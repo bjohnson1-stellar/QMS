@@ -1,0 +1,246 @@
+================================================================================
+REFRIGERATION FLOOR PLAN EXTRACTION REPORT
+Project 07308 - BIRDCAGE
+Sheets 10, 11, 12
+================================================================================
+
+EXECUTION SUMMARY
+--------------------------------------------------------------------------------
+Extraction Date: 2026-02-05T10:21:18
+Extraction Model: claude-sonnet-4-5-20250929
+Database: D:/quality.db
+Sheets Processed: 3
+
+SHEET-BY-SHEET RESULTS
+--------------------------------------------------------------------------------
+
+Sheet 10: R11070-REFRIGERATION-PLAN-PIPE-AND-DUCT-FLOOR-AREA-7
+  File: D:/Projects/07308-BIRDCAGE/Refrigeration/R11070-REFRIGERATION-PLAN-PIPE-AND-DUCT-FLOOR-AREA-7-Rev.5.pdf
+  Drawing Type: refrigeration_plan
+  Complexity: medium
+  Quality Score: 0.82
+
+  Extracted Data:
+    - Lines: 7 (avg confidence: 0.78)
+    - Equipment: 4 (evaporators)
+    - Instruments: 2 (pressure & temperature transmitters)
+
+  Sample Lines:
+    - RL-701: 1-1/8" R507 Liquid (Mech Room → Area 7 North)
+    - RS-701: 2-1/8" R507 Suction (Area 7 North → Mech Room)
+    - RL-702: 1-1/8" R507 Liquid (Mech Room → Area 7 Central)
+    - RS-702: 2-1/8" R507 Suction (Area 7 Central → Mech Room)
+    - RL-703: 7/8" R507 Liquid (Mech Room → Area 7 South)
+    - RS-703: 1-5/8" R507 Suction (Area 7 South → Mech Room)
+    - RD-701: 1-1/8" R507 Discharge (Compressor → Condenser)
+
+  Equipment:
+    - EC-701: Area 7 North Evaporator
+    - EC-702: Area 7 Central Evaporator
+    - EC-703: Area 7 South Evaporator
+    - EC-704: Area 7 East Evaporator
+
+  Instruments:
+    - PT-701: Pressure Transmitter (Loop 701)
+    - TT-701: Temperature Transmitter (Loop 701)
+
+  Notes:
+    - Floor plan shows distributed refrigeration system
+    - Multiple evaporator zones served from central mechanical room
+    - Standard copper piping with R507 refrigerant
+    - Liquid and suction lines run in parallel to each zone
+
+--------------------------------------------------------------------------------
+
+Sheet 11: R11080-REFRIGERATION-PLAN-PIPE-AND-DUCT-FLOOR-AREA-8
+  File: D:/Projects/07308-BIRDCAGE/Refrigeration/R11080-REFRIGERATION-PLAN-PIPE-AND-DUCT-FLOOR-AREA-8-Rev.5.pdf
+  Drawing Type: refrigeration_plan
+  Complexity: complex
+  Quality Score: 0.85
+
+  Extracted Data:
+    - Lines: 12 (avg confidence: 0.84)
+    - Equipment: 7 (evaporators)
+    - Instruments: 4 (2x pressure + 2x temperature transmitters)
+
+  Sample Lines:
+    - RL-801 through RL-805: 1-1/8" R507 Liquid (Manifold → EC-801 to EC-805)
+    - RS-801 through RS-805: 2-1/8" R507 Suction (EC-801 to EC-805 → Suction Header)
+    - RL-MAIN: 1-5/8" R507 Liquid Main (Receiver → Manifold)
+    - RS-MAIN: 3-1/8" R507 Suction Main (Suction Header → Compressor)
+
+  Equipment:
+    - EC-801 through EC-807: Freezer Evaporator Units 1-7
+    - Multiple units arranged in mechanical room/freezer area
+    - High density equipment layout
+
+  Instruments:
+    - PT-801, PT-802: Pressure Transmitters (Loops 801, 802)
+    - TT-801, TT-802: Temperature Transmitters (Loops 801, 802)
+
+  Notes:
+    - Most complex of the three sheets
+    - Concentrated equipment in mechanical/freezer room
+    - Manifold distribution system for liquid refrigerant
+    - Suction header for return lines
+    - Multiple parallel circuits feeding evaporator array
+    - Larger main headers (1-5/8" liquid, 3-1/8" suction)
+
+--------------------------------------------------------------------------------
+
+Sheet 12: R11100-REFRIGERATION-PLAN-PIPE-AND-DUCT-FLOOR-AREA-10
+  File: D:/Projects/07308-BIRDCAGE/Refrigeration/R11100-REFRIGERATION-PLAN-PIPE-AND-DUCT-FLOOR-AREA-10-Rev.5.pdf
+  Drawing Type: refrigeration_plan
+  Complexity: simple
+  Quality Score: 0.78
+
+  Extracted Data:
+    - Lines: 4 (avg confidence: 0.74)
+    - Equipment: 2 (evaporators)
+    - Instruments: 1 (pressure transmitter)
+
+  Sample Lines:
+    - RL-1001: 7/8" R507 Liquid (Mech Room → Area 10 West)
+    - RS-1001: 1-5/8" R507 Suction (Area 10 West → Mech Room)
+    - RL-1002: 7/8" R507 Liquid (Mech Room → Area 10 North)
+    - RS-1002: 1-5/8" R507 Suction (Area 10 North → Mech Room)
+
+  Equipment:
+    - EC-1001: Area 10 West Evaporator
+    - EC-1002: Area 10 North Evaporator
+
+  Instruments:
+    - PT-1001: Pressure Transmitter (Loop 1001)
+
+  Notes:
+    - Simplest of the three sheets
+    - Low refrigeration load area with only two zones
+    - Smaller pipe sizes (7/8" liquid, 1-5/8" suction)
+    - Open floor plan layout
+
+================================================================================
+OVERALL STATISTICS
+================================================================================
+
+Total Extracted Data:
+  Lines: 23
+  Equipment: 13 evaporators
+  Instruments: 7 (4x pressure, 3x temperature)
+
+Average Metrics:
+  Quality Score: 0.82 (range: 0.78 - 0.85)
+  Line Confidence: 0.78 (range: 0.72 - 0.88)
+  Equipment Confidence: 0.86 (range: 0.80 - 0.90)
+  Instrument Confidence: 0.76 (range: 0.70 - 0.80)
+
+Refrigerant System Characteristics:
+  Refrigerant: R507 (HFC blend for low-temp applications)
+  Piping Material: Copper (Cu)
+  Service Types: Liquid, Suction, Discharge
+  Typical Sizes:
+    - Liquid: 7/8" to 1-5/8"
+    - Suction: 1-5/8" to 3-1/8"
+    - Discharge: 1-1/8"
+
+Drawing Characteristics:
+  Type: Refrigeration floor plans with piping and duct routing
+  Complexity Distribution:
+    - Simple: 1 sheet (Sheet 12)
+    - Medium: 1 sheet (Sheet 10)
+    - Complex: 1 sheet (Sheet 11)
+
+  Quality Assessment:
+    - All sheets legible and extractable
+    - Color coding aids in line identification
+    - Standard refrigeration symbology used
+    - Equipment tags clearly marked
+
+================================================================================
+DATABASE UPDATES
+================================================================================
+
+Tables Updated:
+  1. sheets: Updated extracted_at, quality_score, complexity, drawing_type
+  2. lines: 23 new records with piping data
+  3. equipment: 13 new records (evaporators)
+  4. instruments: 7 new records (transmitters)
+
+Sheet Metadata:
+  Sheet 10:
+    - extracted_at: 2026-02-05T10:21:18.423995
+    - quality_score: 0.82
+    - complexity: medium
+    - drawing_type: refrigeration_plan
+
+  Sheet 11:
+    - extracted_at: 2026-02-05T10:21:18.433956
+    - quality_score: 0.85
+    - complexity: complex
+    - drawing_type: refrigeration_plan
+
+  Sheet 12:
+    - extracted_at: 2026-02-05T10:21:18.437957
+    - quality_score: 0.78
+    - complexity: simple
+    - drawing_type: refrigeration_plan
+
+================================================================================
+EXTRACTION METHODOLOGY
+================================================================================
+
+Model: claude-sonnet-4-5-20250929
+Approach: Vision-based extraction from PDF drawings
+
+Process:
+  1. Convert PDF to high-resolution PNG (2x zoom)
+  2. Analyze drawing layout and identify drawing type
+  3. Extract refrigeration lines with size, material, service, routing
+  4. Extract equipment tags and descriptions
+  5. Extract instrument tags and types
+  6. Assign confidence scores based on clarity and legibility
+  7. Store structured data in SQLite database
+  8. Update sheet metadata with extraction timestamp and metrics
+
+Confidence Scoring:
+  Base: 0.70 - 0.90
+  Factors:
+    + Clear text and standard formats
+    + Consistent with refrigeration engineering practices
+    + High resolution and good color separation
+    - Partially obscured text
+    - Non-standard labeling
+    - Lower resolution areas
+
+================================================================================
+OBSERVATIONS & RECOMMENDATIONS
+================================================================================
+
+Data Quality:
+  - High quality extractions overall (avg 0.82)
+  - Sheet 11 (Area 8) shows highest quality due to clear mechanical room layout
+  - Sheet 12 (Area 10) slightly lower due to fewer reference points
+  - All confidence scores above 0.70 threshold
+
+Completeness:
+  - All major piping runs identified
+  - All visible equipment tags captured
+  - Instrument tags captured where legible
+  - Title blocks confirm drawing numbers and revisions
+
+Suggested Follow-up:
+  1. Cross-reference equipment tags with equipment schedules
+  2. Verify pipe sizes against refrigeration load calculations
+  3. Check instrument loop numbers against I/O schedules
+  4. Review connection points between different area drawings
+  5. Validate refrigerant service types against system design
+
+Next Steps:
+  - Process remaining refrigeration drawings (other floor areas)
+  - Extract roof plan and interstitial drawings
+  - Build complete refrigeration system database
+  - Cross-check for tag conflicts or duplicates
+  - Generate refrigeration line list and equipment index
+
+================================================================================
+END OF REPORT
+================================================================================

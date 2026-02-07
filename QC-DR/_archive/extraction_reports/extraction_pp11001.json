@@ -1,0 +1,383 @@
+{
+  "drawing_info": {
+    "sheet_number": "PP11001",
+    "title": "OVERALL FIRST FLOOR PLUMBING PLAN",
+    "revision": "1",
+    "project_number": "07418",
+    "date_issued": "09/24/2024",
+    "scale": "1\" = 40'-0\"",
+    "designed_by": "RMB",
+    "reviewed_by": "NB"
+  },
+  "plumbing_lines": [
+    {
+      "line_number": "4\"-PW",
+      "size": "4\"",
+      "material": "PW",
+      "service": "Process Water",
+      "confidence": 0.95
+    },
+    {
+      "line_number": "6\"-PW",
+      "size": "6\"",
+      "material": "PW",
+      "service": "Process Water",
+      "confidence": 0.95
+    },
+    {
+      "line_number": "8\"-PW",
+      "size": "8\"",
+      "material": "PW",
+      "service": "Process Water",
+      "confidence": 0.95
+    },
+    {
+      "line_number": "10\"-PW",
+      "size": "10\"",
+      "material": "PW",
+      "service": "Process Water",
+      "confidence": 0.95
+    },
+    {
+      "line_number": "12\"-PW",
+      "size": "12\"",
+      "material": "PW",
+      "service": "Process Water",
+      "confidence": 0.95
+    },
+    {
+      "line_number": "4\"-SW",
+      "size": "4\"",
+      "material": "SW",
+      "service": "Sanitary Waste",
+      "confidence": 0.95
+    },
+    {
+      "line_number": "6\"-SW",
+      "size": "6\"",
+      "material": "SW",
+      "service": "Sanitary Waste",
+      "confidence": 0.95
+    },
+    {
+      "line_number": "8\"-SW",
+      "size": "8\"",
+      "material": "SW",
+      "service": "Sanitary Waste",
+      "confidence": 0.95
+    },
+    {
+      "line_number": "6\"-ST1",
+      "size": "6\"",
+      "material": "ST1",
+      "spec_class": "B.O.T -3'6\"",
+      "to_location": "Site Storm Collection",
+      "service": "Storm Drain",
+      "confidence": 0.9
+    },
+    {
+      "line_number": "10\"-ST1",
+      "size": "10\"",
+      "material": "ST1",
+      "to_location": "Site Storm Collection (I.E.: 621.75')",
+      "service": "Storm Drain",
+      "confidence": 0.9
+    },
+    {
+      "line_number": "10\"-ST1-2",
+      "size": "10\"",
+      "material": "ST1",
+      "to_location": "Site Storm Collection (I.E.: 621.8')",
+      "service": "Storm Drain",
+      "confidence": 0.9
+    }
+  ],
+  "areas": [
+    {
+      "area": "AREA 1",
+      "detail_ref": "PP11011",
+      "room_name": null
+    },
+    {
+      "area": "AREA 2",
+      "detail_ref": "P110021",
+      "room_name": null
+    },
+    {
+      "area": "AREA 3",
+      "detail_ref": "P11031",
+      "room_name": null
+    },
+    {
+      "area": "AREA 4",
+      "detail_ref": "PP11041",
+      "room_name": null
+    },
+    {
+      "area": "AREA 5",
+      "detail_ref": "PP11051",
+      "room_name": null
+    },
+    {
+      "area": "AREA 6",
+      "detail_ref": "PP11061",
+      "room_name": null
+    },
+    {
+      "area": "AREA 7",
+      "detail_ref": "PP11071",
+      "room_name": null
+    },
+    {
+      "area": "AREA 8",
+      "detail_ref": "PP11081",
+      "room_name": null
+    },
+    {
+      "area": "AREA 9",
+      "detail_ref": "PP11091",
+      "room_name": null
+    },
+    {
+      "area": "AREA 10",
+      "detail_ref": "P11101",
+      "room_name": null
+    },
+    {
+      "area": "AREA 11",
+      "detail_ref": "PP11102",
+      "room_name": null
+    },
+    {
+      "area": "AREA 12",
+      "detail_ref": "PP11121",
+      "room_name": null
+    },
+    {
+      "area": "AREA 13",
+      "detail_ref": "PP11131",
+      "room_name": null
+    },
+    {
+      "area": "AREA 14",
+      "detail_ref": "PP11141",
+      "room_name": null
+    }
+  ],
+  "rooms": [
+    {
+      "room_number": "10201",
+      "room_name": "FINISHED GOODS"
+    },
+    {
+      "room_number": "10401",
+      "room_name": "SUPERSACK STORAGE"
+    },
+    {
+      "room_number": "10501",
+      "room_name": "PALLETIZING"
+    },
+    {
+      "room_number": "10601",
+      "room_name": "PREFORMS"
+    },
+    {
+      "room_number": "10602",
+      "room_name": "PALLET STORAGE"
+    },
+    {
+      "room_number": "10603",
+      "room_name": "RO STORAGE"
+    },
+    {
+      "room_number": "10604",
+      "room_name": "CIP"
+    },
+    {
+      "room_number": "10616",
+      "room_name": "TECH"
+    },
+    {
+      "room_number": "10701",
+      "room_name": "POWDER BLENDING"
+    },
+    {
+      "room_number": "10702",
+      "room_name": "LIQUID BLENDING"
+    },
+    {
+      "room_number": "10703",
+      "room_name": "PRIMARY PACK & FILLING"
+    },
+    {
+      "room_number": "10704",
+      "room_name": "WASH"
+    },
+    {
+      "room_number": "10705",
+      "room_name": "KITTING"
+    },
+    {
+      "room_number": "10706",
+      "room_name": "PALLET EXCHANGE"
+    },
+    {
+      "room_number": "10801",
+      "room_name": "INGREDIENT STORAGE"
+    },
+    {
+      "room_number": "10802",
+      "room_name": "CAP STORAGE"
+    },
+    {
+      "room_number": "10901",
+      "room_name": "SECONDARY PACKAGING"
+    },
+    {
+      "room_number": "11101",
+      "room_name": "TRASH"
+    },
+    {
+      "room_number": "11102",
+      "room_name": "EXIT PASSAGEWAY"
+    },
+    {
+      "room_number": "11103",
+      "room_name": "FLAMMABLE INGREDIENT STORAGE"
+    },
+    {
+      "room_number": "11104",
+      "room_name": "BOILER"
+    },
+    {
+      "room_number": "11105",
+      "room_name": "ELECTRICAL"
+    },
+    {
+      "room_number": "11301",
+      "room_name": "LABELING & PACKAGING MATERIAL"
+    },
+    {
+      "room_number": "11401",
+      "room_name": "MAINTENANCE"
+    },
+    {
+      "room_number": "11403",
+      "room_name": "PARTS STORAGE"
+    }
+  ],
+  "drainage_features": [
+    {
+      "feature": "EXTERIOR TRENCH DRAIN",
+      "location": "Grid 10.2",
+      "confidence": 0.9
+    },
+    {
+      "feature": "VERTICAL DROP",
+      "invert_elevation": "615.24'",
+      "confidence": 0.85
+    },
+    {
+      "feature": "VERTICAL DROP",
+      "invert_elevation": "615.71'",
+      "confidence": 0.85
+    },
+    {
+      "feature": "VERTICAL DROP",
+      "invert_elevation": "616.62'",
+      "confidence": 0.85
+    },
+    {
+      "feature": "VERTICAL DROP",
+      "invert_elevation": "614.83'",
+      "confidence": 0.85
+    },
+    {
+      "feature": "VERTICAL DROP",
+      "invert_elevation": "616.72'",
+      "confidence": 0.85
+    },
+    {
+      "feature": "RECESSED SLAB",
+      "location": "Multiple",
+      "confidence": 0.9
+    }
+  ],
+  "equipment_notes": [
+    {
+      "tag": "FCO-1",
+      "type": "Floor Cleanout",
+      "location": "Near grid Q",
+      "confidence": 0.85
+    },
+    {
+      "item": "COOG",
+      "description": "Cleanout Ground (multiple locations)",
+      "confidence": 0.8
+    }
+  ],
+  "flow_rates": [
+    {
+      "value": "200 gpm",
+      "location": "Near grid C.9",
+      "confidence": 0.85
+    },
+    {
+      "value": "425 gpm",
+      "location": "Near grid C.9",
+      "confidence": 0.85
+    }
+  ],
+  "elevations": [
+    {
+      "type": "FFE",
+      "elevation": "627.00'",
+      "location": "Multiple",
+      "confidence": 0.9
+    },
+    {
+      "type": "Invert",
+      "elevation": "621.8'",
+      "location": "Storm connection",
+      "confidence": 0.9
+    },
+    {
+      "type": "Invert",
+      "elevation": "621.75'",
+      "location": "Storm connection",
+      "confidence": 0.9
+    }
+  ],
+  "revisions": [
+    {
+      "revision": "A",
+      "description": "DESIGN DEVELOPMENT 1",
+      "date": "05/16/2024"
+    },
+    {
+      "revision": "B",
+      "description": "UNDERGROUND PERMIT ISSUE",
+      "date": "06/28/2024"
+    },
+    {
+      "revision": "C",
+      "description": "DESIGN DEVELOPMENT 2",
+      "date": "07/16/2024"
+    },
+    {
+      "revision": "D",
+      "description": "REVISED AS NOTED",
+      "date": "08/29/2024"
+    },
+    {
+      "revision": "E",
+      "description": "REVISED AS NOTED",
+      "date": "09/06/2024"
+    },
+    {
+      "revision": "1",
+      "description": "CONSTRUCTION ISSUE",
+      "date": "09/24/2024"
+    }
+  ]
+}

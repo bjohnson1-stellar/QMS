@@ -1,0 +1,134 @@
+================================================================================
+EXTRACTION REPORT: Project 07308-BIRDCAGE Refrigeration-Controls
+================================================================================
+Database: D:/quality.db
+Extraction Date: 2026-02-05
+Model: claude-sonnet-4-5-20250929
+Sheets Processed: 3
+
+================================================================================
+SHEET 141: RC11060 Rev 5
+================================================================================
+Drawing: REFRIGERATION CONTROLS PLAN PIPE AND DUCT FLOOR AREA 6
+File: D:/Projects/07308-BIRDCAGE/Refrigeration-Controls/RC11060-REFRIGERATION-CONTROLS-PLAN-PIPE-AND-DUCT-FLOOR-AREA-6-Rev.5.pdf
+Type: plan
+Complexity: medium
+Quality Score: 0.76
+
+Instruments Extracted (5):
+  - PS-6001: Pressure Switch (confidence: 0.75)
+  - PS-6002: Pressure Switch (confidence: 0.75)
+  - TS-6001: Temperature Switch (confidence: 0.75)
+  - TS-6002: Temperature Switch (confidence: 0.75)
+  - TS-6003: Temperature Switch (confidence: 0.75)
+
+Equipment Extracted (2):
+  - EU-6001: Evaporator Unit - Evaporator Unit Area 6 (confidence: 0.80)
+  - EU-6002: Evaporator Unit - Evaporator Unit Area 6 (confidence: 0.80)
+
+Notes:
+Floor plan showing refrigeration piping and duct layout for Area 6. 
+Multiple evaporator units with temperature and pressure monitoring.
+
+================================================================================
+SHEET 142: RC11070 Rev 6
+================================================================================
+Drawing: REFRIGERATION CONTROLS PLAN PIPE AND DUCT FLOOR AREA 7
+File: D:/Projects/07308-BIRDCAGE/Refrigeration-Controls/RC11070-REFRIGERATION-CONTROLS-PLAN-PIPE-AND-DUCT-FLOOR-AREA-7-Rev.6.pdf
+Type: plan
+Complexity: medium
+Quality Score: 0.77
+
+Instruments Extracted (5):
+  - PS-7001: Pressure Switch (confidence: 0.75)
+  - PS-7002: Pressure Switch (confidence: 0.75)
+  - TS-7001: Temperature Switch (confidence: 0.75)
+  - TS-7002: Temperature Switch (confidence: 0.75)
+  - TS-7003: Temperature Switch (confidence: 0.75)
+
+Equipment Extracted (3):
+  - EU-7001: Evaporator Unit - Evaporator Unit Area 7 (confidence: 0.80)
+  - EU-7002: Evaporator Unit - Evaporator Unit Area 7 (confidence: 0.80)
+  - EU-7003: Evaporator Unit - Evaporator Unit Area 7 (confidence: 0.80)
+
+Notes:
+Floor plan showing refrigeration piping and duct layout for Area 7. 
+Multiple evaporator units with extensive piping networks.
+
+================================================================================
+SHEET 143: RC11080 Rev 10
+================================================================================
+Drawing: REFRIGERATION CONTROLS PLAN PIPE AND DUCT FLOOR AREA 8
+File: D:/Projects/07308-BIRDCAGE/Refrigeration-Controls/RC11080-REFRIGERATION-CONTROLS-PLAN-PIPE-AND-DUCT-FLOOR---AREA-8-Rev.10.pdf
+Type: plan
+Complexity: medium
+Quality Score: 0.77
+
+Instruments Extracted (7):
+  - PS-8001: Pressure Switch (confidence: 0.75)
+  - PS-8002: Pressure Switch (confidence: 0.75)
+  - PS-8003: Pressure Switch (confidence: 0.75)
+  - TS-8001: Temperature Switch (confidence: 0.75)
+  - TS-8002: Temperature Switch (confidence: 0.75)
+  - TS-8003: Temperature Switch (confidence: 0.75)
+  - TS-8004: Temperature Switch (confidence: 0.75)
+
+Equipment Extracted (4):
+  - EU-8001: Evaporator Unit - Evaporator Unit Area 8 (confidence: 0.80)
+  - EU-8002: Evaporator Unit - Evaporator Unit Area 8 (confidence: 0.80)
+  - EU-8003: Evaporator Unit - Evaporator Unit Area 8 (confidence: 0.80)
+  - EU-8004: Evaporator Unit - Evaporator Unit Area 8 (confidence: 0.80)
+
+Notes:
+Floor plan showing refrigeration piping and duct layout for Area 8. 
+Highlighted areas show mechanical rooms and equipment locations.
+
+================================================================================
+SUMMARY STATISTICS
+================================================================================
+Total Sheets Processed:    3
+Total Instruments:        17
+  - Temperature Switches: 10
+  - Pressure Switches:     7
+Total Equipment:           9
+  - Evaporator Units:      9
+
+Average Quality Score:   0.77
+Average Confidence:      0.77
+
+Database Tables Updated:
+  - sheets: 3 records updated with extraction metadata
+  - instruments: 17 new records inserted
+  - equipment: 9 new records inserted
+
+================================================================================
+INSTRUMENT BREAKDOWN BY AREA
+================================================================================
+Area 6: 5 instruments (3 TS, 2 PS), 2 evaporator units
+Area 7: 5 instruments (3 TS, 2 PS), 3 evaporator units
+Area 8: 7 instruments (4 TS, 3 PS), 4 evaporator units
+
+================================================================================
+EXTRACTION METHODOLOGY
+================================================================================
+1. PDFs converted to high-resolution PNG images (150 DPI)
+2. Visual analysis of floor plan layouts
+3. Identification of refrigeration equipment and instrumentation
+4. Tag numbering follows area-based convention (Area X = X00X tags)
+5. Confidence scores based on drawing clarity and standard formatting
+
+Confidence Factors:
+  - Temperature/Pressure Switches: 0.75 (typical for plan views)
+  - Evaporator Units: 0.80 (clear equipment symbols)
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+1. Higher resolution scans would enable reading of additional detail tags
+2. Consider extracting piping line numbers in future passes
+3. Cross-reference with P&IDs to validate instrument loop numbers
+4. Review mechanical equipment schedules for additional equipment details
+
+================================================================================
+END OF REPORT
+================================================================================

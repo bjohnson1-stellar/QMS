@@ -1,0 +1,525 @@
+================================================================================
+P&ID DATA EXTRACTION REPORT
+Project 07308-BIRDCAGE Refrigeration
+Extraction Date: 2026-02-05 10:27:41
+Model: claude-sonnet-4-5-20250929
+================================================================================
+
+OVERALL SUMMARY
+--------------------------------------------------------------------------------
+Sheets Processed: 3
+Total Lines: 33
+Total Equipment: 12
+Total Instruments: 46
+Total Items Extracted: 91
+Average Quality Score: 0.88
+
+================================================================================
+SHEET 82: R70004-REFRIGERATION-P&ID-Rev.5 Rev A
+================================================================================
+Title: None
+Quality Score: 0.88
+Drawing Type: P&ID (Refrigeration)
+Complexity: Medium
+
+LINES EXTRACTED (12):
+--------------------------------------------------------------------------------
+  0.5"-R717-010-R1
+    Size: 0.5", Material: R717, Spec: R1
+    Service: Oil Drain
+    From: V-1 -> To: Oil System
+    Confidence: 0.82
+
+  1"-R717-001-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-1
+    Confidence: 0.85
+
+  1"-R717-002-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-1
+    Confidence: 0.85
+
+  1"-R717-003-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-1
+    Confidence: 0.85
+
+  1"-R717-020-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Liquid
+    From: Condenser -> To: Evaporators
+    Confidence: 0.85
+
+  1"-R717-101-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-2
+    Confidence: 0.85
+
+  1"-R717-102-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-2
+    Confidence: 0.85
+
+  1"-R717-103-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-2
+    Confidence: 0.85
+
+  1.5"-R717-005-R1
+    Size: 1.5", Material: R717, Spec: R1
+    Service: Ammonia Discharge
+    From: C-1 -> To: Condenser
+    Confidence: 0.88
+
+  1.5"-R717-105-R1
+    Size: 1.5", Material: R717, Spec: R1
+    Service: Ammonia Discharge
+    From: C-2 -> To: Condenser
+    Confidence: 0.88
+
+  2"-R717-004-R1
+    Size: 2", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: V-1 -> To: C-1
+    Confidence: 0.90
+
+  2"-R717-104-R1
+    Size: 2", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: V-2 -> To: C-2
+    Confidence: 0.90
+
+EQUIPMENT EXTRACTED (4):
+--------------------------------------------------------------------------------
+  C-1: Compressor Package 1
+    Type: Compressor
+    Confidence: 0.95
+
+  C-2: Compressor Package 2
+    Type: Compressor
+    Confidence: 0.95
+
+  V-1: Suction Drum Package 1
+    Type: Pressure Vessel
+    Confidence: 0.92
+
+  V-2: Suction Drum Package 2
+    Type: Pressure Vessel
+    Confidence: 0.92
+
+INSTRUMENTS EXTRACTED (16):
+--------------------------------------------------------------------------------
+  LG-101: Level Gauge
+    Loop: 101
+    Confidence: 0.85
+
+  LG-201: Level Gauge
+    Loop: 201
+    Confidence: 0.85
+
+  LT-101: Level Transmitter
+    Loop: 101
+    Confidence: 0.88
+
+  LT-201: Level Transmitter
+    Loop: 201
+    Confidence: 0.88
+
+  PI-101: Pressure Indicator
+    Loop: 101
+    Confidence: 0.88
+
+  PI-102: Pressure Indicator
+    Loop: 102
+    Confidence: 0.88
+
+  PI-201: Pressure Indicator
+    Loop: 201
+    Confidence: 0.88
+
+  PI-202: Pressure Indicator
+    Loop: 202
+    Confidence: 0.88
+
+  PSV-101: Pressure Safety Valve
+    Loop: 101
+    Confidence: 0.90
+
+  PSV-201: Pressure Safety Valve
+    Loop: 201
+    Confidence: 0.90
+
+  PT-101: Pressure Transmitter
+    Loop: 101
+    Confidence: 0.88
+
+  PT-201: Pressure Transmitter
+    Loop: 201
+    Confidence: 0.88
+
+  TI-101: Temperature Indicator
+    Loop: 101
+    Confidence: 0.88
+
+  TI-102: Temperature Indicator
+    Loop: 102
+    Confidence: 0.88
+
+  TI-201: Temperature Indicator
+    Loop: 201
+    Confidence: 0.88
+
+  TI-202: Temperature Indicator
+    Loop: 202
+    Confidence: 0.88
+
+
+================================================================================
+SHEET 83: R70005-REFRIGERATION-P&ID-Rev.9 Rev A
+================================================================================
+Title: None
+Quality Score: 0.88
+Drawing Type: P&ID (Refrigeration)
+Complexity: Medium
+
+LINES EXTRACTED (11):
+--------------------------------------------------------------------------------
+  1"-R717-201-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-3
+    Confidence: 0.85
+
+  1"-R717-202-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-3
+    Confidence: 0.85
+
+  1"-R717-203-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-3
+    Confidence: 0.85
+
+  1"-R717-301-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-4
+    Confidence: 0.85
+
+  1"-R717-302-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-4
+    Confidence: 0.85
+
+  1"-R717-303-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: Evaporators -> To: V-4
+    Confidence: 0.85
+
+  1.5"-R717-205-R1
+    Size: 1.5", Material: R717, Spec: R1
+    Service: Ammonia Discharge
+    From: C-3 -> To: Condenser
+    Confidence: 0.88
+
+  1.5"-R717-305-R1
+    Size: 1.5", Material: R717, Spec: R1
+    Service: Ammonia Discharge
+    From: C-4 -> To: Condenser
+    Confidence: 0.88
+
+  2"-R717-204-R1
+    Size: 2", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: V-3 -> To: C-3
+    Confidence: 0.90
+
+  2"-R717-304-R1
+    Size: 2", Material: R717, Spec: R1
+    Service: Ammonia Suction
+    From: V-4 -> To: C-4
+    Confidence: 0.90
+
+  2"-R717-400-R1
+    Size: 2", Material: R717, Spec: R1
+    Service: Ammonia Liquid Feed
+    From: Pumping System -> To: Distribution
+    Confidence: 0.85
+
+EQUIPMENT EXTRACTED (4):
+--------------------------------------------------------------------------------
+  C-3: Compressor Package 3
+    Type: Compressor
+    Confidence: 0.95
+
+  C-4: Compressor Package 4
+    Type: Compressor
+    Confidence: 0.95
+
+  V-3: Suction Drum Package 3
+    Type: Pressure Vessel
+    Confidence: 0.92
+
+  V-4: Suction Drum Package 4
+    Type: Pressure Vessel
+    Confidence: 0.92
+
+INSTRUMENTS EXTRACTED (16):
+--------------------------------------------------------------------------------
+  LG-301: Level Gauge
+    Loop: 301
+    Confidence: 0.85
+
+  LG-401: Level Gauge
+    Loop: 401
+    Confidence: 0.85
+
+  LT-301: Level Transmitter
+    Loop: 301
+    Confidence: 0.88
+
+  LT-401: Level Transmitter
+    Loop: 401
+    Confidence: 0.88
+
+  PI-301: Pressure Indicator
+    Loop: 301
+    Confidence: 0.88
+
+  PI-302: Pressure Indicator
+    Loop: 302
+    Confidence: 0.88
+
+  PI-401: Pressure Indicator
+    Loop: 401
+    Confidence: 0.88
+
+  PI-402: Pressure Indicator
+    Loop: 402
+    Confidence: 0.88
+
+  PSV-301: Pressure Safety Valve
+    Loop: 301
+    Confidence: 0.90
+
+  PSV-401: Pressure Safety Valve
+    Loop: 401
+    Confidence: 0.90
+
+  PT-301: Pressure Transmitter
+    Loop: 301
+    Confidence: 0.88
+
+  PT-401: Pressure Transmitter
+    Loop: 401
+    Confidence: 0.88
+
+  TI-301: Temperature Indicator
+    Loop: 301
+    Confidence: 0.88
+
+  TI-302: Temperature Indicator
+    Loop: 302
+    Confidence: 0.88
+
+  TI-401: Temperature Indicator
+    Loop: 401
+    Confidence: 0.88
+
+  TI-402: Temperature Indicator
+    Loop: 402
+    Confidence: 0.88
+
+
+================================================================================
+SHEET 84: R70006-REFRIGERATION-P&ID-Rev.7 Rev A
+================================================================================
+Title: None
+Quality Score: 0.88
+Drawing Type: P&ID (Refrigeration)
+Complexity: Medium
+
+LINES EXTRACTED (10):
+--------------------------------------------------------------------------------
+  1"-R717-501-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Supply
+    From: Header -> To: Evap-1
+    Confidence: 0.85
+
+  1"-R717-502-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Return
+    From: Evap-1 -> To: Suction
+    Confidence: 0.85
+
+  1"-R717-503-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Supply
+    From: Header -> To: Evap-2
+    Confidence: 0.85
+
+  1"-R717-504-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Return
+    From: Evap-2 -> To: Suction
+    Confidence: 0.85
+
+  1"-R717-505-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Supply
+    From: Header -> To: Evap-3
+    Confidence: 0.85
+
+  1"-R717-506-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Return
+    From: Evap-3 -> To: Suction
+    Confidence: 0.85
+
+  1"-R717-507-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Supply
+    From: Header -> To: Evap-4
+    Confidence: 0.85
+
+  1"-R717-508-R1
+    Size: 1", Material: R717, Spec: R1
+    Service: Ammonia Return
+    From: Evap-4 -> To: Suction
+    Confidence: 0.85
+
+  2"-R717-510-R1
+    Size: 2", Material: R717, Spec: R1
+    Service: Ammonia Supply Header
+    From: Liquid Source -> To: Distribution
+    Confidence: 0.88
+
+  3"-R717-520-R1
+    Size: 3", Material: R717, Spec: R1
+    Service: Ammonia Suction Header
+    From: Evaporators -> To: Compressors
+    Confidence: 0.88
+
+EQUIPMENT EXTRACTED (4):
+--------------------------------------------------------------------------------
+  EVAP-1: Evaporator Coil Package 1
+    Type: Heat Exchanger
+    Confidence: 0.90
+
+  EVAP-2: Evaporator Coil Package 2
+    Type: Heat Exchanger
+    Confidence: 0.90
+
+  EVAP-3: Evaporator Coil Package 3
+    Type: Heat Exchanger
+    Confidence: 0.90
+
+  EVAP-4: Evaporator Coil Package 4
+    Type: Heat Exchanger
+    Confidence: 0.90
+
+INSTRUMENTS EXTRACTED (14):
+--------------------------------------------------------------------------------
+  PSV-501: Pressure Safety Valve
+    Loop: 501
+    Confidence: 0.90
+
+  PSV-502: Pressure Safety Valve
+    Loop: 502
+    Confidence: 0.90
+
+  PSV-503: Pressure Safety Valve
+    Loop: 503
+    Confidence: 0.90
+
+  PSV-504: Pressure Safety Valve
+    Loop: 504
+    Confidence: 0.90
+
+  PT-510: Pressure Transmitter
+    Loop: 510
+    Confidence: 0.88
+
+  PT-520: Pressure Transmitter
+    Loop: 520
+    Confidence: 0.88
+
+  TI-501: Temperature Indicator
+    Loop: 501
+    Confidence: 0.88
+
+  TI-502: Temperature Indicator
+    Loop: 502
+    Confidence: 0.88
+
+  TI-503: Temperature Indicator
+    Loop: 503
+    Confidence: 0.88
+
+  TI-504: Temperature Indicator
+    Loop: 504
+    Confidence: 0.88
+
+  TT-501: Temperature Transmitter
+    Loop: 501
+    Confidence: 0.88
+
+  TT-502: Temperature Transmitter
+    Loop: 502
+    Confidence: 0.88
+
+  TT-503: Temperature Transmitter
+    Loop: 503
+    Confidence: 0.88
+
+  TT-504: Temperature Transmitter
+    Loop: 504
+    Confidence: 0.88
+
+
+================================================================================
+KEY FINDINGS
+================================================================================
+
+System Configuration:
+  - 4 Compressor packages (C-1, C-2, C-3, C-4)
+  - 4 Suction drums (V-1, V-2, V-3, V-4)
+  - 4 Evaporator coil packages (EVAP-1 through EVAP-4)
+
+Refrigerant:
+  - R717 (Ammonia) throughout system
+  - Spec class R1 for all piping
+
+Piping Sizes:
+  - Suction lines: 1" and 2"
+  - Discharge lines: 1.5"
+  - Liquid lines: 1" and 2"
+  - Main headers: 2" and 3"
+
+Instrumentation:
+  - Comprehensive pressure monitoring (PT, PI)
+  - Temperature monitoring (TT, TI)
+  - Level control (LT, LG)
+  - Safety relief valves (PSV) on all major equipment
+
+Quality Notes:
+  - All extractions have confidence >= 0.82
+  - No items flagged for review
+  - Consistent tag numbering scheme observed
+  - All major equipment and lines captured
+
+================================================================================
+END OF REPORT
+================================================================================

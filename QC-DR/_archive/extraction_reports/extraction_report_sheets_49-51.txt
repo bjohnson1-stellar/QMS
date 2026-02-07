@@ -1,0 +1,487 @@
+===============================================================================
+EXTRACTION REPORT: REFRIGERATION SUPPORT DETAILS
+Project: 07308-BIRDCAGE (Jack Link's New Processing Facility)
+Date: 2026-02-05
+Extraction Method: Manual extraction from PDF text with structured data entry
+===============================================================================
+
+SHEETS PROCESSED
+================
+
+Sheet 49 (ID: 49)
+  Drawing: R50211-REFRIGERATION-DETAILS-SUPPORTS-Rev.3.pdf
+  Title: REFRIGERATION DETAILS - SUPPORTS
+  Revision: 3
+  Type: detail
+  Complexity: medium
+  Quality Score: 0.93
+  Extracted Items: 15 support details
+
+Sheet 50 (ID: 50)
+  Drawing: R50220-REFRIGERATION-DETAILS-SUPPORTS-Rev.3.pdf
+  Title: REFRIGERATION DETAILS - SUPPORTS
+  Revision: 3
+  Type: detail
+  Complexity: medium
+  Quality Score: 0.92
+  Extracted Items: 13 support details
+
+Sheet 51 (ID: 51)
+  Drawing: R50221-REFRIGERATION-DETAILS-SUPPORTS-Rev.3.pdf
+  Title: REFRIGERATION DETAILS - SUPPORTS
+  Revision: 3
+  Type: detail
+  Complexity: complex
+  Quality Score: 0.91
+  Extracted Items: 19 support details
+
+TOTAL EXTRACTED: 47 support details
+
+===============================================================================
+EXTRACTION SUMMARY BY TYPE
+===============================================================================
+
+Hanger Rods (10 items)
+  - Threaded rod specifications from 3/8" to 2" diameter
+  - Load capacities: 730 lbs (3/8") to 24,600 lbs (2")
+  - Material: Coarse thread UNC, stainless or galvanized steel
+  - Source: Sheet 50 (R50220)
+
+Trapeze Hangers - 2 Rod (7 items)
+  - Labels: N, P, Q, R, S, T, U
+  - Angles: L2x2x1/4 through L5x5x3/8
+  - Load capacities: 500 lbs to 9,500 lbs (4 ft width)
+  - Rod sizes: 1/2" to 1 1/8"
+  - Back-to-back configurations for higher loads
+  - Source: Sheet 49 (R50211)
+
+Trapeze Hangers - 3 Rod (5 items)
+  - Labels: V, W, X, Y, Z
+  - Angles: L4x4x1/4 through L5x5x3/8
+  - Load capacities: 2,700 lbs to 12,500 lbs (4 ft width)
+  - Rod sizes: 5/8" to 1 1/4"
+  - Higher capacity than 2-rod configuration
+  - Source: Sheet 49 (R50211)
+
+Pipe Stand Uprights - Angle (6 items)
+  - Labels: A, B, C, D (angles) + E, F (channels)
+  - Angles: L2x2x1/4 through L4x4x3/8
+  - Channels: C6x8.2, C8x11.5
+  - Load capacities: 700 lbs to 27,100 lbs (2 ft spacing)
+  - Source: Sheet 51 (R50221)
+
+Pipe Stand Uprights - Pipe (3 items)
+  - Labels: 2, 3, 4
+  - Sizes: 2", 3", 4" Schedule 40 pipe
+  - Load capacities: 1,500 lbs to 8,000 lbs
+  - Galvanized with caps
+  - Source: Sheet 51 (R50221)
+
+Cross Member Cantilever (6 items)
+  - Labels: A, B, C, D, E, F
+  - Angles: L2x2x1/4 through L4x4x3/8
+  - Channels: C6x8.2, C8x11.5
+  - Load capacities: 100 lbs to 5,400 lbs (36" cantilever)
+  - Source: Sheet 51 (R50221)
+
+Pipe Stand Bases (4 items)
+  - Labels: W, X, Y, Z
+  - Synthetic wood sleepers: 2x6, 2x8
+  - Load capacities: 575 lbs to 3,900 lbs
+  - Lengths: 36", 48", 60"
+  - Assumes 15 PSI minimum insulation compressive strength
+  - Source: Sheet 51 (R50221)
+
+Pipe Stand Bracing (3 items)
+  - Box bracing: L2x2x1/4 angle, for stands >48" height
+  - Cross bracing: L2x2x1/4 angle, for stands >24" height
+  - Strap down: 5/16" cable with plastic coating
+  - Required at 100 ft intervals and direction changes
+  - Source: Sheet 50 (R50220)
+
+Special Support Types (3 items)
+  - Clevis hanger: Anvil Fig. 260 (galvanized)
+  - Riser support: Anvil Fig. 40 or equal
+  - CMU wall support: Eaton B3069W bracket with 3/4" embedded rod
+  - Source: Sheet 49 (R50211)
+
+===============================================================================
+DETAILED EXTRACTIONS
+===============================================================================
+
+SHEET 49: R50211 - TRAPEZE AND SPECIALTY HANGERS
+------------------------------------------------
+
+Trapeze Hanger Schedule (2-Rod Configuration):
+  Type N:  L2x2x1/4, 1/2" rod,  500 lbs @ 4 ft width
+  Type P:  L3x3x1/4, 1/2" rod,  1,200 lbs @ 4 ft width
+  Type Q:  L4x4x1/4, 1/2" rod,  2,000 lbs @ 4 ft width
+  Type R:  L4x4x3/8, 5/8" rod,  2,900 lbs @ 4 ft width
+  Type S:  L4x4x1/4, 7/8" rod,  4,100 lbs @ 4 ft (back-to-back)
+  Type T:  L4x4x3/8, 1" rod,    6,000 lbs @ 4 ft (back-to-back)
+  Type U:  L5x5x3/8, 1 1/8" rod, 9,500 lbs @ 4 ft (back-to-back)
+
+Trapeze Hanger Schedule (3-Rod Configuration):
+  Type V:  L4x4x1/4, 5/8" rod,   2,700 lbs @ 4 ft width
+  Type W:  L4x4x3/8, 7/8" rod,   3,900 lbs @ 4 ft width
+  Type X:  L4x4x1/4, 1" rod,     5,400 lbs @ 4 ft (back-to-back)
+  Type Y:  L4x4x3/8, 1" rod,     7,900 lbs @ 4 ft (back-to-back)
+  Type Z:  L5x5x3/8, 1 1/4" rod, 12,500 lbs @ 4 ft (back-to-back)
+
+Special Supports:
+  - Clevis Hanger: Anvil Fig. 260 (galvanized steel)
+    * With insulation shield (Anvil Fig. 167) for insulated pipe
+    * High density pipe insert material specified (ASTM C591/C552)
+    * Sway bracing required every third hanger if vertical length >30"
+
+  - Riser Clamp Support: Anvil Fig. 40 or equal
+    * For vertical pipe support at floor penetrations
+    * Includes high density pipe insert for insulated applications
+
+  - CMU Wall Support: Eaton B3069W bracket or equal
+    * 3/4" diameter rod embedded 7" minimum into grouted cell
+    * Uses Hilti HIT HY 100 MAX adhesive
+    * Load per manufacturer recommendations
+
+  - Process Area Standoff: 304 SS split ring clamp
+    * UHMW plastic standoff with food grade/USDA sealant
+    * Rivnut installation into IMP wall
+    * 2" max extension, coordinate with other trades
+
+General Notes from Sheet 49:
+  - Sway bracing L2x2x1/4 required every fourth hanger when vertical
+    length exceeds 30 inches
+  - U-bolt pipe to hanger at every fourth hanger
+  - Hangers identified by label and width (e.g., "N5" = Type N, 5 ft wide)
+  - Minimum 3" clearances required
+  - Load distributed evenly across hanger
+  - Supports designed for refrigeration piping only
+  - Hangers <7 ft from working elevation require corner clips or bump protection
+
+SHEET 50: R50220 - PIPE SPANS AND PIPE STAND BRACING
+----------------------------------------------------
+
+Hanger Rod Maximum Loads (Coarse Thread UNC, Stainless or Galvanized):
+  3/8" rod:     730 lbs
+  1/2" rod:   1,350 lbs
+  5/8" rod:   2,160 lbs
+  3/4" rod:   3,230 lbs
+  7/8" rod:   4,480 lbs
+  1" rod:     5,900 lbs
+  1 1/4" rod: 9,500 lbs
+  1 1/2" rod: 13,800 lbs
+  1 3/4" rod: 18,600 lbs
+  2" rod:     24,600 lbs
+
+Pipe Span Requirements:
+  Note: Values are for pipe only, do not apply for concentrated loads
+  (valves, flanges, etc.)
+  Supports required at each change in direction
+  Detailed tables provided for:
+    - Steel pipe (carbon, stainless, galvanized) - liquid and vapor
+    - Aquatherm Blue PP-R pipe - liquid
+    - ACR copper tube - liquid
+    - PVC pipe - liquid (SCH80/40/STD)
+
+Pipe Stand Bracing Details:
+
+  1. Box Bracing:
+     - Material: L2x2x1/4 galvanized angle
+     - Required when pipe stand bottom of insulation exceeds 48" from roof
+     - Frequency: Every 100 feet, at every change in direction
+     - One for each control group
+     - Box brace on both sides required
+     - Do not box brace around control groups
+
+  2. Welded Cross Bracing:
+     - Material: L2x2x1/4 galvanized angle
+     - Required when pipe stand bottom of insulation exceeds 24" from roof
+     - Frequency: Every 100 feet, at every change in direction
+     - One for each control group
+     - Maintain 8" above roof
+
+  3. Bolted Cross Bracing:
+     - Material: L2x2x1/4 and L4x4x1/4 galvanized angles
+     - 3/8" galvanized bolts and washers
+     - Washers between angles to fill gaps
+     - When bottom of insulation exceeds 24" from roof
+     - Loading to be confirmed by engineer (static, dynamic, wind, seismic)
+
+  4. Strap Down:
+     - Material: 5/16" cable with plastic coating
+     - 1/4" x 1-1/2" galvanized eye bolt
+     - Cable clamps and loops through eye bolt
+     - Required at every anchored pipe stand
+     - Eye bolt installed down to top of steel
+
+Other Details:
+  - Secondary support: L4x4x1/4 angle at centerline changes
+  - Condensate drain sleeper: 1" x 1/8" galv pipe strap on 4x4 treated lumber
+  - Caddy support: Caddy Pyramid Model PBU10 with zinc plated clamp
+
+SHEET 51: R50221 - PIPE STAND UPRIGHTS AND BASES
+------------------------------------------------
+
+Support Stand Upright Capacities (Angle/Channel Top):
+
+At 2 ft spacing:
+  Type A: L2x2x1/4    - 700 lbs
+  Type B: L3x3x1/4    - 1,900 lbs
+  Type C: L4x4x1/4    - 3,400 lbs
+  Type D: L4x4x3/8    - 5,000 lbs
+  Type E: C6x8.2      - 14,600 lbs
+  Type F: C8x11.5     - 27,100 lbs
+
+At 3 ft spacing:
+  Type A: L2x2x1/4    - 500 lbs
+  Type B: L3x3x1/4    - 1,200 lbs
+  Type C: L4x4x1/4    - 2,300 lbs
+  Type D: L4x4x3/8    - 3,300 lbs
+  Type E: C6x8.2      - 9,700 lbs
+  Type F: C8x11.5     - 18,000 lbs
+
+At 4-10 ft spacings: Additional capacity data provided in tables
+
+Cross Member Cantilever Capacities (36" cantilever):
+  Type A: L2x2x1/4    - 100 lbs
+  Type B: L3x3x1/4    - 300 lbs
+  Type C: L4x4x1/4    - 600 lbs
+  Type D: L4x4x3/8    - 1,000 lbs
+  Type E: C6x8.2      - 2,900 lbs
+  Type F: C8x11.5     - 5,400 lbs
+
+Pipe Upright Capacities (Schedule 40 Galvanized Pipe):
+  2" pipe: 1,500 lbs (with 2-1/2" cap, CL-PCP-25)
+  3" pipe: 3,500 lbs (with 3-1/2" cap, CL-PCP-35)
+  4" pipe: 8,000 lbs (with 4" cap, CL-PCP-4)
+  Caps by Hoover Fence Co. or equal
+
+Support Stand Base Configurations:
+
+Type W: 2x6 sleeper, 36" length - 575 lbs max
+  - Upright: 2" SCH40 pipe with 4x4x1/4 angle base
+
+Type X: 2x8 sleeper, 48" length - 3,900 lbs max
+  - Upright: 3" SCH40 pipe with 6x4x5/16 angle base
+
+Type Y: 2x8 sleeper, 60" length - 2,800 lbs max
+  - Upright: 4" SCH40 pipe with 6x4x5/16 angle base
+
+Type Z: Miro sleeper - 1,900 lbs max
+
+Base Construction Notes:
+  - Assumes 15 PSI minimum insulation compressive strength
+  - 3/8" x 1-1/4" lag bolt with washer, 2 per leg
+  - Roof membrane material 3" larger than base member all sides
+  - Synthetic wood sleeper material
+  - Galvanized angle as specified
+  - Weep hole required, 10" typical spacing
+
+Anchored Base Details:
+
+Beam Structure:
+  - 6x6x1/2 galvanized plate on top flange of beam
+  - Stainless steel clamping ring and roof boot
+  - Lap sealant around penetrations
+  - Fill leg to 12" height with spray foam
+
+Metal Deck (1-1/2" steel deck):
+  - 8x8x1/4 galvanized plate
+  - 3-1/2" x 1/4" galv self-tapping screws
+  - Blocking as required to prevent deck flute crushing
+  - Additional L2x2x1/4 web member if load >6" from panel points
+
+Joist Structure:
+  - Support angle below deck (see structural drawings for sizing)
+  - 1/2" dia anchor to support angle
+  - 1/2" dia weep hole in stand base plate
+
+Double Tee Structure:
+  - Hilti Kwik Bolt 3 expansion anchor
+  - (2) 1/2" dia x 3-1/2" embed per leg
+  - Verify double tee strand locations before installing
+  - Support leg located close to center of double tee stem
+  - Base plate: 8x4x1/4 (2" pipe), 9x6x3/8 (4" pipe)
+
+===============================================================================
+CONFIDENCE SCORES
+===============================================================================
+
+Overall Statistics:
+  Average Confidence: 0.939 (93.9%)
+  Minimum Confidence: 0.90 (90%)
+  Maximum Confidence: 0.95 (95%)
+
+Confidence by Category:
+  - Load tables with clear numerical values: 0.95 (95%)
+  - Standard support configurations: 0.95 (95%)
+  - Specialty items with manufacturer specs: 0.90 (90%)
+
+High Confidence Items (0.95):
+  - All trapeze hanger load capacities
+  - All hanger rod specifications
+  - Pipe stand upright load tables
+  - Cross member cantilever capacities
+  - Pipe upright specifications
+
+Medium Confidence Items (0.90):
+  - Specialty supports (clevis, riser, CMU wall)
+  - Pipe stand bases with sleepers
+  - Bracing details (some qualitative requirements)
+
+No items flagged for review - all extractions are clear and unambiguous.
+
+===============================================================================
+MATERIAL SPECIFICATIONS NOTED
+===============================================================================
+
+Steel Members:
+  - Angles: ASTM A36 (typical structural steel)
+  - All galvanized finish for corrosion protection
+  - Field welds: Cold-galvanized paint for galvanized supports,
+    matching paint for painted supports
+
+Fasteners:
+  - Threaded rods: Coarse thread UNC, stainless or galvanized
+  - U-bolts: 3/8" galvanized
+  - Bolts: 3/8" galvanized with washers
+  - Lag bolts: 3/8" x 1-1/4" with washers
+
+Insulation Materials:
+  - Cold piping: ASTM C591, Type VI, Grade 1 Polyisocyanurate,
+    125 PSIG min compressive strength with vapor barrier
+  - Hot piping: ASTM C552, Type II Cellular Glass, 100 PSIG or
+    ASTM C591 Type VI Grade 1 Polyisocyanurate, 125 PSIG min
+
+Anchors:
+  - CMU wall: 3/4" dia rod with Hilti HIT HY 100 MAX adhesive
+  - Concrete: Hilti Kwik Bolt 3 expansion anchors, 1/2" dia x 3-1/2" embed
+
+Sealing:
+  - Roof boots: Stainless steel clamping ring with lap sealant
+  - Process areas: Food grade/USDA sealant
+  - Spray foam fill: In pipe stand legs to 12" height
+
+Manufacturer References:
+  - Anvil International: Fig. 260 (clevis), Fig. 40 (riser clamp), Fig. 167 (shield)
+  - Eaton: B3069W welded knee bracket
+  - Caddy: Pyramid support model PBU10
+  - Hoover Fence Co.: Galvanized pipe caps
+  - Unistrut: SPF200 (sway bracing attachment)
+
+===============================================================================
+DESIGN NOTES AND REQUIREMENTS
+===============================================================================
+
+General Requirements:
+  1. All materials comply with environmental plan on cover sheet
+  2. All hollow supports include weep holes to prevent water collection
+  3. Supports designed for refrigeration piping only
+  4. Values for pipe only - do not apply to concentrated loads (valves, flanges)
+  5. Supports required at each change in direction
+
+Hanger Requirements:
+  - Minimum 3" clearances
+  - Sway bracing L2x2x1/4 every fourth hanger when vertical length >30"
+  - U-bolt pipe to hanger at every fourth hanger
+  - Lock nuts or double nuts typical
+  - Load distributed evenly across hanger
+  - For 3-rod hangers: not more than 50% of max value on one side
+  - Hangers <7 ft from working elevation: corners clipped or bump protection
+
+Pipe Stand Requirements:
+  - Maintain 8" minimum above roof surface
+  - Box bracing: when insulation bottom >48" from roof
+  - Cross bracing: when insulation bottom >24" from roof
+  - Bracing frequency: every 100 feet, at direction changes, one per control group
+  - Strap down at every anchored pipe stand
+  - Do not box brace around control groups
+
+Pipe Span Requirements:
+  - Vapor piping assumes 75% vapor, 25% liquid
+  - Support at concentrated loads
+  - Support at direction changes
+  - Maximum spans vary by pipe size, schedule, and material
+
+Installation Notes:
+  - Verify structural member locations before drilling/anchoring
+  - Block metal deck flutes as required to prevent crushing
+  - Apply cold-galv paint or matching paint to all field welds and marred surfaces
+  - Coordinate process area standoff length with other trades
+  - Fill pipe stand legs to 12" height with spray foam
+
+===============================================================================
+DATABASE SUMMARY
+===============================================================================
+
+New Table Created:
+  support_details - Stores all support specifications and load capacities
+
+Records Inserted:
+  Sheet 49: 15 records
+  Sheet 50: 13 records
+  Sheet 51: 19 records
+  Total: 47 records
+
+Sheets Updated:
+  - drawing_type set to "detail"
+  - complexity: Sheet 49 & 50 = "medium", Sheet 51 = "complex"
+  - quality_score: 0.91 to 0.93
+  - extracted_at timestamp recorded
+  - extraction_model: "manual_extraction"
+
+===============================================================================
+EXTRACTION METHODOLOGY
+===============================================================================
+
+Process:
+1. PDF text extraction using PyPDF2
+2. Manual parsing of load tables and specifications
+3. Structured data entry with validation
+4. Confidence scoring based on data clarity
+5. Database insertion with transaction safety
+
+Model Classification:
+- Drawing Type: Detail drawings (support specifications)
+- Complexity: Medium to Complex (extensive tables and configurations)
+- Extraction Approach: Manual structured extraction from text
+  (These drawings contain primarily tabular data and standard details
+  rather than schematic representations requiring visual interpretation)
+
+Quality Factors:
++ Clear tabular format with numerical values (+0.2)
++ Standard nomenclature and labeling (+0.1)
++ Complete specifications with dimensions (+0.1)
++ Multiple verification points across sheets (+0.05)
+
+===============================================================================
+NEXT STEPS / RECOMMENDATIONS
+===============================================================================
+
+1. Query Support Data:
+   Use the support_details table to find appropriate supports for design loads:
+
+   SELECT detail_label, member_size, max_load_lbs, notes
+   FROM support_details
+   WHERE detail_type = 'trapeze_hanger' AND max_load_lbs >= 3000
+   ORDER BY max_load_lbs;
+
+2. Cross-Reference:
+   Link extracted support details to actual installations found in P&IDs or
+   isometric drawings for verification and field coordination.
+
+3. Load Calculations:
+   Use the extracted capacities for structural verification of pipe support
+   spacing and configurations in the refrigeration system.
+
+4. Material Takeoff:
+   Generate bill of materials for pipe supports based on support types
+   and quantities identified in field drawings.
+
+5. Additional Extractions:
+   Continue with remaining sheets in project 07308-BIRDCAGE to build
+   complete database of refrigeration system components and supports.
+
+===============================================================================
+END OF REPORT
+===============================================================================

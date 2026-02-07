@@ -1,0 +1,53 @@
+# Windows system folders
+$RECYCLE.BIN/
+System Volume Information/
+
+# Database files (too large for git, tracked separately)
+*.db
+quality.db
+
+# Database backups
+*.db.backup
+
+# Vector database (ChromaDB)
+VectorDB/
+
+# Temp files and directories
+tmp/
+temp/
+temp_*/
+temp_output.txt
+temp_*.png
+temp_*.txt
+temp_*.json
+*.tmp
+*_temp.png
+
+# Extraction working directories
+_temp_extraction/
+
+# Windows null device artifact
+nul
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code settings (has embedded git repo)
+.claude/
+
+# Large binary files
+*.pdf
+
+# Project data (tracked via MANIFEST.json, not git)
+Projects/
+Inbox/
+Quality Documents/

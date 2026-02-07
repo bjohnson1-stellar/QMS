@@ -1,0 +1,45 @@
+{
+  "sheet_id": 9,
+  "sheet_name": "R11060-REFRIGERATION-PLAN-PIPE-AND-DUCT-FLOOR-AREA-6-Rev.5",
+  "drawing_type": "refrigeration_plan",
+  "extraction_data": {
+    "lines": [
+      {"line_number": "SR-601", "size": "2-1/8 inch", "service": "suction", "material": "copper", "from_location": "EU-601", "to_location": "East header", "confidence": 0.80},
+      {"line_number": "SR-602", "size": "2-1/8 inch", "service": "suction", "material": "copper", "from_location": "EU-602", "to_location": "East header", "confidence": 0.80},
+      {"line_number": "SR-603", "size": "1-5/8 inch", "service": "suction", "material": "copper", "from_location": "EU-603", "to_location": "South header", "confidence": 0.78},
+      {"line_number": "LL-601", "size": "7/8 inch", "service": "liquid", "material": "copper", "from_location": "East header", "to_location": "EU-601", "confidence": 0.82},
+      {"line_number": "LL-602", "size": "7/8 inch", "service": "liquid", "material": "copper", "from_location": "East header", "to_location": "EU-602", "confidence": 0.82},
+      {"line_number": "LL-603", "size": "5/8 inch", "service": "liquid", "material": "copper", "from_location": "South header", "to_location": "EU-603", "confidence": 0.80},
+      {"line_number": "HG-601", "size": "1-3/8 inch", "service": "hot_gas", "material": "copper", "from_location": "Compressor room", "to_location": "Area 6 defrost", "confidence": 0.76},
+      {"line_number": "DR-601", "size": "1-1/8 inch", "service": "drain", "material": "copper", "from_location": "EU drain pan", "to_location": "Floor drain", "confidence": 0.74}
+    ],
+    "equipment": [
+      {"tag": "EU-601", "equipment_type": "evaporator_unit", "description": "Unit cooler Area 6 east", "location": "East wall", "confidence": 0.85},
+      {"tag": "EU-602", "equipment_type": "evaporator_unit", "description": "Unit cooler Area 6 center", "location": "Center area", "confidence": 0.85},
+      {"tag": "EU-603", "equipment_type": "evaporator_unit", "description": "Unit cooler Area 6 south", "location": "South wall", "confidence": 0.85},
+      {"tag": "AHU-6", "equipment_type": "air_handler", "description": "Air handling unit for Area 6", "location": "Southwest corner", "confidence": 0.82}
+    ],
+    "instruments": [
+      {"tag": "PT-601", "instrument_type": "pressure_transmitter", "loop_number": "601", "confidence": 0.74},
+      {"tag": "TT-601", "instrument_type": "temperature_transmitter", "loop_number": "601", "confidence": 0.74},
+      {"tag": "TT-602", "instrument_type": "temperature_transmitter", "loop_number": "602", "confidence": 0.74},
+      {"tag": "PSV-601", "instrument_type": "pressure_safety_valve", "loop_number": "601", "confidence": 0.76}
+    ],
+    "ducts": [
+      {"tag": "SA-6-01", "size": "28x22", "service": "supply_air", "confidence": 0.78},
+      {"tag": "SA-6-02", "size": "24x18", "service": "supply_air", "confidence": 0.78},
+      {"tag": "RA-6-01", "size": "32x24", "service": "return_air", "confidence": 0.78},
+      {"tag": "EA-6-01", "size": "18x14", "service": "exhaust_air", "confidence": 0.75}
+    ],
+    "metadata": {
+      "floor_area": "Area 6",
+      "complexity": "medium",
+      "grid_references": ["A", "B", "C", "D", "E", "1", "2", "3", "4", "5", "6", "7"],
+      "notes": [
+        "Simpler layout than Areas 4 and 5",
+        "Three evaporator units with separate routing paths",
+        "Some line sizes harder to read due to drawing scale"
+      ]
+    }
+  }
+}

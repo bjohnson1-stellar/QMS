@@ -1,0 +1,197 @@
+================================================================================
+QUALITY VALIDATION REPORT
+================================================================================
+Project: 07645 - Vital Farms
+Database: D:\quality.db (project_id: 2)
+Validation Date: 2026-02-03
+Validator: QC-DR Agent System
+
+================================================================================
+EXECUTIVE SUMMARY
+================================================================================
+
+Total Specifications Validated: 40
+Total Spec Items Extracted: 466
+
+Quality Distribution:
+  Excellent (>=0.9): 31 specs (78%)
+  Good (0.8-0.9):     9 specs (22%)
+  Acceptable:         0 specs (0%)
+  Poor:               0 specs (0%)
+
+Average Quality Score: 0.906 / 1.0
+Overall Quality Score: 0.949 / 1.0
+
+Component Scores:
+  Completeness:  1.000 (30% weight) PASS
+  Format:        0.891 (30% weight)
+  Consistency:   1.000 (20% weight) PASS
+  Confidence:    0.906 (20% weight)
+
+Status: PASSED - All specifications meet minimum quality thresholds
+
+================================================================================
+VALIDATION CHECKS PERFORMED
+================================================================================
+
+1. COMPLETENESS CHECKS
+   [PASS] All 40 specifications have required fields:
+          - spec_number: 40/40 (100%)
+          - title: 40/40 (100%)
+          - revision: 40/40 (100%)
+          - file_path: 40/40 (100%)
+   
+   [PASS] All specifications have extracted items:
+          - Range: 3-31 items per spec
+          - Average: 11.7 items per spec
+          - Total: 466 items
+   
+   [PASS] No orphaned spec_items (all 466 items reference valid specs)
+
+2. FORMAT VALIDATION
+   [PASS] Spec numbers follow CSI format:
+          - 25 specs use standard 6-digit format (e.g., 221113, 230513)
+          - 15 specs use decimal format (e.g., 230923.12, 224213.13)
+          - Both formats are valid CSI MasterFormat codes
+   
+   [WARN] Revision format variations:
+          - 37 specs use "Rev_XX" format (standard)
+          - 3 specs use "Rev XX" format (with space):
+            * 224216.16 - Commercial Sinks
+            * 224223 - Commercial Showers
+            * 224716 - Electric Water Coolers
+   
+   [INFO] Item types identified (19 unique types):
+          - procedure (116 items, 24.9%)
+          - code_reference (107 items, 23.0%)
+          - material (92 items, 19.7%)
+          - dimensional (35 items, 7.5%)
+          - test (27 items, 5.8%)
+          - [Additional types...]
+
+3. CONSISTENCY CHECKS
+   [PASS] No duplicate spec_number + revision combinations
+   [PASS] All specifications belong to project_id 2
+   [PASS] Quality scores in valid range (0.85 - 0.95)
+
+4. CROSS-REFERENCE VALIDATION
+   [PASS] Code references contain recognized standards:
+          - ASTM (materials standards)
+          - NFPA (fire/safety codes)
+          - ASHRAE (HVAC standards)
+          - AWWA (water systems)
+          - ASME (mechanical standards)
+          - UL (safety certifications)
+          - ICC/ANSI A117.1 (accessibility)
+   
+   [PASS] Material references use standard codes
+
+================================================================================
+SPECIFICATIONS REQUIRING ATTENTION
+================================================================================
+
+Below Target Quality (< 0.92): 9 specifications
+
+1. Spec 238126 - Split-System Air-Conditioners
+   Quality: 0.850 | Items: 10 | Materials: 0, Codes: 3, Procedures: 2
+
+2. Spec 238239.19 - Wall and Ceiling Unit Heaters
+   Quality: 0.860 | Items: 11 | Materials: 0, Codes: 3, Procedures: 5
+
+3. Spec 238239.13 - Cabinet Unit Heaters
+   Quality: 0.860 | Items: 10 | Materials: 0, Codes: 6, Procedures: 1
+
+4. Spec 238123.13 - Computer-Room Air-Conditioners, Ceiling-Mounted Units
+   Quality: 0.870 | Items: 12 | Materials: 4, Codes: 3, Procedures: 2
+
+5. Spec 221429 - Sump Pumps
+   Quality: 0.880 | Items: 5 | Materials: 0, Codes: 3, Procedures: 2
+   NOTE: Very low item count
+
+6. Spec 233723 - HVAC Gravity Ventilators
+   Quality: 0.880 | Items: 7 | Materials: 3, Codes: 0, Procedures: 2
+
+7. Spec 238239.16 - Propeller Unit Heaters
+   Quality: 0.880 | Items: 20 | Materials: 0, Codes: 6, Procedures: 7
+
+8. Spec 224216.13 - Commercial Lavatories
+   Quality: 0.890 | Items: 6 | Materials: 1, Codes: 1, Procedures: 4
+
+9. Spec 233713.23 - Registers and Grilles
+   Quality: 0.890 | Items: 3 | Materials: 2, Codes: 1, Procedures: 0
+   NOTE: Very low item count
+
+Pattern: 7 of 9 low-scoring specs are HVAC equipment (Section 238XXX)
+
+================================================================================
+ISSUES IDENTIFIED
+================================================================================
+
+MEDIUM SEVERITY (2 issue types):
+- Item type case inconsistencies:
+  * Mixed UPPERCASE and lowercase variants detected
+  * Examples: CODE_REFERENCE vs code_reference, MATERIAL vs material
+  * Recommend normalization to lowercase for consistency
+
+LOW SEVERITY (3 issues):
+- Non-standard revision format (spaces instead of underscores):
+  * Spec 224216.16: "Rev 01" should be "Rev_01"
+  * Spec 224223: "Rev 01" should be "Rev_01"
+  * Spec 224716: "Rev 01" should be "Rev_01"
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+
+1. IMMEDIATE ACTIONS
+   - Normalize item_type values to lowercase
+   - Fix 3 revision format inconsistencies
+   - Update schema to enforce lowercase item_types
+
+2. SHORT-TERM IMPROVEMENTS
+   - Review 5 lowest-scoring specs for re-extraction
+   - Consolidate test-related item types (test_req -> test)
+   - Focus on specs with < 5 items
+
+3. LONG-TERM QUALITY IMPROVEMENTS
+   - Enhance extraction for HVAC equipment specs (Section 238XXX)
+   - Target: increase average quality from 0.86 to 0.92+
+   - Implement item type validation whitelist
+   - Add automated quality monitoring
+
+4. PROCESS ENHANCEMENTS
+   - Document CSI decimal format handling (230923.12 format)
+   - Implement shadow review process (10% sample)
+   - Track quality trends over time
+
+================================================================================
+CONCLUSION
+================================================================================
+
+Validation Status: PASSED
+
+The specification extraction for Project 07645 (Vital Farms) meets all minimum
+quality thresholds with an excellent overall quality score of 0.949/1.0.
+
+Key Strengths:
+- 100% completeness on required fields
+- Zero orphaned or missing references
+- Strong code reference extraction (107 standards identified)
+- Comprehensive material specification capture (92 items)
+- 78% of specs achieve "Excellent" rating (>=0.9)
+
+Areas for Improvement:
+- 9 specs (22%) below target quality score of 0.92
+- Item type nomenclature needs standardization
+- HVAC equipment specs show lower extraction quality
+- Some specs have unusually low item counts (3-5 items)
+
+Overall Assessment: HIGH QUALITY - Ready for production use with minor
+improvements recommended for optimal performance.
+
+================================================================================
+Validated by: QC-DR Validator Agent
+Date: 2026-02-03
+Database: D:\quality.db
+Project: 07645 (Vital Farms) - 40 specs, 466 items
+================================================================================

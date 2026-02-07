@@ -1,0 +1,222 @@
+================================================================================
+P&ID DATA EXTRACTION REPORT
+================================================================================
+Project: 07308-BIRDCAGE
+Date: 2026-02-05
+Database: D:/quality.db
+Model Used: Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
+
+================================================================================
+SHEETS PROCESSED
+================================================================================
+
+Sheet 85: R70007-REFRIGERATION-P&ID-Rev.8.pdf
+  Drawing Number: R70007-REFRIGERATION-P&ID-Rev.8
+  Revision: A
+  Status: EXTRACTED
+
+Sheet 86: R70008-REFRIGERATION-P&ID-Rev.9.pdf
+  Drawing Number: R70008-REFRIGERATION-P&ID-Rev.9
+  Revision: A
+  Status: EXTRACTED
+
+Sheet 87: R70009-REFRIGERATION-P&ID-Rev.7.pdf
+  Drawing Number: R70009-REFRIGERATION-P&ID-Rev.7
+  Revision: A
+  Status: EXTRACTED
+
+================================================================================
+EXTRACTION SUMMARY
+================================================================================
+
+Sheet 85 - R70007-REFRIGERATION-P&ID-Rev.8 Rev A
+--------------------------------------------------------------------------------
+Quality Score: 0.95
+Complexity: simple
+Extracted at: 2026-02-05 15:31:31
+
+Lines Extracted: 3
+  - 3/4"-CS-401-150# (Hot Gas: C-401 to E-401) - confidence: 0.95
+  - 1"-CS-402-150# (Liquid Ammonia: E-401 to V-401) - confidence: 0.92
+  - 2"-CS-403-150# (Suction Gas: V-401 to C-401) - confidence: 0.93
+
+Equipment Extracted: 3
+  - C-401: Refrigeration Compressor (compressor) - confidence: 0.98
+  - E-401: Condenser (exchanger) - confidence: 0.97
+  - V-401: Liquid Receiver (vessel) - confidence: 0.96
+
+Instruments Extracted: 3
+  - PT-401: Pressure Transmitter (loop 401) - confidence: 0.94
+  - TT-401: Temperature Transmitter (loop 401) - confidence: 0.93
+  - PSV-401: Safety Valve - confidence: 0.95
+
+Average Confidence:
+  - Lines: 0.93
+  - Equipment: 0.97
+  - Instruments: 0.94
+
+
+Sheet 86 - R70008-REFRIGERATION-P&ID-Rev.9 Rev A
+--------------------------------------------------------------------------------
+Quality Score: 0.94
+Complexity: simple
+Extracted at: 2026-02-05 15:31:31
+
+Lines Extracted: 2
+  - 1-1/2"-CS-501-150# (Hot Gas: C-501 to E-501) - confidence: 0.94
+  - 3/4"-CS-502-150# (Liquid: E-501 to V-501) - confidence: 0.91
+
+Equipment Extracted: 3
+  - C-501: Refrigeration Compressor #2 (compressor) - confidence: 0.97
+  - E-501: Evaporative Condenser (exchanger) - confidence: 0.96
+  - V-501: Receiver Vessel (vessel) - confidence: 0.95
+
+Instruments Extracted: 2
+  - PT-501: Pressure Transmitter (loop 501) - confidence: 0.92
+  - TT-501: Temperature Transmitter (loop 501) - confidence: 0.91
+
+Average Confidence:
+  - Lines: 0.93
+  - Equipment: 0.96
+  - Instruments: 0.92
+
+
+Sheet 87 - R70009-REFRIGERATION-P&ID-Rev.7 Rev A
+--------------------------------------------------------------------------------
+Quality Score: 0.95
+Complexity: simple
+Extracted at: 2026-02-05 15:31:31
+
+Lines Extracted: 2
+  - 2"-CS-601-150# (Suction Gas: E-601 to C-601) - confidence: 0.95
+  - 1"-CS-602-150# (Discharge: C-601 to E-602) - confidence: 0.93
+
+Equipment Extracted: 3
+  - C-601: Booster Compressor (compressor) - confidence: 0.98
+  - E-601: Evaporator (exchanger) - confidence: 0.97
+  - E-602: Intercooler (exchanger) - confidence: 0.96
+
+Instruments Extracted: 2
+  - PT-601: Pressure Transmitter (loop 601) - confidence: 0.94
+  - LT-601: Level Transmitter (loop 601) - confidence: 0.93
+
+Average Confidence:
+  - Lines: 0.94
+  - Equipment: 0.97
+  - Instruments: 0.94
+
+
+================================================================================
+OVERALL STATISTICS
+================================================================================
+
+Total Sheets Processed: 3
+Total Items Extracted: 23
+
+Breakdown by Type:
+  - Process Lines: 7
+  - Equipment: 9
+  - Instruments: 7
+
+Average Quality Score: 0.95
+All Sheets Complexity: simple
+
+Confidence Distribution:
+  - High (>= 0.90): 23 items (100%)
+  - Medium (0.70-0.89): 0 items (0%)
+  - Low (< 0.70): 0 items (0%)
+
+Items Flagged for Review: 0
+
+================================================================================
+DATABASE TABLES UPDATED
+================================================================================
+
+Tables:
+  - sheets: Updated metadata (extracted_at, quality_score, drawing_type, complexity)
+  - lines: 7 records inserted
+  - equipment: 9 records inserted
+  - instruments: 7 records inserted
+
+Queries to verify data:
+
+  -- View all extracted data for a sheet
+  SELECT * FROM lines WHERE sheet_id = 85;
+  SELECT * FROM equipment WHERE sheet_id = 85;
+  SELECT * FROM instruments WHERE sheet_id = 85;
+
+  -- Summary by drawing
+  SELECT
+    s.drawing_number,
+    COUNT(DISTINCT l.id) as lines,
+    COUNT(DISTINCT e.id) as equipment,
+    COUNT(DISTINCT i.id) as instruments
+  FROM sheets s
+  LEFT JOIN lines l ON l.sheet_id = s.id
+  LEFT JOIN equipment e ON e.sheet_id = s.id
+  LEFT JOIN instruments i ON i.sheet_id = s.id
+  WHERE s.id IN (85, 86, 87)
+  GROUP BY s.id;
+
+================================================================================
+EXTRACTION METHODOLOGY
+================================================================================
+
+Model: Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
+Approach: Document analysis with structured prompt
+
+Extraction Process:
+1. PDF loaded and encoded to base64
+2. Sent to Claude API with extraction prompt
+3. Model analyzes P&ID drawing
+4. Returns structured JSON with:
+   - Process lines (line number, size, material, spec, service, from/to)
+   - Equipment (tag, type, description)
+   - Instruments (tag, type, loop number)
+   - Confidence scores for each item
+5. Data validated and inserted into database
+6. Sheet metadata updated with quality score
+
+Confidence Scoring:
+  - 1.0: Perfect clarity, standard format
+  - 0.8-0.9: Clear but minor ambiguity
+  - 0.6-0.7: Readable but non-standard or partially unclear
+  - <0.6: Flagged for manual review
+
+================================================================================
+NOTES
+================================================================================
+
+1. All extractions completed successfully with high confidence scores (>0.90)
+2. No items required manual review (all confidence >= 0.90)
+3. All sheets classified as "simple" complexity based on quality scores
+4. Refrigeration system drawings show consistent formatting and clarity
+5. Equipment tags follow standard format (type-number)
+6. Line numbers follow format: SIZE-MATERIAL-NUMBER-SPEC
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Review extracted data for completeness
+2. Cross-reference with other project documentation
+3. Use data for:
+   - Line lists and material takeoffs
+   - Equipment lists and specifications
+   - Instrument index and loop diagrams
+   - Project reporting and analytics
+
+Query Examples:
+
+  -- Find all compressors
+  SELECT * FROM equipment WHERE equipment_type = 'compressor';
+
+  -- Find all hot gas lines
+  SELECT * FROM lines WHERE service LIKE '%Hot Gas%';
+
+  -- Get all instruments for a specific loop
+  SELECT * FROM instruments WHERE loop_number = '401';
+
+================================================================================
+END OF REPORT
+================================================================================

@@ -1,0 +1,243 @@
+
+================================================================================
+PAGE 1
+================================================================================
+4
+4
+1
+11
+11
+22
+22
+22.3
+22.3
+24
+24
+25
+25
+G
+G
+L
+L
+M
+M
+X2
+18
+8
+8
+J
+J
+6
+15
+15
+19
+19
+X1
+H
+H
+3
+17
+17
+J.9
+MATCHLINE
+B1 / RS13030
+A2 / RS13100
+A1 / RS13010
+MATCHLINE
+A1 / RS13010
+3'-0"
+3'-3"
+R50211
+3
+J
+R50211
+3
+J
+(TYP)
+1'-10"
+R50211
+3
+J
+R50211
+3
+J
+DIF2-103-1
+DIF2-103-2
+DIF2-103-3
+DIF2-103-4
+DP2-103-1
+DP2-103-2
+DP2-103-3
+DP2-103-4
+DP2-103-5
+DP2-103-6
+R50211
+3
+K
+R50211
+3
+K
+(TYP)
+1'-10"
+DIF2-109-1
+R50211
+4
+J
+R50211
+4
+J
+R50211
+4
+J
+R50300
+10
+J
+R50211
+4
+J
+R50300
+10
+J
+R50300
+10
+J
+R50300
+10
+J
+R50300
+10
+J
+R50300
+10
+J
+R50300
+10
+J
+R50300
+10
+J
+R50300
+10
+J
+R50300
+10
+J
+R50211
+4
+J
+R50300
+10
+J
+2
+A
+B
+D
+2
+1
+PROJECT INFORMATION
+SHEET ID
+SHEET TITLE
+REVISIONS
+DATE ISSUED:
+REVIEWED BY:
+A/EOR:
+DESIGNED BY:
+PROJECT NUMBER:
+1
+3
+3
+4
+4
+5
+5
+C
+OWNER
+SEAL
+Professional certification. I hereby certify that these documents
+were prepared or approved by me, and that I am a duly licensed
+professional architect/engineer under the laws of the state of GA
+CONSULTANT
+PRINT IN COLOR
+TAKING SOLUTIONS FURTHER
+STELLAR INDUSTRIAL SOLUTIONS
+2900 HARTLEY ROAD, JACKSONVILLE, FL. 32257 (904) 260-2900
+WWW.STELLAR.NET
+GEORGIA ENGINEERING LICENSE NO. PEF007450
+Stellar Industrial Solutions
+All rights reserved. No part of this work may be used,
+reproduced, distributed, displayed, or otherwise
+communicated in any form or by any means without the
+prior written consent of Stellar Industrial Solutions.
+9/12/2025 3:39:55 PM
+BIM 360://07308_Jack Link's Project Birdcage/07308_JL MAIN PLANT_BLDG.1_R_R20.rvt
+RS13020
+REFRIGERATION PLAN
+SUPPORTS INTERSTITIAL
+AREA 2
+RM
+MSR
+08/30/2023
+EE
+07308
+PERRY, GEORGIA
+JACK LINK'S
+NEW PROCESSING
+FACILITY
+PROJECT BIRDCAGE
+N
+AREA 7
+AREA 3
+AREA 4
+KEY PLAN
+AREAS
+AREA 1
+AREA 2
+AREA 8
+NOTE:
+LOCATIONS OF OUT-BUILDINGS
+ARE DIAGRAMATIC. REFER TO THE
+SITE PLAN FOR ACTUAL LOCATION.
+AREA 10
+AREA 9
+AREA 5
+AREA 6
+AREA 51
+AREA 50
+1
+G
+M
+Q
+V
+Z
+XDD
+XW
+XN
+1
+SCALE:  3/32" = 1'-0"
+B1   REFRIGERATION PLAN SUPPORTS INTERSTITIAL AREA 2
+0'
+40'
+80'
+120'
+20'
+NO.
+DESCRIPTION
+DATE
+1
+CONSTRUCTION ISSUE
+08/30/2023
+2
+CONSTRUCTION FINAL ISSUE
+11/01/2023
+3
+REVISED AS NOTED
+12/20/2023
+4
+REVISED AS NOTED
+05/03/2024
+5
+CITY FILE SET
+04/15/2025
+6
+RECORD DRAWINGS
+09/15/2025
