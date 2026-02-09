@@ -34,15 +34,21 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
 venv/
 .venv/
+
+# SQLite WAL journal files
+*.db-shm
+*.db-wal
 
 # IDE
 .vscode/
 .idea/
 
-# Claude Code settings (has embedded git repo)
+# Claude Code / MCP (machine-specific)
 .claude/
+.mcp.json
 
 # Large binary files
 *.pdf

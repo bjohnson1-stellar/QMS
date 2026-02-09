@@ -1,0 +1,371 @@
+# QMS Configuration
+# Quality Management System for MEP Division
+
+# =============================================================================
+# UNIFIED INBOX CONFIGURATION
+# =============================================================================
+
+inbox:
+  path: "D:/Inbox"
+  subdirs:
+    needs_review: "NEEDS-REVIEW"
+    conflicts: "CONFLICTS"
+    duplicates: "DUPLICATES"
+
+# =============================================================================
+# DESTINATION PATHS
+# =============================================================================
+
+destinations:
+  projects: "D:/Projects"
+  quality_documents: "D:/Quality Documents"
+  database: "D:/quality.db"
+  vector_database: "D:/VectorDB"
+  sqlite3: "C:/Users/bjohnson1/AppData/Local/Microsoft/WinGet/Packages/SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe/sqlite3.exe"
+
+# =============================================================================
+# EMBEDDING CONFIGURATION
+# =============================================================================
+
+embeddings:
+  provider: "auto"
+  base_url: "http://127.0.0.1:1234/v1"
+  model: "text-embedding-nomic-embed-text-v1.5@q8_0"
+  local_model: "nomic-ai/nomic-embed-text-v1.5"
+  device: null
+  dimensions: 768
+  batch_size: 32
+
+# =============================================================================
+# ARCHIVE & FOLDER HANDLING
+# =============================================================================
+
+archive_handling:
+  formats:
+    - ".zip"
+    - ".7z"
+  extract_path: "D:/Inbox/_EXTRACTING"
+  on_success: "delete"
+  archive_processed: "D:/Inbox/_PROCESSED"
+  max_depth: 2
+
+folder_handling:
+  enabled: true
+  on_success: "delete"
+  skip_folders:
+    - "__MACOSX"
+    - ".DS_Store"
+    - "Thumbs.db"
+
+# =============================================================================
+# DOCUMENT TYPE DETECTION PATTERNS
+# =============================================================================
+
+document_types:
+  drawings:
+    patterns:
+      - "^[PMSEIC]-\\d+"
+      - "^ISO-\\d+"
+      - "^\\d{5}[-_][PMSEIC]-"
+      - "^[RUHGAF]-\\d+"
+    destination: "{projects}/{project}/{discipline}"
+    handler: "sis-intake"
+
+  specifications:
+    patterns:
+      - "^\\d{6}-.*_Rev[_.]"
+      - "^\\d{6}.*\\.pdf$"
+    destination: "{projects}/{project}/{drawing_set}/Specs"
+    handler: "sis-spec-intake"
+
+  qm_modules:
+    patterns:
+      - "^module.*\\.xml$"
+    destination: "{quality_documents}/Modules"
+    handler: "qm-intake"
+
+  procedures:
+    prefix: "SP"
+    patterns:
+      - "^SP-\\d+"
+    destination: "{quality_documents}/Procedures"
+    handler: "qm-intake"
+
+  work_instructions:
+    prefix: "WI"
+    patterns:
+      - "^WI-\\d+"
+    destination: "{quality_documents}/Procedures"
+    handler: "qm-intake"
+
+  templates:
+    prefix: "TP"
+    patterns:
+      - "^TP-\\d+"
+    destination: "{quality_documents}/Templates"
+    handler: "qm-intake"
+
+  forms:
+    prefix: "FM"
+    patterns:
+      - "^FM-\\d+"
+    destination: "{quality_documents}/Forms"
+    handler: "qm-intake"
+
+  policies:
+    prefix: "PL"
+    patterns:
+      - "^PL-\\d+"
+    destination: "{quality_documents}/Policies"
+    handler: "qm-intake"
+
+  records:
+    prefix: "RC"
+    patterns:
+      - "^RC-\\d+"
+    destination: "{quality_documents}/Records/{year}"
+    handler: "qm-intake"
+
+  wps:
+    prefix: "WPS"
+    patterns:
+      - "^WPS-\\d+"
+      - "^AWS-B2\\.1-\\d+"
+      - "^SWPS-\\d+"
+    destination: "{quality_documents}/Welding/WPS"
+    handler: "weld-intake"
+
+  pqr:
+    prefix: "PQR"
+    patterns:
+      - "^PQR-\\d+"
+    destination: "{quality_documents}/Welding/PQR"
+    handler: "weld-intake"
+
+  wpq:
+    prefix: "WPQ"
+    patterns:
+      - "^WPQ-\\d+"
+      - "^Welder-Qual-"
+      - "^WQ-\\d+"
+    destination: "{quality_documents}/Welding/WPQ"
+    handler: "weld-intake"
+
+  bps:
+    prefix: "BPS"
+    patterns:
+      - "^BPS-\\d+"
+    destination: "{quality_documents}/Welding/BPS"
+    handler: "weld-intake"
+
+  bpq:
+    prefix: "BPQ"
+    patterns:
+      - "^BPQ-\\d+"
+      - "^BPQR-\\d+"
+    destination: "{quality_documents}/Welding/BPQ"
+    handler: "weld-intake"
+
+  production_weld_log:
+    prefix: "PWL"
+    patterns:
+      - "^PWL-\\d+"
+      - "^Weld-Log-\\d+"
+      - "^Weekly[-_]?Weld"
+    destination: "{quality_documents}/Welding/Production-Logs/{year}"
+    handler: "weld-weekly-import"
+
+# =============================================================================
+# MODEL ROUTING
+# =============================================================================
+
+models:
+  simple:
+    model: haiku
+    tasks:
+      - title_block_read
+      - file_routing
+      - manifest_update
+      - pattern_matching
+      - simple_table_extraction
+
+  complex:
+    model: sonnet
+    tasks:
+      - full_extraction
+      - conflict_detection
+      - cross_discipline_check
+      - revision_comparison
+      - report_generation
+
+  critical:
+    model: opus
+    tasks:
+      - shadow_review
+      - calibration
+      - critical_conflict_resolution
+      - quality_validation
+      - ambiguous_routing
+
+# =============================================================================
+# DRAWING CLASSIFICATION
+# =============================================================================
+
+discipline_prefixes:
+  P: "Mechanical"
+  M: "Mechanical"
+  ISO: "Mechanical"
+  E: "Electrical"
+  EL: "Electrical"
+  EP: "Electrical"
+  S: "Structural"
+  I: "Instrumentation"
+  C: "Civil"
+  A: "Architectural"
+  G: "General"
+  H: "HVAC"
+  F: "Fire-Protection"
+  FP: "Fire-Protection"
+  R: "Refrigeration"
+  RF: "Refrigeration"
+  U: "Utility"
+  UT: "Utility"
+  PL: "Plumbing"
+  PP: "Plumbing"
+
+# =============================================================================
+# CSI DIVISION TO DISCIPLINE MAPPING
+# =============================================================================
+
+csi_mapping:
+  "01": "General"
+  "07": "General"
+  "10": "General"
+  "22": "Plumbing"
+  "23": "HVAC"
+  "24": "Refrigeration"
+  "26": "Electrical"
+  "27": "Communications"
+  "28": "Electronic-Safety"
+  "33": "Utility"
+
+# =============================================================================
+# EXTRACTION SETTINGS
+# =============================================================================
+
+extraction:
+  thresholds:
+    minimum_confidence: 0.6
+    high_confidence: 0.9
+    shadow_review_rate: 0.10
+
+  materials:
+    CS: Carbon Steel
+    SS: Stainless Steel
+    SS304: Stainless Steel 304
+    SS316: Stainless Steel 316
+    AL: Aluminum
+    CU: Copper
+    PVC: PVC
+    CPVC: CPVC
+    PP: Polypropylene
+    HDPE: HDPE
+    GRP: Glass Reinforced Plastic
+    DI: Ductile Iron
+    CI: Cast Iron
+
+# =============================================================================
+# CONFLICT DETECTION
+# =============================================================================
+
+conflicts:
+  checks:
+    material_mismatch: true
+    size_mismatch: true
+    tag_duplicate: true
+    missing_instrument: true
+    weld_inconsistency: true
+    cross_discipline: true
+
+# =============================================================================
+# PROCESSING
+# =============================================================================
+
+processing:
+  batch_size: 10
+  auto:
+    supersede_old_revisions: true
+    archive_superseded: false
+    queue_related_recheck: true
+
+# =============================================================================
+# INTAKE
+# =============================================================================
+
+intake:
+  auto_extract: false
+  auto_embed: true
+  read_title_block_always: true
+  on_ambiguous: move_to_needs_review
+  on_no_match: move_to_needs_review
+
+# =============================================================================
+# DEPARTMENTS
+# =============================================================================
+
+departments:
+  - number: "600"
+    name: "Refrigeration"
+    full_name: "600-Refrigeration"
+  - number: "645"
+    name: "Electrical"
+    full_name: "645-Electrical"
+  - number: "650"
+    name: "Mechanical"
+    full_name: "650-Mechanical"
+  - number: "655"
+    name: "Plumbing"
+    full_name: "655-Plumbing"
+  - number: "660"
+    name: "HVAC"
+    full_name: "660-HVAC"
+  - number: "665"
+    name: "Utility"
+    full_name: "665-Utility"
+
+# =============================================================================
+# QM DOCUMENT PREFIXES
+# =============================================================================
+
+qm_prefixes:
+  SP: "Standard Operating Procedure"
+  WI: "Work Instruction"
+  TP: "Template"
+  FM: "Form"
+  PL: "Policy"
+  RC: "Record"
+
+# =============================================================================
+# REFERENCE EXTRACTION
+# =============================================================================
+
+reference_extraction:
+  parallel_threshold_pages: 50
+  max_concurrent_extractors: 4
+  section_overlap_pages: 2
+  target_section_pages: 50
+  models:
+    splitting: haiku
+    extraction: sonnet
+    merging: sonnet
+    validation: opus
+  confidence:
+    high: 0.9
+    medium: 0.7
+    low: 0.7
+  validation:
+    completeness_pass: 0.95
+    accuracy_pass: 0.90
+    sample_rate: 0.10
+  paths:
+    references_root: "D:/Quality Documents/References"
