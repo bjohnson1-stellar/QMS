@@ -1,15 +1,49 @@
-# SIS Quality System
+# QMS — Quality Management System
 
-Automated construction drawing review and quality document management.
+Modular Python package at `D:\qms\` for construction drawing review and quality document management.
+
+## Git Workflow (MANDATORY)
+
+**Repository:** `https://github.com/bjohnson1-stellar/QMS.git`
+**Branch:** `restructure/qms-modules`
+
+### Auto-Commit Rule
+**ALWAYS commit and push after completing a batch of work.** Do not wait to be asked.
+
+```bash
+# Stage only qms/ files
+git -C D:/ add qms/ .planning/ .gitignore CLAUDE.md
+
+# Commit with descriptive message
+git -C D:/ commit -m "description of changes
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+
+# Push immediately
+git -C D:/ push origin restructure/qms-modules
+```
+
+### What to commit
+- `qms/**` — all package code
+- `.planning/` — architecture docs
+- `.gitignore`, `CLAUDE.md`
+
+### What to NEVER commit
+- `QC-DR/`, `Eng/` — legacy scripts (being deleted after refactor)
+- `quality.db`, `*.db-shm`, `*.db-wal` — database files
+- `.mcp.json` — local MCP config
+- `*.egg-info/` — build artifacts
+- `Projects/`, `Inbox/`, `Quality Documents/` — project data
 
 ## Quick Start
 
 ```
-/intake                # Route ALL documents from D:\Inbox (drawings, specs, QM docs)
-/sis-scan              # Index existing projects in D:\Projects
-/sis-go <project>      # Full extraction pipeline for a project
-/sis-status            # Show all projects with processing status
-/sis-report <project>  # Generate conflict report
+qms version            # Show version
+qms migrate            # Run all schema migrations
+qms welding dashboard  # Welding program status
+qms docs summary       # Quality manual summary
+qms refs search <term> # Search reference standards
+qms projects scan      # Scan project folders
 ```
 
 ## Unified Inbox
