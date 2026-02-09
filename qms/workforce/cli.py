@@ -70,10 +70,10 @@ def import_from_sis(
     # The SIS parser is expected to live in qms.pipeline; fall back
     # gracefully if it is not yet wired up.
     try:
-        from qms.pipeline.sis_common import parse_sis_sheet  # type: ignore[import-untyped]
+        from qms.pipeline.processor import parse_sis_sheet
     except ImportError:
         typer.echo(
-            "SIS sheet parser (qms.pipeline.sis_common.parse_sis_sheet) is not "
+            "SIS sheet parser (qms.pipeline.processor.parse_sis_sheet) is not "
             "available yet.  Please ensure the pipeline module has been ported."
         )
         raise typer.Exit(code=1)
