@@ -32,7 +32,7 @@ logger = get_logger("qms.welding.importer")
 # Configuration defaults (overridable via config.yaml)
 # ---------------------------------------------------------------------------
 
-DEFAULT_EXCEL_PATH = Path("D:/Quality Documents/Welding/Welding Daily Log.xlsm")
+DEFAULT_EXCEL_PATH = QMS_PATHS.quality_documents / "Welding" / "Welding Daily Log.xlsm"
 MAIN_SHEET = "Welder_Info"
 HEADER_ROW = 3
 DATA_START_ROW = 4

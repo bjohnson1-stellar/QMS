@@ -49,7 +49,7 @@ def get_config_value(*keys: str, default: Any = None) -> Any:
         default: Value to return if key not found
 
     Example:
-        db_path = get_config_value('destinations', 'database', default='D:/quality.db')
+        db_path = get_config_value('destinations', 'database', default='data/quality.db')
     """
     config = get_config()
 
@@ -81,34 +81,42 @@ class QMSPaths:
         if self._config is None:
             self._config = get_config()
 
+    def _resolve(self, raw: str) -> Path:
+        """Resolve a path: if relative, resolve against _PACKAGE_DIR."""
+        p = Path(raw)
+        if not p.is_absolute():
+            p = _PACKAGE_DIR / p
+        return p
+
     @property
     def database(self) -> Path:
         self._ensure_config()
-        return Path(self._config.get("destinations", {}).get("database", r"D:\quality.db"))
+        raw = self._config.get("destinations", {}).get("database", "data/quality.db")
+        return self._resolve(raw)
 
     @property
     def inbox(self) -> Path:
         self._ensure_config()
-        return Path(self._config.get("inbox", {}).get("path", r"D:\Inbox"))
+        raw = self._config.get("inbox", {}).get("path", "data/inbox")
+        return self._resolve(raw)
 
     @property
     def projects(self) -> Path:
         self._ensure_config()
-        return Path(self._config.get("destinations", {}).get("projects", r"D:\Projects"))
+        raw = self._config.get("destinations", {}).get("projects", "data/projects")
+        return self._resolve(raw)
 
     @property
     def quality_documents(self) -> Path:
         self._ensure_config()
-        return Path(
-            self._config.get("destinations", {}).get("quality_documents", r"D:\Quality Documents")
-        )
+        raw = self._config.get("destinations", {}).get("quality_documents", "data/quality-documents")
+        return self._resolve(raw)
 
     @property
     def vector_database(self) -> Path:
         self._ensure_config()
-        return Path(
-            self._config.get("destinations", {}).get("vector_database", r"D:\VectorDB")
-        )
+        raw = self._config.get("destinations", {}).get("vector_database", "data/vectordb")
+        return self._resolve(raw)
 
     @property
     def config_dir(self) -> Path:

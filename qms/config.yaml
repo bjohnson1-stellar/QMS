@@ -6,7 +6,7 @@
 # =============================================================================
 
 inbox:
-  path: "D:/Inbox"
+  path: "data/inbox"
   subdirs:
     needs_review: "NEEDS-REVIEW"
     conflicts: "CONFLICTS"
@@ -17,10 +17,10 @@ inbox:
 # =============================================================================
 
 destinations:
-  projects: "D:/Projects"
-  quality_documents: "D:/Quality Documents"
-  database: "D:/quality.db"
-  vector_database: "D:/VectorDB"
+  projects: "data/projects"
+  quality_documents: "data/quality-documents"
+  database: "data/quality.db"
+  vector_database: "data/vectordb"
   sqlite3: "C:/Users/bjohnson1/AppData/Local/Microsoft/WinGet/Packages/SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe/sqlite3.exe"
 
 # =============================================================================
@@ -44,9 +44,9 @@ archive_handling:
   formats:
     - ".zip"
     - ".7z"
-  extract_path: "D:/Inbox/_EXTRACTING"
+  extract_path: "data/inbox/_EXTRACTING"
   on_success: "delete"
-  archive_processed: "D:/Inbox/_PROCESSED"
+  archive_processed: "data/inbox/_PROCESSED"
   max_depth: 2
 
 folder_handling:
@@ -368,4 +368,4 @@ reference_extraction:
     accuracy_pass: 0.90
     sample_rate: 0.10
   paths:
-    references_root: "D:/Quality Documents/References"
+    references_root: "data/quality-documents/References"

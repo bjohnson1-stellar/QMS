@@ -2,32 +2,19 @@
 $RECYCLE.BIN/
 System Volume Information/
 
-# Database files (too large for git, tracked separately)
-*.db
-quality.db
+# Runtime data (tracked via MANIFEST.json, not git)
+qms/data/
 
-# Database backups
+# Database files
+*.db
+*.db-shm
+*.db-wal
 *.db.backup
 
-# Vector database (ChromaDB)
-VectorDB/
-
-# Temp files and directories
+# Temp files
 tmp/
 temp/
-temp_*/
-temp_output.txt
-temp_*.png
-temp_*.txt
-temp_*.json
 *.tmp
-*_temp.png
-
-# Extraction working directories
-_temp_extraction/
-
-# Windows null device artifact
-nul
 
 # Python
 __pycache__/
@@ -37,10 +24,6 @@ __pycache__/
 *.egg-info/
 venv/
 .venv/
-
-# SQLite WAL journal files
-*.db-shm
-*.db-wal
 
 # IDE
 .vscode/
@@ -53,7 +36,5 @@ venv/
 # Large binary files
 *.pdf
 
-# Project data (tracked via MANIFEST.json, not git)
-Projects/
-Inbox/
-Quality Documents/
+# Legacy (empty, locked by Windows — delete manually)
+Eng/
