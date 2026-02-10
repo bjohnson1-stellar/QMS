@@ -102,9 +102,49 @@ def migrate_welding_add_bu_fk(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def migrate_add_project_allocations(conn: sqlite3.Connection) -> None:
+    """Create project_allocations table if not exists."""
+    if _table_exists(conn, "project_allocations"):
+        return
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS project_allocations (
+            id INTEGER PRIMARY KEY,
+            project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            business_unit_id INTEGER NOT NULL REFERENCES business_units(id),
+            subjob TEXT NOT NULL DEFAULT '00',
+            job_code TEXT NOT NULL,
+            allocated_budget REAL NOT NULL DEFAULT 0,
+            weight_adjustment REAL NOT NULL DEFAULT 1.0,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(project_id, business_unit_id, subjob)
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_pa_project ON project_allocations(project_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_pa_bu ON project_allocations(business_unit_id)")
+    logger.info("Created project_allocations table")
+    conn.commit()
+
+
+def migrate_add_project_description(conn: sqlite3.Connection) -> None:
+    """Add description column to projects table."""
+    if not _table_exists(conn, "projects"):
+        return
+    if _column_exists(conn, "projects", "description"):
+        return
+
+    conn.execute("ALTER TABLE projects ADD COLUMN description TEXT")
+    logger.info("Added column projects.description")
+    conn.commit()
+
+
 def run_all_migrations() -> None:
     """Run all incremental migrations against the active database."""
     with get_db() as conn:
         migrate_departments_to_business_units(conn)
         migrate_projects_add_columns(conn)
         migrate_welding_add_bu_fk(conn)
+        migrate_add_project_allocations(conn)
+        migrate_add_project_description(conn)

@@ -11,7 +11,7 @@ from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple
 
 from qms.core import get_logger
-from qms.projects.budget import PROJECT_NUMBER_PATTERN, VALID_STAGES
+from qms.projects.budget import PROJECT_NUMBER_PATTERN, VALID_STAGES, parse_job_code
 
 logger = get_logger("qms.projects.excel_io")
 
@@ -33,6 +33,7 @@ TEMPLATE_HEADERS = [
     "Owner State",
     "Owner Zip",
     "Notes",
+    "Description",
 ]
 
 
@@ -53,11 +54,12 @@ def generate_template() -> BytesIO:
         50000, 1.0, "2024-01-15", "2024-12-31",
         "ABC Corporation", "123 Main St", "Springfield", "IL", "62701",
         "Sample project for reference",
+        "New refrigeration system for processing facility",
     ]
     for col, value in enumerate(example, 1):
         ws.cell(row=2, column=col, value=value)
 
-    widths = [25, 18, 15, 20, 25, 15, 22, 15, 18, 12, 12, 25, 25, 15, 8, 10, 30]
+    widths = [25, 18, 15, 20, 25, 15, 22, 15, 18, 12, 12, 25, 25, 15, 8, 10, 30, 40]
     for i, w in enumerate(widths, 1):
         ws.column_dimensions[chr(64 + i)].width = w
 
@@ -115,6 +117,7 @@ def import_projects_from_excel(
         owner_state = str(row[14]).strip().upper() if len(row) > 14 and row[14] else None
         owner_zip = str(row[15]).strip() if len(row) > 15 and row[15] else None
         notes = str(row[16]).strip() if len(row) > 16 and row[16] else None
+        description = str(row[17]).strip() if len(row) > 17 and row[17] else None
 
         row_errors: List[str] = []
 
@@ -123,17 +126,21 @@ def import_projects_from_excel(
         if not project_number:
             row_errors.append("Project Number is required")
         elif not PROJECT_NUMBER_PATTERN.match(project_number):
-            row_errors.append("Project Number must follow NNNNN-CCC-SS format")
+            row_errors.append("Project Number must follow NNNNN or NNNNN-CCC-SS format")
         else:
-            bu_code = project_number.split("-")[1]
-            if bu_code not in valid_bu_codes:
-                row_errors.append(f'Business Unit code "{bu_code}" does not exist')
-            if project_number in existing_codes:
+            parsed = parse_job_code(project_number)
+            base_number = parsed[0] if parsed else project_number
+            bu_code_from_num = parsed[1] if parsed else None
+            subjob_from_num = parsed[2] if parsed else None
+
+            if bu_code_from_num and bu_code_from_num not in valid_bu_codes:
+                row_errors.append(f'Business Unit code "{bu_code_from_num}" does not exist')
+            if base_number in existing_codes:
                 row_errors.append("Project Number already exists")
-            elif project_number in import_codes:
+            elif base_number in import_codes:
                 row_errors.append("Duplicate in import file")
             else:
-                import_codes.add(project_number)
+                import_codes.add(base_number)
 
         if not stage:
             row_errors.append("Stage is required")
@@ -157,7 +164,7 @@ def import_projects_from_excel(
                 "errors": row_errors,
             })
         else:
-            valid_rows.append({
+            row_data = {
                 "name": project_name,
                 "code": project_number,
                 "manager": manager,
@@ -171,8 +178,19 @@ def import_projects_from_excel(
                 "street": owner_addr,
                 "city": owner_city,
                 "state": owner_state,
-                "zip": owner_zip,
-            })
+                "zip_code": owner_zip,
+                "description": description,
+            }
+            # If full code provided, create allocation for that BU
+            parsed = parse_job_code(project_number)
+            if parsed and parsed[1]:
+                row_data["allocations"] = [{
+                    "bu_code": parsed[1],
+                    "subjob": parsed[2] or "00",
+                    "budget": total_budget or 0,
+                    "weight": float(weight_adj),
+                }]
+            valid_rows.append(row_data)
 
     from qms.projects.budget import create_project_with_budget
 

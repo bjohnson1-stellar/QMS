@@ -39,6 +39,7 @@ def migrate(source_db_path: str) -> Dict[str, Any]:
         "projects_matched": 0,
         "projects_created": 0,
         "budgets_created": 0,
+        "allocations_created": 0,
         "transactions_migrated": 0,
         "settings_migrated": False,
         "periods_migrated": 0,
@@ -209,6 +210,28 @@ def _migrate_projects(
                 (qms_id, total_budget, weight_adj),
             )
             stats["budgets_created"] += 1
+
+        # Create per-BU allocation from full TT code
+        parts = code.split("-")
+        if len(parts) >= 3:
+            bu_code = parts[1]
+            subjob = parts[2]
+            bu_row = dest.execute(
+                "SELECT id FROM business_units WHERE code = ?", (bu_code,)
+            ).fetchone()
+            if bu_row:
+                try:
+                    dest.execute(
+                        """INSERT OR IGNORE INTO project_allocations
+                           (project_id, business_unit_id, subjob, job_code,
+                            allocated_budget, weight_adjustment)
+                           VALUES (?, ?, ?, ?, ?, ?)""",
+                        (qms_id, bu_row["id"], subjob, code,
+                         total_budget, weight_adj),
+                    )
+                    stats["allocations_created"] += 1
+                except Exception as exc:
+                    stats["errors"].append(f"Allocation {code}: {exc}")
 
     return id_map
 

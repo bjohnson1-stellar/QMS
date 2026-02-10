@@ -132,7 +132,7 @@
         let html = '<table><thead><tr><th>Project</th><th>Stage</th></tr></thead><tbody>';
         recent.forEach(p => {
             html += `<tr>
-                <td><strong>${p.name}</strong><br><small style="color:#7f8c8d;">${p.code}</small></td>
+                <td><strong>${p.name}</strong>${p.description ? '<div style="color:#7f8c8d;font-size:12px;">' + p.description + '</div>' : ''}<small style="color:#7f8c8d;">${p.number || p.code}</small></td>
                 <td><span class="status-badge ${getStageClass(p.stage)}">${p.stage}</span></td>
             </tr>`;
         });
@@ -153,7 +153,7 @@
             const percentSpent = project.total_budget > 0 ? (project.budget_spent / project.total_budget) * 100 : 0;
             const barClass = percentSpent > 90 ? 'danger' : percentSpent > 70 ? 'warning' : '';
             html += '<tr>';
-            html += `<td><strong>${project.name}</strong><br><small style="color:#7f8c8d;">${project.code}</small></td>`;
+            html += `<td><strong>${project.name}</strong>${project.description ? '<div style="color:#7f8c8d;font-size:12px;">' + project.description + '</div>' : ''}<small style="color:#7f8c8d;">${project.number || project.code}</small></td>`;
             html += `<td>${project.manager || '-'}</td>`;
             html += `<td class="currency">$${project.total_budget.toLocaleString()}</td>`;
             html += `<td>$${project.budget_spent.toLocaleString()}<div class="budget-bar"><div class="budget-fill ${barClass}" style="width:${percentSpent}%"></div></div></td>`;

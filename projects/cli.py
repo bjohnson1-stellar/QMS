@@ -42,12 +42,28 @@ def summary(project: str = typer.Argument(..., help="Project number")):
 
     typer.echo(f"Project: {result['number']} - {result['name']}")
     typer.echo(f"  Status: {result['status'] or 'unknown'}")
+    if result.get("description"):
+        typer.echo(f"  Desc:   {result['description']}")
     if result.get("client"):
         typer.echo(f"  Client: {result['client']}")
     if result.get("pm"):
         typer.echo(f"  PM:     {result['pm']}")
     if result.get("path"):
         typer.echo(f"  Path:   {result['path']}")
+
+    # Show allocation breakdown if available
+    from qms.core import get_db
+    from qms.projects.budget import get_project_allocations
+
+    with get_db(readonly=True) as conn:
+        allocs = get_project_allocations(conn, result["id"])
+    if allocs:
+        typer.echo(f"\n  BU Allocations ({len(allocs)}):")
+        for a in allocs:
+            typer.echo(
+                f"    {a['job_code']:<15} {a['bu_name']:<20} "
+                f"${a['allocated_budget']:>10,.0f}  {a['weight_adjustment']}x"
+            )
 
     typer.echo(
         f"\n  Sheets: {result['total_sheets']} total, "
@@ -150,6 +166,7 @@ def migrate_timetracker(
     typer.echo(f"  Projects matched: {result['projects_matched']}")
     typer.echo(f"  Projects created: {result['projects_created']}")
     typer.echo(f"  Budgets created: {result['budgets_created']}")
+    typer.echo(f"  Allocations created: {result['allocations_created']}")
     typer.echo(f"  Transactions: {result['transactions_migrated']}")
     typer.echo(f"  Settings: {'migrated' if result['settings_migrated'] else 'skipped'}")
     typer.echo(f"  Projection periods: {result['periods_migrated']}")

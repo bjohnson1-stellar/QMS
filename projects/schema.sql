@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS projects (
     start_date TEXT,
     end_date TEXT,
     notes TEXT,
+    description TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     customer_id INTEGER REFERENCES customers(id),
@@ -128,6 +129,23 @@ CREATE TABLE IF NOT EXISTS project_budgets (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Per-business-unit budget allocations within a project
+CREATE TABLE IF NOT EXISTS project_allocations (
+    id INTEGER PRIMARY KEY,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    business_unit_id INTEGER NOT NULL REFERENCES business_units(id),
+    subjob TEXT NOT NULL DEFAULT '00',
+    job_code TEXT NOT NULL,
+    allocated_budget REAL NOT NULL DEFAULT 0,
+    weight_adjustment REAL NOT NULL DEFAULT 1.0,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(project_id, business_unit_id, subjob)
+);
+CREATE INDEX IF NOT EXISTS idx_pa_project ON project_allocations(project_id);
+CREATE INDEX IF NOT EXISTS idx_pa_bu ON project_allocations(business_unit_id);
 
 -- Project spending ledger
 CREATE TABLE IF NOT EXISTS project_transactions (

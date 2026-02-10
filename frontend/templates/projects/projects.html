@@ -20,17 +20,12 @@
             </div>
             <div class="form-group">
                 <label>Project Number *</label>
-                <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:10px;align-items:center;">
-                    <input type="text" id="projectBase" pattern="\d{5}" placeholder="06974" maxlength="5" required style="text-align:center;">
-                    <span style="font-weight:bold;color:#7f8c8d;">-</span>
-                    <select id="projectBU" required style="text-align:left;">
-                        <option value="">BU</option>
-                    </select>
-                    <span style="font-weight:bold;color:#7f8c8d;">-</span>
-                    <input type="text" id="projectSubjob" pattern="\d{2}" placeholder="01" maxlength="2" required style="text-align:center;">
-                </div>
-                <input type="hidden" id="projectCode">
-                <div class="help-text">Format: NNNNN-CCC-SS (e.g., 06974-230-01)</div>
+                <input type="text" id="projectBase" pattern="\d{5}" placeholder="07587" maxlength="5" required style="text-align:center;width:120px;">
+                <div class="help-text">5-digit base number (e.g., 07587). BU allocations are managed separately below.</div>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="projectDescription" rows="2" placeholder="Full project scope description"></textarea>
             </div>
             <div class="form-group">
                 <label>Project Manager</label>
@@ -47,6 +42,7 @@
             <div class="form-group">
                 <label>Total Budget *</label>
                 <input type="number" id="totalBudget" step="0.01" required>
+                <div class="help-text" id="budgetHint"></div>
             </div>
             <div class="form-group">
                 <label>Manual Weight Adjustment</label>
@@ -118,6 +114,34 @@
             <button type="button" class="secondary" onclick="resetForm()">Clear</button>
         </form>
 
+        <!-- Allocation management (visible when editing) -->
+        <div id="allocationSection" style="display:none;margin-top:25px;padding-top:15px;border-top:2px solid #3498db;">
+            <h3>BU Allocations</h3>
+            <p style="color:#7f8c8d;font-size:13px;margin-bottom:10px;">Break down the project budget by business unit</p>
+            <div id="allocationList"></div>
+            <div style="display:grid;grid-template-columns:1fr 80px 120px 80px auto;gap:8px;align-items:end;margin-top:10px;">
+                <div>
+                    <label style="font-size:12px;">Business Unit</label>
+                    <select id="allocBU" style="font-size:13px;">
+                        <option value="">Select BU</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:12px;">Subjob</label>
+                    <input type="text" id="allocSubjob" value="00" maxlength="2" pattern="\d{2}" style="font-size:13px;text-align:center;">
+                </div>
+                <div>
+                    <label style="font-size:12px;">Budget</label>
+                    <input type="number" id="allocBudget" step="0.01" style="font-size:13px;">
+                </div>
+                <div>
+                    <label style="font-size:12px;">Weight</label>
+                    <input type="number" id="allocWeight" value="1.0" step="0.1" min="0.5" max="2.0" style="font-size:13px;">
+                </div>
+                <button class="success" onclick="addAllocation()" style="height:36px;font-size:13px;">Add</button>
+            </div>
+        </div>
+
         <div class="import-section" id="import">
             <h3>Bulk Import</h3>
             <p style="color:#7f8c8d;margin-bottom:10px;font-size:13px;">Import multiple projects from an Excel file</p>
@@ -153,38 +177,22 @@
     let currentEditId = null;
     const API_BASE = '/projects/api';
 
-    function updateProjectCode() {
-        const base = document.getElementById('projectBase').value;
-        const bu = document.getElementById('projectBU').value;
-        const subjob = document.getElementById('projectSubjob').value;
-        if (base && bu && subjob) {
-            document.getElementById('projectCode').value = `${base}-${bu}-${subjob}`;
-        }
-    }
-
     document.getElementById('projectBase').addEventListener('input', function(e) {
         e.target.value = e.target.value.replace(/\D/g, '');
-        updateProjectCode();
-    });
-    document.getElementById('projectBU').addEventListener('change', updateProjectCode);
-    document.getElementById('projectSubjob').addEventListener('input', function(e) {
-        e.target.value = e.target.value.replace(/\D/g, '');
-        updateProjectCode();
     });
 
     async function loadBusinessUnits() {
         try {
             const response = await fetch(`${API_BASE}/business-units`);
             businessUnits = await response.json();
-            populateBUDropdown();
+            populateAllocBUDropdown();
         } catch (error) {
             console.error('Error loading business units:', error);
         }
     }
 
-    function populateBUDropdown() {
-        const select = document.getElementById('projectBU');
-        const currentValue = select.value;
+    function populateAllocBUDropdown() {
+        const select = document.getElementById('allocBU');
         select.innerHTML = '<option value="">Select BU</option>';
         businessUnits.forEach(bu => {
             const option = document.createElement('option');
@@ -192,14 +200,14 @@
             option.textContent = `${bu.code} - ${bu.name}`;
             select.appendChild(option);
         });
-        if (currentValue) select.value = currentValue;
     }
 
     document.getElementById('projectForm').addEventListener('submit', async function(e) {
         e.preventDefault();
+        const base = document.getElementById('projectBase').value;
         const projectData = {
             name: document.getElementById('projectName').value,
-            code: document.getElementById('projectCode').value,
+            code: base,
             manager: document.getElementById('projectManager').value,
             stage: document.getElementById('projectStage').value,
             totalBudget: parseFloat(document.getElementById('totalBudget').value),
@@ -211,7 +219,8 @@
             ownerCity: document.getElementById('ownerCity').value,
             ownerState: document.getElementById('ownerState').value,
             ownerZip: document.getElementById('ownerZip').value,
-            notes: document.getElementById('notes').value
+            notes: document.getElementById('notes').value,
+            description: document.getElementById('projectDescription').value
         };
 
         try {
@@ -240,15 +249,16 @@
     function resetForm() {
         document.getElementById('projectForm').reset();
         document.getElementById('projectBase').value = '';
-        document.getElementById('projectBU').value = '';
-        document.getElementById('projectSubjob').value = '';
-        document.getElementById('projectCode').value = '';
+        document.getElementById('projectDescription').value = '';
         document.getElementById('weightAdjustment').value = '1.0';
         document.getElementById('ownerName').value = '';
         document.getElementById('ownerAddress').value = '';
         document.getElementById('ownerCity').value = '';
         document.getElementById('ownerState').value = '';
         document.getElementById('ownerZip').value = '';
+        document.getElementById('allocationSection').style.display = 'none';
+        document.getElementById('allocationList').innerHTML = '';
+        document.getElementById('budgetHint').textContent = '';
         currentEditId = null;
         document.getElementById('submitBtn').textContent = 'Add Project';
         document.getElementById('formTitle').textContent = 'Add New Project';
@@ -258,29 +268,151 @@
         const project = projects.find(p => p.id === id);
         if (!project) return;
         document.getElementById('projectName').value = project.name;
-        const codeParts = (project.code || '').split('-');
-        if (codeParts.length === 3) {
-            document.getElementById('projectBase').value = codeParts[0];
-            document.getElementById('projectBU').value = codeParts[1];
-            document.getElementById('projectSubjob').value = codeParts[2];
-            document.getElementById('projectCode').value = project.code;
-        }
-        document.getElementById('projectManager').value = project.manager || '';
+        document.getElementById('projectBase').value = project.number || '';
+        document.getElementById('projectDescription').value = project.description || '';
+        document.getElementById('projectManager').value = project.pm || '';
         document.getElementById('projectStage').value = project.stage;
-        document.getElementById('totalBudget').value = project.total_budget;
-        document.getElementById('weightAdjustment').value = project.weight_adjustment;
+        document.getElementById('totalBudget').value = project.total_budget || 0;
+        document.getElementById('weightAdjustment').value = project.weight_adjustment || 1.0;
         document.getElementById('startDate').value = project.start_date || '';
         document.getElementById('endDate').value = project.end_date || '';
-        document.getElementById('ownerName').value = project.owner_name || '';
-        document.getElementById('ownerAddress').value = project.owner_address || '';
-        document.getElementById('ownerCity').value = project.owner_city || '';
-        document.getElementById('ownerState').value = project.owner_state || '';
-        document.getElementById('ownerZip').value = project.owner_zip || '';
+        document.getElementById('ownerName').value = project.client || '';
+        document.getElementById('ownerAddress').value = project.street || '';
+        document.getElementById('ownerCity').value = project.city || '';
+        document.getElementById('ownerState').value = project.state || '';
+        document.getElementById('ownerZip').value = project.zip || '';
         document.getElementById('notes').value = project.notes || '';
         currentEditId = id;
         document.getElementById('submitBtn').textContent = 'Update Project';
         document.getElementById('formTitle').textContent = 'Edit Project';
+
+        // Show allocation section and load allocations
+        document.getElementById('allocationSection').style.display = 'block';
+        loadAllocations(id);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function loadAllocations(projectId) {
+        try {
+            const response = await fetch(`${API_BASE}/projects/${projectId}/allocations`);
+            const allocs = await response.json();
+            renderAllocations(allocs, projectId);
+        } catch (error) {
+            console.error('Error loading allocations:', error);
+        }
+    }
+
+    function renderAllocations(allocs, projectId) {
+        const container = document.getElementById('allocationList');
+        if (!allocs || allocs.length === 0) {
+            container.innerHTML = '<p style="color:#7f8c8d;font-size:13px;">No allocations yet. Add a BU allocation below.</p>';
+            document.getElementById('budgetHint').textContent = '';
+            return;
+        }
+        let total = 0;
+        let html = '<table style="font-size:13px;margin-bottom:5px;"><thead><tr><th>BU</th><th>Job Code</th><th>Budget</th><th>Weight</th><th></th></tr></thead><tbody>';
+        allocs.forEach(a => {
+            total += a.allocated_budget;
+            html += `<tr>`;
+            html += `<td>${a.bu_code} - ${a.bu_name}</td>`;
+            html += `<td>${a.job_code}</td>`;
+            html += `<td class="currency">$${a.allocated_budget.toLocaleString()}</td>`;
+            html += `<td>${a.weight_adjustment}x</td>`;
+            html += `<td><button class="action-btn danger" style="font-size:11px;padding:2px 8px;" onclick="deleteAllocation(${projectId},${a.id})">x</button></td>`;
+            html += `</tr>`;
+        });
+        html += `<tr style="font-weight:bold;border-top:2px solid #ecf0f1;"><td colspan="2">Total</td><td class="currency">$${total.toLocaleString()}</td><td colspan="2"></td></tr>`;
+        html += '</tbody></table>';
+        container.innerHTML = html;
+
+        const formBudget = parseFloat(document.getElementById('totalBudget').value) || 0;
+        if (Math.abs(total - formBudget) > 0.01) {
+            document.getElementById('budgetHint').textContent = `Allocation total: $${total.toLocaleString()} (auto-synced on save)`;
+        } else {
+            document.getElementById('budgetHint').textContent = '';
+        }
+    }
+
+    async function addAllocation() {
+        if (!currentEditId) {
+            showError('Save the project first, then add allocations.');
+            return;
+        }
+        const buCode = document.getElementById('allocBU').value;
+        if (!buCode) { showError('Select a business unit'); return; }
+
+        const data = {
+            buCode: buCode,
+            subjob: document.getElementById('allocSubjob').value || '00',
+            budget: parseFloat(document.getElementById('allocBudget').value) || 0,
+            weight: parseFloat(document.getElementById('allocWeight').value) || 1.0
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/projects/${currentEditId}/allocations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (response.ok) {
+                renderAllocations(result, currentEditId);
+                document.getElementById('allocBudget').value = '';
+                document.getElementById('allocSubjob').value = '00';
+                document.getElementById('allocWeight').value = '1.0';
+                loadProjects();
+            } else {
+                showError(result.error || 'Failed to add allocation');
+            }
+        } catch (error) {
+            showError('Failed to add allocation');
+        }
+    }
+
+    async function deleteAllocation(projectId, allocId) {
+        try {
+            const response = await fetch(`${API_BASE}/projects/${projectId}/allocations/${allocId}`, { method: 'DELETE' });
+            const result = await response.json();
+            if (response.ok) {
+                renderAllocations(result, projectId);
+                loadProjects();
+            }
+        } catch (error) {
+            showError('Failed to delete allocation');
+        }
+    }
+
+    async function toggleAllocations(projectId) {
+        const row = document.getElementById(`alloc-row-${projectId}`);
+        if (row) {
+            row.remove();
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE}/projects/${projectId}/allocations`);
+            const allocs = await response.json();
+            if (!allocs.length) return;
+            const parentRow = document.querySelector(`tr[data-pid="${projectId}"]`);
+            if (!parentRow) return;
+            const tr = document.createElement('tr');
+            tr.id = `alloc-row-${projectId}`;
+            tr.style.background = '#f8f9fa';
+            let html = '<td colspan="9" style="padding:8px 15px 8px 30px;"><table style="font-size:12px;width:100%;margin:0;"><tbody>';
+            allocs.forEach(a => {
+                html += `<tr style="background:transparent;">`;
+                html += `<td style="padding:3px 8px;color:#7f8c8d;">|--</td>`;
+                html += `<td style="padding:3px 8px;">${a.bu_code} ${a.bu_name}</td>`;
+                html += `<td style="padding:3px 8px;">${a.job_code}</td>`;
+                html += `<td style="padding:3px 8px;" class="currency">$${a.allocated_budget.toLocaleString()}</td>`;
+                html += `<td style="padding:3px 8px;">${a.weight_adjustment}x</td>`;
+                html += `</tr>`;
+            });
+            html += '</tbody></table></td>';
+            tr.innerHTML = html;
+            parentRow.after(tr);
+        } catch (error) {
+            console.error('Error loading allocations:', error);
+        }
     }
 
     async function deleteProject(id) {
@@ -312,27 +444,33 @@
         if (stageFilter) filtered = filtered.filter(p => p.stage === stageFilter);
         if (searchFilter) filtered = filtered.filter(p =>
             p.name.toLowerCase().includes(searchFilter) ||
-            (p.code && p.code.toLowerCase().includes(searchFilter)) ||
-            (p.manager && p.manager.toLowerCase().includes(searchFilter))
+            (p.number && p.number.toLowerCase().includes(searchFilter)) ||
+            (p.pm && p.pm.toLowerCase().includes(searchFilter)) ||
+            (p.description && p.description.toLowerCase().includes(searchFilter))
         );
         if (filtered.length === 0) {
             container.innerHTML = '<div class="empty-state">No projects found. Add your first project to get started!</div>';
             return;
         }
-        let html = '<table><thead><tr><th>Project Name</th><th>Number</th><th>PM</th><th>Stage</th><th>Budget</th><th>Spent</th><th>Remaining</th><th>Weight</th><th>Actions</th></tr></thead><tbody>';
+        let html = '<table><thead><tr><th>Project</th><th>Number</th><th>PM</th><th>Stage</th><th>Budget</th><th>Spent</th><th>Remaining</th><th>Weight</th><th>Actions</th></tr></thead><tbody>';
         filtered.forEach(p => {
-            const remaining = p.total_budget - p.budget_spent;
-            const pct = p.total_budget > 0 ? (p.budget_spent / p.total_budget) * 100 : 0;
+            const tb = p.total_budget || 0;
+            const bs = p.budget_spent || 0;
+            const remaining = tb - bs;
+            const pct = tb > 0 ? (bs / tb) * 100 : 0;
             const barClass = pct > 90 ? 'danger' : pct > 70 ? 'warning' : '';
-            html += '<tr>';
-            html += `<td><strong>${p.name}</strong></td>`;
-            html += `<td>${p.code || '-'}</td>`;
-            html += `<td>${p.manager || '-'}</td>`;
+            const allocBadge = p.allocation_count > 0
+                ? ` <span onclick="toggleAllocations(${p.id})" style="cursor:pointer;font-size:11px;color:#3498db;border:1px solid #3498db;border-radius:3px;padding:1px 5px;margin-left:4px;" title="Show BU breakdown">${p.allocation_count} BU${p.allocation_count > 1 ? 's' : ''}</span>`
+                : '';
+            html += `<tr data-pid="${p.id}">`;
+            html += `<td><strong>${p.name}</strong>${p.description ? '<div style="color:#7f8c8d;font-size:12px;margin-top:2px;">' + p.description + '</div>' : ''}</td>`;
+            html += `<td>${p.number || '-'}${allocBadge}</td>`;
+            html += `<td>${p.pm || '-'}</td>`;
             html += `<td><span class="status-badge ${getStageClass(p.stage)}">${p.stage}</span></td>`;
-            html += `<td class="currency">$${p.total_budget.toLocaleString()}</td>`;
-            html += `<td>$${p.budget_spent.toLocaleString()}<div class="budget-bar"><div class="budget-fill ${barClass}" style="width:${pct}%"></div></div></td>`;
+            html += `<td class="currency">$${tb.toLocaleString()}</td>`;
+            html += `<td>$${bs.toLocaleString()}<div class="budget-bar"><div class="budget-fill ${barClass}" style="width:${pct}%"></div></div></td>`;
             html += `<td class="currency">$${remaining.toLocaleString()}</td>`;
-            html += `<td>${p.weight_adjustment}x</td>`;
+            html += `<td>${(p.weight_adjustment || 1.0)}x</td>`;
             html += `<td><div class="action-buttons">`;
             html += `<button class="action-btn secondary" onclick="editProject(${p.id})">Edit</button>`;
             html += `<button class="action-btn danger" onclick="deleteProject(${p.id})">Delete</button>`;

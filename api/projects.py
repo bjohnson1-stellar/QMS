@@ -68,8 +68,14 @@ def api_create_project():
     if not ok:
         return jsonify({"error": err}), 400
 
+    # Extract base number for duplicate check
+    parsed = budget.parse_job_code(code)
+    base_number = parsed[0] if parsed else code
+
     with get_db() as conn:
-        dup = conn.execute("SELECT id FROM projects WHERE number = ?", (code,)).fetchone()
+        dup = conn.execute(
+            "SELECT id FROM projects WHERE number = ?", (base_number,)
+        ).fetchone()
         if dup:
             return jsonify({"error": "Project number already exists"}), 400
 
@@ -89,6 +95,8 @@ def api_create_project():
             city=data.get("ownerCity"),
             state=data.get("ownerState"),
             zip_code=data.get("ownerZip"),
+            description=data.get("description"),
+            allocations=data.get("allocations"),
         )
     return jsonify({"id": pid, "message": "Project created successfully"}), 201
 
@@ -101,9 +109,13 @@ def api_update_project(project_id):
     if not ok:
         return jsonify({"error": err}), 400
 
+    parsed = budget.parse_job_code(code)
+    base_number = parsed[0] if parsed else code
+
     with get_db() as conn:
         dup = conn.execute(
-            "SELECT id FROM projects WHERE number = ? AND id != ?", (code, project_id)
+            "SELECT id FROM projects WHERE number = ? AND id != ?",
+            (base_number, project_id),
         ).fetchone()
         if dup:
             return jsonify({"error": "Project number already exists"}), 400
@@ -125,6 +137,8 @@ def api_update_project(project_id):
             city=data.get("ownerCity"),
             state=data.get("ownerState"),
             zip_code=data.get("ownerZip"),
+            description=data.get("description"),
+            allocations=data.get("allocations"),
         )
     return jsonify({"message": "Project updated successfully"})
 
@@ -134,6 +148,48 @@ def api_delete_project(project_id):
     with get_db() as conn:
         budget.delete_project(conn, project_id)
     return jsonify({"message": "Project deleted successfully"})
+
+
+# ---------------------------------------------------------------------------
+# Project Allocations API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/projects/<int:pid>/allocations", methods=["GET"])
+def api_get_allocations(pid):
+    with get_db(readonly=True) as conn:
+        return jsonify(budget.get_project_allocations(conn, pid))
+
+
+@bp.route("/api/projects/<int:pid>/allocations", methods=["POST"])
+def api_upsert_allocation(pid):
+    data = request.json
+    bu_code = data.get("buCode", "").strip()
+    if not bu_code:
+        return jsonify({"error": "Business unit code is required"}), 400
+
+    with get_db() as conn:
+        try:
+            budget.upsert_allocation(
+                conn, pid,
+                bu_code=bu_code,
+                subjob=data.get("subjob", "00"),
+                allocated_budget=float(data.get("budget", 0)),
+                weight_adjustment=float(data.get("weight", 1.0)),
+                notes=data.get("notes"),
+            )
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        allocs = budget.get_project_allocations(conn, pid)
+    return jsonify(allocs), 201
+
+
+@bp.route("/api/projects/<int:pid>/allocations/<int:aid>", methods=["DELETE"])
+def api_delete_allocation(pid, aid):
+    with get_db() as conn:
+        budget.delete_allocation(conn, aid)
+        allocs = budget.get_project_allocations(conn, pid)
+    return jsonify(allocs)
 
 
 # ---------------------------------------------------------------------------

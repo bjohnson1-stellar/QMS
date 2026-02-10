@@ -23,7 +23,9 @@ from qms.core import get_db, get_logger
 
 logger = get_logger("qms.projects.budget")
 
-PROJECT_NUMBER_PATTERN = re.compile(r"^\d{5}-\d{3}-\d{2}$")
+PROJECT_NUMBER_PATTERN = re.compile(r"^\d{5}(-\d{3}-\d{2})?$")
+_FULL_CODE = re.compile(r"^(\d{5})-(\d{3})-(\d{2})$")
+_BASE_CODE = re.compile(r"^\d{5}$")
 
 VALID_STAGES = [
     "Archive",
@@ -43,12 +45,26 @@ VALID_STAGES = [
 # ---------------------------------------------------------------------------
 
 
+def parse_job_code(code: str) -> Optional[Tuple[str, Optional[str], Optional[str]]]:
+    """
+    Parse a project code into (base, bu_code, subjob).
+
+    Accepts NNNNN or NNNNN-CCC-SS. Returns None if invalid.
+    """
+    m = _FULL_CODE.match(code)
+    if m:
+        return m.group(1), m.group(2), m.group(3)
+    if _BASE_CODE.match(code):
+        return code, None, None
+    return None
+
+
 def validate_project_number(project_number: str) -> Tuple[bool, Optional[str]]:
-    """Validate project number format: NNNNN-CCC-SS."""
+    """Validate project number format: NNNNN or NNNNN-CCC-SS."""
     if not project_number:
         return False, "Project number is required"
     if not PROJECT_NUMBER_PATTERN.match(project_number):
-        return False, "Project number must follow format NNNNN-CCC-SS (e.g., 06974-230-01)"
+        return False, "Project number must follow format NNNNN or NNNNN-CCC-SS (e.g., 07587 or 06974-230-01)"
     return True, None
 
 
@@ -111,18 +127,23 @@ def get_dashboard_stats(conn: Optional[sqlite3.Connection] = None) -> Dict[str, 
 def list_projects_with_budgets(
     conn: Optional[sqlite3.Connection] = None,
 ) -> List[Dict[str, Any]]:
-    """List all projects with budget and spent totals."""
+    """List all projects with budget, spent totals, and allocation count."""
     sql = """
         SELECT p.*,
                b.total_budget,
                b.weight_adjustment,
-               COALESCE(spent.total, 0) AS budget_spent
+               COALESCE(spent.total, 0) AS budget_spent,
+               COALESCE(alloc.count, 0) AS allocation_count
         FROM projects p
         LEFT JOIN project_budgets b ON b.project_id = p.id
         LEFT JOIN (
             SELECT project_id, SUM(amount) AS total
             FROM project_transactions GROUP BY project_id
         ) spent ON spent.project_id = p.id
+        LEFT JOIN (
+            SELECT project_id, COUNT(*) AS count
+            FROM project_allocations GROUP BY project_id
+        ) alloc ON alloc.project_id = p.id
         ORDER BY p.created_at DESC
     """
 
@@ -173,26 +194,44 @@ def create_project_with_budget(
     city: Optional[str] = None,
     state: Optional[str] = None,
     zip_code: Optional[str] = None,
+    description: Optional[str] = None,
+    allocations: Optional[List[Dict[str, Any]]] = None,
 ) -> int:
     """Create a project and its budget record. Returns project_id."""
+    # Extract base number for projects.number (strip BU/subjob if present)
+    parsed = parse_job_code(code)
+    base_number = parsed[0] if parsed else code
+
     cursor = conn.execute(
         """
         INSERT INTO projects (number, name, client, pm, stage, status,
-                              start_date, end_date, notes,
+                              start_date, end_date, notes, description,
                               street, city, state, zip)
-        VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (code, name, client, manager, stage,
-         start_date, end_date, notes,
+        (base_number, name, client, manager, stage,
+         start_date, end_date, notes, description,
          street, city, state, zip_code),
     )
     project_id = cursor.lastrowid
 
-    conn.execute(
-        "INSERT INTO project_budgets (project_id, total_budget, weight_adjustment) "
-        "VALUES (?, ?, ?)",
-        (project_id, total_budget, weight_adjustment),
-    )
+    # Create allocations if provided, then rollup; else use direct budget
+    if allocations:
+        for alloc in allocations:
+            _insert_allocation(
+                conn, project_id, base_number,
+                alloc["bu_code"], alloc.get("subjob", "00"),
+                alloc.get("budget", 0), alloc.get("weight", 1.0),
+                alloc.get("notes"),
+            )
+        sync_budget_rollup(conn, project_id)
+    else:
+        conn.execute(
+            "INSERT INTO project_budgets (project_id, total_budget, weight_adjustment) "
+            "VALUES (?, ?, ?)",
+            (project_id, total_budget, weight_adjustment),
+        )
+
     conn.commit()
     return project_id
 
@@ -215,33 +254,53 @@ def update_project_with_budget(
     city: Optional[str] = None,
     state: Optional[str] = None,
     zip_code: Optional[str] = None,
+    description: Optional[str] = None,
+    allocations: Optional[List[Dict[str, Any]]] = None,
 ) -> None:
     """Update a project and its budget record."""
+    parsed = parse_job_code(code)
+    base_number = parsed[0] if parsed else code
+
     conn.execute(
         """
         UPDATE projects
         SET number=?, name=?, client=?, pm=?, stage=?,
-            start_date=?, end_date=?, notes=?,
+            start_date=?, end_date=?, notes=?, description=?,
             street=?, city=?, state=?, zip=?,
             updated_at=CURRENT_TIMESTAMP
         WHERE id=?
         """,
-        (code, name, client, manager, stage,
-         start_date, end_date, notes,
+        (base_number, name, client, manager, stage,
+         start_date, end_date, notes, description,
          street, city, state, zip_code, project_id),
     )
 
-    conn.execute(
-        """
-        INSERT INTO project_budgets (project_id, total_budget, weight_adjustment)
-        VALUES (?, ?, ?)
-        ON CONFLICT(project_id) DO UPDATE SET
-            total_budget=excluded.total_budget,
-            weight_adjustment=excluded.weight_adjustment,
-            updated_at=CURRENT_TIMESTAMP
-        """,
-        (project_id, total_budget, weight_adjustment),
-    )
+    if allocations is not None:
+        # Replace existing allocations
+        conn.execute(
+            "DELETE FROM project_allocations WHERE project_id = ?", (project_id,)
+        )
+        for alloc in allocations:
+            _insert_allocation(
+                conn, project_id, base_number,
+                alloc["bu_code"], alloc.get("subjob", "00"),
+                alloc.get("budget", 0), alloc.get("weight", 1.0),
+                alloc.get("notes"),
+            )
+        sync_budget_rollup(conn, project_id)
+    else:
+        conn.execute(
+            """
+            INSERT INTO project_budgets (project_id, total_budget, weight_adjustment)
+            VALUES (?, ?, ?)
+            ON CONFLICT(project_id) DO UPDATE SET
+                total_budget=excluded.total_budget,
+                weight_adjustment=excluded.weight_adjustment,
+                updated_at=CURRENT_TIMESTAMP
+            """,
+            (project_id, total_budget, weight_adjustment),
+        )
+
     conn.commit()
 
 
@@ -249,6 +308,129 @@ def delete_project(conn: sqlite3.Connection, project_id: int) -> None:
     """Delete a project (cascades to budgets, transactions, projections)."""
     conn.execute("DELETE FROM projects WHERE id=?", (project_id,))
     conn.commit()
+
+
+# ---------------------------------------------------------------------------
+# Project Allocations (per-BU budget breakdown)
+# ---------------------------------------------------------------------------
+
+
+def get_project_allocations(
+    conn: sqlite3.Connection, project_id: int
+) -> List[Dict[str, Any]]:
+    """Get all allocations for a project with BU details."""
+    rows = conn.execute(
+        """
+        SELECT pa.*, bu.code AS bu_code, bu.name AS bu_name
+        FROM project_allocations pa
+        JOIN business_units bu ON bu.id = pa.business_unit_id
+        WHERE pa.project_id = ?
+        ORDER BY bu.code, pa.subjob
+        """,
+        (project_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def upsert_allocation(
+    conn: sqlite3.Connection,
+    project_id: int,
+    bu_code: str,
+    subjob: str = "00",
+    allocated_budget: float = 0,
+    weight_adjustment: float = 1.0,
+    notes: Optional[str] = None,
+) -> int:
+    """Create or update an allocation. Returns allocation id."""
+    proj = conn.execute(
+        "SELECT number FROM projects WHERE id = ?", (project_id,)
+    ).fetchone()
+    if not proj:
+        raise ValueError(f"Project {project_id} not found")
+
+    alloc_id = _insert_allocation(
+        conn, project_id, proj["number"],
+        bu_code, subjob, allocated_budget, weight_adjustment, notes,
+    )
+    sync_budget_rollup(conn, project_id)
+    conn.commit()
+    return alloc_id
+
+
+def delete_allocation(conn: sqlite3.Connection, allocation_id: int) -> None:
+    """Delete an allocation and sync the rollup."""
+    row = conn.execute(
+        "SELECT project_id FROM project_allocations WHERE id = ?",
+        (allocation_id,),
+    ).fetchone()
+    if not row:
+        return
+    project_id = row["project_id"]
+    conn.execute("DELETE FROM project_allocations WHERE id = ?", (allocation_id,))
+    sync_budget_rollup(conn, project_id)
+    conn.commit()
+
+
+def _insert_allocation(
+    conn: sqlite3.Connection,
+    project_id: int,
+    base_number: str,
+    bu_code: str,
+    subjob: str,
+    allocated_budget: float,
+    weight_adjustment: float,
+    notes: Optional[str] = None,
+) -> int:
+    """Insert or replace an allocation row. Returns allocation id."""
+    bu_row = conn.execute(
+        "SELECT id FROM business_units WHERE code = ?", (bu_code,)
+    ).fetchone()
+    if not bu_row:
+        raise ValueError(f"Business unit code '{bu_code}' not found")
+
+    job_code = f"{base_number}-{bu_code}-{subjob}"
+    cursor = conn.execute(
+        """
+        INSERT INTO project_allocations
+            (project_id, business_unit_id, subjob, job_code,
+             allocated_budget, weight_adjustment, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(project_id, business_unit_id, subjob) DO UPDATE SET
+            job_code=excluded.job_code,
+            allocated_budget=excluded.allocated_budget,
+            weight_adjustment=excluded.weight_adjustment,
+            notes=excluded.notes,
+            updated_at=CURRENT_TIMESTAMP
+        """,
+        (project_id, bu_row["id"], subjob, job_code,
+         allocated_budget, weight_adjustment, notes),
+    )
+    return cursor.lastrowid
+
+
+def sync_budget_rollup(conn: sqlite3.Connection, project_id: int) -> None:
+    """Set project_budgets.total_budget = SUM of allocations."""
+    result = conn.execute(
+        "SELECT COALESCE(SUM(allocated_budget), 0) AS total "
+        "FROM project_allocations WHERE project_id = ?",
+        (project_id,),
+    ).fetchone()
+    total = result["total"]
+
+    existing = conn.execute(
+        "SELECT id FROM project_budgets WHERE project_id = ?", (project_id,)
+    ).fetchone()
+    if existing:
+        conn.execute(
+            "UPDATE project_budgets SET total_budget = ?, "
+            "updated_at = CURRENT_TIMESTAMP WHERE project_id = ?",
+            (total, project_id),
+        )
+    elif total > 0:
+        conn.execute(
+            "INSERT INTO project_budgets (project_id, total_budget) VALUES (?, ?)",
+            (project_id, total),
+        )
 
 
 # ---------------------------------------------------------------------------
