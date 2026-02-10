@@ -1,7 +1,8 @@
 """
 QMS Projects Module
 
-Project registry, customers, jobs, project scanning and tracking.
+Project registry, customers, jobs, project scanning, budget tracking,
+and time allocation.
 """
 
 from qms.projects.scanner import (

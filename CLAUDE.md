@@ -38,13 +38,16 @@ git push origin main
 ## Quick Start
 
 ```bash
-pip install -e D:\qms        # Install editable
+pip install -e D:\qms        # Install editable (core)
+pip install -e "D:\qms[web]" # Install with web UI (Flask)
 qms version                  # Show version
 qms migrate                  # Run all schema migrations
+qms serve                    # Launch web UI at localhost:5000
 qms welding dashboard        # Welding program status
 qms docs summary             # Quality manual summary
 qms refs search <term>       # Search reference standards
 qms projects scan            # Scan project folders
+qms projects migrate-timetracker  # Import from Time Tracker DB
 qms eng line-sizing          # Run pipe sizing calculation
 qms eng --help               # All engineering commands
 ```
@@ -76,6 +79,17 @@ D:\qms\                          # Repo root = package root
 │   ├── logging.py               # get_logger()
 │   └── paths.py, output.py
 │
+├── api/                         # Flask web backend
+│   ├── __init__.py              # App factory (create_app)
+│   └── projects.py              # Blueprint: /projects/* routes
+│
+├── frontend/                    # Web UI assets
+│   ├── templates/
+│   │   ├── base.html            # Shared layout (sidebar nav)
+│   │   └── projects/            # 6 project pages (Jinja2)
+│   └── static/
+│       └── style.css            # Shared CSS
+│
 ├── engineering/                 # Calculation library + design verification
 │   ├── refrig_calc/             # Vendored refrig_calc (20 modules, zero deps)
 │   ├── refrigeration.py         # RefrigerationCalculator (ABC impl)
@@ -88,7 +102,10 @@ D:\qms\                          # Repo root = package root
 ├── welding/                     # WPS/WPQ/continuity tracking
 ├── qualitydocs/                 # Quality manual loader
 ├── references/                  # Reference standard extraction
-├── projects/                    # Project scanner
+├── projects/                    # Project scanner + budget tracking
+│   ├── budget.py                # Allocation algorithm, budget queries
+│   ├── excel_io.py              # Excel import/export
+│   └── migrate_timetracker.py   # One-time TT data migration
 ├── pipeline/                    # Drawing intake pipeline
 ├── workforce/                   # Employee management
 ├── vectordb/                    # Semantic search
@@ -111,15 +128,16 @@ D:\qms\                          # Repo root = package root
 
 All paths in `config.yaml` are **relative** to the package root. The `QMS_PATHS` singleton resolves them automatically.
 
-## CLI Commands (32 total)
+## CLI Commands (35 total)
 
 | Module | Commands |
 |--------|----------|
+| `qms` (top-level) | `version`, `migrate`, `serve` |
 | `qms eng` | `history`, `line-sizing`, `relief-valve`, `pump`, `ventilation`, `charge`, `validate-pipes`, `validate-relief` |
 | `qms welding` | `dashboard`, `continuity`, `import-wps`, `import-weekly`, `check-notifications` |
 | `qms docs` | `load-module`, `summary`, `search`, `detail` |
 | `qms refs` | `extract`, `list`, `search`, `clauses` |
-| `qms projects` | `scan`, `list`, `summary` |
+| `qms projects` | `scan`, `list`, `summary`, `migrate-timetracker` |
 | `qms pipeline` | `status`, `queue`, `import-drawing`, `import-batch`, `process` |
 | `qms workforce` | `list`, `import-csv`, `import-from-sis`, `bulk-update` |
 | `qms vectordb` | `index`, `search`, `status`, `rebuild` |
@@ -166,13 +184,27 @@ from qms.engineering.refrig_calc import NH3Properties, LineSizing
 
 ### Database
 
-Single SQLite database at `QMS_PATHS.database` with 216 tables across 8 schema files. FK dependency chain controlled by `SCHEMA_ORDER` in `core/db.py`.
+Single SQLite database at `QMS_PATHS.database` with 220+ tables across 8 schema files. FK dependency chain controlled by `SCHEMA_ORDER` in `core/db.py`. The `business_units` table is shared by projects, welding, and pipeline modules.
 
 ```python
 from qms.core import get_db
 with get_db() as conn:
     conn.execute("SELECT * FROM projects")
 ```
+
+### Web Architecture
+
+`qms serve` launches a Flask app at `http://localhost:5000`. The app factory in `api/__init__.py` registers module blueprints. Business logic stays in module files (NO Flask imports in `projects/budget.py` etc.) — the API layer wraps results in Flask responses.
+
+```
+api/__init__.py     → create_app(), registers blueprints
+api/projects.py     → Blueprint /projects/*, calls budget.py
+projects/budget.py  → Pure business logic (allocation, queries)
+frontend/templates/ → Jinja2 templates extending base.html
+frontend/static/    → Shared CSS/JS
+```
+
+Optional dependency: `pip install -e ".[web]"` for Flask.
 
 ### Model Routing
 
