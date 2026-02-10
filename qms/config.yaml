@@ -21,7 +21,8 @@ destinations:
   quality_documents: "data/quality-documents"
   database: "data/quality.db"
   vector_database: "data/vectordb"
-  sqlite3: "C:/Users/bjohnson1/AppData/Local/Microsoft/WinGet/Packages/SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe/sqlite3.exe"
+  # sqlite3 CLI binary — set per-machine, not used by Python code
+  # sqlite3: "/usr/bin/sqlite3"
 
 # =============================================================================
 # EMBEDDING CONFIGURATION
