@@ -183,6 +183,156 @@ def import_weekly(
             typer.echo(f"    - {err}")
 
 
+@app.command()
+def register(
+    employee_number: Optional[str] = typer.Option(None, "--employee-number", "-e", help="Employee number"),
+    first_name: Optional[str] = typer.Option(None, "--first-name", "-f", help="First name"),
+    last_name: Optional[str] = typer.Option(None, "--last-name", "-l", help="Last name"),
+    stamp: Optional[str] = typer.Option(None, "--stamp", "-s", help="Welder stamp (auto-assigned if omitted)"),
+    department: Optional[str] = typer.Option(None, "--department", help="Department"),
+    supervisor: Optional[str] = typer.Option(None, "--supervisor", help="Supervisor name"),
+    business_unit: Optional[str] = typer.Option(None, "--business-unit", help="Business unit"),
+    preferred_name: Optional[str] = typer.Option(None, "--preferred-name", help="Preferred name / nickname"),
+    process: Optional[str] = typer.Option(None, "--process", "-p", help="Initial WPQ process (SMAW, GTAW, etc.)"),
+    batch: Optional[str] = typer.Option(None, "--batch", "-b", help="CSV file for batch registration"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview without database changes"),
+):
+    """Register new welder(s) — interactive, by flags, or batch CSV."""
+    from qms.core import get_db
+    from qms.welding.registration import (
+        add_initial_wpq,
+        get_next_stamp,
+        register_batch,
+        register_new_welder,
+    )
+
+    # --- Batch mode ---
+    if batch:
+        csv_path = Path(batch)
+        if not csv_path.exists():
+            typer.echo(f"ERROR: File not found: {csv_path}")
+            raise typer.Exit(1)
+
+        stats = register_batch(csv_path, dry_run=dry_run)
+
+        typer.echo()
+        typer.echo("Batch Registration Summary")
+        typer.echo("=" * 40)
+        typer.echo(f"  Total rows:    {stats['total']}")
+        typer.echo(f"  Created:       {stats['created']}")
+        typer.echo(f"  Skipped:       {stats['skipped']}")
+
+        if stats["errors"]:
+            typer.echo(f"\n  Errors ({len(stats['errors'])}):")
+            for err in stats["errors"][:10]:
+                typer.echo(f"    Row {err['row']}: {err['error']}")
+            if len(stats["errors"]) > 10:
+                typer.echo(f"    ... and {len(stats['errors']) - 10} more")
+
+        if stats["welders"] and not dry_run:
+            typer.echo(f"\n  Registered:")
+            for w in stats["welders"][:20]:
+                typer.echo(f"    {w['stamp']:>6}  {w['name']}  (emp#: {w['employee_number']})")
+        return
+
+    # --- Interactive mode (if required fields not provided) ---
+    if not employee_number or not first_name or not last_name:
+        typer.echo("New Welder Registration")
+        typer.echo("=" * 30)
+
+        if not employee_number:
+            employee_number = typer.prompt("Employee number")
+        if not first_name:
+            first_name = typer.prompt("First name")
+        if not last_name:
+            last_name = typer.prompt("Last name")
+        if preferred_name is None:
+            preferred_name = typer.prompt("Preferred name (enter to skip)", default="") or None
+        if department is None:
+            department = typer.prompt("Department (enter to skip)", default="") or None
+        if supervisor is None:
+            supervisor = typer.prompt("Supervisor (enter to skip)", default="") or None
+        if business_unit is None:
+            business_unit = typer.prompt("Business unit (enter to skip)", default="") or None
+
+        # Show next stamp
+        with get_db(readonly=True) as conn:
+            next_stamp = get_next_stamp(conn)
+        if stamp is None:
+            stamp_input = typer.prompt(f"Welder stamp [auto: {next_stamp}]", default="")
+            stamp = stamp_input if stamp_input else None
+
+        if process is None:
+            process = typer.prompt(
+                "Initial WPQ process (SMAW/GTAW/GMAW/FCAW, enter to skip)", default=""
+            ) or None
+
+        typer.echo()
+        typer.echo(f"  Employee #:  {employee_number}")
+        typer.echo(f"  Name:        {first_name} {last_name}")
+        typer.echo(f"  Stamp:       {stamp or '(auto-assign)'}")
+        if department:
+            typer.echo(f"  Department:  {department}")
+        if process:
+            typer.echo(f"  Process:     {process}")
+        typer.echo()
+
+        if not dry_run and not typer.confirm("Proceed with registration?"):
+            typer.echo("Cancelled.")
+            raise typer.Exit(0)
+
+    # --- Register ---
+    if dry_run:
+        typer.echo("[DRY RUN] Would register:")
+        typer.echo(f"  {first_name} {last_name} (emp#: {employee_number}, stamp: {stamp or 'auto'})")
+        if process:
+            typer.echo(f"  Initial WPQ: {process}")
+        return
+
+    with get_db() as conn:
+        result = register_new_welder(
+            conn,
+            employee_number=employee_number,
+            first_name=first_name,
+            last_name=last_name,
+            stamp=stamp,
+            department=department,
+            supervisor=supervisor,
+            business_unit=business_unit,
+            preferred_name=preferred_name,
+        )
+
+        if result["errors"]:
+            typer.echo("Registration FAILED:")
+            for err in result["errors"]:
+                typer.echo(f"  - {err}")
+            raise typer.Exit(1)
+
+        typer.echo()
+        typer.echo("Welder Registered")
+        typer.echo("=" * 40)
+        typer.echo(f"  ID:          {result['id']}")
+        typer.echo(f"  Name:        {result['name']}")
+        typer.echo(f"  Employee #:  {result['employee_number']}")
+        typer.echo(f"  Stamp:       {result['stamp']}")
+
+        # Add initial WPQ if process provided
+        if process and result["id"] and result["stamp"]:
+            wpq_result = add_initial_wpq(
+                conn,
+                welder_id=result["id"],
+                welder_stamp=result["stamp"],
+                process_type=process.upper(),
+            )
+            if wpq_result["errors"]:
+                typer.echo(f"\n  WPQ Warning:")
+                for err in wpq_result["errors"]:
+                    typer.echo(f"    - {err}")
+            else:
+                typer.echo(f"  WPQ:         {wpq_result['wpq_number']}")
+                typer.echo(f"  Expires:     {wpq_result['expiration_date']}")
+
+
 @app.command("check-notifications")
 def check_notifications(
     generate: bool = typer.Option(False, "--generate", help="Generate new notifications"),

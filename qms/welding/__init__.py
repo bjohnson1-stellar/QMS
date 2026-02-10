@@ -30,6 +30,13 @@ from qms.welding.notifications import (
     get_notification_summary,
     list_active_notifications,
 )
+from qms.welding.registration import (
+    add_initial_wpq,
+    get_next_stamp,
+    register_batch,
+    register_new_welder,
+    validate_registration,
+)
 
 __all__ = [
     # intake
@@ -51,4 +58,10 @@ __all__ = [
     "generate_all_notifications",
     "get_notification_summary",
     "list_active_notifications",
+    # registration
+    "add_initial_wpq",
+    "get_next_stamp",
+    "register_batch",
+    "register_new_welder",
+    "validate_registration",
 ]
