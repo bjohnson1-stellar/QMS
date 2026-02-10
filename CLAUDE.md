@@ -5,30 +5,32 @@ Modular Python package at `D:\qms\` for construction drawing review, quality doc
 ## Git Workflow (MANDATORY)
 
 **Repository:** `https://github.com/bjohnson1-stellar/QMS.git`
-**Branch:** `restructure/qms-modules`
+**Branch:** `main`
 
 ### Auto-Commit Rule
 **ALWAYS commit and push after completing a batch of work.** Do not wait to be asked.
 
 ```bash
-# Stage qms/ files
-git -C D:/ add qms/ .gitignore CLAUDE.md
+cd D:\qms
+
+# Stage files (exclude data/)
+git add -A -- ':!data'
 
 # Commit with descriptive message
-git -C D:/ commit -m "description of changes
+git commit -m "description of changes
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 
 # Push immediately
-git -C D:/ push origin restructure/qms-modules
+git push origin main
 ```
 
 ### What to commit
-- `qms/**` — all package code (including `.planning/`)
-- `.gitignore`, `CLAUDE.md`
+- All package code (including `.planning/`)
+- `.gitignore`, `CLAUDE.md`, `pyproject.toml`, `config.yaml`
 
 ### What to NEVER commit
-- `qms/data/` — runtime data (database, projects, documents, vectordb)
+- `data/` — runtime data (database, projects, documents, vectordb)
 - `*.db`, `*.db-shm`, `*.db-wal` — database files
 - `.mcp.json` — local MCP config
 - `*.egg-info/` — build artifacts
@@ -50,49 +52,48 @@ qms eng --help               # All engineering commands
 ## Directory Structure
 
 ```
-D:\
+D:\qms\                          # Repo root = package root
 ├── .git/                        # Git repository
 ├── .gitignore
 ├── CLAUDE.md                    # This file
-└── qms/                         # THE package — everything lives here
-    ├── pyproject.toml
-    ├── config.yaml              # All settings (relative paths)
-    ├── .planning/               # Architecture docs
-    │
-    ├── data/                    # Runtime data (git-ignored)
-    │   ├── quality.db           # SQLite database (source of truth)
-    │   ├── inbox/               # Drop ALL documents here
-    │   │   ├── NEEDS-REVIEW/
-    │   │   ├── CONFLICTS/
-    │   │   └── DUPLICATES/
-    │   ├── projects/            # Engineering drawings by project
-    │   ├── quality-documents/   # QM procedures, forms, references
-    │   └── vectordb/            # ChromaDB semantic search
-    │
-    ├── core/                    # Shared services
-    │   ├── db.py                # get_db(), migrate_all()
-    │   ├── config.py            # get_config(), QMS_PATHS
-    │   ├── logging.py           # get_logger()
-    │   └── paths.py, output.py
-    │
-    ├── engineering/             # Calculation library + design verification
-    │   ├── refrig_calc/         # Vendored refrig_calc (20 modules, zero deps)
-    │   ├── refrigeration.py     # RefrigerationCalculator (ABC impl)
-    │   ├── validators.py        # Drawing vs calculation validation
-    │   ├── db.py                # Calculation audit trail
-    │   ├── output.py            # Result formatters
-    │   ├── base.py              # DisciplineCalculator ABC
-    │   └── cli.py               # 8 commands
-    │
-    ├── welding/                 # WPS/WPQ/continuity tracking
-    ├── qualitydocs/             # Quality manual loader
-    ├── references/              # Reference standard extraction
-    ├── projects/                # Project scanner
-    ├── pipeline/                # Drawing intake pipeline
-    ├── workforce/               # Employee management
-    ├── vectordb/                # Semantic search
-    ├── reporting/               # Reports (stub)
-    └── cli/main.py              # Typer CLI entrypoint
+├── pyproject.toml
+├── config.yaml                  # All settings (relative paths)
+├── .planning/                   # Architecture docs
+│
+├── data/                        # Runtime data (git-ignored)
+│   ├── quality.db               # SQLite database (source of truth)
+│   ├── inbox/                   # Drop ALL documents here
+│   │   ├── NEEDS-REVIEW/
+│   │   ├── CONFLICTS/
+│   │   └── DUPLICATES/
+│   ├── projects/                # Engineering drawings by project
+│   ├── quality-documents/       # QM procedures, forms, references
+│   └── vectordb/                # ChromaDB semantic search
+│
+├── core/                        # Shared services
+│   ├── db.py                    # get_db(), migrate_all()
+│   ├── config.py                # get_config(), QMS_PATHS
+│   ├── logging.py               # get_logger()
+│   └── paths.py, output.py
+│
+├── engineering/                 # Calculation library + design verification
+│   ├── refrig_calc/             # Vendored refrig_calc (20 modules, zero deps)
+│   ├── refrigeration.py         # RefrigerationCalculator (ABC impl)
+│   ├── validators.py            # Drawing vs calculation validation
+│   ├── db.py                    # Calculation audit trail
+│   ├── output.py                # Result formatters
+│   ├── base.py                  # DisciplineCalculator ABC
+│   └── cli.py                   # 8 commands
+│
+├── welding/                     # WPS/WPQ/continuity tracking
+├── qualitydocs/                 # Quality manual loader
+├── references/                  # Reference standard extraction
+├── projects/                    # Project scanner
+├── pipeline/                    # Drawing intake pipeline
+├── workforce/                   # Employee management
+├── vectordb/                    # Semantic search
+├── reporting/                   # Reports (stub)
+└── cli/main.py                  # Typer CLI entrypoint
 ```
 
 ## Key Paths

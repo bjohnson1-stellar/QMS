@@ -1,9 +1,5 @@
-# Windows system folders
-$RECYCLE.BIN/
-System Volume Information/
-
 # Runtime data (tracked via MANIFEST.json, not git)
-qms/data/
+data/
 
 # Database files
 *.db
@@ -35,6 +31,3 @@ venv/
 
 # Large binary files
 *.pdf
-
-# Legacy (empty, locked by Windows — delete manually)
-Eng/
