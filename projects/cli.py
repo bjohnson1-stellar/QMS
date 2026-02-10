@@ -143,6 +143,45 @@ def _print_scan_result(result: dict) -> None:
         typer.echo(f"    MANIFEST.json:   {result['manifest_path']}")
 
 
+@app.command("import-procore")
+def import_procore(
+    csv_path: str = typer.Argument(..., help="Path to Procore Company Home CSV export"),
+):
+    """Import projects and jobs from a Procore Company Home CSV export."""
+    from pathlib import Path
+
+    from qms.core import get_db
+    from qms.projects.procore_io import import_from_procore
+
+    src = Path(csv_path)
+    if not src.exists():
+        typer.echo(f"File not found: {src}")
+        raise typer.Exit(1)
+    if not src.suffix.lower() == ".csv":
+        typer.echo(f"Expected .csv file, got: {src.suffix}")
+        raise typer.Exit(1)
+
+    with get_db() as conn:
+        result = import_from_procore(conn, str(src))
+
+    typer.echo(f"\nProcore import complete:")
+    typer.echo(f"  Projects created:  {result['projects_created']}")
+    typer.echo(f"  Projects updated:  {result['projects_updated']}")
+    typer.echo(f"  Jobs created:      {result['jobs_created']}")
+    typer.echo(f"  Jobs updated:      {result['jobs_updated']}")
+    typer.echo(f"  Rows skipped:      {result['rows_skipped']}")
+
+    if result["skipped_details"]:
+        typer.echo(f"\n  Skipped rows:")
+        for s in result["skipped_details"]:
+            typer.echo(f"    Row {s['row']}: {s['number']} - {s['reason']}")
+
+    if result["errors"]:
+        typer.echo(f"\n  Errors ({len(result['errors'])}):")
+        for err in result["errors"]:
+            typer.echo(f"    Row {err['row']}: {err['name']} - {'; '.join(err['errors'])}")
+
+
 @app.command("migrate-timetracker")
 def migrate_timetracker(
     db_path: str = typer.Argument(

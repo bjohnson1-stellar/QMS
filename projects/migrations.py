@@ -140,6 +140,18 @@ def migrate_add_project_description(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def migrate_add_project_type(conn: sqlite3.Connection) -> None:
+    """Add project_type column to projects table."""
+    if not _table_exists(conn, "projects"):
+        return
+    if _column_exists(conn, "projects", "project_type"):
+        return
+
+    conn.execute("ALTER TABLE projects ADD COLUMN project_type TEXT")
+    logger.info("Added column projects.project_type")
+    conn.commit()
+
+
 def run_all_migrations() -> None:
     """Run all incremental migrations against the active database."""
     with get_db() as conn:
@@ -148,3 +160,4 @@ def run_all_migrations() -> None:
         migrate_welding_add_bu_fk(conn)
         migrate_add_project_allocations(conn)
         migrate_add_project_description(conn)
+        migrate_add_project_type(conn)

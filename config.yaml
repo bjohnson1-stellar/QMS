@@ -167,6 +167,13 @@ document_types:
     destination: "{quality_documents}/Welding/BPQ"
     handler: "weld-intake"
 
+  procore_export:
+    patterns:
+      - "^Company Home.*\\.csv$"
+      - "^Procore.*\\.csv$"
+    destination: "{projects}"
+    handler: "procore-import"
+
   production_weld_log:
     prefix: "PWL"
     patterns:

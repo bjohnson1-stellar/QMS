@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS projects (
     end_date TEXT,
     notes TEXT,
     description TEXT,
+    project_type TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     customer_id INTEGER REFERENCES customers(id),

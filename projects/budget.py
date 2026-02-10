@@ -23,8 +23,9 @@ from qms.core import get_db, get_logger
 
 logger = get_logger("qms.projects.budget")
 
-PROJECT_NUMBER_PATTERN = re.compile(r"^\d{5}(-\d{3}-\d{2})?$")
+PROJECT_NUMBER_PATTERN = re.compile(r"^\d{5}(-\d{3}(-\d{2})?)?$")
 _FULL_CODE = re.compile(r"^(\d{5})-(\d{3})-(\d{2})$")
+_TWO_PART_CODE = re.compile(r"^(\d{5})-(\d{3})$")
 _BASE_CODE = re.compile(r"^\d{5}$")
 
 VALID_STAGES = [
@@ -49,22 +50,26 @@ def parse_job_code(code: str) -> Optional[Tuple[str, Optional[str], Optional[str
     """
     Parse a project code into (base, bu_code, subjob).
 
-    Accepts NNNNN or NNNNN-CCC-SS. Returns None if invalid.
+    Accepts NNNNN, NNNNN-CCC, or NNNNN-CCC-SS. Returns None if invalid.
+    Two-part codes (NNNNN-CCC) are normalized to subjob "00".
     """
     m = _FULL_CODE.match(code)
     if m:
         return m.group(1), m.group(2), m.group(3)
+    m = _TWO_PART_CODE.match(code)
+    if m:
+        return m.group(1), m.group(2), "00"
     if _BASE_CODE.match(code):
         return code, None, None
     return None
 
 
 def validate_project_number(project_number: str) -> Tuple[bool, Optional[str]]:
-    """Validate project number format: NNNNN or NNNNN-CCC-SS."""
+    """Validate project number format: NNNNN, NNNNN-CCC, or NNNNN-CCC-SS."""
     if not project_number:
         return False, "Project number is required"
     if not PROJECT_NUMBER_PATTERN.match(project_number):
-        return False, "Project number must follow format NNNNN or NNNNN-CCC-SS (e.g., 07587 or 06974-230-01)"
+        return False, "Project number must follow format NNNNN, NNNNN-CCC, or NNNNN-CCC-SS (e.g., 07587 or 06974-230-01)"
     return True, None
 
 

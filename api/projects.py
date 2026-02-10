@@ -495,3 +495,32 @@ def api_import_projects():
     with get_db() as conn:
         result = import_projects_from_excel(conn, file)
     return jsonify(result)
+
+
+@bp.route("/api/projects/import-procore", methods=["POST"])
+def api_import_procore():
+    """Import projects from a Procore Company Home CSV export."""
+    import tempfile
+
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    file = request.files["file"]
+    if not file.filename.endswith(".csv"):
+        return jsonify({"error": "File must be .csv"}), 400
+
+    from qms.projects.procore_io import import_from_procore
+
+    # Save uploaded file to a temp path for the importer
+    with tempfile.NamedTemporaryFile(
+        suffix=".csv", delete=False, mode="wb"
+    ) as tmp:
+        file.save(tmp)
+        tmp_path = tmp.name
+
+    try:
+        with get_db() as conn:
+            result = import_from_procore(conn, tmp_path)
+        return jsonify(result)
+    finally:
+        import os
+        os.unlink(tmp_path)
