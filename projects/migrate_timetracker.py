@@ -56,6 +56,7 @@ def migrate(source_db_path: str) -> Dict[str, Any]:
         _migrate_transactions(src, dest, id_map, stats)
         _migrate_settings(src, dest, stats)
         _migrate_projections(src, dest, id_map, stats)
+        dest.commit()
 
     src.close()
     logger.info("Migration complete: %s", stats)
@@ -90,14 +91,26 @@ def _migrate_business_units(
             stats["errors"].append(f"BU {code}: {exc}")
 
 
+def _extract_base_number(code: str) -> str:
+    """
+    Extract the 5-digit base project number from a TT code.
+
+    TT codes use NNNNN-CCC-SS format (e.g. 07600-600-00).
+    QMS stores just the base NNNNN (e.g. 07600).
+    Falls back to the full code if no dash is found.
+    """
+    return code.split("-")[0] if "-" in code else code
+
+
 def _migrate_projects(
     src: sqlite3.Connection, dest: sqlite3.Connection, stats: Dict[str, Any]
 ) -> Dict[int, int]:
     """
     Migrate projects. Returns mapping: TT project_id -> QMS project_id.
 
-    Matching strategy: exact match on project number (code).
-    If no match, create a new project in QMS.
+    Matching strategy: extract 5-digit base from TT code (NNNNN-CCC-SS -> NNNNN)
+    and match against QMS projects.number. Multiple TT entries sharing a base
+    number map to the same QMS project; their budgets are summed.
     """
     id_map: Dict[int, int] = {}
 
@@ -110,22 +123,25 @@ def _migrate_projects(
     for proj in tt_projects:
         tt_id = proj["id"]
         code = proj["code"] if "code" in proj.keys() else proj.get("project_number", "")
+        base_number = _extract_base_number(code)
         name = proj["name"] if "name" in proj.keys() else ""
         tt_status = proj["status"] if "status" in proj.keys() else "Active"
         stage = STATUS_TO_STAGE.get(tt_status, "Proposal")
 
-        # Try to find existing QMS project by number
+        logger.info("Mapping TT %s (base %s) -> QMS", code, base_number)
+
+        # Try to find existing QMS project by base number
         qms_proj = dest.execute(
-            "SELECT id FROM projects WHERE number = ?", (code,)
+            "SELECT id FROM projects WHERE number = ?", (base_number,)
         ).fetchone()
 
         if qms_proj:
             qms_id = qms_proj["id"]
             stats["projects_matched"] += 1
-            # Update stage and timeline fields
+            # Update stage only if it's still the default 'Proposal'
             dest.execute(
                 """UPDATE projects SET
-                       stage = COALESCE(stage, ?),
+                       stage = CASE WHEN stage = 'Proposal' THEN ? ELSE stage END,
                        start_date = COALESCE(start_date, ?),
                        end_date = COALESCE(end_date, ?),
                        notes = COALESCE(notes, ?)
@@ -139,17 +155,17 @@ def _migrate_projects(
                 ),
             )
         else:
-            # Create new project
+            # Create new project using base number
             manager = _get_field(proj, "manager")
             client = _get_field(proj, "owner_name")
             try:
                 cursor = dest.execute(
-                    """INSERT INTO projects (name, number, client, pm_name, stage,
+                    """INSERT INTO projects (name, number, client, pm, stage,
                            start_date, end_date, notes)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         name,
-                        code,
+                        base_number,
                         client,
                         manager,
                         stage,
@@ -166,15 +182,27 @@ def _migrate_projects(
 
         id_map[tt_id] = qms_id
 
-        # Create/update budget record
+        # Create or accumulate budget record
         total_budget = float(_get_field(proj, "total_budget") or 0)
         weight_adj = float(_get_field(proj, "weight_adjustment") or 1.0)
 
         existing_budget = dest.execute(
-            "SELECT id FROM project_budgets WHERE project_id = ?", (qms_id,)
+            "SELECT id, total_budget FROM project_budgets WHERE project_id = ?",
+            (qms_id,),
         ).fetchone()
 
-        if not existing_budget:
+        if existing_budget:
+            # Another TT entry shares this base number — sum budgets
+            new_total = existing_budget["total_budget"] + total_budget
+            dest.execute(
+                "UPDATE project_budgets SET total_budget = ? WHERE id = ?",
+                (new_total, existing_budget["id"]),
+            )
+            logger.info(
+                "  Budget for %s: added %.0f (now %.0f) from TT %s",
+                base_number, total_budget, new_total, code,
+            )
+        else:
             dest.execute(
                 """INSERT INTO project_budgets (project_id, total_budget, weight_adjustment)
                    VALUES (?, ?, ?)""",
