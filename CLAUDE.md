@@ -103,8 +103,9 @@ D:\qms\                          # Repo root = package root
 ├── qualitydocs/                 # Quality manual loader
 ├── references/                  # Reference standard extraction
 ├── projects/                    # Project scanner + budget tracking
-│   ├── budget.py                # Allocation algorithm, budget queries
+│   ├── budget.py                # Per-BU allocations, budget queries, rollup sync
 │   ├── excel_io.py              # Excel import/export
+│   ├── migrations.py            # Incremental schema migrations
 │   └── migrate_timetracker.py   # One-time TT data migration
 ├── pipeline/                    # Drawing intake pipeline
 ├── workforce/                   # Employee management
@@ -184,7 +185,9 @@ from qms.engineering.refrig_calc import NH3Properties, LineSizing
 
 ### Database
 
-Single SQLite database at `QMS_PATHS.database` with 220+ tables across 8 schema files. FK dependency chain controlled by `SCHEMA_ORDER` in `core/db.py`. The `business_units` table is shared by projects, welding, and pipeline modules.
+Single SQLite database at `QMS_PATHS.database` with 224 tables across 8 schema files. FK dependency chain controlled by `SCHEMA_ORDER` in `core/db.py`. The `business_units` table is shared by projects, welding, and pipeline modules.
+
+**Budget model** (three-tier): `projects` (5-digit base) → `project_allocations` (per-BU breakdown) → `project_budgets` (rollup total). The `sync_budget_rollup()` function in `budget.py` keeps `project_budgets.total_budget = SUM(project_allocations.allocated_budget)`.
 
 ```python
 from qms.core import get_db

@@ -5,9 +5,9 @@
 ### Phase 0: Foundation — COMPLETE
 - Package: `D:\qms\` installed editable (`pip install -e .`)
 - CLI: `qms version`, `qms migrate`, 8 module sub-commands registered
-- 215 tables + 3 FTS virtual tables across 8 schema files
+- 224 tables (including FTS virtual tables) across 8 schema files
 - Core services: db.py, config.py, logging.py, paths.py, output.py
-- Git: `https://github.com/bjohnson1-stellar/QMS.git` branch `restructure/qms-modules`
+- Git: `https://github.com/bjohnson1-stellar/QMS.git` branch `main`
 
 ### Phase 1: Port Business Logic — COMPLETE
 **Batch 1** (4 modules, ported from QC-DR/ scripts):
