@@ -146,6 +146,7 @@ def _print_scan_result(result: dict) -> None:
 @app.command("import-procore")
 def import_procore(
     csv_path: str = typer.Argument(..., help="Path to Procore Company Home CSV export"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview changes without writing to database"),
 ):
     """Import projects and jobs from a Procore Company Home CSV export."""
     from pathlib import Path
@@ -162,9 +163,10 @@ def import_procore(
         raise typer.Exit(1)
 
     with get_db() as conn:
-        result = import_from_procore(conn, str(src))
+        result = import_from_procore(conn, str(src), dry_run=dry_run)
 
-    typer.echo(f"\nProcore import complete:")
+    prefix = "[DRY RUN] " if dry_run else ""
+    typer.echo(f"\n{prefix}Procore import complete:")
     typer.echo(f"  Projects created:  {result['projects_created']}")
     typer.echo(f"  Projects updated:  {result['projects_updated']}")
     typer.echo(f"  Jobs created:      {result['jobs_created']}")

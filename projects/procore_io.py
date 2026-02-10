@@ -148,12 +148,17 @@ def _extract_bu_from_department(dept: str) -> Optional[str]:
 
 
 def import_from_procore(
-    conn: sqlite3.Connection, csv_path: str
+    conn: sqlite3.Connection, csv_path: str, *, dry_run: bool = False
 ) -> Dict[str, Any]:
     """
     Import projects and jobs from a Procore Company Home CSV export.
 
     Upserts into projects and jobs tables. Never deletes existing data.
+
+    Args:
+        conn: Database connection.
+        csv_path: Path to the Procore CSV file.
+        dry_run: If True, parse and validate but roll back all DB changes.
 
     Returns:
         dict with counts of created/updated/skipped items and any errors.
@@ -250,7 +255,11 @@ def import_from_procore(
                 "errors": [str(e)],
             })
 
-    conn.commit()
+    if dry_run:
+        conn.rollback()
+        result["dry_run"] = True
+    else:
+        conn.commit()
     return result
 
 
