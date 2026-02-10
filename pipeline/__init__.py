@@ -6,11 +6,22 @@ multi-discipline extraction, specification management,
 and all discipline-specific data tables.
 
 Sub-modules:
+    classifier - Document intake classifier & router
     common     - Shared utilities (job number parsing, date extraction, etc.)
     importer   - Single and batch import from Excel workbooks
     processor  - Core SIS extraction engine (the big one)
 """
 
+from qms.pipeline.classifier import (
+    classify_file,
+    compile_patterns,
+    get_intake_log,
+    get_intake_stats,
+    load_document_types,
+    process_files,
+    resolve_destination,
+    scan_inbox,
+)
 from qms.pipeline.common import (
     extract_date_from_filename,
     extract_department_number,
@@ -36,6 +47,15 @@ from qms.pipeline.processor import (
 )
 
 __all__ = [
+    # classifier
+    "classify_file",
+    "compile_patterns",
+    "get_intake_log",
+    "get_intake_stats",
+    "load_document_types",
+    "process_files",
+    "resolve_destination",
+    "scan_inbox",
     # common
     "extract_date_from_filename",
     "extract_department_number",

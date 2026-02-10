@@ -338,3 +338,106 @@ def process(
 
     typer.echo()
     typer.echo(f"Processed: {processed}, Failed: {failed}")
+
+
+@app.command()
+def intake(
+    file: Optional[str] = typer.Option(None, "--file", "-f", help="Classify a single file"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview without moving files"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show destination paths and patterns"),
+):
+    """Classify and route inbox documents to their destinations."""
+    from qms.pipeline.classifier import (
+        classify_file,
+        compile_patterns,
+        process_files,
+        scan_inbox,
+    )
+
+    # Single file mode
+    if file:
+        filepath = Path(file)
+        if not filepath.exists():
+            typer.echo(f"ERROR: File not found: {filepath}")
+            raise typer.Exit(1)
+
+        compiled = compile_patterns()
+        result = classify_file(filepath.name, filepath, compiled)
+
+        _STATUS_ICON = {"matched": "[+]", "incomplete": "[?]", "unrecognized": "[X]"}
+        icon = _STATUS_ICON.get(result.status, "[ ]")
+
+        typer.echo(f"  {icon} {result.filename}")
+        typer.echo(f"      Type:    {result.doc_type or '-'}")
+        typer.echo(f"      Status:  {result.status}")
+        typer.echo(f"      Handler: {result.handler or '-'}")
+        if verbose and result.matched_pattern:
+            typer.echo(f"      Pattern: {result.matched_pattern}")
+        if result.destination:
+            typer.echo(f"      Dest:    {result.destination}")
+        if result.notes:
+            typer.echo(f"      Notes:   {result.notes}")
+
+        if not dry_run and result.status in ("matched", "incomplete", "unrecognized"):
+            if typer.confirm("\nRoute this file?"):
+                actions = process_files([result], dry_run=False)
+                for a in actions:
+                    typer.echo(f"  -> {a.action}: {a.destination}")
+        return
+
+    # Full inbox scan
+    results = scan_inbox()
+
+    if not results:
+        typer.echo("Inbox is empty.")
+        return
+
+    # Count by status
+    matched = sum(1 for r in results if r.status == "matched")
+    incomplete = sum(1 for r in results if r.status == "incomplete")
+    unrecognized = sum(1 for r in results if r.status == "unrecognized")
+
+    typer.echo(f"Inbox Scan: {len(results)} files")
+    typer.echo("=" * 80)
+    typer.echo(
+        f"  {'Filename':<36} {'Type':<20} {'Status':<14} Handler"
+    )
+    typer.echo("-" * 80)
+
+    _STATUS_ICON = {"matched": "[+]", "incomplete": "[?]", "unrecognized": "[X]"}
+
+    for r in results:
+        icon = _STATUS_ICON.get(r.status, "[ ]")
+        doc_type = r.doc_type or "-"
+        handler = r.handler or "-"
+        typer.echo(f"{icon} {r.filename:<36} {doc_type:<20} {r.status:<14} {handler}")
+        if verbose:
+            if r.matched_pattern:
+                typer.echo(f"     pattern: {r.matched_pattern}")
+            if r.destination:
+                typer.echo(f"     dest:    {r.destination}")
+            if r.notes:
+                typer.echo(f"     notes:   {r.notes}")
+
+    typer.echo("-" * 80)
+    typer.echo(f"  Matched: {matched}  |  Incomplete: {incomplete}  |  Unrecognized: {unrecognized}")
+
+    if dry_run:
+        typer.echo("\n[DRY RUN] No files moved.")
+        actions = process_files(results, dry_run=True)
+        for a in actions:
+            typer.echo(f"  {a.action}: {a.filename} -> {a.destination}")
+        return
+
+    if matched + incomplete + unrecognized == 0:
+        return
+
+    if not typer.confirm(f"\nProcess {len(results)} files?"):
+        typer.echo("Aborted.")
+        return
+
+    actions = process_files(results, dry_run=False)
+    routed = sum(1 for a in actions if a.action == "routed")
+    review = sum(1 for a in actions if a.action == "needs_review")
+    dupes = sum(1 for a in actions if a.action == "duplicate")
+    typer.echo(f"\nDone: {routed} routed, {review} to NEEDS-REVIEW, {dupes} duplicates")

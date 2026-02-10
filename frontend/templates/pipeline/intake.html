@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Document Intake — QMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Document Intake</h1>
+    <p class="subtitle">Classify and route inbox files to their destinations</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid" id="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value" id="stat-total">-</div>
+        <div class="stat-label">Files in Inbox</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-matched" style="color:#155724">-</div>
+        <div class="stat-label">Matched</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-incomplete" style="color:#856404">-</div>
+        <div class="stat-label">Incomplete</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-unrecognized" style="color:#721c24">-</div>
+        <div class="stat-label">Unrecognized</div>
+    </div>
+</div>
+
+<!-- Inbox Table -->
+<div class="card">
+    <h2>Inbox Files</h2>
+
+    <div class="filter-bar">
+        <select id="filter-status" onchange="applyFilters()">
+            <option value="">All Statuses</option>
+            <option value="matched">Matched</option>
+            <option value="incomplete">Incomplete</option>
+            <option value="unrecognized">Unrecognized</option>
+        </select>
+        <select id="filter-type" onchange="applyFilters()">
+            <option value="">All Types</option>
+        </select>
+        <button onclick="loadInbox()">Refresh</button>
+        <button class="success" onclick="processFiles(false)">Process Selected</button>
+        <button class="secondary" onclick="processFiles(true)">Dry Run</button>
+    </div>
+
+    <div id="inbox-message" class="success-message"></div>
+    <div id="inbox-error" class="error-message"></div>
+
+    <table>
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="select-all" onchange="toggleAll(this)"></th>
+                <th>Filename</th>
+                <th>Type</th>
+                <th>Destination</th>
+                <th>Handler</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="inbox-body">
+            <tr><td colspan="6" class="loading">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Quick Classify -->
+<div class="card">
+    <h2>Quick Classify</h2>
+    <p style="margin-bottom:15px;color:#7f8c8d">Upload a file to preview its classification without moving it.</p>
+    <div style="display:flex;gap:15px;align-items:center">
+        <input type="file" id="classify-file" style="width:auto">
+        <button onclick="classifyFile()">Classify</button>
+    </div>
+    <div id="classify-result" style="margin-top:15px;display:none">
+        <table>
+            <thead>
+                <tr><th>Field</th><th>Value</th></tr>
+            </thead>
+            <tbody id="classify-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Recent Log -->
+<div class="card">
+    <h2>Recent Intake Log</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Type</th>
+                <th>Handler</th>
+                <th>Action</th>
+                <th>Notes</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody id="log-body">
+            <tr><td colspan="6" class="loading">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let inboxData = [];
+
+function loadInbox() {
+    fetch('/pipeline/api/inbox')
+        .then(r => r.json())
+        .then(data => {
+            inboxData = data;
+            updateStats(data);
+            populateTypeFilter(data);
+            renderInbox(data);
+        })
+        .catch(err => showError('Failed to load inbox: ' + err));
+}
+
+function updateStats(data) {
+    document.getElementById('stat-total').textContent = data.length;
+    document.getElementById('stat-matched').textContent =
+        data.filter(d => d.status === 'matched').length;
+    document.getElementById('stat-incomplete').textContent =
+        data.filter(d => d.status === 'incomplete').length;
+    document.getElementById('stat-unrecognized').textContent =
+        data.filter(d => d.status === 'unrecognized').length;
+}
+
+function populateTypeFilter(data) {
+    const sel = document.getElementById('filter-type');
+    const current = sel.value;
+    const types = [...new Set(data.map(d => d.doc_type).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">All Types</option>';
+    types.forEach(t => {
+        sel.innerHTML += `<option value="${t}">${t}</option>`;
+    });
+    sel.value = current;
+}
+
+function renderInbox(data) {
+    const tbody = document.getElementById('inbox-body');
+    if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Inbox is empty</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map(d => `
+        <tr>
+            <td><input type="checkbox" class="file-cb" value="${esc(d.filename)}"></td>
+            <td title="${esc(d.filename)}">${esc(d.filename)}</td>
+            <td>${esc(d.doc_type || '-')}</td>
+            <td title="${esc(d.destination || d.notes || '')}" style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                ${esc(d.destination || d.notes || '-')}
+            </td>
+            <td>${esc(d.handler || '-')}</td>
+            <td><span class="status-badge intake-${d.status}">${d.status}</span></td>
+        </tr>
+    `).join('');
+}
+
+function applyFilters() {
+    const statusF = document.getElementById('filter-status').value;
+    const typeF = document.getElementById('filter-type').value;
+    let filtered = inboxData;
+    if (statusF) filtered = filtered.filter(d => d.status === statusF);
+    if (typeF) filtered = filtered.filter(d => d.doc_type === typeF);
+    renderInbox(filtered);
+}
+
+function toggleAll(master) {
+    document.querySelectorAll('.file-cb').forEach(cb => cb.checked = master.checked);
+}
+
+function getSelected() {
+    return [...document.querySelectorAll('.file-cb:checked')].map(cb => cb.value);
+}
+
+function processFiles(dryRun) {
+    const selected = getSelected();
+    const body = { dry_run: dryRun };
+    if (selected.length) body.filenames = selected;
+
+    fetch('/pipeline/api/intake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        const s = data.summary;
+        const prefix = dryRun ? '[DRY RUN] ' : '';
+        showMessage(
+            `${prefix}${s.routed} routed, ${s.needs_review} to NEEDS-REVIEW, ${s.duplicate} duplicates`
+        );
+        if (!dryRun) loadInbox();
+        loadLog();
+    })
+    .catch(err => showError('Process failed: ' + err));
+}
+
+function classifyFile() {
+    const input = document.getElementById('classify-file');
+    if (!input.files.length) return;
+
+    const form = new FormData();
+    form.append('file', input.files[0]);
+
+    fetch('/pipeline/api/classify', { method: 'POST', body: form })
+        .then(r => r.json())
+        .then(data => {
+            const fields = [
+                ['Filename', data.filename],
+                ['Type', data.doc_type || '-'],
+                ['Status', data.status],
+                ['Handler', data.handler || '-'],
+                ['Pattern', data.matched_pattern || '-'],
+                ['Destination Template', data.destination_template || '-'],
+                ['Notes', data.notes || '-'],
+            ];
+            const tbody = document.getElementById('classify-body');
+            tbody.innerHTML = fields.map(([k, v]) =>
+                `<tr><td><strong>${k}</strong></td><td>${esc(v)}</td></tr>`
+            ).join('');
+            document.getElementById('classify-result').style.display = 'block';
+        })
+        .catch(err => showError('Classify failed: ' + err));
+}
+
+function loadLog() {
+    fetch('/pipeline/api/intake-log?limit=50')
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('log-body');
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No log entries yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(d => `
+                <tr>
+                    <td>${esc(d.file_name)}</td>
+                    <td>${esc(d.document_type || '-')}</td>
+                    <td>${esc(d.handler || '-')}</td>
+                    <td><span class="status-badge intake-${d.action}">${d.action}</span></td>
+                    <td>${esc(d.notes || '-')}</td>
+                    <td>${esc(d.created_at || '-')}</td>
+                </tr>
+            `).join('');
+        });
+}
+
+function showMessage(msg) {
+    const el = document.getElementById('inbox-message');
+    el.textContent = msg;
+    el.style.display = 'block';
+    document.getElementById('inbox-error').style.display = 'none';
+    setTimeout(() => el.style.display = 'none', 8000);
+}
+
+function showError(msg) {
+    const el = document.getElementById('inbox-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+    document.getElementById('inbox-message').style.display = 'none';
+}
+
+function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+// Load on page ready
+loadInbox();
+loadLog();
+</script>
+{% endblock %}

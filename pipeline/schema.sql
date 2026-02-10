@@ -1517,3 +1517,19 @@ CREATE TABLE IF NOT EXISTS insulation_thickness (
     thickness_inches REAL,
     confidence REAL DEFAULT 1.0
 );
+
+-- =============================================================================
+-- 14. DOCUMENT INTAKE LOG
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS document_intake_log (
+    id INTEGER PRIMARY KEY,
+    file_name TEXT NOT NULL,
+    source_path TEXT,
+    destination_path TEXT,
+    document_type TEXT,
+    handler TEXT,
+    action TEXT NOT NULL,
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);

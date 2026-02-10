@@ -579,3 +579,11 @@ tr:hover {
 
 .allocation-project { font-weight: 500; color: #2c3e50; }
 .allocation-hours { font-size: 18px; font-weight: bold; color: #3498db; }
+
+/* === Intake Status Badges === */
+.intake-matched { background: #d4edda; color: #155724; }
+.intake-incomplete { background: #fff3cd; color: #856404; }
+.intake-unrecognized { background: #f8d7da; color: #721c24; }
+.intake-routed { background: #d4edda; color: #155724; }
+.intake-needs_review { background: #fff3cd; color: #856404; }
+.intake-duplicate { background: #e2e3e5; color: #383d41; }
