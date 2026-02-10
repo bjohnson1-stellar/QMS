@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}QMS{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <h2>QMS</h2>
+            <small>Quality Management System</small>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">Projects</div>
+            <a href="{{ url_for('projects.dashboard') }}"
+               class="{% if request.endpoint == 'projects.dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('projects.projects_page') }}"
+               class="{% if request.endpoint == 'projects.projects_page' %}active{% endif %}">Projects</a>
+            <a href="{{ url_for('projects.transactions_page') }}"
+               class="{% if request.endpoint == 'projects.transactions_page' %}active{% endif %}">Transactions</a>
+            <a href="{{ url_for('projects.business_units_page') }}"
+               class="{% if request.endpoint == 'projects.business_units_page' %}active{% endif %}">Business Units</a>
+            <a href="{{ url_for('projects.projections_page') }}"
+               class="{% if request.endpoint == 'projects.projections_page' %}active{% endif %}">Projections</a>
+            <a href="{{ url_for('projects.settings_page') }}"
+               class="{% if request.endpoint == 'projects.settings_page' %}active{% endif %}">Settings</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

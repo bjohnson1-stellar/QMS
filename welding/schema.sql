@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS weld_welder_registry (
     preferred_name TEXT,
     display_name TEXT,
     business_unit TEXT,
+    business_unit_id INTEGER REFERENCES business_units(id),
     running_total_welds INTEGER DEFAULT 0,
     total_welds_tested INTEGER DEFAULT 0,
     welds_passed INTEGER DEFAULT 0,

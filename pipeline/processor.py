@@ -435,9 +435,9 @@ def ensure_customer(
 def find_department_id(
     conn: sqlite3.Connection, dept_number: str
 ) -> Optional[int]:
-    """Look up department ID by number."""
+    """Look up business unit ID by code (formerly department_number)."""
     cursor = conn.execute(
-        "SELECT id FROM departments WHERE department_number = ?",
+        "SELECT id FROM business_units WHERE code = ?",
         (dept_number,)
     )
     row = cursor.fetchone()
@@ -446,14 +446,14 @@ def find_department_id(
 
 def ensure_department(conn: sqlite3.Connection, dept_number: str) -> int:
     """
-    Ensure department exists, create with generic name if missing.
+    Ensure business unit exists, create with generic name if missing.
 
     Args:
         conn: Database connection.
-        dept_number: Department number (e.g. '650').
+        dept_number: Business unit code (e.g. '650').
 
     Returns:
-        Department database ID.
+        Business unit database ID.
     """
     dept_id = find_department_id(conn, dept_number)
     if dept_id:
@@ -463,11 +463,11 @@ def ensure_department(conn: sqlite3.Connection, dept_number: str) -> int:
     full_name = f"{dept_number}-{dept_name}"
 
     cursor = conn.execute(
-        "INSERT INTO departments (department_number, name, full_name) VALUES (?, ?, ?)",
+        "INSERT INTO business_units (code, name, full_name) VALUES (?, ?, ?)",
         (dept_number, dept_name, full_name)
     )
     conn.commit()
-    logger.warning("Auto-created department: %s (%s)", dept_number, dept_name)
+    logger.warning("Auto-created business unit: %s (%s)", dept_number, dept_name)
     return cursor.lastrowid
 
 
@@ -792,51 +792,11 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
     Args:
         conn: Database connection (writable).
     """
+    # customers, business_units, projects, jobs are now defined in
+    # projects/schema.sql and created via migrate_all(). We only create
+    # supplementary tables here that are pipeline-specific.
     conn.executescript("""
-        CREATE TABLE IF NOT EXISTS customers (
-            id INTEGER PRIMARY KEY,
-            name TEXT UNIQUE NOT NULL,
-            contact_name TEXT,
-            contact_email TEXT,
-            contact_phone TEXT,
-            billing_street TEXT,
-            billing_city TEXT,
-            billing_state TEXT,
-            billing_zip TEXT,
-            status TEXT DEFAULT 'active',
-            notes TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
         CREATE INDEX IF NOT EXISTS idx_customer_name ON customers(name);
-
-        CREATE TABLE IF NOT EXISTS departments (
-            id INTEGER PRIMARY KEY,
-            department_number TEXT UNIQUE NOT NULL,
-            name TEXT NOT NULL,
-            full_name TEXT,
-            manager TEXT,
-            status TEXT DEFAULT 'active',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE INDEX IF NOT EXISTS idx_dept_number ON departments(department_number);
-
-        CREATE TABLE IF NOT EXISTS jobs (
-            id INTEGER PRIMARY KEY,
-            job_number TEXT UNIQUE NOT NULL,
-            project_id INTEGER NOT NULL REFERENCES projects(id),
-            department_id INTEGER NOT NULL REFERENCES departments(id),
-            project_number TEXT NOT NULL,
-            department_number TEXT NOT NULL,
-            suffix TEXT NOT NULL,
-            scope_name TEXT NOT NULL,
-            pm TEXT,
-            status TEXT DEFAULT 'active',
-            last_updated DATE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
         CREATE INDEX IF NOT EXISTS idx_jobs_project ON jobs(project_id);
         CREATE INDEX IF NOT EXISTS idx_jobs_department ON jobs(department_id);
         CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
@@ -860,20 +820,20 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_jobsites_status ON jobsites(status);
     """)
 
-    # Load departments from config if table is empty
-    cursor = conn.execute("SELECT COUNT(*) as count FROM departments")
+    # Load business units from config if table is empty
+    cursor = conn.execute("SELECT COUNT(*) as count FROM business_units")
     if cursor.fetchone()['count'] == 0:
         departments = load_departments_from_config()
         if departments:
             for dept in departments:
                 conn.execute(
-                    "INSERT INTO departments (department_number, name, full_name, manager) "
+                    "INSERT INTO business_units (code, name, full_name, manager) "
                     "VALUES (?, ?, ?, ?)",
                     (dept['number'], dept['name'],
                      dept.get('full_name', ''), dept.get('manager', ''))
                 )
             conn.commit()
-            logger.info("Loaded %d departments from config", len(departments))
+            logger.info("Loaded %d business units from config", len(departments))
 
 
 # ---------------------------------------------------------------------------

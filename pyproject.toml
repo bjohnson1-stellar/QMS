@@ -20,6 +20,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+web = [
+    "flask>=3.0",
+]
 pipeline = [
     # Vector DB & Embeddings
     "chromadb>=0.4.0",

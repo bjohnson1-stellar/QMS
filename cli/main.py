@@ -42,6 +42,19 @@ def migrate():
     typer.echo("Database migration complete.")
 
 
+@app.command()
+def serve(
+    port: int = typer.Option(5000, "--port", "-p", help="Port number"),
+    host: str = typer.Option("127.0.0.1", "--host", "-h", help="Host address"),
+):
+    """Launch the QMS web interface."""
+    from qms.api import create_app
+
+    web = create_app()
+    typer.echo(f"Starting QMS web server at http://{host}:{port}")
+    web.run(host=host, port=port, debug=False)
+
+
 def _register_modules():
     """Register module CLI sub-apps. Silently skips modules missing a cli.py."""
     module_registry = [

@@ -102,3 +102,11 @@ def migrate_all():
 
         conn.commit()
         logger.info("All schemas applied successfully")
+
+    # Run incremental migrations (column additions, data migrations)
+    try:
+        from qms.projects.migrations import run_all_migrations
+        run_all_migrations()
+        logger.info("Incremental migrations applied")
+    except Exception as exc:
+        logger.warning("Migration step failed (non-fatal): %s", exc)

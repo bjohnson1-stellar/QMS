@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Projections - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Projections</h1>
+    <p class="subtitle">Monthly projection and cost forecasting system</p>
+</div>
+
+<div class="card">
+    <h2>Monthly Projections</h2>
+
+    <div class="month-selector">
+        <label>Period:</label>
+        <input type="month" id="monthInput">
+        <button onclick="loadPeriod()">Load Period</button>
+        <button onclick="calculateProjection()">Calculate</button>
+        <button class="success" onclick="saveProjection()" id="saveBtn" disabled>Save Projection</button>
+        <button class="danger" onclick="finalizeProjection()" id="finalizeBtn" disabled style="display:none;">Finalize</button>
+    </div>
+
+    <div class="success-message" id="successMessage"></div>
+    <div class="error-message" id="errorMessage"></div>
+
+    <div class="period-info" id="periodInfo">
+        <div class="period-info-grid">
+            <div class="period-stat">
+                <div class="period-stat-value" id="workingDays">0</div>
+                <div class="period-stat-label">Working Days</div>
+            </div>
+            <div class="period-stat">
+                <div class="period-stat-value" id="totalHours">0</div>
+                <div class="period-stat-label">Total Hours</div>
+            </div>
+            <div class="period-stat">
+                <div class="period-stat-value" id="hourlyRate">$0</div>
+                <div class="period-stat-label">Hourly Rate</div>
+            </div>
+            <div class="period-stat">
+                <div class="period-stat-value" id="totalCost">$0</div>
+                <div class="period-stat-label">Total Projected Cost</div>
+            </div>
+            <div class="period-stat">
+                <div class="period-stat-value" id="snapshotStatus">-</div>
+                <div class="period-stat-label">Status</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="projectionResults"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API_BASE = '/projects/api';
+    let currentPeriod = null;
+    let currentSnapshot = null;
+    let calculatedEntries = [];
+
+    document.getElementById('monthInput').value = new Date().toISOString().slice(0, 7);
+
+    async function loadPeriod() {
+        const monthValue = document.getElementById('monthInput').value;
+        if (!monthValue) { showError('Please select a month'); return; }
+        const [year, month] = monthValue.split('-').map(Number);
+
+        try {
+            const periodsResponse = await fetch(`${API_BASE}/projection-periods`);
+            const periods = await periodsResponse.json();
+            const existing = periods.find(p => p.year === year && p.month === month);
+
+            if (existing) {
+                currentPeriod = existing;
+                showSuccess('Period loaded successfully');
+            } else {
+                const response = await fetch(`${API_BASE}/projection-periods`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ year, month })
+                });
+                if (response.ok) {
+                    currentPeriod = await response.json();
+                    showSuccess('New period created successfully');
+                } else {
+                    const error = await response.json();
+                    showError(error.error || 'Failed to create period');
+                    return;
+                }
+            }
+
+            document.getElementById('periodInfo').style.display = 'block';
+            updatePeriodInfo();
+        } catch (error) { showError('Failed to load period'); }
+    }
+
+    function updatePeriodInfo() {
+        if (!currentPeriod) return;
+        document.getElementById('workingDays').textContent = currentPeriod.working_days || 0;
+        document.getElementById('totalHours').textContent = currentPeriod.total_hours || 0;
+    }
+
+    async function calculateProjection() {
+        if (!currentPeriod) { showError('Please load a period first'); return; }
+        if (currentPeriod.is_locked) { showError('This period is locked'); return; }
+
+        try {
+            const response = await fetch(`${API_BASE}/projections/calculate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ periodId: currentPeriod.id })
+            });
+            if (response.ok) {
+                const result = await response.json();
+                calculatedEntries = result.entries;
+                document.getElementById('hourlyRate').textContent = `$${result.hourly_rate.toFixed(2)}`;
+                document.getElementById('totalCost').textContent = `$${result.total_cost.toLocaleString()}`;
+                renderProjection(result);
+                document.getElementById('saveBtn').disabled = false;
+                showSuccess('Projection calculated successfully');
+            } else {
+                const error = await response.json();
+                showError(error.error || 'Failed to calculate projection');
+            }
+        } catch (error) { showError('Failed to calculate projection'); }
+    }
+
+    function renderProjection(result) {
+        const container = document.getElementById('projectionResults');
+        if (result.entries.length === 0) {
+            container.innerHTML = '<div class="empty-state">No active projects found</div>';
+            return;
+        }
+        let html = '<table><thead><tr><th>Project</th><th>Total Budget</th><th>Budget Spent</th><th>Remaining</th><th>Weight</th><th>Hours</th><th>Projected Cost</th></tr></thead><tbody>';
+        result.entries.forEach(entry => {
+            html += '<tr>';
+            html += `<td><strong>${entry.project_name}</strong><br><small>${entry.project_code}</small></td>`;
+            html += `<td class="currency">$${entry.total_budget.toLocaleString()}</td>`;
+            html += `<td class="currency">$${entry.budget_spent.toLocaleString()}</td>`;
+            html += `<td class="currency">$${entry.remaining_budget.toLocaleString()}</td>`;
+            html += `<td>${entry.weight_adjustment.toFixed(1)}x</td>`;
+            html += `<td><strong>${entry.allocated_hours}</strong> hrs</td>`;
+            html += `<td class="currency">$${entry.projected_cost.toLocaleString()}</td>`;
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    async function saveProjection() {
+        if (!currentPeriod || calculatedEntries.length === 0) {
+            showError('Please calculate projection first');
+            return;
+        }
+        try {
+            const hourlyRateText = document.getElementById('hourlyRate').textContent;
+            const hourlyRate = parseFloat(hourlyRateText.replace('$', '').replace(',', ''));
+            const response = await fetch(`${API_BASE}/projections/${currentPeriod.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    hourlyRate,
+                    totalHours: currentPeriod.total_hours,
+                    entries: calculatedEntries
+                })
+            });
+            if (response.ok) {
+                const result = await response.json();
+                currentSnapshot = result;
+                document.getElementById('snapshotStatus').innerHTML = '<span class="status-badge status-draft">Draft</span>';
+                document.getElementById('finalizeBtn').style.display = 'inline-block';
+                document.getElementById('finalizeBtn').disabled = false;
+                showSuccess(`Projection saved as Version ${result.version}`);
+            } else {
+                const error = await response.json();
+                showError(error.error || 'Failed to save projection');
+            }
+        } catch (error) { showError('Failed to save projection'); }
+    }
+
+    async function finalizeProjection() {
+        if (!currentSnapshot) { showError('No snapshot to finalize'); return; }
+        if (!confirm('Are you sure you want to finalize this projection? This action cannot be undone.')) return;
+
+        try {
+            const response = await fetch(`${API_BASE}/projections/snapshot/${currentSnapshot.id}/finalize`, { method: 'PUT' });
+            if (response.ok) {
+                document.getElementById('snapshotStatus').innerHTML = '<span class="status-badge status-final">Final</span>';
+                document.getElementById('finalizeBtn').disabled = true;
+                showSuccess('Projection finalized successfully');
+            } else {
+                const error = await response.json();
+                showError(error.error || 'Failed to finalize projection');
+            }
+        } catch (error) { showError('Failed to finalize projection'); }
+    }
+
+    function showSuccess(msg) {
+        const el = document.getElementById('successMessage');
+        el.textContent = msg; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 3000);
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('errorMessage');
+        el.textContent = msg; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 5000);
+    }
+</script>
+{% endblock %}

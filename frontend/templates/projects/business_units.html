@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Business Units - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Business Units</h1>
+    <p class="subtitle">Manage business unit codes used in project numbers (NNNNN-<strong>CCC</strong>-SS)</p>
+</div>
+
+<div class="main-grid">
+    <div class="card">
+        <h2 id="formTitle">Add Business Unit</h2>
+        <div class="success-message" id="successMessage"></div>
+        <div class="error-message" id="errorMessage"></div>
+        <form id="buForm">
+            <div class="form-group">
+                <label>BU Code (3 digits) *</label>
+                <input type="text" id="buCode" pattern="\d{3}" maxlength="3" placeholder="230" required>
+                <div class="help-text">Must be exactly 3 digits (e.g., 230, 730, 800)</div>
+            </div>
+            <div class="form-group">
+                <label>BU Name *</label>
+                <input type="text" id="buName" placeholder="Engineering" required>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="buDescription" placeholder="Optional description of this business unit"></textarea>
+            </div>
+            <button type="submit" id="submitBtn">Add Business Unit</button>
+            <button type="button" class="secondary" onclick="resetForm()">Clear</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Business Units</h2>
+        <div id="buTable"><div class="loading">Loading business units...</div></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let businessUnits = [];
+    let currentEditId = null;
+    const API_BASE = '/projects/api';
+
+    document.getElementById('buCode').addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+    });
+
+    document.getElementById('buForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const buData = {
+            code: document.getElementById('buCode').value,
+            name: document.getElementById('buName').value,
+            description: document.getElementById('buDescription').value
+        };
+        try {
+            const url = currentEditId
+                ? `${API_BASE}/business-units/${currentEditId}`
+                : `${API_BASE}/business-units`;
+            const method = currentEditId ? 'PUT' : 'POST';
+            const response = await fetch(url, {
+                method, headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(buData)
+            });
+            const result = await response.json();
+            if (response.ok) {
+                showSuccess(currentEditId ? 'Business Unit updated!' : 'Business Unit added!');
+                resetForm();
+                loadBusinessUnits();
+            } else {
+                showError(result.error || 'Failed to save Business Unit');
+            }
+        } catch (error) {
+            showError('Failed to save Business Unit: ' + error.message);
+        }
+    });
+
+    function resetForm() {
+        document.getElementById('buForm').reset();
+        currentEditId = null;
+        document.getElementById('submitBtn').textContent = 'Add Business Unit';
+        document.getElementById('formTitle').textContent = 'Add Business Unit';
+    }
+
+    function editBU(id) {
+        const bu = businessUnits.find(b => b.id === id);
+        if (!bu) return;
+        document.getElementById('buCode').value = bu.code;
+        document.getElementById('buName').value = bu.name;
+        document.getElementById('buDescription').value = bu.description || '';
+        currentEditId = id;
+        document.getElementById('submitBtn').textContent = 'Update Business Unit';
+        document.getElementById('formTitle').textContent = 'Edit Business Unit';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function deleteBU(id) {
+        if (!confirm('Are you sure you want to delete this Business Unit?')) return;
+        try {
+            const response = await fetch(`${API_BASE}/business-units/${id}`, { method: 'DELETE' });
+            const result = await response.json();
+            if (response.ok) { showSuccess('Business Unit deleted!'); loadBusinessUnits(); }
+            else showError(result.error || 'Failed to delete Business Unit');
+        } catch (error) { showError('Failed to delete Business Unit'); }
+    }
+
+    async function loadBusinessUnits() {
+        try {
+            const response = await fetch(`${API_BASE}/business-units`);
+            businessUnits = await response.json();
+            renderBusinessUnits();
+        } catch (error) { showError('Failed to load business units'); }
+    }
+
+    function renderBusinessUnits() {
+        const container = document.getElementById('buTable');
+        if (businessUnits.length === 0) {
+            container.innerHTML = '<div class="empty-state">No business units yet. Add your first one!</div>';
+            return;
+        }
+        let html = '<table><thead><tr><th>Code</th><th>Name</th><th>Description</th><th>Actions</th></tr></thead><tbody>';
+        businessUnits.forEach(bu => {
+            html += '<tr>';
+            html += `<td><span class="bu-code">${bu.code}</span></td>`;
+            html += `<td><strong>${bu.name}</strong></td>`;
+            html += `<td>${bu.description || '<span style="color:#bdc3c7;">-</span>'}</td>`;
+            html += `<td><div class="action-buttons">`;
+            html += `<button class="action-btn secondary" onclick="editBU(${bu.id})">Edit</button>`;
+            html += `<button class="action-btn danger" onclick="deleteBU(${bu.id})">Delete</button>`;
+            html += `</div></td></tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function showSuccess(msg) {
+        const el = document.getElementById('successMessage');
+        el.textContent = msg; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 3000);
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('errorMessage');
+        el.textContent = msg; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 5000);
+    }
+
+    loadBusinessUnits();
+</script>
+{% endblock %}

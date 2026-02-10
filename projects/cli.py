@@ -7,21 +7,22 @@ app = typer.Typer(no_args_is_help=True)
 
 @app.command("list")
 def list_projects(
-    status: str = typer.Option(
-        None, "--status", "-s", help="Filter by status (e.g. active)"
+    stage: str = typer.Option(
+        None, "--stage", "-s", help="Filter by stage (e.g. 'Course of Construction')"
     ),
 ):
     """List all projects in the database."""
     from qms.projects.scanner import list_projects as _list_projects
 
-    projects = _list_projects(status=status)
+    projects = _list_projects(status=stage)
 
     if not projects:
         typer.echo("No projects found.")
         return
 
     for p in projects:
-        flag = f" [{p['status']}]" if p["status"] != "active" else ""
+        st = p.get("stage") or p.get("status") or ""
+        flag = f" [{st}]" if st else ""
         typer.echo(
             f"  {p['number']:<10} {p['name']:<40} {p.get('pm') or ''}{flag}"
         )
@@ -124,3 +125,35 @@ def _print_scan_result(result: dict) -> None:
         typer.echo(f"    Missing from disk: {missing}")
     if result.get("manifest_path"):
         typer.echo(f"    MANIFEST.json:   {result['manifest_path']}")
+
+
+@app.command("migrate-timetracker")
+def migrate_timetracker(
+    db_path: str = typer.Argument(
+        r"D:\Time Tracker\time_tracker.db",
+        help="Path to Time Tracker SQLite database",
+    ),
+):
+    """One-time import from Time Tracker database into QMS."""
+    from pathlib import Path
+
+    from qms.projects.migrate_timetracker import migrate
+
+    src = Path(db_path)
+    if not src.exists():
+        typer.echo(f"Database not found: {src}")
+        raise typer.Exit(1)
+
+    result = migrate(str(src))
+    typer.echo(f"\nMigration complete:")
+    typer.echo(f"  Business units: {result['business_units_migrated']}")
+    typer.echo(f"  Projects matched: {result['projects_matched']}")
+    typer.echo(f"  Projects created: {result['projects_created']}")
+    typer.echo(f"  Budgets created: {result['budgets_created']}")
+    typer.echo(f"  Transactions: {result['transactions_migrated']}")
+    typer.echo(f"  Settings: {'migrated' if result['settings_migrated'] else 'skipped'}")
+    typer.echo(f"  Projection periods: {result['periods_migrated']}")
+    if result["errors"]:
+        typer.echo(f"\n  Errors ({len(result['errors'])}):")
+        for err in result["errors"][:10]:
+            typer.echo(f"    - {err}")

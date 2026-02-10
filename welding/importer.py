@@ -295,6 +295,24 @@ def find_welder_by_employee(conn: sqlite3.Connection, emp_num: str) -> Optional[
     return dict(row) if row else None
 
 
+def _resolve_business_unit_id(conn: sqlite3.Connection, bu_text: Optional[str]) -> Optional[int]:
+    """Look up business_unit_id from the business_units table by code or name."""
+    if not bu_text:
+        return None
+    bu_text = str(bu_text).strip()
+    # Try matching by 3-digit code first
+    row = conn.execute(
+        "SELECT id FROM business_units WHERE code = ?", (bu_text,)
+    ).fetchone()
+    if row:
+        return row["id"]
+    # Try matching by name
+    row = conn.execute(
+        "SELECT id FROM business_units WHERE name = ? OR full_name = ?", (bu_text, bu_text)
+    ).fetchone()
+    return row["id"] if row else None
+
+
 def upsert_welder(conn: sqlite3.Connection, welder_data: Dict[str, Any], row_hash: str) -> int:
     """
     Insert or update welder record.
@@ -313,13 +331,17 @@ def upsert_welder(conn: sqlite3.Connection, welder_data: Dict[str, Any], row_has
     if not existing and welder_data.get("employee_number"):
         existing = find_welder_by_employee(conn, welder_data["employee_number"])
 
+    # Resolve business_unit_id FK from text value
+    bu_id = _resolve_business_unit_id(conn, welder_data.get("business_unit"))
+
     if existing:
         if existing.get("excel_row_hash") != row_hash:
             conn.execute(
                 """UPDATE weld_welder_registry SET
                        last_name = ?, first_name = ?, preferred_name = ?,
                        display_name = ?, department = ?, supervisor = ?,
-                       business_unit = ?, status = ?, running_total_welds = ?,
+                       business_unit = ?, business_unit_id = ?,
+                       status = ?, running_total_welds = ?,
                        total_welds_tested = ?, welds_passed = ?, welds_failed = ?,
                        excel_row_hash = ?, updated_at = CURRENT_TIMESTAMP
                    WHERE id = ?""",
@@ -331,6 +353,7 @@ def upsert_welder(conn: sqlite3.Connection, welder_data: Dict[str, Any], row_has
                     welder_data.get("department"),
                     welder_data.get("supervisor"),
                     welder_data.get("business_unit"),
+                    bu_id,
                     welder_data.get("status", "active"),
                     welder_data.get("running_total_welds", 0),
                     welder_data.get("total_welds_tested", 0),
@@ -353,9 +376,10 @@ def upsert_welder(conn: sqlite3.Connection, welder_data: Dict[str, Any], row_has
         """INSERT INTO weld_welder_registry (
                employee_number, welder_stamp, last_name, first_name,
                preferred_name, display_name, department, supervisor,
-               business_unit, status, running_total_welds, total_welds_tested,
+               business_unit, business_unit_id, status,
+               running_total_welds, total_welds_tested,
                welds_passed, welds_failed, excel_row_hash
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             emp_num,
             welder_data.get("welder_stamp"),
@@ -366,6 +390,7 @@ def upsert_welder(conn: sqlite3.Connection, welder_data: Dict[str, Any], row_has
             welder_data.get("department"),
             welder_data.get("supervisor"),
             welder_data.get("business_unit"),
+            bu_id,
             welder_data.get("status", "active"),
             welder_data.get("running_total_welds", 0),
             welder_data.get("total_welds_tested", 0),

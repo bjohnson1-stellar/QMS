@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - QMS Projects{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Project Dashboard</h1>
+    <p class="subtitle">Budget-based weighted hour allocation system</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value" id="totalProjects">{{ stats.active_projects }}</div>
+        <div class="stat-label">Active Projects</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="totalBudget">${{ '{:,.0f}'.format(stats.total_budget) }}</div>
+        <div class="stat-label">Total Budget</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="budgetRemaining">${{ '{:,.0f}'.format(stats.budget_remaining) }}</div>
+        <div class="stat-label">Budget Remaining</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="monthHours">0</div>
+        <div class="stat-label">Hours This Month</div>
+    </div>
+</div>
+
+<div class="main-grid-equal">
+    <div class="card">
+        <h2>Monthly Time Allocation</h2>
+        <div class="month-selector">
+            <label>Month:</label>
+            <input type="month" id="monthDate">
+            <button onclick="calculateMonthlyAllocation()">Calculate</button>
+            <button class="success" onclick="saveAllocation()">Save Month</button>
+        </div>
+        <div class="success-message" id="allocationSuccess"></div>
+        <div class="error-message" id="allocationError"></div>
+        <div id="allocationResults"><div class="loading">Loading...</div></div>
+    </div>
+
+    <div class="card">
+        <h2>Quick Actions</h2>
+        <div class="quick-links">
+            <a href="{{ url_for('projects.projects_page') }}" class="quick-link">
+                <span class="quick-link-icon">+</span>
+                <span class="quick-link-label">Add Project</span>
+            </a>
+            <a href="{{ url_for('projects.business_units_page') }}" class="quick-link">
+                <span class="quick-link-icon">+</span>
+                <span class="quick-link-label">Add Business Unit</span>
+            </a>
+            <a href="{{ url_for('projects.projects_page') }}#import" class="quick-link">
+                <span class="quick-link-icon">^</span>
+                <span class="quick-link-label">Import Projects</span>
+            </a>
+        </div>
+
+        <h3 style="margin-top: 25px; margin-bottom: 15px; color: #2c3e50; font-size: 16px;">Recent Projects</h3>
+        <div id="recentProjects"><div class="loading">Loading...</div></div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Active Projects Overview</h2>
+    <div id="projectsOverview"><div class="loading">Loading projects...</div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const STAGES = {{ stages|tojson }};
+    let projects = [];
+    let currentAllocation = [];
+    let currentMonthWorkingDays = 0;
+    const HOURS_PER_DAY = 10;
+    const API_BASE = '/projects/api';
+
+    function getCurrentMonth() {
+        return new Date().toISOString().slice(0, 7);
+    }
+
+    document.getElementById('monthDate').value = getCurrentMonth();
+
+    function getWorkingDaysInMonth(year, month) {
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        let workingDays = 0;
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            const dayOfWeek = date.getDay();
+            if (dayOfWeek >= 1 && dayOfWeek <= 4) workingDays++;
+        }
+        return workingDays;
+    }
+
+    function getCurrentMonthHours() {
+        const monthValue = document.getElementById('monthDate').value;
+        if (!monthValue) return 0;
+        const [year, month] = monthValue.split('-').map(Number);
+        return getWorkingDaysInMonth(year, month - 1) * HOURS_PER_DAY;
+    }
+
+    async function loadProjects() {
+        try {
+            const response = await fetch(`${API_BASE}/projects`);
+            projects = await response.json();
+            renderProjectsOverview();
+            renderRecentProjects();
+            calculateMonthlyAllocation();
+        } catch (error) {
+            console.error('Error loading projects:', error);
+        }
+    }
+
+    function getStageClass(stage) {
+        return 'stage-' + stage.toLowerCase().replace(/[\s-]+/g, '').replace(/[^a-z]/g, '');
+    }
+
+    function isActiveStage(stage) {
+        return ['Course of Construction', 'Pre-Construction', 'Construction and Bidding'].includes(stage);
+    }
+
+    function renderRecentProjects() {
+        const container = document.getElementById('recentProjects');
+        const recent = projects.slice(0, 5);
+        if (recent.length === 0) {
+            container.innerHTML = '<div class="empty-state">No projects yet</div>';
+            return;
+        }
+        let html = '<table><thead><tr><th>Project</th><th>Stage</th></tr></thead><tbody>';
+        recent.forEach(p => {
+            html += `<tr>
+                <td><strong>${p.name}</strong><br><small style="color:#7f8c8d;">${p.code}</small></td>
+                <td><span class="status-badge ${getStageClass(p.stage)}">${p.stage}</span></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function renderProjectsOverview() {
+        const container = document.getElementById('projectsOverview');
+        const activeProjects = projects.filter(p => isActiveStage(p.stage));
+        if (activeProjects.length === 0) {
+            container.innerHTML = '<div class="empty-state">No active projects. <a href="/projects/manage">Add a project</a> to get started.</div>';
+            return;
+        }
+        let html = '<table><thead><tr><th>Project</th><th>Manager</th><th>Budget</th><th>Spent</th><th>Remaining</th></tr></thead><tbody>';
+        activeProjects.forEach(project => {
+            const remaining = project.total_budget - project.budget_spent;
+            const percentSpent = project.total_budget > 0 ? (project.budget_spent / project.total_budget) * 100 : 0;
+            const barClass = percentSpent > 90 ? 'danger' : percentSpent > 70 ? 'warning' : '';
+            html += '<tr>';
+            html += `<td><strong>${project.name}</strong><br><small style="color:#7f8c8d;">${project.code}</small></td>`;
+            html += `<td>${project.manager || '-'}</td>`;
+            html += `<td class="currency">$${project.total_budget.toLocaleString()}</td>`;
+            html += `<td>$${project.budget_spent.toLocaleString()}<div class="budget-bar"><div class="budget-fill ${barClass}" style="width:${percentSpent}%"></div></div></td>`;
+            html += `<td class="currency">$${remaining.toLocaleString()}</td>`;
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function calculateMonthlyAllocation() {
+        const activeProjects = projects.filter(p => isActiveStage(p.stage));
+        const container = document.getElementById('allocationResults');
+        if (activeProjects.length === 0) {
+            container.innerHTML = '<div class="empty-state">No active projects. Add or activate projects to calculate allocation.</div>';
+            currentAllocation = [];
+            return;
+        }
+        const monthValue = document.getElementById('monthDate').value;
+        if (!monthValue) {
+            container.innerHTML = '<div class="empty-state">Please select a month.</div>';
+            return;
+        }
+        const [year, month] = monthValue.split('-').map(Number);
+        const workingDays = getWorkingDaysInMonth(year, month - 1);
+        currentMonthWorkingDays = workingDays;
+        const totalHours = workingDays * HOURS_PER_DAY;
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        let totalWeightedBudget = 0;
+        activeProjects.forEach(p => {
+            const remaining = p.total_budget - p.budget_spent;
+            p.calculatedWeight = remaining * p.weight_adjustment;
+            totalWeightedBudget += p.calculatedWeight;
+        });
+
+        currentAllocation = [];
+        function roundToNearest5(num) { return Math.round(num / 5) * 5; }
+
+        let html = '<div class="allocation-summary">';
+        html += `<div class="allocation-summary-item"><span>Month:</span><span>${monthNames[month-1]} ${year}</span></div>`;
+        html += `<div class="allocation-summary-item"><span>Working Days (Mon-Thu):</span><span>${workingDays} days</span></div>`;
+        html += `<div class="allocation-summary-item"><span>Hours per Day:</span><span>${HOURS_PER_DAY} hrs</span></div>`;
+        html += `<div class="allocation-summary-item"><span>Total Hours:</span><span>${totalHours} hrs</span></div>`;
+        html += '</div>';
+
+        let projectAllocations = activeProjects.map(p => ({
+            project: p,
+            rawHours: (p.calculatedWeight / totalWeightedBudget) * totalHours,
+            roundedHours: roundToNearest5((p.calculatedWeight / totalWeightedBudget) * totalHours)
+        }));
+
+        let roundedTotal = projectAllocations.reduce((sum, p) => sum + p.roundedHours, 0);
+        if (roundedTotal !== totalHours) {
+            projectAllocations.sort((a, b) => b.rawHours - a.rawHours);
+            projectAllocations[0].roundedHours += totalHours - roundedTotal;
+        }
+        projectAllocations.sort((a, b) => activeProjects.indexOf(a.project) - activeProjects.indexOf(b.project));
+
+        projectAllocations.forEach(alloc => {
+            currentAllocation.push({ projectId: alloc.project.id, hours: alloc.roundedHours });
+            html += '<div class="allocation-item">';
+            html += `<div><span class="allocation-project">${alloc.project.name}</span>`;
+            html += `<br><small style="color:#7f8c8d;">Budget Remaining: $${(alloc.project.total_budget - alloc.project.budget_spent).toLocaleString()}</small></div>`;
+            html += `<div class="allocation-hours">${alloc.roundedHours} hrs</div>`;
+            html += '</div>';
+        });
+
+        html += `<div style="margin-top:15px;padding-top:15px;border-top:2px solid #ecf0f1;text-align:right;">`;
+        html += `<strong>Total: ${totalHours} hours (${workingDays} days x ${HOURS_PER_DAY} hrs/day)</strong></div>`;
+        container.innerHTML = html;
+        document.getElementById('monthHours').textContent = totalHours;
+    }
+
+    async function saveAllocation() {
+        if (currentAllocation.length === 0) {
+            showMsg('allocationError', 'No allocation to save. Calculate allocation first.');
+            return;
+        }
+        // Placeholder — the dashboard save uses the projections system in QMS
+        showMsg('allocationSuccess', 'Use the Projections page to save and finalize monthly allocations.');
+    }
+
+    function showMsg(id, message) {
+        const el = document.getElementById(id);
+        el.textContent = message;
+        el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 4000);
+    }
+
+    loadProjects();
+</script>
+{% endblock %}

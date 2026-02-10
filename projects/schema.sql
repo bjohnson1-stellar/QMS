@@ -1,6 +1,6 @@
 -- =============================================================================
 -- QMS Projects Schema
--- Projects, customers, jobs
+-- Projects, customers, jobs, business units, budgets, projections
 -- =============================================================================
 
 -- Customers
@@ -20,6 +20,23 @@ CREATE TABLE IF NOT EXISTS customers (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Business Units (unified department/BU table)
+-- Replaces the former inline 'departments' table from pipeline/processor.py.
+-- Shared by projects (jobs FK), welding (welder registry FK), and pipeline.
+CREATE TABLE IF NOT EXISTS business_units (
+    id INTEGER PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    full_name TEXT,
+    description TEXT,
+    manager TEXT,
+    status TEXT DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_bu_code CHECK (code GLOB '[0-9][0-9][0-9]')
+);
+CREATE INDEX IF NOT EXISTS idx_bu_code ON business_units(code);
+
 -- Projects
 CREATE TABLE IF NOT EXISTS projects (
     id INTEGER PRIMARY KEY,
@@ -28,6 +45,16 @@ CREATE TABLE IF NOT EXISTS projects (
     client TEXT,
     path TEXT,
     status TEXT DEFAULT 'active',
+    stage TEXT DEFAULT 'Proposal' CHECK (
+        stage IN (
+            'Archive', 'Bidding', 'Construction and Bidding',
+            'Course of Construction', 'Lost Proposal',
+            'Post-Construction', 'Pre-Construction', 'Proposal', 'Warranty'
+        )
+    ),
+    start_date TEXT,
+    end_date TEXT,
+    notes TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     customer_id INTEGER REFERENCES customers(id),
@@ -75,7 +102,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     id INTEGER PRIMARY KEY,
     job_number TEXT UNIQUE NOT NULL,
     project_id INTEGER NOT NULL REFERENCES projects(id),
-    department_id INTEGER NOT NULL REFERENCES departments(id),
+    department_id INTEGER NOT NULL REFERENCES business_units(id),
     project_number TEXT NOT NULL,
     department_number TEXT NOT NULL,
     suffix TEXT NOT NULL,
@@ -86,4 +113,93 @@ CREATE TABLE IF NOT EXISTS jobs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     pm_employee_id TEXT REFERENCES employees(id)
+);
+
+-- =============================================================================
+-- Budget & Time Tracking Tables (from Time Tracker integration)
+-- =============================================================================
+
+-- Project budgets (1:1 with projects, budget-specific fields)
+CREATE TABLE IF NOT EXISTS project_budgets (
+    id INTEGER PRIMARY KEY,
+    project_id INTEGER UNIQUE NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    total_budget REAL NOT NULL DEFAULT 0,
+    weight_adjustment REAL NOT NULL DEFAULT 1.0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Project spending ledger
+CREATE TABLE IF NOT EXISTS project_transactions (
+    id INTEGER PRIMARY KEY,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    transaction_date TEXT NOT NULL,
+    transaction_type TEXT NOT NULL CHECK (
+        transaction_type IN ('Time', 'Travel', 'Materials', 'Other')
+    ),
+    description TEXT NOT NULL,
+    amount REAL NOT NULL,
+    hours REAL,
+    rate REAL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Singleton budget configuration
+CREATE TABLE IF NOT EXISTS budget_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    company_name TEXT DEFAULT 'My Company',
+    default_hourly_rate REAL DEFAULT 150.0,
+    working_hours_per_month INTEGER DEFAULT 176,
+    fiscal_year_start_month INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================================================================
+-- Projection Tables (monthly hour forecasting)
+-- =============================================================================
+
+-- Monthly periods for projection planning
+CREATE TABLE IF NOT EXISTS projection_periods (
+    id INTEGER PRIMARY KEY,
+    year INTEGER NOT NULL,
+    month INTEGER NOT NULL,
+    working_days INTEGER NOT NULL,
+    total_hours INTEGER NOT NULL,
+    is_locked INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(year, month)
+);
+
+-- Versioned projection snapshots per period
+CREATE TABLE IF NOT EXISTS projection_snapshots (
+    id INTEGER PRIMARY KEY,
+    period_id INTEGER NOT NULL REFERENCES projection_periods(id) ON DELETE CASCADE,
+    version INTEGER NOT NULL DEFAULT 1,
+    name TEXT,
+    description TEXT,
+    hourly_rate REAL NOT NULL,
+    total_hours INTEGER NOT NULL,
+    total_projected_cost REAL NOT NULL,
+    status TEXT DEFAULT 'Draft' CHECK (status IN ('Draft', 'Final', 'Superseded')),
+    is_active INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    finalized_at TEXT,
+    UNIQUE(period_id, version)
+);
+
+-- Per-project allocations within a snapshot
+CREATE TABLE IF NOT EXISTS projection_entries (
+    id INTEGER PRIMARY KEY,
+    snapshot_id INTEGER NOT NULL REFERENCES projection_snapshots(id) ON DELETE CASCADE,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    allocated_hours REAL NOT NULL CHECK (allocated_hours >= 0),
+    projected_cost REAL NOT NULL,
+    weight_used REAL,
+    remaining_budget_at_time REAL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(snapshot_id, project_id)
 );

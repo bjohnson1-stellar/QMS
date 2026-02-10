@@ -1,0 +1,441 @@
+"""
+Projects Blueprint — Flask routes for budget tracking UI.
+
+Thin delivery layer: all business logic lives in projects.budget.
+"""
+
+from flask import Blueprint, jsonify, request, render_template, send_file
+
+from qms.core import get_db
+from qms.projects import budget
+from qms.projects.budget import VALID_STAGES
+
+bp = Blueprint("projects", __name__, url_prefix="/projects")
+
+
+# ---------------------------------------------------------------------------
+# Page routes (render templates)
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/")
+def dashboard():
+    with get_db(readonly=True) as conn:
+        stats = budget.get_dashboard_stats(conn)
+    return render_template("projects/dashboard.html", stats=stats, stages=VALID_STAGES)
+
+
+@bp.route("/manage")
+def projects_page():
+    return render_template("projects/projects.html", stages=VALID_STAGES)
+
+
+@bp.route("/business-units")
+def business_units_page():
+    return render_template("projects/business_units.html")
+
+
+@bp.route("/transactions")
+def transactions_page():
+    return render_template("projects/transactions.html")
+
+
+@bp.route("/settings")
+def settings_page():
+    return render_template("projects/settings.html")
+
+
+@bp.route("/projections")
+def projections_page():
+    return render_template("projects/projections.html")
+
+
+# ---------------------------------------------------------------------------
+# Projects API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/projects", methods=["GET"])
+def api_list_projects():
+    return jsonify(budget.list_projects_with_budgets())
+
+
+@bp.route("/api/projects", methods=["POST"])
+def api_create_project():
+    data = request.json
+    code = data.get("code", "")
+    ok, err = budget.validate_project_number(code)
+    if not ok:
+        return jsonify({"error": err}), 400
+
+    with get_db() as conn:
+        dup = conn.execute("SELECT id FROM projects WHERE number = ?", (code,)).fetchone()
+        if dup:
+            return jsonify({"error": "Project number already exists"}), 400
+
+        pid = budget.create_project_with_budget(
+            conn,
+            name=data["name"],
+            code=code,
+            manager=data.get("manager"),
+            stage=data.get("stage", "Proposal"),
+            total_budget=float(data.get("totalBudget", 0)),
+            weight_adjustment=float(data.get("weightAdjustment", 1.0)),
+            start_date=data.get("startDate"),
+            end_date=data.get("endDate"),
+            notes=data.get("notes"),
+            client=data.get("ownerName"),
+            street=data.get("ownerAddress"),
+            city=data.get("ownerCity"),
+            state=data.get("ownerState"),
+            zip_code=data.get("ownerZip"),
+        )
+    return jsonify({"id": pid, "message": "Project created successfully"}), 201
+
+
+@bp.route("/api/projects/<int:project_id>", methods=["PUT"])
+def api_update_project(project_id):
+    data = request.json
+    code = data.get("code", "")
+    ok, err = budget.validate_project_number(code)
+    if not ok:
+        return jsonify({"error": err}), 400
+
+    with get_db() as conn:
+        dup = conn.execute(
+            "SELECT id FROM projects WHERE number = ? AND id != ?", (code, project_id)
+        ).fetchone()
+        if dup:
+            return jsonify({"error": "Project number already exists"}), 400
+
+        budget.update_project_with_budget(
+            conn,
+            project_id,
+            name=data["name"],
+            code=code,
+            manager=data.get("manager"),
+            stage=data.get("stage", "Proposal"),
+            total_budget=float(data.get("totalBudget", 0)),
+            weight_adjustment=float(data.get("weightAdjustment", 1.0)),
+            start_date=data.get("startDate"),
+            end_date=data.get("endDate"),
+            notes=data.get("notes"),
+            client=data.get("ownerName"),
+            street=data.get("ownerAddress"),
+            city=data.get("ownerCity"),
+            state=data.get("ownerState"),
+            zip_code=data.get("ownerZip"),
+        )
+    return jsonify({"message": "Project updated successfully"})
+
+
+@bp.route("/api/projects/<int:project_id>", methods=["DELETE"])
+def api_delete_project(project_id):
+    with get_db() as conn:
+        budget.delete_project(conn, project_id)
+    return jsonify({"message": "Project deleted successfully"})
+
+
+# ---------------------------------------------------------------------------
+# Business Units API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/business-units", methods=["GET"])
+def api_list_bus():
+    return jsonify(budget.list_business_units())
+
+
+@bp.route("/api/business-units", methods=["POST"])
+def api_create_bu():
+    data = request.json
+    import re
+
+    code = data.get("code", "").strip()
+    if not re.match(r"^\d{3}$", code):
+        return jsonify({"error": "Code must be exactly 3 digits"}), 400
+
+    with get_db() as conn:
+        dup = conn.execute(
+            "SELECT id FROM business_units WHERE code = ?", (code,)
+        ).fetchone()
+        if dup:
+            return jsonify({"error": "Code already exists"}), 400
+        bu_id = budget.create_business_unit(
+            conn, code=code, name=data["name"], description=data.get("description", "")
+        )
+    return jsonify({"id": bu_id, "message": "Business Unit created"}), 201
+
+
+@bp.route("/api/business-units/<int:bu_id>", methods=["PUT"])
+def api_update_bu(bu_id):
+    data = request.json
+    import re
+
+    code = data.get("code", "").strip()
+    if not re.match(r"^\d{3}$", code):
+        return jsonify({"error": "Code must be exactly 3 digits"}), 400
+
+    with get_db() as conn:
+        dup = conn.execute(
+            "SELECT id FROM business_units WHERE code = ? AND id != ?", (code, bu_id)
+        ).fetchone()
+        if dup:
+            return jsonify({"error": "Code already exists"}), 400
+        budget.update_business_unit(
+            conn, bu_id, code=code, name=data["name"],
+            description=data.get("description", ""),
+        )
+    return jsonify({"message": "Business Unit updated"})
+
+
+@bp.route("/api/business-units/<int:bu_id>", methods=["DELETE"])
+def api_delete_bu(bu_id):
+    with get_db() as conn:
+        ok = budget.delete_business_unit(conn, bu_id)
+    if not ok:
+        return jsonify({"error": "Cannot delete: in use by jobs"}), 400
+    return jsonify({"message": "Business Unit deleted"})
+
+
+# ---------------------------------------------------------------------------
+# Transactions API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/transactions", methods=["GET"])
+def api_list_transactions():
+    pid = request.args.get("project_id", type=int)
+    ttype = request.args.get("type")
+    return jsonify(budget.list_transactions(project_id=pid, transaction_type=ttype))
+
+
+@bp.route("/api/transactions/<int:txn_id>", methods=["GET"])
+def api_get_transaction(txn_id):
+    with get_db(readonly=True) as conn:
+        t = budget.get_transaction(conn, txn_id)
+    if not t:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(t)
+
+
+@bp.route("/api/transactions", methods=["POST"])
+def api_create_transaction():
+    data = request.json
+    if not data.get("projectId"):
+        return jsonify({"error": "Project is required"}), 400
+
+    amount = data.get("amount", 0)
+    hours = data.get("hours")
+    rate = data.get("rate")
+    if data.get("transactionType") == "Time" and hours and rate:
+        amount = float(hours) * float(rate)
+
+    with get_db() as conn:
+        tid = budget.create_transaction(
+            conn,
+            project_id=data["projectId"],
+            transaction_date=data["transactionDate"],
+            transaction_type=data["transactionType"],
+            description=data["description"],
+            amount=float(amount),
+            hours=float(hours) if hours else None,
+            rate=float(rate) if rate else None,
+            notes=data.get("notes"),
+        )
+    return jsonify({"id": tid, "message": "Transaction created"}), 201
+
+
+@bp.route("/api/transactions/<int:txn_id>", methods=["PUT"])
+def api_update_transaction(txn_id):
+    data = request.json
+    amount = data.get("amount", 0)
+    hours = data.get("hours")
+    rate = data.get("rate")
+    if data.get("transactionType") == "Time" and hours and rate:
+        amount = float(hours) * float(rate)
+
+    with get_db() as conn:
+        budget.update_transaction(
+            conn, txn_id,
+            project_id=data["projectId"],
+            transaction_date=data["transactionDate"],
+            transaction_type=data["transactionType"],
+            description=data["description"],
+            amount=float(amount),
+            hours=float(hours) if hours else None,
+            rate=float(rate) if rate else None,
+            notes=data.get("notes"),
+        )
+    return jsonify({"message": "Transaction updated"})
+
+
+@bp.route("/api/transactions/<int:txn_id>", methods=["DELETE"])
+def api_delete_transaction(txn_id):
+    with get_db() as conn:
+        budget.delete_transaction(conn, txn_id)
+    return jsonify({"message": "Transaction deleted"})
+
+
+# ---------------------------------------------------------------------------
+# Settings API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/settings", methods=["GET"])
+def api_get_settings():
+    return jsonify(budget.get_settings())
+
+
+@bp.route("/api/settings", methods=["PUT"])
+def api_update_settings():
+    data = request.json
+    with get_db() as conn:
+        budget.update_settings(
+            conn,
+            company_name=data.get("companyName", "My Company"),
+            default_hourly_rate=float(data.get("defaultHourlyRate", 150)),
+            working_hours_per_month=int(data.get("workingHoursPerMonth", 176)),
+            fiscal_year_start_month=int(data.get("fiscalYearStartMonth", 1)),
+        )
+    return jsonify({"message": "Settings updated"})
+
+
+# ---------------------------------------------------------------------------
+# Projection Periods API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/projection-periods", methods=["GET"])
+def api_list_periods():
+    return jsonify(budget.list_projection_periods())
+
+
+@bp.route("/api/projection-periods", methods=["POST"])
+def api_create_period():
+    data = request.json
+    year = int(data.get("year", 0))
+    month = int(data.get("month", 0))
+    if not (2020 <= year <= 2100) or not (1 <= month <= 12):
+        return jsonify({"error": "Invalid year or month"}), 400
+
+    with get_db() as conn:
+        dup = conn.execute(
+            "SELECT id FROM projection_periods WHERE year = ? AND month = ?",
+            (year, month),
+        ).fetchone()
+        if dup:
+            return jsonify({"error": f"Period {year}-{month:02d} already exists"}), 400
+        result = budget.create_projection_period(conn, year=year, month=month)
+    return jsonify({**result, "message": "Period created"}), 201
+
+
+@bp.route("/api/projection-periods/<int:pid>", methods=["GET"])
+def api_get_period(pid):
+    with get_db(readonly=True) as conn:
+        p = budget.get_projection_period(conn, pid)
+    if not p:
+        return jsonify({"error": "Period not found"}), 404
+    return jsonify(p)
+
+
+@bp.route("/api/projection-periods/<int:pid>/lock", methods=["PUT"])
+def api_toggle_lock(pid):
+    data = request.json
+    with get_db() as conn:
+        ok = budget.toggle_period_lock(conn, pid, locked=bool(data.get("locked")))
+    if not ok:
+        return jsonify({"error": "Period not found"}), 404
+    return jsonify({"message": "Lock toggled"})
+
+
+# ---------------------------------------------------------------------------
+# Projections API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/projections/calculate", methods=["POST"])
+def api_calculate_projection():
+    data = request.json
+    pid = data.get("periodId")
+    if not pid:
+        return jsonify({"error": "Period ID required"}), 400
+    with get_db(readonly=True) as conn:
+        result = budget.calculate_projection(conn, int(pid))
+    if "error" in result:
+        return jsonify(result), 400
+    return jsonify(result)
+
+
+@bp.route("/api/projections/<int:pid>", methods=["GET"])
+def api_get_projection(pid):
+    with get_db(readonly=True) as conn:
+        result = budget.get_active_projection(conn, pid)
+    if not result:
+        return jsonify({"error": "No active snapshot"}), 404
+    return jsonify(result)
+
+
+@bp.route("/api/projections/<int:pid>", methods=["POST"])
+def api_create_snapshot(pid):
+    data = request.json
+    with get_db() as conn:
+        period = conn.execute(
+            "SELECT * FROM projection_periods WHERE id = ?", (pid,)
+        ).fetchone()
+        if not period:
+            return jsonify({"error": "Period not found"}), 404
+        if period["is_locked"]:
+            return jsonify({"error": "Period is locked"}), 400
+
+        result = budget.create_projection_snapshot(
+            conn, pid,
+            entries=data.get("entries", []),
+            hourly_rate=data.get("hourlyRate", 150.0),
+            total_hours=data.get("totalHours", period["total_hours"]),
+            name=data.get("name"),
+            description=data.get("description"),
+        )
+    return jsonify({**result, "message": "Snapshot created"}), 201
+
+
+@bp.route("/api/projections/snapshot/<int:sid>/finalize", methods=["PUT"])
+def api_finalize_snapshot(sid):
+    with get_db() as conn:
+        ok = budget.finalize_snapshot(conn, sid)
+    if not ok:
+        return jsonify({"error": "Snapshot not found"}), 404
+    return jsonify({"message": "Snapshot finalized"})
+
+
+# ---------------------------------------------------------------------------
+# Excel Import/Export
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/projects/template", methods=["GET"])
+def api_download_template():
+    from qms.projects.excel_io import generate_template
+
+    output = generate_template()
+    return send_file(
+        output,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name="project_import_template.xlsx",
+    )
+
+
+@bp.route("/api/projects/import", methods=["POST"])
+def api_import_projects():
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    file = request.files["file"]
+    if not file.filename.endswith(".xlsx"):
+        return jsonify({"error": "File must be .xlsx"}), 400
+
+    from qms.projects.excel_io import import_projects_from_excel
+
+    with get_db() as conn:
+        result = import_projects_from_excel(conn, file)
+    return jsonify(result)
