@@ -147,7 +147,10 @@ def api_update_project(project_id):
 @bp.route("/api/projects/<int:project_id>", methods=["DELETE"])
 def api_delete_project(project_id):
     with get_db() as conn:
-        budget.delete_project(conn, project_id)
+        try:
+            budget.delete_project(conn, project_id)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
     return jsonify({"message": "Project deleted successfully"})
 
 
@@ -526,6 +529,93 @@ def api_get_projection(pid):
     return jsonify(result)
 
 
+# ---------------------------------------------------------------------------
+# Per-Period Job Selection API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/projection-periods/<int:pid>/jobs", methods=["GET"])
+def api_get_period_jobs(pid):
+    with get_db() as conn:
+        jobs = budget.load_period_jobs(conn, pid)
+    return jsonify(jobs)
+
+
+@bp.route("/api/projection-periods/<int:pid>/jobs/<int:aid>/toggle", methods=["PATCH"])
+def api_toggle_period_job(pid, aid):
+    data = request.json or {}
+    included = bool(data.get("included", True))
+    with get_db() as conn:
+        budget.toggle_period_job(conn, pid, aid, included)
+    return jsonify({"message": "Toggled"})
+
+
+@bp.route("/api/projection-periods/<int:pid>/jobs/bulk-toggle", methods=["PATCH"])
+def api_bulk_toggle_period_jobs(pid):
+    data = request.json or {}
+    ids = data.get("allocationIds", [])
+    included = bool(data.get("included", True))
+    if not ids:
+        return jsonify({"error": "allocationIds required"}), 400
+    with get_db() as conn:
+        count = budget.bulk_toggle_period_jobs(conn, pid, ids, included)
+    return jsonify({"updated": count})
+
+
+# ---------------------------------------------------------------------------
+# Snapshot Management API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/projections/period/<int:pid>/snapshots", methods=["GET"])
+def api_list_snapshots(pid):
+    with get_db(readonly=True) as conn:
+        return jsonify(budget.list_snapshots(conn, pid))
+
+
+@bp.route("/api/projections/snapshot/<int:sid>", methods=["GET"])
+def api_get_snapshot(sid):
+    with get_db(readonly=True) as conn:
+        result = budget.get_snapshot_with_details(conn, sid)
+    if not result:
+        return jsonify({"error": "Snapshot not found"}), 404
+    return jsonify(result)
+
+
+@bp.route("/api/projections/snapshot/<int:sid>/activate", methods=["PUT"])
+def api_activate_snapshot(sid):
+    with get_db() as conn:
+        ok = budget.activate_snapshot(conn, sid)
+    if not ok:
+        return jsonify({"error": "Cannot activate (not found or not Draft)"}), 400
+    return jsonify({"message": "Snapshot activated"})
+
+
+@bp.route("/api/projections/snapshot/<int:sid>/commit", methods=["PUT"])
+def api_commit_snapshot(sid):
+    with get_db() as conn:
+        result = budget.commit_snapshot(conn, sid)
+    if "error" in result:
+        return jsonify(result), 400
+    return jsonify(result)
+
+
+@bp.route("/api/projections/snapshot/<int:sid>/uncommit", methods=["PUT"])
+def api_uncommit_snapshot(sid):
+    with get_db() as conn:
+        result = budget.uncommit_snapshot(conn, sid)
+    if "error" in result:
+        return jsonify(result), 400
+    return jsonify(result)
+
+
+@bp.route("/api/projects/budget-summary", methods=["GET"])
+def api_budget_summary():
+    pid = request.args.get("project_id", type=int)
+    with get_db(readonly=True) as conn:
+        return jsonify(budget.get_budget_summary(conn, project_id=pid))
+
+
 @bp.route("/api/projections/<int:pid>", methods=["POST"])
 def api_create_snapshot(pid):
     data = request.json
@@ -541,6 +631,7 @@ def api_create_snapshot(pid):
         # Aggregate per-job entries to per-project for snapshot storage
         raw_entries = data.get("entries", [])
         project_map = {}
+        detail_entries = []
         for e in raw_entries:
             pid_key = e.get("project_id")
             if pid_key not in project_map:
@@ -555,11 +646,24 @@ def api_create_snapshot(pid):
             project_map[pid_key]["projected_cost"] += e.get("projected_cost", 0)
             project_map[pid_key]["weight_used"] += e.get("weight_used", 0)
             project_map[pid_key]["remaining_budget"] += e.get("effective_budget", 0)
+
+            # Build job-level detail entry
+            if e.get("allocation_id"):
+                detail_entries.append({
+                    "project_id": pid_key,
+                    "allocation_id": e["allocation_id"],
+                    "job_code": e.get("job_code", ""),
+                    "allocated_hours": e.get("allocated_hours", 0),
+                    "projected_cost": e.get("projected_cost", 0),
+                    "weight_used": e.get("weight_used"),
+                    "is_manual_override": 1 if e.get("is_manual_override") else 0,
+                })
         aggregated = list(project_map.values())
 
         result = budget.create_projection_snapshot(
             conn, pid,
             entries=aggregated,
+            detail_entries=detail_entries if detail_entries else None,
             hourly_rate=data.get("hourlyRate", 150.0),
             total_hours=data.get("totalHours", period["total_hours"]),
             name=data.get("name"),

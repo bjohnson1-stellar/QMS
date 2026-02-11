@@ -210,9 +210,10 @@ CREATE TABLE IF NOT EXISTS projection_snapshots (
     hourly_rate REAL NOT NULL,
     total_hours INTEGER NOT NULL,
     total_projected_cost REAL NOT NULL,
-    status TEXT DEFAULT 'Draft' CHECK (status IN ('Draft', 'Final', 'Superseded')),
+    status TEXT DEFAULT 'Draft' CHECK (status IN ('Draft', 'Committed', 'Superseded')),
     is_active INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    committed_at TEXT,
     finalized_at TEXT,
     UNIQUE(period_id, version)
 );
@@ -229,4 +230,28 @@ CREATE TABLE IF NOT EXISTS projection_entries (
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(snapshot_id, project_id)
+);
+
+-- Per-period job selection (which eligible jobs to include in this month)
+CREATE TABLE IF NOT EXISTS projection_period_jobs (
+    id INTEGER PRIMARY KEY,
+    period_id INTEGER NOT NULL REFERENCES projection_periods(id) ON DELETE CASCADE,
+    allocation_id INTEGER NOT NULL REFERENCES project_allocations(id) ON DELETE CASCADE,
+    included INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(period_id, allocation_id)
+);
+
+-- Job-level detail under project-level projection_entries
+CREATE TABLE IF NOT EXISTS projection_entry_details (
+    id INTEGER PRIMARY KEY,
+    entry_id INTEGER NOT NULL REFERENCES projection_entries(id) ON DELETE CASCADE,
+    allocation_id INTEGER NOT NULL REFERENCES project_allocations(id),
+    job_code TEXT NOT NULL,
+    allocated_hours REAL NOT NULL DEFAULT 0,
+    projected_cost REAL NOT NULL DEFAULT 0,
+    weight_used REAL,
+    is_manual_override INTEGER NOT NULL DEFAULT 0,
+    notes TEXT,
+    UNIQUE(entry_id, allocation_id)
 );

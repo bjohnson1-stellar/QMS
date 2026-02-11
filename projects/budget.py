@@ -310,7 +310,12 @@ def update_project_with_budget(
 
 
 def delete_project(conn: sqlite3.Connection, project_id: int) -> None:
-    """Delete a project (cascades to budgets, transactions, projections)."""
+    """Delete a project (cascades to budgets, transactions, projections).
+
+    Raises ValueError if the project has committed projections.
+    """
+    if has_committed_projections(conn, project_id):
+        raise ValueError("Cannot delete project with committed projections")
     conn.execute("DELETE FROM projects WHERE id=?", (project_id,))
     conn.commit()
 
@@ -923,7 +928,7 @@ def calculate_projection(
     Calculate budget-weighted hour allocation for a period (preview only).
 
     Algorithm (job-level):
-    1. Get all projection-enabled jobs with budget > 0 in active projects
+    1. Get included jobs from projection_period_jobs (auto-populated on load)
     2. Pro-rate each job's budget by project remaining-budget ratio
     3. weight = effective_budget * weight_adjustment * gmp_factor
     4. Allocate hours proportionally, rounded to nearest 5
@@ -941,7 +946,10 @@ def calculate_projection(
     hourly_rate = settings["default_hourly_rate"]
     gmp_multiplier = settings.get("gmp_weight_multiplier", 1.5)
 
-    # Job-level query: enabled allocations in active-stage projects
+    # Ensure period_jobs are populated
+    load_period_jobs(conn, period_id)
+
+    # Job-level query: uses projection_period_jobs for per-period toggles
     rows = conn.execute(
         """
         SELECT pa.id AS allocation_id,
@@ -957,7 +965,8 @@ def calculate_projection(
                p.name AS project_name,
                COALESCE(b.total_budget, 0) AS project_total_budget,
                COALESCE(spent.total, 0) AS project_budget_spent
-        FROM project_allocations pa
+        FROM projection_period_jobs ppj
+        JOIN project_allocations pa ON pa.id = ppj.allocation_id
         JOIN projects p ON p.id = pa.project_id
         JOIN business_units bu ON bu.id = pa.business_unit_id
         LEFT JOIN project_budgets b ON b.project_id = p.id
@@ -965,12 +974,12 @@ def calculate_projection(
             SELECT project_id, SUM(amount) AS total
             FROM project_transactions GROUP BY project_id
         ) spent ON spent.project_id = p.id
-        WHERE pa.projection_enabled = 1
+        WHERE ppj.period_id = ?
+          AND ppj.included = 1
           AND pa.allocated_budget > 0
-          AND p.stage IN ('Course of Construction', 'Construction and Bidding',
-                          'Pre-Construction')
         ORDER BY pa.allocated_budget DESC
-        """
+        """,
+        (period_id,),
     ).fetchall()
     jobs = [dict(r) for r in rows]
 
@@ -1003,9 +1012,9 @@ def calculate_projection(
         rounded = round_to_nearest_5(raw)
         allocs.append({"job": j, "raw_hours": raw, "rounded_hours": rounded})
 
-    # Adjust largest job to match total exactly
+    # Adjust largest job to match total exactly (only if there are valid weights)
     rounded_total = sum(a["rounded_hours"] for a in allocs)
-    if rounded_total != total_hours and allocs:
+    if rounded_total != total_hours and allocs and total_weight > 0:
         diff = total_hours - rounded_total
         allocs.sort(key=lambda a: a["raw_hours"], reverse=True)
         allocs[0]["rounded_hours"] += diff
@@ -1080,12 +1089,13 @@ def create_projection_snapshot(
     period_id: int,
     *,
     entries: List[Dict[str, Any]],
+    detail_entries: Optional[List[Dict[str, Any]]] = None,
     hourly_rate: float,
     total_hours: int,
     name: Optional[str] = None,
     description: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Create a versioned snapshot with entries."""
+    """Create a versioned snapshot with project-level and optional job-level entries."""
     next_ver = conn.execute(
         "SELECT COALESCE(MAX(version), 0) + 1 AS v FROM projection_snapshots "
         "WHERE period_id = ?",
@@ -1113,8 +1123,10 @@ def create_projection_snapshot(
         (period_id, snapshot_id),
     )
 
+    # Build map of project_id -> entry_id for linking details
+    entry_id_map: Dict[int, int] = {}
     for e in entries:
-        conn.execute(
+        cur = conn.execute(
             """
             INSERT INTO projection_entries
                 (snapshot_id, project_id, allocated_hours, projected_cost,
@@ -1125,13 +1137,33 @@ def create_projection_snapshot(
              e["projected_cost"], e.get("weight_used"),
              e.get("remaining_budget"), e.get("notes")),
         )
+        entry_id_map[e["project_id"]] = cur.lastrowid
+
+    # Insert job-level details if provided
+    if detail_entries:
+        for d in detail_entries:
+            eid = entry_id_map.get(d.get("project_id"))
+            if not eid:
+                continue
+            conn.execute(
+                """
+                INSERT INTO projection_entry_details
+                    (entry_id, allocation_id, job_code, allocated_hours,
+                     projected_cost, weight_used, is_manual_override, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (eid, d["allocation_id"], d["job_code"],
+                 d.get("allocated_hours", 0), d.get("projected_cost", 0),
+                 d.get("weight_used"), d.get("is_manual_override", 0),
+                 d.get("notes")),
+            )
 
     conn.commit()
     return {"id": snapshot_id, "version": next_ver}
 
 
 def finalize_snapshot(conn: sqlite3.Connection, snapshot_id: int) -> bool:
-    """Mark snapshot as Final, supersede previous Finals."""
+    """Mark snapshot as Final, supersede previous Finals.  (Legacy compat.)"""
     snap = conn.execute(
         "SELECT * FROM projection_snapshots WHERE id = ?", (snapshot_id,)
     ).fetchone()
@@ -1140,13 +1172,399 @@ def finalize_snapshot(conn: sqlite3.Connection, snapshot_id: int) -> bool:
 
     conn.execute(
         "UPDATE projection_snapshots SET status = 'Superseded' "
-        "WHERE period_id = ? AND id != ? AND status = 'Final'",
+        "WHERE period_id = ? AND id != ? AND status IN ('Final','Committed')",
         (snap["period_id"], snapshot_id),
     )
     conn.execute(
-        "UPDATE projection_snapshots SET status = 'Final', "
-        "finalized_at = CURRENT_TIMESTAMP WHERE id = ?",
+        "UPDATE projection_snapshots SET status = 'Committed', "
+        "committed_at = CURRENT_TIMESTAMP, finalized_at = CURRENT_TIMESTAMP WHERE id = ?",
         (snapshot_id,),
     )
     conn.commit()
     return True
+
+
+# ---------------------------------------------------------------------------
+# Per-Period Job Selection
+# ---------------------------------------------------------------------------
+
+
+def load_period_jobs(
+    conn: sqlite3.Connection, period_id: int
+) -> List[Dict[str, Any]]:
+    """Load eligible jobs for a period, auto-populating on first access.
+
+    Only considers allocations where the global ``projection_enabled=1``
+    (set on the Projects page).  If no rows exist in
+    ``projection_period_jobs`` for this period, auto-populate from eligible
+    allocations with ``included=1``.
+    """
+    # Check if already populated
+    existing = conn.execute(
+        "SELECT COUNT(*) AS n FROM projection_period_jobs WHERE period_id = ?",
+        (period_id,),
+    ).fetchone()["n"]
+
+    if existing == 0:
+        # Auto-populate from globally enabled allocations with budget > 0
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO projection_period_jobs (period_id, allocation_id, included)
+            SELECT ?, pa.id, 1
+            FROM project_allocations pa
+            JOIN projects p ON p.id = pa.project_id
+            WHERE pa.projection_enabled = 1
+              AND pa.allocated_budget > 0
+              AND p.stage IN ('Course of Construction', 'Construction and Bidding',
+                              'Pre-Construction')
+            """,
+            (period_id,),
+        )
+        conn.commit()
+
+    # Return all eligible jobs with details
+    rows = conn.execute(
+        """
+        SELECT ppj.id AS period_job_id,
+               ppj.included,
+               pa.id AS allocation_id,
+               pa.job_code,
+               pa.allocated_budget,
+               pa.weight_adjustment,
+               pa.is_gmp,
+               pa.projection_enabled,
+               COALESCE(pa.scope_name, '') AS scope_name,
+               COALESCE(pa.pm, '') AS pm,
+               bu.code AS bu_code,
+               bu.name AS bu_name,
+               p.id AS project_id,
+               p.number AS project_number,
+               p.name AS project_name,
+               p.stage AS project_stage,
+               COALESCE(b.total_budget, 0) AS project_total_budget,
+               COALESCE(spent.total, 0) AS project_budget_spent
+        FROM projection_period_jobs ppj
+        JOIN project_allocations pa ON pa.id = ppj.allocation_id
+        JOIN projects p ON p.id = pa.project_id
+        JOIN business_units bu ON bu.id = pa.business_unit_id
+        LEFT JOIN project_budgets b ON b.project_id = p.id
+        LEFT JOIN (
+            SELECT project_id, SUM(amount) AS total
+            FROM project_transactions GROUP BY project_id
+        ) spent ON spent.project_id = p.id
+        WHERE ppj.period_id = ?
+        ORDER BY pa.allocated_budget DESC
+        """,
+        (period_id,),
+    ).fetchall()
+
+    result = []
+    for r in rows:
+        d = dict(r)
+        ptb = d["project_total_budget"]
+        d["remaining_budget"] = ptb - d["project_budget_spent"]
+        result.append(d)
+    return result
+
+
+def toggle_period_job(
+    conn: sqlite3.Connection,
+    period_id: int,
+    allocation_id: int,
+    included: bool,
+) -> bool:
+    """Toggle a single job's inclusion for a period. Returns True on success."""
+    cursor = conn.execute(
+        """
+        INSERT INTO projection_period_jobs (period_id, allocation_id, included)
+        VALUES (?, ?, ?)
+        ON CONFLICT(period_id, allocation_id) DO UPDATE SET included = excluded.included
+        """,
+        (period_id, allocation_id, 1 if included else 0),
+    )
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def bulk_toggle_period_jobs(
+    conn: sqlite3.Connection,
+    period_id: int,
+    allocation_ids: List[int],
+    included: bool,
+) -> int:
+    """Bulk toggle job inclusion. Returns count of affected rows."""
+    if not allocation_ids:
+        return 0
+    flag = 1 if included else 0
+    count = 0
+    for aid in allocation_ids:
+        conn.execute(
+            """
+            INSERT INTO projection_period_jobs (period_id, allocation_id, included)
+            VALUES (?, ?, ?)
+            ON CONFLICT(period_id, allocation_id) DO UPDATE SET included = excluded.included
+            """,
+            (period_id, aid, flag),
+        )
+        count += 1
+    conn.commit()
+    return count
+
+
+# ---------------------------------------------------------------------------
+# Snapshot Listing & Details
+# ---------------------------------------------------------------------------
+
+
+def list_snapshots(
+    conn: sqlite3.Connection, period_id: int
+) -> List[Dict[str, Any]]:
+    """List all snapshots for a period, ordered by version DESC."""
+    rows = conn.execute(
+        """
+        SELECT id, period_id, version, name, status, is_active,
+               total_hours, total_projected_cost, hourly_rate,
+               created_at, committed_at
+        FROM projection_snapshots
+        WHERE period_id = ?
+        ORDER BY version DESC
+        """,
+        (period_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_snapshot_with_details(
+    conn: sqlite3.Connection, snapshot_id: int
+) -> Optional[Dict[str, Any]]:
+    """Return snapshot metadata + project entries with nested job details."""
+    snap = conn.execute(
+        "SELECT * FROM projection_snapshots WHERE id = ?", (snapshot_id,)
+    ).fetchone()
+    if not snap:
+        return None
+
+    result = dict(snap)
+
+    # Project-level entries
+    entries = conn.execute(
+        """
+        SELECT pe.*, p.name AS project_name, p.number AS project_code
+        FROM projection_entries pe
+        JOIN projects p ON pe.project_id = p.id
+        WHERE pe.snapshot_id = ?
+        ORDER BY pe.allocated_hours DESC
+        """,
+        (snapshot_id,),
+    ).fetchall()
+
+    entry_list = []
+    for e in entries:
+        ed = dict(e)
+        # Fetch job-level details for this entry
+        details = conn.execute(
+            """
+            SELECT ped.*, bu.code AS bu_code, bu.name AS bu_name,
+                   COALESCE(pa.scope_name, '') AS scope_name,
+                   pa.is_gmp
+            FROM projection_entry_details ped
+            JOIN project_allocations pa ON pa.id = ped.allocation_id
+            JOIN business_units bu ON bu.id = pa.business_unit_id
+            WHERE ped.entry_id = ?
+            ORDER BY ped.allocated_hours DESC
+            """,
+            (e["id"],),
+        ).fetchall()
+        ed["details"] = [dict(d) for d in details]
+        entry_list.append(ed)
+
+    result["entries"] = entry_list
+    return result
+
+
+def activate_snapshot(
+    conn: sqlite3.Connection, snapshot_id: int
+) -> bool:
+    """Activate a snapshot (must be Draft). Deactivates others in same period."""
+    snap = conn.execute(
+        "SELECT * FROM projection_snapshots WHERE id = ?", (snapshot_id,)
+    ).fetchone()
+    if not snap or snap["status"] != "Draft":
+        return False
+
+    conn.execute(
+        "UPDATE projection_snapshots SET is_active = 0 WHERE period_id = ?",
+        (snap["period_id"],),
+    )
+    conn.execute(
+        "UPDATE projection_snapshots SET is_active = 1 WHERE id = ?",
+        (snapshot_id,),
+    )
+    conn.commit()
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Commit / Uncommit
+# ---------------------------------------------------------------------------
+
+
+def commit_snapshot(
+    conn: sqlite3.Connection, snapshot_id: int
+) -> Dict[str, Any]:
+    """Commit a snapshot: lock period, record costs, supersede others."""
+    snap = conn.execute(
+        "SELECT * FROM projection_snapshots WHERE id = ?", (snapshot_id,)
+    ).fetchone()
+    if not snap:
+        return {"error": "Snapshot not found"}
+    if snap["status"] != "Draft":
+        return {"error": f"Cannot commit: snapshot is {snap['status']}"}
+
+    # Check period not already committed
+    already = conn.execute(
+        "SELECT id FROM projection_snapshots WHERE period_id = ? AND status = 'Committed'",
+        (snap["period_id"],),
+    ).fetchone()
+    if already:
+        return {"error": "Period already has a committed snapshot"}
+
+    # Commit the snapshot
+    conn.execute(
+        "UPDATE projection_snapshots SET status = 'Committed', "
+        "committed_at = CURRENT_TIMESTAMP, is_active = 1 WHERE id = ?",
+        (snapshot_id,),
+    )
+
+    # Lock the period
+    conn.execute(
+        "UPDATE projection_periods SET is_locked = 1 WHERE id = ?",
+        (snap["period_id"],),
+    )
+
+    # Supersede all other snapshots in period
+    conn.execute(
+        "UPDATE projection_snapshots SET status = 'Superseded', is_active = 0 "
+        "WHERE period_id = ? AND id != ?",
+        (snap["period_id"], snapshot_id),
+    )
+
+    conn.commit()
+
+    # Return summary
+    totals = conn.execute(
+        "SELECT SUM(allocated_hours) AS hours, SUM(projected_cost) AS cost "
+        "FROM projection_entries WHERE snapshot_id = ?",
+        (snapshot_id,),
+    ).fetchone()
+
+    return {
+        "id": snapshot_id,
+        "status": "Committed",
+        "total_hours": totals["hours"] or 0,
+        "total_cost": totals["cost"] or 0,
+    }
+
+
+def uncommit_snapshot(
+    conn: sqlite3.Connection, snapshot_id: int
+) -> Dict[str, Any]:
+    """Revert a committed snapshot back to Draft. Unlock period."""
+    snap = conn.execute(
+        "SELECT * FROM projection_snapshots WHERE id = ?", (snapshot_id,)
+    ).fetchone()
+    if not snap:
+        return {"error": "Snapshot not found"}
+    if snap["status"] != "Committed":
+        return {"error": f"Cannot uncommit: snapshot is {snap['status']}"}
+
+    # Revert to Draft
+    conn.execute(
+        "UPDATE projection_snapshots SET status = 'Draft', committed_at = NULL WHERE id = ?",
+        (snapshot_id,),
+    )
+
+    # Unlock the period
+    conn.execute(
+        "UPDATE projection_periods SET is_locked = 0 WHERE id = ?",
+        (snap["period_id"],),
+    )
+
+    # Un-supersede other snapshots in the period
+    conn.execute(
+        "UPDATE projection_snapshots SET status = 'Draft' "
+        "WHERE period_id = ? AND id != ? AND status = 'Superseded'",
+        (snap["period_id"], snapshot_id),
+    )
+
+    conn.commit()
+    return {"id": snapshot_id, "status": "Draft"}
+
+
+# ---------------------------------------------------------------------------
+# Budget Integration
+# ---------------------------------------------------------------------------
+
+
+def has_committed_projections(
+    conn: sqlite3.Connection, project_id: int
+) -> bool:
+    """True if any committed snapshot references this project."""
+    row = conn.execute(
+        """
+        SELECT COUNT(*) AS n
+        FROM projection_entries pe
+        JOIN projection_snapshots ps ON ps.id = pe.snapshot_id
+        WHERE pe.project_id = ? AND ps.status = 'Committed'
+        """,
+        (project_id,),
+    ).fetchone()
+    return row["n"] > 0
+
+
+def get_budget_summary(
+    conn: sqlite3.Connection, project_id: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Extended project listing with committed + projected costs."""
+    where = "WHERE p.id = ?" if project_id else ""
+    params: list = [project_id] if project_id else []
+
+    rows = conn.execute(
+        f"""
+        SELECT p.id, p.number, p.name, p.stage,
+               COALESCE(b.total_budget, 0) AS total_budget,
+               COALESCE(spent.total, 0) AS budget_spent,
+               COALESCE(committed.cost, 0) AS committed_cost,
+               COALESCE(projected.cost, 0) AS projected_cost
+        FROM projects p
+        LEFT JOIN project_budgets b ON b.project_id = p.id
+        LEFT JOIN (
+            SELECT project_id, SUM(amount) AS total
+            FROM project_transactions GROUP BY project_id
+        ) spent ON spent.project_id = p.id
+        LEFT JOIN (
+            SELECT pe.project_id, SUM(pe.projected_cost) AS cost
+            FROM projection_entries pe
+            JOIN projection_snapshots ps ON ps.id = pe.snapshot_id
+            WHERE ps.status = 'Committed'
+            GROUP BY pe.project_id
+        ) committed ON committed.project_id = p.id
+        LEFT JOIN (
+            SELECT pe.project_id, SUM(pe.projected_cost) AS cost
+            FROM projection_entries pe
+            JOIN projection_snapshots ps ON ps.id = pe.snapshot_id
+            WHERE ps.status = 'Draft' AND ps.is_active = 1
+            GROUP BY pe.project_id
+        ) projected ON projected.project_id = p.id
+        {where}
+        ORDER BY p.created_at DESC
+        """,
+        params,
+    ).fetchall()
+
+    result = []
+    for r in rows:
+        d = dict(r)
+        d["budget_remaining"] = d["total_budget"] - d["budget_spent"] - d["committed_cost"]
+        result.append(d)
+    return result

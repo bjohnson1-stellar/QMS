@@ -266,6 +266,60 @@ def migrate_add_project_gmp(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def migrate_projection_overhaul(conn: sqlite3.Connection) -> None:
+    """Add projection_period_jobs, projection_entry_details tables and committed_at column."""
+    # New table: per-period job selection
+    if not _table_exists(conn, "projection_period_jobs"):
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS projection_period_jobs (
+                id INTEGER PRIMARY KEY,
+                period_id INTEGER NOT NULL REFERENCES projection_periods(id) ON DELETE CASCADE,
+                allocation_id INTEGER NOT NULL REFERENCES project_allocations(id) ON DELETE CASCADE,
+                included INTEGER NOT NULL DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(period_id, allocation_id)
+            )
+        """)
+        logger.info("Created projection_period_jobs table")
+
+    # New table: job-level detail under projection_entries
+    if not _table_exists(conn, "projection_entry_details"):
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS projection_entry_details (
+                id INTEGER PRIMARY KEY,
+                entry_id INTEGER NOT NULL REFERENCES projection_entries(id) ON DELETE CASCADE,
+                allocation_id INTEGER NOT NULL REFERENCES project_allocations(id),
+                job_code TEXT NOT NULL,
+                allocated_hours REAL NOT NULL DEFAULT 0,
+                projected_cost REAL NOT NULL DEFAULT 0,
+                weight_used REAL,
+                is_manual_override INTEGER NOT NULL DEFAULT 0,
+                notes TEXT,
+                UNIQUE(entry_id, allocation_id)
+            )
+        """)
+        logger.info("Created projection_entry_details table")
+
+    # Add committed_at to projection_snapshots
+    if _table_exists(conn, "projection_snapshots") and not _column_exists(
+        conn, "projection_snapshots", "committed_at"
+    ):
+        conn.execute(
+            "ALTER TABLE projection_snapshots ADD COLUMN committed_at TEXT"
+        )
+        logger.info("Added column projection_snapshots.committed_at")
+
+    # Migrate 'Final' status to 'Committed' for existing snapshots
+    if _table_exists(conn, "projection_snapshots"):
+        conn.execute(
+            "UPDATE projection_snapshots SET status = 'Committed', "
+            "committed_at = COALESCE(finalized_at, created_at) "
+            "WHERE status = 'Final'"
+        )
+
+    conn.commit()
+
+
 def run_all_migrations() -> None:
     """Run all incremental migrations against the active database."""
     with get_db() as conn:
@@ -277,3 +331,4 @@ def run_all_migrations() -> None:
         migrate_add_project_type(conn)
         migrate_allocations_add_job_fields(conn)
         migrate_add_project_gmp(conn)
+        migrate_projection_overhaul(conn)
