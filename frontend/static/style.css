@@ -1173,7 +1173,7 @@ tr:hover {
     right: 0;
     background: var(--color-sidebar);
     color: #fff;
-    padding: 10px 24px;
+    padding: 20px 24px;
     display: flex;
     align-items: center;
     gap: 16px;
