@@ -190,6 +190,7 @@
             <button id="viewProject" class="toggle-btn active" onclick="setViewMode('project')">By Project</button>
             <button id="viewBU" class="toggle-btn" onclick="setViewMode('bu')">By BU</button>
         </div>
+        <button id="projectionFilterBtn" class="secondary" onclick="toggleProjectionFilter()" style="font-size:12px;padding:4px 12px;" title="Show only projects with projections enabled">Projections</button>
         <button id="expandAllBtn" class="secondary" onclick="toggleExpandAll()" style="font-size:12px;padding:4px 12px;">▶ Expand All</button>
     </div>
     <div id="projectsTable"><div class="loading">Loading projects...</div></div>
@@ -242,6 +243,7 @@
     let currentEditId = null;
     let expandedProjects = new Set();
     let viewMode = 'project'; // 'project' or 'bu'
+    let projectionFilter = false;
     let selectedJobs = new Set();
     const API_BASE = '/projects/api';
     const STAGES = {{ stages|tojson }};
@@ -323,6 +325,16 @@
         document.getElementById('viewBU').classList.toggle('active', mode === 'bu');
         const btn = document.getElementById('expandAllBtn');
         btn.textContent = '▶ Expand All';
+        renderProjects();
+    }
+
+    function toggleProjectionFilter() {
+        projectionFilter = !projectionFilter;
+        const btn = document.getElementById('projectionFilterBtn');
+        btn.classList.toggle('active', projectionFilter);
+        btn.style.background = projectionFilter ? '#2980b9' : '';
+        btn.style.color = projectionFilter ? '#fff' : '';
+        btn.style.borderColor = projectionFilter ? '#2980b9' : '';
         renderProjects();
     }
 
@@ -629,6 +641,10 @@
                     );
                 }
             }
+            // Projection filter: only keep jobs with projection_enabled
+            if (projectionFilter) {
+                jobs = jobs.filter(j => j.projection_enabled);
+            }
             // Show project if it matches or has matching jobs
             if (stageFilter && jobs.length === 0) return null;
             if (searchFilter) {
@@ -637,6 +653,7 @@
                     (p.description && p.description.toLowerCase().includes(searchFilter));
                 if (!projMatch && jobs.length === 0) return null;
             }
+            if (projectionFilter && jobs.length === 0) return null;
             return { ...p, filteredJobs: jobs };
         }).filter(Boolean);
 
@@ -778,6 +795,7 @@
         });
 
         // Apply filters
+        if (projectionFilter) allJobs = allJobs.filter(j => j.projection_enabled);
         if (stageFilter) allJobs = allJobs.filter(j => j.stage === stageFilter);
         if (searchFilter) {
             allJobs = allJobs.filter(j =>
