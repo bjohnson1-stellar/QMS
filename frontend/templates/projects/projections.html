@@ -129,21 +129,57 @@
     function renderProjection(result) {
         const container = document.getElementById('projectionResults');
         if (result.entries.length === 0) {
-            container.innerHTML = '<div class="empty-state">No active projects found</div>';
+            container.innerHTML = '<div class="empty-state">No active jobs found</div>';
             return;
         }
-        let html = '<table><thead><tr><th>Project</th><th>Total Budget</th><th>Budget Spent</th><th>Remaining</th><th>Weight</th><th>Hours</th><th>Projected Cost</th></tr></thead><tbody>';
-        result.entries.forEach(entry => {
-            html += '<tr>';
-            html += `<td><strong>${entry.project_name}</strong><br><small>${entry.project_code}</small></td>`;
-            html += `<td class="currency">$${entry.total_budget.toLocaleString()}</td>`;
-            html += `<td class="currency">$${entry.budget_spent.toLocaleString()}</td>`;
-            html += `<td class="currency">$${entry.remaining_budget.toLocaleString()}</td>`;
-            html += `<td>${entry.weight_adjustment.toFixed(1)}x</td>`;
-            html += `<td><strong>${entry.allocated_hours}</strong> hrs</td>`;
-            html += `<td class="currency">$${entry.projected_cost.toLocaleString()}</td>`;
-            html += '</tr>';
+
+        // Group entries by project for visual grouping
+        const byProject = {};
+        result.entries.forEach(e => {
+            if (!byProject[e.project_id]) {
+                byProject[e.project_id] = {
+                    name: e.project_name, code: e.project_code, jobs: [],
+                    totalHours: 0, totalCost: 0
+                };
+            }
+            byProject[e.project_id].jobs.push(e);
+            byProject[e.project_id].totalHours += e.allocated_hours;
+            byProject[e.project_id].totalCost += e.projected_cost;
         });
+
+        let html = '<table><thead><tr>';
+        html += '<th>Job</th><th>Budget</th><th>Effective</th>';
+        html += '<th>Weight</th><th>GMP</th><th>Hours</th><th>Projected Cost</th>';
+        html += '</tr></thead><tbody>';
+
+        Object.values(byProject).forEach(proj => {
+            // Project header row
+            html += `<tr class="project-header" style="cursor:default;">`;
+            html += `<td colspan="3"><span class="project-number">${proj.code || '-'}</span> `;
+            html += `<span class="project-name">${proj.name}</span>`;
+            if (proj.jobs.some(j => j.is_gmp)) html += ` <span class="gmp-badge">GMP</span>`;
+            html += `</td>`;
+            html += `<td></td><td></td>`;
+            html += `<td><strong>${proj.totalHours}</strong> hrs</td>`;
+            html += `<td class="currency">$${proj.totalCost.toLocaleString()}</td>`;
+            html += `</tr>`;
+
+            // Job rows
+            proj.jobs.forEach(entry => {
+                html += '<tr class="job-row">';
+                html += `<td style="padding-left:30px;"><span class="job-code">${entry.job_code}</span>`;
+                if (entry.scope_name) html += `<span class="job-scope"> - ${entry.scope_name}</span>`;
+                html += `</td>`;
+                html += `<td class="currency">$${entry.allocated_budget.toLocaleString()}</td>`;
+                html += `<td class="currency">$${Math.round(entry.effective_budget).toLocaleString()}</td>`;
+                html += `<td>${entry.weight_adjustment.toFixed(1)}x</td>`;
+                html += `<td>${entry.is_gmp ? '<span class="gmp-badge">GMP</span>' : ''}</td>`;
+                html += `<td><strong>${entry.allocated_hours}</strong> hrs</td>`;
+                html += `<td class="currency">$${entry.projected_cost.toLocaleString()}</td>`;
+                html += '</tr>';
+            });
+        });
+
         html += '</tbody></table>';
         container.innerHTML = html;
     }

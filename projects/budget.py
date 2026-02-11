@@ -913,11 +913,12 @@ def calculate_projection(
     """
     Calculate budget-weighted hour allocation for a period (preview only).
 
-    Algorithm:
-    1. Get all active projects with remaining budget
-    2. weight = remaining_budget * weight_adjustment
-    3. Allocate hours proportionally, rounded to nearest 5
-    4. Adjust largest project to match total hours exactly
+    Algorithm (job-level):
+    1. Get all projection-enabled jobs with budget > 0 in active projects
+    2. Pro-rate each job's budget by project remaining-budget ratio
+    3. weight = effective_budget * weight_adjustment * gmp_factor
+    4. Allocate hours proportionally, rounded to nearest 5
+    5. Adjust largest job to match total hours exactly
     """
     period = conn.execute(
         "SELECT * FROM projection_periods WHERE id = ?", (period_id,)
@@ -929,37 +930,42 @@ def calculate_projection(
 
     settings = get_settings(conn)
     hourly_rate = settings["default_hourly_rate"]
-
     gmp_multiplier = settings.get("gmp_weight_multiplier", 1.5)
 
-    # Active projects with budget info
-    # has_gmp = 1 if ANY allocation (job) for this project is flagged GMP
+    # Job-level query: enabled allocations in active-stage projects
     rows = conn.execute(
         """
-        SELECT p.id, p.number, p.name, p.stage,
-               COALESCE(b.total_budget, 0) AS total_budget,
-               COALESCE(b.weight_adjustment, 1.0) AS weight_adjustment,
-               COALESCE(spent.total, 0) AS budget_spent,
-               COALESCE(gmp.has_gmp, 0) AS has_gmp
-        FROM projects p
+        SELECT pa.id AS allocation_id,
+               pa.job_code,
+               pa.allocated_budget,
+               pa.weight_adjustment,
+               pa.is_gmp,
+               COALESCE(pa.scope_name, '') AS scope_name,
+               bu.code AS bu_code,
+               bu.name AS bu_name,
+               p.id AS project_id,
+               p.number AS project_number,
+               p.name AS project_name,
+               COALESCE(b.total_budget, 0) AS project_total_budget,
+               COALESCE(spent.total, 0) AS project_budget_spent
+        FROM project_allocations pa
+        JOIN projects p ON p.id = pa.project_id
+        JOIN business_units bu ON bu.id = pa.business_unit_id
         LEFT JOIN project_budgets b ON b.project_id = p.id
         LEFT JOIN (
             SELECT project_id, SUM(amount) AS total
             FROM project_transactions GROUP BY project_id
         ) spent ON spent.project_id = p.id
-        LEFT JOIN (
-            SELECT project_id, MAX(is_gmp) AS has_gmp
-            FROM project_allocations
-            WHERE projection_enabled = 1
-            GROUP BY project_id
-        ) gmp ON gmp.project_id = p.id
-        WHERE p.stage IN ('Course of Construction', 'Construction and Bidding',
+        WHERE pa.projection_enabled = 1
+          AND pa.allocated_budget > 0
+          AND p.stage IN ('Course of Construction', 'Construction and Bidding',
                           'Pre-Construction')
+        ORDER BY pa.allocated_budget DESC
         """
     ).fetchall()
-    projects = [dict(r) for r in rows]
+    jobs = [dict(r) for r in rows]
 
-    if not projects:
+    if not jobs:
         return {
             "period_id": period_id,
             "total_hours": period["total_hours"],
@@ -970,48 +976,54 @@ def calculate_projection(
 
     total_hours = period["total_hours"]
 
-    # Calculate weights
-    total_weighted_budget = 0
-    for p in projects:
-        p["remaining_budget"] = p["total_budget"] - p["budget_spent"]
-        gmp_factor = gmp_multiplier if p.get("has_gmp") else 1.0
-        p["weight"] = p["remaining_budget"] * p["weight_adjustment"] * gmp_factor
-        total_weighted_budget += p["weight"]
+    # Calculate per-job weights
+    total_weight = 0
+    for j in jobs:
+        ptb = j["project_total_budget"]
+        remaining_ratio = max(0, (ptb - j["project_budget_spent"]) / ptb) if ptb > 0 else 0
+        j["effective_budget"] = j["allocated_budget"] * remaining_ratio
+        gmp_factor = gmp_multiplier if j["is_gmp"] else 1.0
+        j["weight"] = j["effective_budget"] * j["weight_adjustment"] * gmp_factor
+        total_weight += j["weight"]
 
-    # Allocate hours
-    allocations = []
-    for p in projects:
-        raw = (p["weight"] / total_weighted_budget * total_hours
-               if total_weighted_budget > 0 else 0)
+    # Allocate hours proportionally
+    allocs = []
+    for j in jobs:
+        raw = (j["weight"] / total_weight * total_hours
+               if total_weight > 0 else 0)
         rounded = round_to_nearest_5(raw)
-        allocations.append({"project": p, "raw_hours": raw, "rounded_hours": rounded})
+        allocs.append({"job": j, "raw_hours": raw, "rounded_hours": rounded})
 
-    # Adjust to match total
-    rounded_total = sum(a["rounded_hours"] for a in allocations)
-    if rounded_total != total_hours and allocations:
+    # Adjust largest job to match total exactly
+    rounded_total = sum(a["rounded_hours"] for a in allocs)
+    if rounded_total != total_hours and allocs:
         diff = total_hours - rounded_total
-        allocations.sort(key=lambda a: a["raw_hours"], reverse=True)
-        allocations[0]["rounded_hours"] += diff
+        allocs.sort(key=lambda a: a["raw_hours"], reverse=True)
+        allocs[0]["rounded_hours"] += diff
 
     entries = []
     total_cost = 0
-    for a in allocations:
-        p = a["project"]
+    for a in allocs:
+        j = a["job"]
         hours = a["rounded_hours"]
         cost = hours * hourly_rate
         total_cost += cost
         entries.append({
-            "project_id": p["id"],
-            "project_name": p["name"],
-            "project_code": p["number"],
-            "total_budget": p["total_budget"],
-            "budget_spent": p["budget_spent"],
-            "remaining_budget": p["remaining_budget"],
-            "weight_adjustment": p["weight_adjustment"],
-            "weight_used": p["weight"],
+            "allocation_id": j["allocation_id"],
+            "job_code": j["job_code"],
+            "bu_code": j["bu_code"],
+            "bu_name": j["bu_name"],
+            "scope_name": j["scope_name"],
+            "is_gmp": bool(j["is_gmp"]),
+            "project_id": j["project_id"],
+            "project_name": j["project_name"],
+            "project_code": j["project_number"],
+            "allocated_budget": j["allocated_budget"],
+            "effective_budget": j["effective_budget"],
+            "weight_adjustment": j["weight_adjustment"],
+            "weight_used": j["weight"],
             "allocated_hours": hours,
             "projected_cost": cost,
-            "has_gmp": bool(p.get("has_gmp")),
         })
 
     return {

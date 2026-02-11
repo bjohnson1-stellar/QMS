@@ -538,9 +538,28 @@ def api_create_snapshot(pid):
         if period["is_locked"]:
             return jsonify({"error": "Period is locked"}), 400
 
+        # Aggregate per-job entries to per-project for snapshot storage
+        raw_entries = data.get("entries", [])
+        project_map = {}
+        for e in raw_entries:
+            pid_key = e.get("project_id")
+            if pid_key not in project_map:
+                project_map[pid_key] = {
+                    "project_id": pid_key,
+                    "allocated_hours": 0,
+                    "projected_cost": 0,
+                    "weight_used": 0,
+                    "remaining_budget": 0,
+                }
+            project_map[pid_key]["allocated_hours"] += e.get("allocated_hours", 0)
+            project_map[pid_key]["projected_cost"] += e.get("projected_cost", 0)
+            project_map[pid_key]["weight_used"] += e.get("weight_used", 0)
+            project_map[pid_key]["remaining_budget"] += e.get("effective_budget", 0)
+        aggregated = list(project_map.values())
+
         result = budget.create_projection_snapshot(
             conn, pid,
-            entries=data.get("entries", []),
+            entries=aggregated,
             hourly_rate=data.get("hourlyRate", 150.0),
             total_hours=data.get("totalHours", period["total_hours"]),
             name=data.get("name"),
