@@ -1190,7 +1190,7 @@ tr:hover {
 .bulk-count {
     font-family: var(--font-heading);
     font-weight: 600;
-    font-size: 13px;
+    font-size: 15px;
     white-space: nowrap;
 }
 
@@ -1203,14 +1203,14 @@ tr:hover {
 
 .bulk-sep {
     color: rgba(255, 255, 255, 0.25);
-    font-size: 16px;
+    font-size: 18px;
     margin: 0 2px;
 }
 
 .bulk-btn {
     font-family: var(--font-body);
-    font-size: 12px;
-    padding: 5px 12px;
+    font-size: 14px;
+    padding: 6px 14px;
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: var(--radius-sm);
     background: transparent;
@@ -1239,7 +1239,7 @@ tr:hover {
     margin-left: auto;
     border: none;
     color: rgba(255, 255, 255, 0.6);
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .bulk-btn-clear:hover {
@@ -1249,8 +1249,8 @@ tr:hover {
 
 .bulk-input {
     font-family: var(--font-body);
-    font-size: 12px;
-    padding: 4px 8px;
+    font-size: 14px;
+    padding: 6px 10px;
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.08);
