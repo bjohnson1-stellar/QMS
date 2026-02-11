@@ -98,6 +98,7 @@ def api_create_project():
             zip_code=data.get("ownerZip"),
             description=data.get("description"),
             allocations=data.get("allocations"),
+            is_gmp=bool(data.get("isGmp", False)),
         )
     return jsonify({"id": pid, "message": "Project created successfully"}), 201
 
@@ -140,6 +141,7 @@ def api_update_project(project_id):
             zip_code=data.get("ownerZip"),
             description=data.get("description"),
             allocations=data.get("allocations"),
+            is_gmp=bool(data.get("isGmp", False)),
         )
     return jsonify({"message": "Project updated successfully"})
 
@@ -435,6 +437,7 @@ def api_update_settings():
             default_hourly_rate=float(data.get("defaultHourlyRate", 150)),
             working_hours_per_month=int(data.get("workingHoursPerMonth", 176)),
             fiscal_year_start_month=int(data.get("fiscalYearStartMonth", 1)),
+            gmp_weight_multiplier=float(data.get("gmpWeightMultiplier", 1.5)),
         )
     return jsonify({"message": "Settings updated"})
 

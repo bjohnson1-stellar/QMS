@@ -201,6 +201,7 @@ def create_project_with_budget(
     zip_code: Optional[str] = None,
     description: Optional[str] = None,
     allocations: Optional[List[Dict[str, Any]]] = None,
+    is_gmp: bool = False,
 ) -> int:
     """Create a project and its budget record. Returns project_id."""
     # Extract base number for projects.number (strip BU/subjob if present)
@@ -211,12 +212,12 @@ def create_project_with_budget(
         """
         INSERT INTO projects (number, name, client, pm, stage, status,
                               start_date, end_date, notes, description,
-                              street, city, state, zip)
-        VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?)
+                              street, city, state, zip, is_gmp)
+        VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (base_number, name, client, manager, stage,
          start_date, end_date, notes, description,
-         street, city, state, zip_code),
+         street, city, state, zip_code, 1 if is_gmp else 0),
     )
     project_id = cursor.lastrowid
 
@@ -261,6 +262,7 @@ def update_project_with_budget(
     zip_code: Optional[str] = None,
     description: Optional[str] = None,
     allocations: Optional[List[Dict[str, Any]]] = None,
+    is_gmp: bool = False,
 ) -> None:
     """Update a project and its budget record."""
     parsed = parse_job_code(code)
@@ -271,13 +273,13 @@ def update_project_with_budget(
         UPDATE projects
         SET number=?, name=?, client=?, pm=?, stage=?,
             start_date=?, end_date=?, notes=?, description=?,
-            street=?, city=?, state=?, zip=?,
+            street=?, city=?, state=?, zip=?, is_gmp=?,
             updated_at=CURRENT_TIMESTAMP
         WHERE id=?
         """,
         (base_number, name, client, manager, stage,
          start_date, end_date, notes, description,
-         street, city, state, zip_code, project_id),
+         street, city, state, zip_code, 1 if is_gmp else 0, project_id),
     )
 
     if allocations is not None:
@@ -786,8 +788,8 @@ def get_settings(conn: Optional[sqlite3.Connection] = None) -> Dict[str, Any]:
         if not row:
             c.execute(
                 "INSERT INTO budget_settings (id, company_name, default_hourly_rate, "
-                "working_hours_per_month, fiscal_year_start_month) "
-                "VALUES (1, 'My Company', 150.0, 176, 1)"
+                "working_hours_per_month, fiscal_year_start_month, gmp_weight_multiplier) "
+                "VALUES (1, 'My Company', 150.0, 176, 1, 1.5)"
             )
             c.commit()
             row = c.execute("SELECT * FROM budget_settings WHERE id = 1").fetchone()
@@ -806,16 +808,18 @@ def update_settings(
     default_hourly_rate: float = 150.0,
     working_hours_per_month: int = 176,
     fiscal_year_start_month: int = 1,
+    gmp_weight_multiplier: float = 1.5,
 ) -> None:
     conn.execute(
         """
         UPDATE budget_settings
         SET company_name=?, default_hourly_rate=?, working_hours_per_month=?,
-            fiscal_year_start_month=?, updated_at=CURRENT_TIMESTAMP
+            fiscal_year_start_month=?, gmp_weight_multiplier=?,
+            updated_at=CURRENT_TIMESTAMP
         WHERE id=1
         """,
         (company_name, default_hourly_rate, working_hours_per_month,
-         fiscal_year_start_month),
+         fiscal_year_start_month, gmp_weight_multiplier),
     )
     conn.commit()
 
@@ -928,10 +932,12 @@ def calculate_projection(
     settings = get_settings(conn)
     hourly_rate = settings["default_hourly_rate"]
 
+    gmp_multiplier = settings.get("gmp_weight_multiplier", 1.5)
+
     # Active projects with budget info
     rows = conn.execute(
         """
-        SELECT p.id, p.number, p.name, p.stage,
+        SELECT p.id, p.number, p.name, p.stage, p.is_gmp,
                COALESCE(b.total_budget, 0) AS total_budget,
                COALESCE(b.weight_adjustment, 1.0) AS weight_adjustment,
                COALESCE(spent.total, 0) AS budget_spent
@@ -962,7 +968,8 @@ def calculate_projection(
     total_weighted_budget = 0
     for p in projects:
         p["remaining_budget"] = p["total_budget"] - p["budget_spent"]
-        p["weight"] = p["remaining_budget"] * p["weight_adjustment"]
+        gmp_factor = gmp_multiplier if p.get("is_gmp") else 1.0
+        p["weight"] = p["remaining_budget"] * p["weight_adjustment"] * gmp_factor
         total_weighted_budget += p["weight"]
 
     # Allocate hours
@@ -998,6 +1005,7 @@ def calculate_projection(
             "weight_used": p["weight"],
             "allocated_hours": hours,
             "projected_cost": cost,
+            "is_gmp": bool(p.get("is_gmp")),
         })
 
     return {

@@ -966,6 +966,20 @@ tr:hover {
     margin-left: 6px;
 }
 
+.gmp-badge {
+    display: inline-block;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+
 .job-row {
     border-left: 4px solid transparent;
     transition: background 0.1s var(--ease);

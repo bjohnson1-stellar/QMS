@@ -52,6 +52,12 @@
             </select>
         </div>
 
+        <div class="form-group">
+            <label for="gmpWeightMultiplier">GMP Weight Multiplier</label>
+            <input type="number" id="gmpWeightMultiplier" step="0.1" min="1.0" max="5.0" required>
+            <div class="help-text">Applied to GMP projects in projections (default: 1.5x)</div>
+        </div>
+
         <button type="submit">Save Settings</button>
     </form>
 </div>
@@ -69,6 +75,7 @@
             document.getElementById('defaultHourlyRate').value = settings.default_hourly_rate || 150;
             document.getElementById('workingHoursPerMonth').value = settings.working_hours_per_month || 176;
             document.getElementById('fiscalYearStartMonth').value = settings.fiscal_year_start_month || 1;
+            document.getElementById('gmpWeightMultiplier').value = settings.gmp_weight_multiplier || 1.5;
         } catch (error) { showError('Failed to load settings'); }
     }
 
@@ -78,7 +85,8 @@
             companyName: document.getElementById('companyName').value,
             defaultHourlyRate: parseFloat(document.getElementById('defaultHourlyRate').value),
             workingHoursPerMonth: parseInt(document.getElementById('workingHoursPerMonth').value),
-            fiscalYearStartMonth: parseInt(document.getElementById('fiscalYearStartMonth').value)
+            fiscalYearStartMonth: parseInt(document.getElementById('fiscalYearStartMonth').value),
+            gmpWeightMultiplier: parseFloat(document.getElementById('gmpWeightMultiplier').value)
         };
         try {
             const response = await fetch(`${API_BASE}/settings`, {

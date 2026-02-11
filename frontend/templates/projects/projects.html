@@ -60,6 +60,10 @@
                     <input type="number" id="weightAdjustment" step="0.1" value="1.0" min="0.5" max="2.0">
                     <div class="help-text">Default: 1.0 (0.5 - 2.0)</div>
                 </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:20px;">
+                    <input type="checkbox" id="isGmp" style="width:auto;">
+                    <label for="isGmp" style="margin:0;">GMP Contract</label>
+                </div>
                 <div class="form-group">
                     <label>Start Date</label>
                     <input type="date" id="startDate">
@@ -363,7 +367,8 @@
             ownerState: document.getElementById('ownerState').value,
             ownerZip: document.getElementById('ownerZip').value,
             notes: document.getElementById('notes').value,
-            description: document.getElementById('projectDescription').value
+            description: document.getElementById('projectDescription').value,
+            isGmp: document.getElementById('isGmp').checked
         };
 
         try {
@@ -411,6 +416,7 @@
         document.getElementById('ownerCity').value = '';
         document.getElementById('ownerState').value = '';
         document.getElementById('ownerZip').value = '';
+        document.getElementById('isGmp').checked = false;
         document.getElementById('allocationSection').style.display = 'none';
         document.getElementById('allocationList').innerHTML = '';
         document.getElementById('budgetHint').textContent = 'Auto-calculated from job budgets';
@@ -437,6 +443,7 @@
         document.getElementById('ownerState').value = project.state || '';
         document.getElementById('ownerZip').value = project.zip || '';
         document.getElementById('notes').value = project.notes || '';
+        document.getElementById('isGmp').checked = !!project.is_gmp;
         currentEditId = id;
         document.getElementById('submitBtn').textContent = 'Update Project';
         document.getElementById('formTitle').textContent = 'Edit Project';
@@ -691,6 +698,7 @@
             html += `<span class="toggle-icon ${expanded ? 'expanded' : ''}">\u25B6</span>`;
             html += `<span class="project-number">${esc(p.number) || '-'}</span>`;
             html += `<span class="project-name">${esc(p.name)}</span>`;
+            if (p.is_gmp) html += `<span class="gmp-badge">GMP</span>`;
             const loc = [p.city, p.state].filter(Boolean).join(', ');
             if (loc) html += `<span class="project-location">${esc(loc)}</span>`;
             if (p.description) html += `<span class="project-desc">${esc(p.description)}</span>`;
@@ -762,7 +770,7 @@
         let allJobs = [];
         projects.forEach(p => {
             (p.jobs || []).forEach(j => {
-                allJobs.push({ ...j, project_name: p.name, project_number: p.number, project_id: p.id, project_city: p.city, project_state: p.state });
+                allJobs.push({ ...j, project_name: p.name, project_number: p.number, project_id: p.id, project_city: p.city, project_state: p.state, is_gmp: p.is_gmp });
             });
         });
 

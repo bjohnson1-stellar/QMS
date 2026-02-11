@@ -65,7 +65,8 @@ CREATE TABLE IF NOT EXISTS projects (
     state TEXT,
     zip TEXT,
     pm TEXT,
-    pm_employee_id TEXT REFERENCES employees(id)
+    pm_employee_id TEXT REFERENCES employees(id),
+    is_gmp INTEGER NOT NULL DEFAULT 0
 );
 
 -- Project identification codes
@@ -177,6 +178,7 @@ CREATE TABLE IF NOT EXISTS budget_settings (
     default_hourly_rate REAL DEFAULT 150.0,
     working_hours_per_month INTEGER DEFAULT 176,
     fiscal_year_start_month INTEGER DEFAULT 1,
+    gmp_weight_multiplier REAL NOT NULL DEFAULT 1.5,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

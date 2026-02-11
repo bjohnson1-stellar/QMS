@@ -235,6 +235,26 @@ def migrate_allocations_add_job_fields(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def migrate_add_project_gmp(conn: sqlite3.Connection) -> None:
+    """Add GMP contract flag to projects and weight multiplier to budget_settings."""
+    if _table_exists(conn, "projects") and not _column_exists(conn, "projects", "is_gmp"):
+        conn.execute(
+            "ALTER TABLE projects ADD COLUMN is_gmp INTEGER NOT NULL DEFAULT 0"
+        )
+        logger.info("Added column projects.is_gmp")
+
+    if _table_exists(conn, "budget_settings") and not _column_exists(
+        conn, "budget_settings", "gmp_weight_multiplier"
+    ):
+        conn.execute(
+            "ALTER TABLE budget_settings ADD COLUMN "
+            "gmp_weight_multiplier REAL NOT NULL DEFAULT 1.5"
+        )
+        logger.info("Added column budget_settings.gmp_weight_multiplier")
+
+    conn.commit()
+
+
 def run_all_migrations() -> None:
     """Run all incremental migrations against the active database."""
     with get_db() as conn:
@@ -245,3 +265,4 @@ def run_all_migrations() -> None:
         migrate_add_project_description(conn)
         migrate_add_project_type(conn)
         migrate_allocations_add_job_fields(conn)
+        migrate_add_project_gmp(conn)
