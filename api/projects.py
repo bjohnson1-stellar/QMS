@@ -472,7 +472,7 @@ def api_finalize_snapshot(sid):
 
 @bp.route("/api/timecard/<int:pid>", methods=["GET"])
 def api_get_timecard(pid):
-    """Export timecard entries for a projection period."""
+    """Export timecard entries for a single projection period."""
     from datetime import date as _date
 
     start = request.args.get("start_date")
@@ -482,6 +482,27 @@ def api_get_timecard(pid):
 
     with get_db(readonly=True) as conn:
         result = timecard.generate_timecard_entries(conn, pid, start_date=sd, end_date=ed)
+
+    if "error" in result:
+        return jsonify(result), 400
+    return jsonify(result)
+
+
+@bp.route("/api/timecard", methods=["GET"])
+def api_get_timecard_by_dates():
+    """Export timecard entries for a date range (cross-month capable)."""
+    from datetime import date as _date
+
+    start = request.args.get("start_date")
+    end = request.args.get("end_date")
+    if not start or not end:
+        return jsonify({"error": "start_date and end_date required"}), 400
+
+    sd = _date.fromisoformat(start)
+    ed = _date.fromisoformat(end)
+
+    with get_db(readonly=True) as conn:
+        result = timecard.generate_timecard_for_pay_period(conn, sd, ed)
 
     if "error" in result:
         return jsonify(result), 400

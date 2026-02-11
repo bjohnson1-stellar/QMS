@@ -193,34 +193,55 @@ def export_timecard(
     end_date: str = typer.Option(None, "--end", help="End date YYYY-MM-DD (default: last of month)"),
     output_format: str = typer.Option("table", "--format", "-f", help="Output format: table | json"),
 ):
-    """Export timecard entries from a projection for UKG entry."""
+    """Export timecard entries from a projection for UKG entry.
+
+    Three modes:
+      1. --start/--end only  → auto-detects months, handles cross-month
+      2. --year/--month      → single month (with optional --start/--end)
+      3. --period            → by period ID (with optional --start/--end)
+    """
     import json
     from datetime import date as _date
 
     from qms.core import get_db
-    from qms.projects.timecard import generate_timecard_entries
-
-    # Resolve period_id from year/month if not given directly
-    if period_id is None:
-        if year is None or month is None:
-            typer.echo("Provide --period or both --year and --month.")
-            raise typer.Exit(1)
-        with get_db(readonly=True) as conn:
-            row = conn.execute(
-                "SELECT id FROM projection_periods WHERE year = ? AND month = ?",
-                (year, month),
-            ).fetchone()
-            if not row:
-                typer.echo(f"No projection period found for {year}-{month:02d}.")
-                raise typer.Exit(1)
-            period_id = row["id"]
+    from qms.projects.timecard import (
+        generate_timecard_entries,
+        generate_timecard_for_pay_period,
+    )
 
     # Parse optional date overrides
     sd = _date.fromisoformat(start_date) if start_date else None
     ed = _date.fromisoformat(end_date) if end_date else None
 
-    with get_db(readonly=True) as conn:
-        result = generate_timecard_entries(conn, period_id, start_date=sd, end_date=ed)
+    # Mode 1: date-only (cross-month capable)
+    if period_id is None and year is None:
+        if sd is None or ed is None:
+            typer.echo(
+                "Provide --start and --end, or --year/--month, or --period."
+            )
+            raise typer.Exit(1)
+        with get_db(readonly=True) as conn:
+            result = generate_timecard_for_pay_period(conn, sd, ed)
+    else:
+        # Mode 2/3: resolve a single period
+        if period_id is None:
+            if month is None:
+                typer.echo("Provide --month with --year.")
+                raise typer.Exit(1)
+            with get_db(readonly=True) as conn:
+                row = conn.execute(
+                    "SELECT id FROM projection_periods WHERE year = ? AND month = ?",
+                    (year, month),
+                ).fetchone()
+                if not row:
+                    typer.echo(f"No projection period found for {year}-{month:02d}.")
+                    raise typer.Exit(1)
+                period_id = row["id"]
+
+        with get_db(readonly=True) as conn:
+            result = generate_timecard_entries(
+                conn, period_id, start_date=sd, end_date=ed
+            )
 
     if "error" in result:
         typer.echo(f"Error: {result['error']}")
@@ -232,12 +253,19 @@ def export_timecard(
 
     # Table output
     typer.echo(
-        f"\n  Timecard: {result['year']}-{result['month']:02d}  "
-        f"({result['date_range']['start']} to {result['date_range']['end']})"
+        f"\n  Timecard: {result['date_range']['start']} to {result['date_range']['end']}"
     )
+    if "periods" in result:
+        # Cross-month response
+        for pd in result["periods"]:
+            typer.echo(
+                f"    {pd['year']}-{pd['month']:02d}: "
+                f"{pd['working_days']} days, {pd['hours']:.2f} hrs"
+            )
+    elif "snapshot_version" in result:
+        typer.echo(f"  Snapshot v{result['snapshot_version']}")
     typer.echo(
-        f"  Snapshot v{result['snapshot_version']}  |  "
-        f"{result['working_days']} working days  |  "
+        f"  {result['working_days']} working days  |  "
         f"{result['total_hours']} total hours  |  "
         f"{result['entry_count']} entries"
     )

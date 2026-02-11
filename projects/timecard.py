@@ -127,6 +127,10 @@ def generate_timecard_entries(
     """
     Generate timecard entries from the active projection snapshot.
 
+    Hours are pro-rated when the requested date range is a subset of the
+    month: if the month has 16 working days and the range covers 10,
+    each project gets 10/16 of its monthly allocation.
+
     For each projection entry:
       - 1 allocation  → use that job_code for all hours
       - N allocations → split hours proportionally by allocated_budget
@@ -157,19 +161,33 @@ def generate_timecard_entries(
         else:
             end_date = date(year, month + 1, 1) - timedelta(days=1)
 
-    working_dates = get_working_dates(start_date, end_date)
+    # Clamp date range to the period's month (caller handles cross-month)
+    month_start = date(year, month, 1)
+    if month == 12:
+        month_end = date(year + 1, 1, 1) - timedelta(days=1)
+    else:
+        month_end = date(year, month + 1, 1) - timedelta(days=1)
+    effective_start = max(start_date, month_start)
+    effective_end = min(end_date, month_end)
+
+    working_dates = get_working_dates(effective_start, effective_end)
     if not working_dates:
         return {"error": "No working days in the specified date range"}
 
     num_days = len(working_dates)
 
-    # 4. Process each projection entry
+    # 4. Pro-rate: compare requested working days vs full month
+    month_working_days = period["working_days"]
+    prorate_factor = num_days / month_working_days if month_working_days > 0 else 1.0
+
+    # 5. Process each projection entry
     entries = []
     warnings = []
 
     for pe in projection["entries"]:
         project_id = pe["project_id"]
-        total_hours = pe["allocated_hours"]
+        monthly_hours = pe["allocated_hours"]
+        total_hours = round(monthly_hours * prorate_factor, 2)
 
         if total_hours <= 0:
             continue
@@ -306,7 +324,96 @@ def generate_timecard_entries(
 
 
 # ---------------------------------------------------------------------------
-# Convenience wrapper
+# Cross-month pay period support
+# ---------------------------------------------------------------------------
+
+
+def _months_in_range(start: date, end: date) -> List[Tuple[int, int]]:
+    """Return list of (year, month) tuples that a date range spans."""
+    months = []
+    current = date(start.year, start.month, 1)
+    while current <= end:
+        months.append((current.year, current.month))
+        if current.month == 12:
+            current = date(current.year + 1, 1, 1)
+        else:
+            current = date(current.year, current.month + 1, 1)
+    return months
+
+
+def generate_timecard_for_pay_period(
+    conn: sqlite3.Connection,
+    start_date: date,
+    end_date: date,
+) -> Dict[str, Any]:
+    """
+    Generate timecard entries for a pay period that may span months.
+
+    Looks up projection periods for each month in the range, pro-rates
+    hours from each, and merges the results.
+    """
+    months = _months_in_range(start_date, end_date)
+    if not months:
+        return {"error": "Invalid date range"}
+
+    all_entries = []
+    all_warnings = []
+    total_hours = 0.0
+    period_details = []
+
+    for year, month in months:
+        row = conn.execute(
+            "SELECT id FROM projection_periods WHERE year = ? AND month = ?",
+            (year, month),
+        ).fetchone()
+        if not row:
+            all_warnings.append(
+                f"No projection period for {year}-{month:02d}; "
+                f"days in that month will have zero hours"
+            )
+            continue
+
+        result = generate_timecard_entries(
+            conn, row["id"], start_date=start_date, end_date=end_date,
+        )
+        if "error" in result:
+            all_warnings.append(
+                f"{year}-{month:02d}: {result['error']}"
+            )
+            continue
+
+        all_entries.extend(result["entries"])
+        all_warnings.extend(result.get("warnings", []))
+        total_hours += result["total_hours"]
+        period_details.append({
+            "period_id": result["period_id"],
+            "year": year,
+            "month": month,
+            "working_days": result["working_days"],
+            "hours": result["total_hours"],
+        })
+
+    all_entries.sort(key=lambda e: (e["date"], e["project_name"]))
+    total_hours = round(total_hours, 2)
+
+    working_dates = get_working_dates(start_date, end_date)
+
+    return {
+        "date_range": {
+            "start": start_date.isoformat(),
+            "end": end_date.isoformat(),
+        },
+        "periods": period_details,
+        "working_days": len(working_dates),
+        "total_hours": total_hours,
+        "entry_count": len(all_entries),
+        "entries": all_entries,
+        "warnings": all_warnings,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Convenience wrappers
 # ---------------------------------------------------------------------------
 
 
@@ -321,3 +428,12 @@ def get_timecard_for_period(
         return generate_timecard_entries(
             conn, period_id, start_date=start_date, end_date=end_date
         )
+
+
+def get_timecard_for_pay_period(
+    start_date: date,
+    end_date: date,
+) -> Dict[str, Any]:
+    """Convenience wrapper for cross-month pay periods."""
+    with get_db(readonly=True) as conn:
+        return generate_timecard_for_pay_period(conn, start_date, end_date)

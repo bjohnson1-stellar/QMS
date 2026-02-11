@@ -8,6 +8,7 @@ from qms.projects.timecard import (
     distribute_hours,
     format_ukg_transfer,
     generate_timecard_entries,
+    generate_timecard_for_pay_period,
     get_working_dates,
 )
 
@@ -228,6 +229,33 @@ class TestGenerateTimecardEntries:
         # Feb 9=Mon, 10=Tue, 11=Wed, 12=Thu → 4 working days
         assert result["working_days"] == 4
         assert len(result["entries"]) == 4
+        # Pro-rated: 4/16 of 160h = 40h
+        assert result["total_hours"] == pytest.approx(40.0, abs=0.1)
+
+    def test_prorate_partial_month(self, seeded_db):
+        """Requesting half the month should yield half the hours."""
+        result = generate_timecard_entries(
+            seeded_db, 1,
+            start_date=date(2026, 2, 9),
+            end_date=date(2026, 2, 28),
+        )
+        assert "error" not in result
+        # Feb 9-28: 12 Mon-Thu working days out of 16 total
+        assert result["working_days"] == 12
+        # 12/16 of 160 = 120
+        assert result["total_hours"] == pytest.approx(120.0, abs=0.1)
+
+    def test_dates_outside_month_are_clamped(self, seeded_db):
+        """Dates beyond the period's month are clamped to month boundary."""
+        result = generate_timecard_entries(
+            seeded_db, 1,
+            start_date=date(2026, 2, 1),
+            end_date=date(2026, 3, 15),  # extends into March
+        )
+        assert "error" not in result
+        # Should be clamped to Feb, so full 16 days and 160 hours
+        assert result["working_days"] == 16
+        assert result["total_hours"] == pytest.approx(160.0, abs=0.1)
 
     def test_no_active_snapshot(self, memory_db):
         memory_db.execute(
@@ -330,5 +358,107 @@ class TestGenerateTimecardEntries:
         assert "06974-600" in job_codes   # -00 stripped
         assert "06974-230-01" in job_codes  # -01 kept
 
-        # Total should still be 40 hours
+        # Total should still be 40 hours (pro-rated: 4/4 * 40 = 40)
         assert result["total_hours"] == pytest.approx(40.0, abs=0.1)
+
+
+# ---------------------------------------------------------------------------
+# TestGenerateTimecardForPayPeriod (cross-month)
+# ---------------------------------------------------------------------------
+
+
+class TestGenerateTimecardForPayPeriod:
+    @pytest.fixture
+    def two_month_db(self, memory_db):
+        """Seed DB with two months of projection data."""
+        db = memory_db
+
+        # Business unit + project
+        db.execute(
+            "INSERT INTO business_units (id, code, name) VALUES (1, '600', 'Mechanical')"
+        )
+        db.execute(
+            "INSERT INTO projects (id, number, name, status, stage) "
+            "VALUES (1, '07600', 'Rosina', 'active', 'Course of Construction')"
+        )
+        db.execute(
+            "INSERT INTO project_allocations "
+            "(id, project_id, business_unit_id, subjob, job_code, allocated_budget) "
+            "VALUES (1, 1, 1, '00', '07600-600-00', 50000)"
+        )
+
+        # Jan 2026: 17 Mon-Thu days, 170 hours
+        db.execute(
+            "INSERT INTO projection_periods (id, year, month, working_days, total_hours) "
+            "VALUES (1, 2026, 1, 17, 170)"
+        )
+        db.execute(
+            "INSERT INTO projection_snapshots "
+            "(id, period_id, version, name, hourly_rate, total_hours, "
+            "total_projected_cost, status, is_active) "
+            "VALUES (1, 1, 1, 'v1', 150.0, 170, 25500.0, 'Draft', 1)"
+        )
+        db.execute(
+            "INSERT INTO projection_entries "
+            "(snapshot_id, project_id, allocated_hours, projected_cost) "
+            "VALUES (1, 1, 170.0, 25500.0)"
+        )
+
+        # Feb 2026: 16 Mon-Thu days, 160 hours
+        db.execute(
+            "INSERT INTO projection_periods (id, year, month, working_days, total_hours) "
+            "VALUES (2, 2026, 2, 16, 160)"
+        )
+        db.execute(
+            "INSERT INTO projection_snapshots "
+            "(id, period_id, version, name, hourly_rate, total_hours, "
+            "total_projected_cost, status, is_active) "
+            "VALUES (2, 2, 1, 'v1', 150.0, 160, 24000.0, 'Draft', 1)"
+        )
+        db.execute(
+            "INSERT INTO projection_entries "
+            "(snapshot_id, project_id, allocated_hours, projected_cost) "
+            "VALUES (2, 1, 160.0, 24000.0)"
+        )
+
+        db.commit()
+        return db
+
+    def test_cross_month_pay_period(self, two_month_db):
+        """Pay period spanning Jan 26 - Feb 8 pulls from both months."""
+        result = generate_timecard_for_pay_period(
+            two_month_db,
+            date(2026, 1, 26),
+            date(2026, 2, 8),
+        )
+        assert "error" not in result
+        assert len(result["periods"]) == 2
+
+        # Jan 26-31: Mon=26, Tue=27, Wed=28, Thu=29 → 4 working days
+        # Feb 1-8: Mon=2, Tue=3, Wed=4, Thu=5 → 4 working days
+        assert result["working_days"] == 8
+
+        # Jan: 4/17 * 170 ≈ 40.0; Feb: 4/16 * 160 = 40.0 → ~80 total
+        assert result["total_hours"] == pytest.approx(80.0, abs=1.0)
+
+    def test_single_month_via_pay_period(self, two_month_db):
+        """Pay period within one month works too."""
+        result = generate_timecard_for_pay_period(
+            two_month_db,
+            date(2026, 2, 9),
+            date(2026, 2, 22),
+        )
+        assert "error" not in result
+        assert len(result["periods"]) == 1
+        assert result["periods"][0]["year"] == 2026
+        assert result["periods"][0]["month"] == 2
+
+    def test_missing_month_warns(self, two_month_db):
+        """If a month in the range has no projection, a warning is added."""
+        result = generate_timecard_for_pay_period(
+            two_month_db,
+            date(2026, 2, 23),
+            date(2026, 3, 8),
+        )
+        # Feb should work, March has no projection
+        assert any("No projection period for 2026-03" in w for w in result["warnings"])
