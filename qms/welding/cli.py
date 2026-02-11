@@ -431,6 +431,52 @@ def check_notifications(
         )
 
 
+@app.command("export-lookups")
+def export_lookups(
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o",
+        help="Output path for Excel file (default: data/welding-lookups.xlsx)",
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview row counts without writing"),
+):
+    """Export lookup data to Excel for Power Automate / Teams Adaptive Cards.
+
+    Writes an Excel workbook with sheets: Welders, WPS, Projects, WPQ Status,
+    Processes, Positions, Base Materials, Filler Metals.
+
+    Power Automate reads this file from OneDrive to populate Adaptive Card
+    dropdowns. Run weekly or after data changes.
+    """
+    from qms.welding.export_lookups import export_lookups as do_export
+
+    output_path = Path(output) if output else None
+    result = do_export(output_path=output_path, dry_run=dry_run)
+
+    if result.get("status") == "dry_run":
+        typer.echo("Export Preview (dry run)")
+        typer.echo("=" * 40)
+        for sheet_name, count in result["sheets"].items():
+            typer.echo(f"  {sheet_name:<20} {count:>5} rows")
+        typer.echo(f"  {'─' * 28}")
+        typer.echo(f"  {'Total':<20} {result['total_rows']:>5} rows")
+        typer.echo(f"\n  Output would be: {result['output_path']}")
+        return
+
+    if result.get("status") == "success":
+        typer.echo("Welding Lookups Exported")
+        typer.echo("=" * 40)
+        for sheet_name, count in result["sheets"].items():
+            typer.echo(f"  {sheet_name:<20} {count:>5} rows")
+        typer.echo(f"  {'─' * 28}")
+        typer.echo(f"  {'Total':<20} {result['total_rows']:>5} rows")
+        typer.echo(f"\n  File: {result['output_path']}")
+        typer.echo(f"  Date: {result['exported_at']}")
+        typer.echo("\n  Sync this file to OneDrive for Power Automate access.")
+    else:
+        typer.echo(f"Export failed: {result}")
+        raise typer.Exit(1)
+
+
 @app.command("sync-sharepoint")
 def sync_sharepoint(
     push: bool = typer.Option(False, "--push", help="Push lookup data to SharePoint"),

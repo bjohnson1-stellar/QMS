@@ -38,6 +38,7 @@ from qms.welding.registration import (
     validate_registration,
 )
 from qms.welding.sharepoint import preview_sync_data
+from qms.welding.export_lookups import export_lookups
 
 __all__ = [
     # intake
@@ -67,4 +68,6 @@ __all__ = [
     "validate_registration",
     # sharepoint (lazy — requires 'pip install qms[sharepoint]')
     "preview_sync_data",
+    # export
+    "export_lookups",
 ]
