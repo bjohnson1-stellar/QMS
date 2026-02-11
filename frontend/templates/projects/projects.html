@@ -167,6 +167,7 @@
 <div class="card">
     <div class="tab-bar" style="display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--color-border-light);">
         <button id="tabActive" class="tab-btn active" onclick="setArchiveTab('active')">Active Projects</button>
+        <button id="tabWarranty" class="tab-btn" onclick="setArchiveTab('warranty')">Warranty</button>
         <button id="tabArchived" class="tab-btn" onclick="setArchiveTab('archived')">Archived</button>
     </div>
     <div class="filter-bar">
@@ -190,8 +191,8 @@
         </select>
         <input type="text" id="searchFilter" placeholder="Search projects, jobs, PM..." oninput="renderProjects()">
         <div class="view-toggle" style="margin-left:auto;display:flex;gap:0;">
-            <button id="viewProject" class="toggle-btn active" onclick="setViewMode('project')">By Project</button>
-            <button id="viewBU" class="toggle-btn" onclick="setViewMode('bu')">By BU</button>
+            <button id="viewProject" class="toggle-btn" onclick="setViewMode('project')">By Project</button>
+            <button id="viewBU" class="toggle-btn active" onclick="setViewMode('bu')">By BU</button>
         </div>
         <button id="projectionFilterBtn" class="secondary" onclick="toggleProjectionFilter()" style="font-size:12px;padding:4px 12px;" title="Show only projects with projections enabled">Projections</button>
         <button id="expandAllBtn" class="secondary" onclick="toggleExpandAll()" style="font-size:12px;padding:4px 12px;">▶ Expand All</button>
@@ -245,10 +246,12 @@
     let businessUnits = [];
     let currentEditId = null;
     let expandedProjects = new Set();
-    let viewMode = 'project'; // 'project' or 'bu'
+    let viewMode = 'bu'; // 'project' or 'bu'
     let projectionFilter = false;
     let archiveTab = 'active';
+    const WARRANTY_STAGES = ['Warranty'];
     const ARCHIVED_STAGES = ['Archive', 'Lost Proposal'];
+    const INACTIVE_STAGES = [...WARRANTY_STAGES, ...ARCHIVED_STAGES];
     let selectedJobs = new Set();
     const API_BASE = '/projects/api';
     const STAGES = {{ stages|tojson }};
@@ -336,13 +339,17 @@
     function setArchiveTab(tab) {
         archiveTab = tab;
         document.getElementById('tabActive').classList.toggle('active', tab === 'active');
+        document.getElementById('tabWarranty').classList.toggle('active', tab === 'warranty');
         document.getElementById('tabArchived').classList.toggle('active', tab === 'archived');
-        // Update stage filter options
+        // Update stage filter options per tab
         const sel = document.getElementById('stageFilter');
         const current = sel.value;
         sel.innerHTML = '<option value="">All Stages</option>';
-        STAGES.filter(s => tab === 'archived' ? ARCHIVED_STAGES.includes(s) : !ARCHIVED_STAGES.includes(s))
-            .forEach(s => { sel.innerHTML += `<option value="${s}"${s === current ? ' selected' : ''}>${s}</option>`; });
+        let tabStages;
+        if (tab === 'warranty') tabStages = WARRANTY_STAGES;
+        else if (tab === 'archived') tabStages = ARCHIVED_STAGES;
+        else tabStages = STAGES.filter(s => !INACTIVE_STAGES.includes(s));
+        tabStages.forEach(s => { sel.innerHTML += `<option value="${s}"${s === current ? ' selected' : ''}>${s}</option>`; });
         renderProjects();
     }
 
@@ -640,9 +647,11 @@
 
         let filtered = projects.map(p => {
             let jobs = p.jobs || [];
-            // Archive tab filter: split active vs archived jobs
+            // Tab filter: active / warranty / archived
             if (archiveTab === 'active') {
-                jobs = jobs.filter(j => !ARCHIVED_STAGES.includes(j.stage));
+                jobs = jobs.filter(j => !INACTIVE_STAGES.includes(j.stage));
+            } else if (archiveTab === 'warranty') {
+                jobs = jobs.filter(j => WARRANTY_STAGES.includes(j.stage));
             } else {
                 jobs = jobs.filter(j => ARCHIVED_STAGES.includes(j.stage));
             }
@@ -821,7 +830,9 @@
 
         // Apply filters
         if (archiveTab === 'active') {
-            allJobs = allJobs.filter(j => !ARCHIVED_STAGES.includes(j.stage));
+            allJobs = allJobs.filter(j => !INACTIVE_STAGES.includes(j.stage));
+        } else if (archiveTab === 'warranty') {
+            allJobs = allJobs.filter(j => WARRANTY_STAGES.includes(j.stage));
         } else {
             allJobs = allJobs.filter(j => ARCHIVED_STAGES.includes(j.stage));
         }
@@ -1006,7 +1017,14 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ stage })
             });
-            if (res.ok) { const j = _findJob(allocId); if (j) j.stage = stage; }
+            if (res.ok) {
+                const j = _findJob(allocId);
+                if (j) {
+                    j.stage = stage;
+                    // Backend auto-clears projection flag for inactive stages
+                    if (INACTIVE_STAGES.includes(stage)) j.projection_enabled = 0;
+                }
+            }
         } catch (error) { showError('Failed to update stage'); }
     }
 

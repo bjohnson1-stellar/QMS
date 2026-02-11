@@ -481,6 +481,9 @@ def list_projects_hierarchical(
         return _run(c)
 
 
+INACTIVE_STAGES = {"Archive", "Lost Proposal", "Warranty"}
+
+
 def update_allocation_field(
     conn: sqlite3.Connection, allocation_id: int, field: str, value: Any
 ) -> bool:
@@ -494,6 +497,12 @@ def update_allocation_field(
         f"UPDATE project_allocations SET {field}=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
         (value, allocation_id),
     )
+    # Auto-clear projection flag when moving to an inactive stage
+    if field == "stage" and value in INACTIVE_STAGES:
+        conn.execute(
+            "UPDATE project_allocations SET projection_enabled=0 WHERE id=? AND projection_enabled=1",
+            (allocation_id,),
+        )
     conn.commit()
     return cursor.rowcount > 0
 
@@ -543,6 +552,13 @@ def bulk_update_allocations(
             [value] + list(allocation_ids),
         )
         updated = cursor.rowcount
+        # Auto-clear projection flag when moving to an inactive stage
+        if value in INACTIVE_STAGES:
+            conn.execute(
+                f"UPDATE project_allocations SET projection_enabled=0 "
+                f"WHERE id IN ({placeholders}) AND projection_enabled=1",
+                list(allocation_ids),
+            )
 
     elif action == "set_projection":
         flag = 1 if value else 0
