@@ -236,7 +236,8 @@ def migrate_allocations_add_job_fields(conn: sqlite3.Connection) -> None:
 
 
 def migrate_add_project_gmp(conn: sqlite3.Connection) -> None:
-    """Add GMP contract flag to projects and weight multiplier to budget_settings."""
+    """Add GMP contract flag and weight multiplier for GMP projections."""
+    # Legacy: projects.is_gmp was added first, kept for compat but unused
     if _table_exists(conn, "projects") and not _column_exists(conn, "projects", "is_gmp"):
         conn.execute(
             "ALTER TABLE projects ADD COLUMN is_gmp INTEGER NOT NULL DEFAULT 0"
@@ -251,6 +252,16 @@ def migrate_add_project_gmp(conn: sqlite3.Connection) -> None:
             "gmp_weight_multiplier REAL NOT NULL DEFAULT 1.5"
         )
         logger.info("Added column budget_settings.gmp_weight_multiplier")
+
+    # GMP flag on allocations (job-level) — the active flag
+    if _table_exists(conn, "project_allocations") and not _column_exists(
+        conn, "project_allocations", "is_gmp"
+    ):
+        conn.execute(
+            "ALTER TABLE project_allocations ADD COLUMN "
+            "is_gmp INTEGER NOT NULL DEFAULT 0"
+        )
+        logger.info("Added column project_allocations.is_gmp")
 
     conn.commit()
 

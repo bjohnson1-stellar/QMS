@@ -60,10 +60,6 @@
                     <input type="number" id="weightAdjustment" step="0.1" value="1.0" min="0.5" max="2.0">
                     <div class="help-text">Default: 1.0 (0.5 - 2.0)</div>
                 </div>
-                <div class="form-group" style="display:flex;align-items:center;gap:10px;padding-top:20px;">
-                    <input type="checkbox" id="isGmp" style="width:auto;">
-                    <label for="isGmp" style="margin:0;">GMP Contract</label>
-                </div>
                 <div class="form-group">
                     <label>Start Date</label>
                     <input type="date" id="startDate">
@@ -367,8 +363,7 @@
             ownerState: document.getElementById('ownerState').value,
             ownerZip: document.getElementById('ownerZip').value,
             notes: document.getElementById('notes').value,
-            description: document.getElementById('projectDescription').value,
-            isGmp: document.getElementById('isGmp').checked
+            description: document.getElementById('projectDescription').value
         };
 
         try {
@@ -416,7 +411,6 @@
         document.getElementById('ownerCity').value = '';
         document.getElementById('ownerState').value = '';
         document.getElementById('ownerZip').value = '';
-        document.getElementById('isGmp').checked = false;
         document.getElementById('allocationSection').style.display = 'none';
         document.getElementById('allocationList').innerHTML = '';
         document.getElementById('budgetHint').textContent = 'Auto-calculated from job budgets';
@@ -443,7 +437,6 @@
         document.getElementById('ownerState').value = project.state || '';
         document.getElementById('ownerZip').value = project.zip || '';
         document.getElementById('notes').value = project.notes || '';
-        document.getElementById('isGmp').checked = !!project.is_gmp;
         currentEditId = id;
         document.getElementById('submitBtn').textContent = 'Update Project';
         document.getElementById('formTitle').textContent = 'Edit Project';
@@ -678,7 +671,7 @@
         let html = '<table><thead><tr>';
         html += '<th style="width:30px;"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" title="Select all visible jobs"></th>';
         html += '<th>Job</th><th>PM</th><th>Stage</th>';
-        html += '<th>Budget</th><th>Weight</th><th>Proj</th>';
+        html += '<th>Budget</th><th>Weight</th><th>Proj</th><th>GMP</th>';
         html += '<th>Actions</th>';
         html += '</tr></thead><tbody>';
 
@@ -698,14 +691,14 @@
             html += `<span class="toggle-icon ${expanded ? 'expanded' : ''}">\u25B6</span>`;
             html += `<span class="project-number">${esc(p.number) || '-'}</span>`;
             html += `<span class="project-name">${esc(p.name)}</span>`;
-            if (p.is_gmp) html += `<span class="gmp-badge">GMP</span>`;
+            if ((p.jobs || []).some(j => j.is_gmp)) html += `<span class="gmp-badge">GMP</span>`;
             const loc = [p.city, p.state].filter(Boolean).join(', ');
             if (loc) html += `<span class="project-location">${esc(loc)}</span>`;
             if (p.description) html += `<span class="project-desc">${esc(p.description)}</span>`;
             html += `</div>`;
             html += `</td>`;
             html += `<td class="currency">${tb > 0 ? '$' + tb.toLocaleString() : ''}</td>`;
-            html += `<td></td><td></td>`;
+            html += `<td></td><td></td><td></td>`;
             html += `<td><div class="action-buttons">`;
             html += `<button class="action-btn secondary" onclick="event.stopPropagation();editProject(${p.id})">Edit</button>`;
             if (jobCount > 0) html += `<span class="job-count-badge">${jobCount} job${jobCount > 1 ? 's' : ''}</span>`;
@@ -715,7 +708,7 @@
             // Job rows (visible when expanded)
             if (expanded) {
                 if (jobs.length === 0) {
-                    html += `<tr class="no-jobs-row"><td colspan="8">No jobs found for this project</td></tr>`;
+                    html += `<tr class="no-jobs-row"><td colspan="9">No jobs found for this project</td></tr>`;
                 } else {
                     jobs.forEach(j => {
                         const jb = j.allocated_budget || 0;
@@ -748,6 +741,9 @@
                         // Projection toggle
                         html += `<td><input type="checkbox" class="projection-toggle" ${j.projection_enabled ? 'checked' : ''} `;
                         html += `onchange="updateJobProjection(${j.id},this.checked)" onclick="event.stopPropagation()" title="Include in projections"></td>`;
+                        // GMP toggle
+                        html += `<td><input type="checkbox" class="projection-toggle" ${j.is_gmp ? 'checked' : ''} `;
+                        html += `onchange="updateJobGmp(${j.id},this.checked)" onclick="event.stopPropagation()" title="GMP contract"></td>`;
                         // Actions (empty — delete moved to edit page)
                         html += `<td></td>`;
                         html += `</tr>`;
@@ -833,7 +829,7 @@
         let html = '<table><thead><tr>';
         html += '<th style="width:30px;"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" title="Select all visible jobs"></th>';
         html += '<th>Job</th><th>Project</th><th>Stage</th>';
-        html += '<th>Budget</th><th>Weight</th><th>Proj</th>';
+        html += '<th>Budget</th><th>Weight</th><th>Proj</th><th>GMP</th>';
         html += '<th>Actions</th>';
         html += '</tr></thead><tbody>';
 
@@ -854,7 +850,7 @@
             html += `</div>`;
             html += `</td>`;
             html += `<td class="currency">${tb > 0 ? '$' + tb.toLocaleString() : ''}</td>`;
-            html += `<td></td><td></td>`;
+            html += `<td></td><td></td><td></td>`;
             html += `<td><div class="action-buttons">`;
             if (jobCount > 0) html += `<span class="job-count-badge">${jobCount} job${jobCount > 1 ? 's' : ''}</span>`;
             html += `</div></td>`;
@@ -892,6 +888,9 @@
                     // Projection toggle
                     html += `<td><input type="checkbox" class="projection-toggle" ${j.projection_enabled ? 'checked' : ''} `;
                     html += `onchange="updateJobProjection(${j.id},this.checked)" onclick="event.stopPropagation()" title="Include in projections"></td>`;
+                    // GMP toggle
+                    html += `<td><input type="checkbox" class="projection-toggle" ${j.is_gmp ? 'checked' : ''} `;
+                    html += `onchange="updateJobGmp(${j.id},this.checked)" onclick="event.stopPropagation()" title="GMP contract"></td>`;
                     // Actions
                     html += `<td></td>`;
                     html += `</tr>`;
@@ -933,6 +932,17 @@
             });
             if (res.ok) { const j = _findJob(allocId); if (j) j.projection_enabled = enabled ? 1 : 0; }
         } catch (error) { showError('Failed to update projection flag'); }
+    }
+
+    async function updateJobGmp(allocId, isGmp) {
+        try {
+            const res = await fetch(`${API_BASE}/allocations/${allocId}/gmp`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isGmp })
+            });
+            if (res.ok) { const j = _findJob(allocId); if (j) j.is_gmp = isGmp ? 1 : 0; }
+        } catch (error) { showError('Failed to update GMP flag'); }
     }
 
     async function updateJobStage(allocId, stage) {

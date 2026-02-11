@@ -201,7 +201,6 @@ def create_project_with_budget(
     zip_code: Optional[str] = None,
     description: Optional[str] = None,
     allocations: Optional[List[Dict[str, Any]]] = None,
-    is_gmp: bool = False,
 ) -> int:
     """Create a project and its budget record. Returns project_id."""
     # Extract base number for projects.number (strip BU/subjob if present)
@@ -212,12 +211,12 @@ def create_project_with_budget(
         """
         INSERT INTO projects (number, name, client, pm, stage, status,
                               start_date, end_date, notes, description,
-                              street, city, state, zip, is_gmp)
-        VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                              street, city, state, zip)
+        VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (base_number, name, client, manager, stage,
          start_date, end_date, notes, description,
-         street, city, state, zip_code, 1 if is_gmp else 0),
+         street, city, state, zip_code),
     )
     project_id = cursor.lastrowid
 
@@ -262,7 +261,6 @@ def update_project_with_budget(
     zip_code: Optional[str] = None,
     description: Optional[str] = None,
     allocations: Optional[List[Dict[str, Any]]] = None,
-    is_gmp: bool = False,
 ) -> None:
     """Update a project and its budget record."""
     parsed = parse_job_code(code)
@@ -273,13 +271,13 @@ def update_project_with_budget(
         UPDATE projects
         SET number=?, name=?, client=?, pm=?, stage=?,
             start_date=?, end_date=?, notes=?, description=?,
-            street=?, city=?, state=?, zip=?, is_gmp=?,
+            street=?, city=?, state=?, zip=?,
             updated_at=CURRENT_TIMESTAMP
         WHERE id=?
         """,
         (base_number, name, client, manager, stage,
          start_date, end_date, notes, description,
-         street, city, state, zip_code, 1 if is_gmp else 0, project_id),
+         street, city, state, zip_code, project_id),
     )
 
     if allocations is not None:
@@ -482,7 +480,7 @@ def update_allocation_field(
     conn: sqlite3.Connection, allocation_id: int, field: str, value: Any
 ) -> bool:
     """Update a single field on an allocation. Returns True if found."""
-    allowed = {"weight_adjustment", "projection_enabled", "stage"}
+    allowed = {"weight_adjustment", "projection_enabled", "stage", "is_gmp"}
     if field not in allowed:
         raise ValueError(f"Field '{field}' not updatable via this API")
     if field == "stage" and value not in VALID_STAGES:
@@ -935,18 +933,26 @@ def calculate_projection(
     gmp_multiplier = settings.get("gmp_weight_multiplier", 1.5)
 
     # Active projects with budget info
+    # has_gmp = 1 if ANY allocation (job) for this project is flagged GMP
     rows = conn.execute(
         """
-        SELECT p.id, p.number, p.name, p.stage, p.is_gmp,
+        SELECT p.id, p.number, p.name, p.stage,
                COALESCE(b.total_budget, 0) AS total_budget,
                COALESCE(b.weight_adjustment, 1.0) AS weight_adjustment,
-               COALESCE(spent.total, 0) AS budget_spent
+               COALESCE(spent.total, 0) AS budget_spent,
+               COALESCE(gmp.has_gmp, 0) AS has_gmp
         FROM projects p
         LEFT JOIN project_budgets b ON b.project_id = p.id
         LEFT JOIN (
             SELECT project_id, SUM(amount) AS total
             FROM project_transactions GROUP BY project_id
         ) spent ON spent.project_id = p.id
+        LEFT JOIN (
+            SELECT project_id, MAX(is_gmp) AS has_gmp
+            FROM project_allocations
+            WHERE projection_enabled = 1
+            GROUP BY project_id
+        ) gmp ON gmp.project_id = p.id
         WHERE p.stage IN ('Course of Construction', 'Construction and Bidding',
                           'Pre-Construction')
         """
@@ -968,7 +974,7 @@ def calculate_projection(
     total_weighted_budget = 0
     for p in projects:
         p["remaining_budget"] = p["total_budget"] - p["budget_spent"]
-        gmp_factor = gmp_multiplier if p.get("is_gmp") else 1.0
+        gmp_factor = gmp_multiplier if p.get("has_gmp") else 1.0
         p["weight"] = p["remaining_budget"] * p["weight_adjustment"] * gmp_factor
         total_weighted_budget += p["weight"]
 
@@ -1005,7 +1011,7 @@ def calculate_projection(
             "weight_used": p["weight"],
             "allocated_hours": hours,
             "projected_cost": cost,
-            "is_gmp": bool(p.get("is_gmp")),
+            "has_gmp": bool(p.get("has_gmp")),
         })
 
     return {

@@ -98,7 +98,6 @@ def api_create_project():
             zip_code=data.get("ownerZip"),
             description=data.get("description"),
             allocations=data.get("allocations"),
-            is_gmp=bool(data.get("isGmp", False)),
         )
     return jsonify({"id": pid, "message": "Project created successfully"}), 201
 
@@ -141,7 +140,6 @@ def api_update_project(project_id):
             zip_code=data.get("ownerZip"),
             description=data.get("description"),
             allocations=data.get("allocations"),
-            is_gmp=bool(data.get("isGmp", False)),
         )
     return jsonify({"message": "Project updated successfully"})
 
@@ -230,6 +228,17 @@ def api_update_allocation_projection(aid):
     if not ok:
         return jsonify({"error": "Allocation not found"}), 404
     return jsonify({"message": "Projection flag updated"})
+
+
+@bp.route("/api/allocations/<int:aid>/gmp", methods=["PATCH"])
+def api_update_allocation_gmp(aid):
+    data = request.json
+    flag = 1 if data.get("isGmp") else 0
+    with get_db() as conn:
+        ok = budget.update_allocation_field(conn, aid, "is_gmp", flag)
+    if not ok:
+        return jsonify({"error": "Allocation not found"}), 404
+    return jsonify({"message": "GMP flag updated"})
 
 
 @bp.route("/api/allocations/<int:aid>/budget", methods=["PATCH"])
