@@ -374,6 +374,7 @@ def _process_project_group(
         ).fetchone()
 
         if existing_job:
+            job_id = existing_job["id"]
             conn.execute(
                 """
                 UPDATE jobs
@@ -381,11 +382,11 @@ def _process_project_group(
                     updated_at=CURRENT_TIMESTAMP
                 WHERE id=?
                 """,
-                (scope_name, pm, existing_job["id"]),
+                (scope_name, pm, job_id),
             )
             result["jobs_updated"] += 1
         else:
-            conn.execute(
+            cursor = conn.execute(
                 """
                 INSERT INTO jobs (job_number, project_id, department_id,
                                   project_number, department_number, suffix,
@@ -396,4 +397,30 @@ def _process_project_group(
                  base_number, bu_code, subjob,
                  scope_name, pm),
             )
+            job_id = cursor.lastrowid
             result["jobs_created"] += 1
+
+        # Auto-create/link corresponding allocation
+        existing_alloc = conn.execute(
+            "SELECT id FROM project_allocations WHERE project_id=? AND business_unit_id=? AND subjob=?",
+            (project_id, bu_id, subjob),
+        ).fetchone()
+        if existing_alloc:
+            conn.execute(
+                "UPDATE project_allocations SET job_id=?, scope_name=?, pm=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                (job_id, scope_name, pm, existing_alloc["id"]),
+            )
+        else:
+            conn.execute(
+                """
+                INSERT INTO project_allocations
+                    (project_id, business_unit_id, subjob, job_code,
+                     allocated_budget, weight_adjustment, job_id,
+                     scope_name, pm, stage)
+                VALUES (?, ?, ?, ?, 0, 1.0, ?, ?, ?,
+                        (SELECT COALESCE(p.stage, 'Course of Construction')
+                         FROM projects p WHERE p.id = ?))
+                """,
+                (project_id, bu_id, subjob, job_number,
+                 job_id, scope_name, pm, project_id),
+            )

@@ -152,6 +152,89 @@ def migrate_add_project_type(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def migrate_allocations_add_job_fields(conn: sqlite3.Connection) -> None:
+    """Add stage, projection_enabled, scope_name, pm, job_id to project_allocations."""
+    if not _table_exists(conn, "project_allocations"):
+        return
+
+    new_cols = [
+        ("stage", "ALTER TABLE project_allocations ADD COLUMN stage TEXT DEFAULT 'Course of Construction'"),
+        ("projection_enabled", "ALTER TABLE project_allocations ADD COLUMN projection_enabled INTEGER DEFAULT 1"),
+        ("scope_name", "ALTER TABLE project_allocations ADD COLUMN scope_name TEXT"),
+        ("pm", "ALTER TABLE project_allocations ADD COLUMN pm TEXT"),
+        ("job_id", "ALTER TABLE project_allocations ADD COLUMN job_id INTEGER REFERENCES jobs(id)"),
+    ]
+
+    added = False
+    for col, sql in new_cols:
+        if not _column_exists(conn, "project_allocations", col):
+            conn.execute(sql)
+            logger.info("Added column project_allocations.%s", col)
+            added = True
+
+    if added:
+        conn.commit()
+
+    # Backfill: link allocations to jobs via matching job_code = job_number
+    unlinked = conn.execute(
+        "SELECT pa.id, pa.job_code, pa.project_id "
+        "FROM project_allocations pa "
+        "WHERE pa.job_id IS NULL AND pa.job_code IS NOT NULL"
+    ).fetchall()
+    for row in unlinked:
+        job = conn.execute(
+            "SELECT id, scope_name, pm FROM jobs WHERE job_number = ?",
+            (row["job_code"],),
+        ).fetchone()
+        if job:
+            conn.execute(
+                "UPDATE project_allocations SET job_id=?, scope_name=COALESCE(scope_name,?), pm=COALESCE(pm,?) WHERE id=?",
+                (job["id"], job["scope_name"], job["pm"], row["id"]),
+            )
+    if unlinked:
+        logger.info("Backfilled %d allocation-job links", len(unlinked))
+
+    # Backfill: default stage from parent project for allocations with NULL stage
+    conn.execute("""
+        UPDATE project_allocations SET stage = (
+            SELECT COALESCE(p.stage, 'Course of Construction')
+            FROM projects p WHERE p.id = project_allocations.project_id
+        )
+        WHERE stage IS NULL
+    """)
+
+    # Create stub allocations for orphan jobs (have job but no allocation)
+    if _table_exists(conn, "jobs"):
+        orphans = conn.execute("""
+            SELECT j.id AS job_id, j.job_number, j.project_id, j.department_id,
+                   j.suffix, j.scope_name, j.pm
+            FROM jobs j
+            WHERE j.status = 'active'
+              AND NOT EXISTS (
+                  SELECT 1 FROM project_allocations pa
+                  WHERE pa.job_code = j.job_number
+              )
+        """).fetchall()
+        for orph in orphans:
+            conn.execute("""
+                INSERT OR IGNORE INTO project_allocations
+                    (project_id, business_unit_id, subjob, job_code,
+                     allocated_budget, weight_adjustment, job_id,
+                     scope_name, pm, stage)
+                VALUES (?, ?, ?, ?, 0, 1.0, ?, ?, ?,
+                        (SELECT COALESCE(p.stage, 'Course of Construction')
+                         FROM projects p WHERE p.id = ?))
+            """, (
+                orph["project_id"], orph["department_id"], orph["suffix"],
+                orph["job_number"], orph["job_id"],
+                orph["scope_name"], orph["pm"], orph["project_id"],
+            ))
+        if orphans:
+            logger.info("Created %d stub allocations for orphan jobs", len(orphans))
+
+    conn.commit()
+
+
 def run_all_migrations() -> None:
     """Run all incremental migrations against the active database."""
     with get_db() as conn:
@@ -161,3 +244,4 @@ def run_all_migrations() -> None:
         migrate_add_project_allocations(conn)
         migrate_add_project_description(conn)
         migrate_add_project_type(conn)
+        migrate_allocations_add_job_fields(conn)

@@ -385,6 +385,10 @@ def _insert_allocation(
     allocated_budget: float,
     weight_adjustment: float,
     notes: Optional[str] = None,
+    *,
+    stage: Optional[str] = None,
+    scope_name: Optional[str] = None,
+    pm: Optional[str] = None,
 ) -> int:
     """Insert or replace an allocation row. Returns allocation id."""
     bu_row = conn.execute(
@@ -394,12 +398,24 @@ def _insert_allocation(
         raise ValueError(f"Business unit code '{bu_code}' not found")
 
     job_code = f"{base_number}-{bu_code}-{subjob}"
+
+    # Try to auto-link to jobs table
+    job_row = conn.execute(
+        "SELECT id, scope_name, pm FROM jobs WHERE job_number = ?", (job_code,)
+    ).fetchone()
+    job_id = job_row["id"] if job_row else None
+    if job_row and not scope_name:
+        scope_name = job_row["scope_name"]
+    if job_row and not pm:
+        pm = job_row["pm"]
+
     cursor = conn.execute(
         """
         INSERT INTO project_allocations
             (project_id, business_unit_id, subjob, job_code,
-             allocated_budget, weight_adjustment, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+             allocated_budget, weight_adjustment, notes,
+             stage, scope_name, pm, job_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(project_id, business_unit_id, subjob) DO UPDATE SET
             job_code=excluded.job_code,
             allocated_budget=excluded.allocated_budget,
@@ -408,9 +424,73 @@ def _insert_allocation(
             updated_at=CURRENT_TIMESTAMP
         """,
         (project_id, bu_row["id"], subjob, job_code,
-         allocated_budget, weight_adjustment, notes),
+         allocated_budget, weight_adjustment, notes,
+         stage, scope_name, pm, job_id),
     )
     return cursor.lastrowid
+
+
+def list_projects_hierarchical(
+    conn: Optional[sqlite3.Connection] = None,
+) -> List[Dict[str, Any]]:
+    """List projects with nested job (allocation) arrays for the hierarchical view."""
+    proj_sql = """
+        SELECT p.*,
+               COALESCE(b.total_budget, 0) AS total_budget,
+               COALESCE(b.weight_adjustment, 1.0) AS weight_adjustment,
+               COALESCE(spent.total, 0) AS budget_spent
+        FROM projects p
+        LEFT JOIN project_budgets b ON b.project_id = p.id
+        LEFT JOIN (
+            SELECT project_id, SUM(amount) AS total
+            FROM project_transactions GROUP BY project_id
+        ) spent ON spent.project_id = p.id
+        ORDER BY p.created_at DESC
+    """
+    alloc_sql = """
+        SELECT pa.*, bu.code AS bu_code, bu.name AS bu_name,
+               COALESCE(j.scope_name, pa.scope_name) AS scope_name,
+               COALESCE(j.pm, pa.pm) AS pm
+        FROM project_allocations pa
+        JOIN business_units bu ON bu.id = pa.business_unit_id
+        LEFT JOIN jobs j ON j.id = pa.job_id
+        ORDER BY bu.code, pa.subjob
+    """
+
+    def _run(c: sqlite3.Connection):
+        projects = [dict(r) for r in c.execute(proj_sql).fetchall()]
+        allocs = [dict(r) for r in c.execute(alloc_sql).fetchall()]
+
+        # Group allocations by project_id
+        alloc_map: Dict[int, List[Dict[str, Any]]] = {}
+        for a in allocs:
+            alloc_map.setdefault(a["project_id"], []).append(a)
+
+        for p in projects:
+            p["jobs"] = alloc_map.get(p["id"], [])
+        return projects
+
+    if conn:
+        return _run(conn)
+    with get_db(readonly=True) as c:
+        return _run(c)
+
+
+def update_allocation_field(
+    conn: sqlite3.Connection, allocation_id: int, field: str, value: Any
+) -> bool:
+    """Update a single field on an allocation. Returns True if found."""
+    allowed = {"weight_adjustment", "projection_enabled", "stage"}
+    if field not in allowed:
+        raise ValueError(f"Field '{field}' not updatable via this API")
+    if field == "stage" and value not in VALID_STAGES:
+        raise ValueError(f"Invalid stage: {value}")
+    cursor = conn.execute(
+        f"UPDATE project_allocations SET {field}=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+        (value, allocation_id),
+    )
+    conn.commit()
+    return cursor.rowcount > 0
 
 
 def sync_budget_rollup(conn: sqlite3.Connection, project_id: int) -> None:

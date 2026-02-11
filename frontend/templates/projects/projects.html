@@ -3,172 +3,195 @@
 {% block title %}Projects - QMS{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Projects</h1>
-    <p class="subtitle">Manage projects and budgets</p>
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1>Projects</h1>
+        <p class="subtitle">Manage projects and budgets</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+        <button onclick="openProjectModal()">+ Add Project</button>
+        <button class="secondary" onclick="document.getElementById('importSection').style.display = document.getElementById('importSection').style.display === 'none' ? 'block' : 'none'">Import</button>
+    </div>
 </div>
 
-<div class="main-grid">
-    <div class="card">
-        <h2 id="formTitle">Add New Project</h2>
+<!-- Project Form Modal -->
+<div id="projectModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="formTitle" style="margin:0;border:none;padding:0;">Add New Project</h2>
+            <button class="modal-close" onclick="closeProjectModal()">&times;</button>
+        </div>
         <div class="success-message" id="successMessage"></div>
         <div class="error-message" id="errorMessage"></div>
         <form id="projectForm">
-            <div class="form-group">
-                <label>Project Name *</label>
-                <input type="text" id="projectName" required>
-            </div>
-            <div class="form-group">
-                <label>Project Number *</label>
-                <input type="text" id="projectBase" pattern="\d{5}" placeholder="07587" maxlength="5" required style="text-align:center;width:120px;">
-                <div class="help-text">5-digit base number (e.g., 07587). BU allocations are managed separately below.</div>
-            </div>
-            <div class="form-group">
-                <label>Description</label>
-                <textarea id="projectDescription" rows="2" placeholder="Full project scope description"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Project Manager</label>
-                <input type="text" id="projectManager">
-            </div>
-            <div class="form-group">
-                <label>Stage *</label>
-                <select id="projectStage" required>
-                    {% for stage in stages %}
-                    <option value="{{ stage }}">{{ stage }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Total Budget *</label>
-                <input type="number" id="totalBudget" step="0.01" required>
-                <div class="help-text" id="budgetHint"></div>
-            </div>
-            <div class="form-group">
-                <label>Manual Weight Adjustment</label>
-                <input type="number" id="weightAdjustment" step="0.1" value="1.0" min="0.5" max="2.0">
-                <div class="help-text">Default: 1.0 (Range: 0.5 - 2.0)</div>
-            </div>
-            <div class="form-group">
-                <label>Start Date</label>
-                <input type="date" id="startDate">
-            </div>
-            <div class="form-group">
-                <label>End Date</label>
-                <input type="date" id="endDate">
-            </div>
-
-            <h3 style="margin-top:25px;padding-top:15px;border-top:1px solid #ecf0f1;">Owner Information</h3>
-            <div class="form-group">
-                <label>Owner Name</label>
-                <input type="text" id="ownerName">
-            </div>
-            <div class="form-group">
-                <label>Address</label>
-                <input type="text" id="ownerAddress">
-            </div>
-            <div class="form-group">
-                <label>City</label>
-                <input type="text" id="ownerCity">
-            </div>
-            <div class="form-group">
-                <label>State</label>
-                <select id="ownerState">
-                    <option value="">Select State</option>
-                    <option value="AL">AL - Alabama</option><option value="AK">AK - Alaska</option>
-                    <option value="AZ">AZ - Arizona</option><option value="AR">AR - Arkansas</option>
-                    <option value="CA">CA - California</option><option value="CO">CO - Colorado</option>
-                    <option value="CT">CT - Connecticut</option><option value="DE">DE - Delaware</option>
-                    <option value="FL">FL - Florida</option><option value="GA">GA - Georgia</option>
-                    <option value="HI">HI - Hawaii</option><option value="ID">ID - Idaho</option>
-                    <option value="IL">IL - Illinois</option><option value="IN">IN - Indiana</option>
-                    <option value="IA">IA - Iowa</option><option value="KS">KS - Kansas</option>
-                    <option value="KY">KY - Kentucky</option><option value="LA">LA - Louisiana</option>
-                    <option value="ME">ME - Maine</option><option value="MD">MD - Maryland</option>
-                    <option value="MA">MA - Massachusetts</option><option value="MI">MI - Michigan</option>
-                    <option value="MN">MN - Minnesota</option><option value="MS">MS - Mississippi</option>
-                    <option value="MO">MO - Missouri</option><option value="MT">MT - Montana</option>
-                    <option value="NE">NE - Nebraska</option><option value="NV">NV - Nevada</option>
-                    <option value="NH">NH - New Hampshire</option><option value="NJ">NJ - New Jersey</option>
-                    <option value="NM">NM - New Mexico</option><option value="NY">NY - New York</option>
-                    <option value="NC">NC - North Carolina</option><option value="ND">ND - North Dakota</option>
-                    <option value="OH">OH - Ohio</option><option value="OK">OK - Oklahoma</option>
-                    <option value="OR">OR - Oregon</option><option value="PA">PA - Pennsylvania</option>
-                    <option value="RI">RI - Rhode Island</option><option value="SC">SC - South Carolina</option>
-                    <option value="SD">SD - South Dakota</option><option value="TN">TN - Tennessee</option>
-                    <option value="TX">TX - Texas</option><option value="UT">UT - Utah</option>
-                    <option value="VT">VT - Vermont</option><option value="VA">VA - Virginia</option>
-                    <option value="WA">WA - Washington</option><option value="WV">WV - West Virginia</option>
-                    <option value="WI">WI - Wisconsin</option><option value="WY">WY - Wyoming</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Zip Code</label>
-                <input type="text" id="ownerZip" maxlength="10" placeholder="12345">
-            </div>
-            <div class="form-group">
-                <label>Notes</label>
-                <textarea id="notes"></textarea>
-            </div>
-            <button type="submit" id="submitBtn">Add Project</button>
-            <button type="button" class="secondary" onclick="resetForm()">Clear</button>
-        </form>
-
-        <!-- Allocation management (visible when editing) -->
-        <div id="allocationSection" style="display:none;margin-top:25px;padding-top:15px;border-top:2px solid #3498db;">
-            <h3>BU Allocations</h3>
-            <p style="color:#7f8c8d;font-size:13px;margin-bottom:10px;">Break down the project budget by business unit</p>
-            <div id="allocationList"></div>
-            <div style="display:grid;grid-template-columns:1fr 80px 120px 80px auto;gap:8px;align-items:end;margin-top:10px;">
-                <div>
-                    <label style="font-size:12px;">Business Unit</label>
-                    <select id="allocBU" style="font-size:13px;">
-                        <option value="">Select BU</option>
+            <div class="modal-form-grid">
+                <div class="form-group">
+                    <label>Project Name *</label>
+                    <input type="text" id="projectName" required>
+                </div>
+                <div class="form-group">
+                    <label>Project Number *</label>
+                    <input type="text" id="projectBase" pattern="\d{5}" placeholder="07587" maxlength="5" required style="text-align:center;width:120px;">
+                    <div class="help-text">5-digit base number (e.g., 07587)</div>
+                </div>
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label>Description</label>
+                    <textarea id="projectDescription" rows="2" placeholder="Full project scope description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Project Manager</label>
+                    <input type="text" id="projectManager">
+                </div>
+                <div class="form-group">
+                    <label>Stage *</label>
+                    <select id="projectStage" required>
+                        {% for stage in stages %}
+                        <option value="{{ stage }}">{{ stage }}</option>
+                        {% endfor %}
                     </select>
                 </div>
-                <div>
-                    <label style="font-size:12px;">Subjob</label>
-                    <input type="text" id="allocSubjob" value="00" maxlength="2" pattern="\d{2}" style="font-size:13px;text-align:center;">
+                <div class="form-group">
+                    <label>Total Budget *</label>
+                    <input type="number" id="totalBudget" step="0.01" required>
+                    <div class="help-text" id="budgetHint"></div>
                 </div>
-                <div>
-                    <label style="font-size:12px;">Budget</label>
-                    <input type="number" id="allocBudget" step="0.01" style="font-size:13px;">
+                <div class="form-group">
+                    <label>Weight Adjustment</label>
+                    <input type="number" id="weightAdjustment" step="0.1" value="1.0" min="0.5" max="2.0">
+                    <div class="help-text">Default: 1.0 (0.5 - 2.0)</div>
                 </div>
-                <div>
-                    <label style="font-size:12px;">Weight</label>
-                    <input type="number" id="allocWeight" value="1.0" step="0.1" min="0.5" max="2.0" style="font-size:13px;">
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="date" id="startDate">
                 </div>
-                <button class="success" onclick="addAllocation()" style="height:36px;font-size:13px;">Add</button>
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="date" id="endDate">
+                </div>
             </div>
-        </div>
 
-        <div class="import-section" id="import">
-            <h3>Bulk Import</h3>
-            <p style="color:#7f8c8d;margin-bottom:10px;font-size:13px;">Import multiple projects from an Excel file or Procore CSV export</p>
-            <div class="import-buttons">
-                <button onclick="downloadTemplate()">Download Template</button>
-                <input type="file" id="importFile" accept=".xlsx" style="display:none;" onchange="importProjects(this.files[0])">
-                <button class="success" onclick="document.getElementById('importFile').click()">Import from Excel</button>
-                <input type="file" id="procoreFile" accept=".csv" style="display:none;" onchange="importProcore(this.files[0])">
-                <button class="success" onclick="document.getElementById('procoreFile').click()">Import from Procore</button>
+            <h3 style="margin-top:20px;padding-top:15px;border-top:1px solid #ecf0f1;">Owner Information</h3>
+            <div class="modal-form-grid">
+                <div class="form-group">
+                    <label>Owner Name</label>
+                    <input type="text" id="ownerName">
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" id="ownerAddress">
+                </div>
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" id="ownerCity">
+                </div>
+                <div class="form-group">
+                    <label>State</label>
+                    <select id="ownerState">
+                        <option value="">Select State</option>
+                        <option value="AL">AL - Alabama</option><option value="AK">AK - Alaska</option>
+                        <option value="AZ">AZ - Arizona</option><option value="AR">AR - Arkansas</option>
+                        <option value="CA">CA - California</option><option value="CO">CO - Colorado</option>
+                        <option value="CT">CT - Connecticut</option><option value="DE">DE - Delaware</option>
+                        <option value="FL">FL - Florida</option><option value="GA">GA - Georgia</option>
+                        <option value="HI">HI - Hawaii</option><option value="ID">ID - Idaho</option>
+                        <option value="IL">IL - Illinois</option><option value="IN">IN - Indiana</option>
+                        <option value="IA">IA - Iowa</option><option value="KS">KS - Kansas</option>
+                        <option value="KY">KY - Kentucky</option><option value="LA">LA - Louisiana</option>
+                        <option value="ME">ME - Maine</option><option value="MD">MD - Maryland</option>
+                        <option value="MA">MA - Massachusetts</option><option value="MI">MI - Michigan</option>
+                        <option value="MN">MN - Minnesota</option><option value="MS">MS - Mississippi</option>
+                        <option value="MO">MO - Missouri</option><option value="MT">MT - Montana</option>
+                        <option value="NE">NE - Nebraska</option><option value="NV">NV - Nevada</option>
+                        <option value="NH">NH - New Hampshire</option><option value="NJ">NJ - New Jersey</option>
+                        <option value="NM">NM - New Mexico</option><option value="NY">NY - New York</option>
+                        <option value="NC">NC - North Carolina</option><option value="ND">ND - North Dakota</option>
+                        <option value="OH">OH - Ohio</option><option value="OK">OK - Oklahoma</option>
+                        <option value="OR">OR - Oregon</option><option value="PA">PA - Pennsylvania</option>
+                        <option value="RI">RI - Rhode Island</option><option value="SC">SC - South Carolina</option>
+                        <option value="SD">SD - South Dakota</option><option value="TN">TN - Tennessee</option>
+                        <option value="TX">TX - Texas</option><option value="UT">UT - Utah</option>
+                        <option value="VT">VT - Vermont</option><option value="VA">VA - Virginia</option>
+                        <option value="WA">WA - Washington</option><option value="WV">WV - West Virginia</option>
+                        <option value="WI">WI - Wisconsin</option><option value="WY">WY - Wyoming</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Zip Code</label>
+                    <input type="text" id="ownerZip" maxlength="10" placeholder="12345">
+                </div>
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label>Notes</label>
+                    <textarea id="notes"></textarea>
+                </div>
             </div>
-            <div id="importResults" style="margin-top:15px;"></div>
-        </div>
-    </div>
 
-    <div class="card">
-        <h2>All Projects</h2>
-        <div class="filter-bar">
-            <select id="stageFilter" onchange="renderProjects()">
-                <option value="">All Stages</option>
-                {% for stage in stages %}
-                <option value="{{ stage }}">{{ stage }}</option>
-                {% endfor %}
-            </select>
-            <input type="text" id="searchFilter" placeholder="Search projects..." oninput="renderProjects()">
-        </div>
-        <div id="projectsTable"><div class="loading">Loading projects...</div></div>
+            <!-- Allocation management (visible when editing) -->
+            <div id="allocationSection" style="display:none;margin-top:20px;padding-top:15px;border-top:2px solid #3498db;">
+                <h3>BU Allocations</h3>
+                <p style="color:#7f8c8d;font-size:13px;margin-bottom:10px;">Break down the project budget by business unit</p>
+                <div id="allocationList"></div>
+                <div style="display:grid;grid-template-columns:1fr 80px 120px 80px auto;gap:8px;align-items:end;margin-top:10px;">
+                    <div>
+                        <label style="font-size:12px;">Business Unit</label>
+                        <select id="allocBU" style="font-size:13px;">
+                            <option value="">Select BU</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;">Subjob</label>
+                        <input type="text" id="allocSubjob" value="00" maxlength="2" pattern="\d{2}" style="font-size:13px;text-align:center;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;">Budget</label>
+                        <input type="number" id="allocBudget" step="0.01" style="font-size:13px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;">Weight</label>
+                        <input type="number" id="allocWeight" value="1.0" step="0.1" min="0.5" max="2.0" style="font-size:13px;">
+                    </div>
+                    <button class="success" onclick="addAllocation()" style="height:36px;font-size:13px;">Add</button>
+                </div>
+            </div>
+
+            <div style="margin-top:20px;padding-top:15px;border-top:1px solid #ecf0f1;display:flex;gap:10px;">
+                <button type="submit" id="submitBtn">Add Project</button>
+                <button type="button" class="secondary" onclick="closeProjectModal()">Cancel</button>
+            </div>
+        </form>
     </div>
+</div>
+
+<div class="success-message" id="pageSuccessMessage"></div>
+<div class="error-message" id="pageErrorMessage"></div>
+
+<div class="card">
+    <h2>All Projects</h2>
+    <div class="filter-bar">
+        <select id="stageFilter" onchange="renderProjects()">
+            <option value="">All Stages</option>
+            {% for stage in stages %}
+            <option value="{{ stage }}">{{ stage }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" id="searchFilter" placeholder="Search projects, jobs, PM..." oninput="renderProjects()">
+        <label style="display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-size:12.5px;color:var(--color-text-muted);cursor:pointer;">
+            <input type="checkbox" id="expandAll" onchange="toggleExpandAll(this.checked)" style="width:auto;accent-color:var(--color-primary);"> Expand All
+        </label>
+    </div>
+    <div id="projectsTable"><div class="loading">Loading projects...</div></div>
+</div>
+
+<div class="card" id="importSection" style="display:none;">
+    <h2>Bulk Import</h2>
+    <p style="color:#7f8c8d;margin-bottom:10px;font-size:13px;">Import multiple projects from an Excel file or Procore CSV export</p>
+    <div class="import-buttons">
+        <button onclick="downloadTemplate()">Download Template</button>
+        <input type="file" id="importFile" accept=".xlsx" style="display:none;" onchange="importProjects(this.files[0])">
+        <button class="success" onclick="document.getElementById('importFile').click()">Import from Excel</button>
+        <input type="file" id="procoreFile" accept=".csv" style="display:none;" onchange="importProcore(this.files[0])">
+        <button class="success" onclick="document.getElementById('procoreFile').click()">Import from Procore</button>
+    </div>
+    <div id="importResults" style="margin-top:15px;"></div>
 </div>
 {% endblock %}
 
@@ -177,7 +200,9 @@
     let projects = [];
     let businessUnits = [];
     let currentEditId = null;
+    let expandedProjects = new Set();
     const API_BASE = '/projects/api';
+    const STAGES = {{ stages|tojson }};
 
     document.getElementById('projectBase').addEventListener('input', function(e) {
         e.target.value = e.target.value.replace(/\D/g, '');
@@ -236,8 +261,8 @@
             });
             const result = await response.json();
             if (response.ok) {
+                closeProjectModal();
                 showSuccess(currentEditId ? 'Project updated!' : 'Project added!');
-                resetForm();
                 loadProjects();
             } else {
                 showError(result.error || 'Failed to save project');
@@ -247,6 +272,18 @@
             showError('Failed to save project');
         }
     });
+
+    function openProjectModal() {
+        resetForm();
+        document.getElementById('projectModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeProjectModal() {
+        document.getElementById('projectModal').style.display = 'none';
+        document.body.style.overflow = '';
+        resetForm();
+    }
 
     function resetForm() {
         document.getElementById('projectForm').reset();
@@ -287,11 +324,10 @@
         currentEditId = id;
         document.getElementById('submitBtn').textContent = 'Update Project';
         document.getElementById('formTitle').textContent = 'Edit Project';
-
-        // Show allocation section and load allocations
         document.getElementById('allocationSection').style.display = 'block';
         loadAllocations(id);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('projectModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     }
 
     async function loadAllocations(projectId) {
@@ -307,7 +343,7 @@
     function renderAllocations(allocs, projectId) {
         const container = document.getElementById('allocationList');
         if (!allocs || allocs.length === 0) {
-            container.innerHTML = '<p style="color:#7f8c8d;font-size:13px;">No allocations yet. Add a BU allocation below.</p>';
+            container.innerHTML = '<p style="color:var(--color-text-muted);font-size:13px;">No allocations yet. Add a BU allocation below.</p>';
             document.getElementById('budgetHint').textContent = '';
             return;
         }
@@ -323,7 +359,7 @@
             html += `<td><button class="action-btn danger" style="font-size:11px;padding:2px 8px;" onclick="deleteAllocation(${projectId},${a.id})">x</button></td>`;
             html += `</tr>`;
         });
-        html += `<tr style="font-weight:bold;border-top:2px solid #ecf0f1;"><td colspan="2">Total</td><td class="currency">$${total.toLocaleString()}</td><td colspan="2"></td></tr>`;
+        html += `<tr style="font-weight:bold;border-top:2px solid var(--color-border);"><td colspan="2">Total</td><td class="currency">$${total.toLocaleString()}</td><td colspan="2"></td></tr>`;
         html += '</tbody></table>';
         container.innerHTML = html;
 
@@ -384,39 +420,6 @@
         }
     }
 
-    async function toggleAllocations(projectId) {
-        const row = document.getElementById(`alloc-row-${projectId}`);
-        if (row) {
-            row.remove();
-            return;
-        }
-        try {
-            const response = await fetch(`${API_BASE}/projects/${projectId}/allocations`);
-            const allocs = await response.json();
-            if (!allocs.length) return;
-            const parentRow = document.querySelector(`tr[data-pid="${projectId}"]`);
-            if (!parentRow) return;
-            const tr = document.createElement('tr');
-            tr.id = `alloc-row-${projectId}`;
-            tr.style.background = '#f8f9fa';
-            let html = '<td colspan="9" style="padding:8px 15px 8px 30px;"><table style="font-size:12px;width:100%;margin:0;"><tbody>';
-            allocs.forEach(a => {
-                html += `<tr style="background:transparent;">`;
-                html += `<td style="padding:3px 8px;color:#7f8c8d;">|--</td>`;
-                html += `<td style="padding:3px 8px;">${a.bu_code} ${a.bu_name}</td>`;
-                html += `<td style="padding:3px 8px;">${a.job_code}</td>`;
-                html += `<td style="padding:3px 8px;" class="currency">$${a.allocated_budget.toLocaleString()}</td>`;
-                html += `<td style="padding:3px 8px;">${a.weight_adjustment}x</td>`;
-                html += `</tr>`;
-            });
-            html += '</tbody></table></td>';
-            tr.innerHTML = html;
-            parentRow.after(tr);
-        } catch (error) {
-            console.error('Error loading allocations:', error);
-        }
-    }
-
     async function deleteProject(id) {
         if (!confirm('Are you sure you want to delete this project?')) return;
         try {
@@ -428,58 +431,204 @@
 
     async function loadProjects() {
         try {
-            const response = await fetch(`${API_BASE}/projects`);
+            const response = await fetch(`${API_BASE}/projects/hierarchical`);
             projects = await response.json();
             renderProjects();
         } catch (error) { showError('Failed to load projects'); }
     }
 
     function getStageClass(stage) {
+        if (!stage) return '';
         return 'stage-' + stage.toLowerCase().replace(/[\s-]+/g, '').replace(/[^a-z]/g, '');
+    }
+
+    function esc(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function toggleProject(pid) {
+        if (expandedProjects.has(pid)) {
+            expandedProjects.delete(pid);
+        } else {
+            expandedProjects.add(pid);
+        }
+        renderProjects();
+    }
+
+    function toggleExpandAll(checked) {
+        if (checked) {
+            projects.forEach(p => expandedProjects.add(p.id));
+        } else {
+            expandedProjects.clear();
+        }
+        renderProjects();
     }
 
     function renderProjects() {
         const container = document.getElementById('projectsTable');
         const stageFilter = document.getElementById('stageFilter').value;
         const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
-        let filtered = projects;
-        if (stageFilter) filtered = filtered.filter(p => p.stage === stageFilter);
-        if (searchFilter) filtered = filtered.filter(p =>
-            p.name.toLowerCase().includes(searchFilter) ||
-            (p.number && p.number.toLowerCase().includes(searchFilter)) ||
-            (p.pm && p.pm.toLowerCase().includes(searchFilter)) ||
-            (p.description && p.description.toLowerCase().includes(searchFilter))
-        );
+
+        let filtered = projects.map(p => {
+            let jobs = p.jobs || [];
+            // Stage filter applies at job level
+            if (stageFilter) {
+                jobs = jobs.filter(j => j.stage === stageFilter);
+            }
+            // Search matches project name/number/description AND job scope/PM
+            if (searchFilter) {
+                const projMatch = (p.name && p.name.toLowerCase().includes(searchFilter)) ||
+                    (p.number && p.number.toLowerCase().includes(searchFilter)) ||
+                    (p.description && p.description.toLowerCase().includes(searchFilter)) ||
+                    (p.pm && p.pm.toLowerCase().includes(searchFilter));
+                if (!projMatch) {
+                    jobs = jobs.filter(j =>
+                        (j.scope_name && j.scope_name.toLowerCase().includes(searchFilter)) ||
+                        (j.pm && j.pm.toLowerCase().includes(searchFilter)) ||
+                        (j.job_code && j.job_code.toLowerCase().includes(searchFilter)) ||
+                        (j.bu_name && j.bu_name.toLowerCase().includes(searchFilter))
+                    );
+                }
+            }
+            // Show project if it matches or has matching jobs
+            if (stageFilter && jobs.length === 0) return null;
+            if (searchFilter) {
+                const projMatch = (p.name && p.name.toLowerCase().includes(searchFilter)) ||
+                    (p.number && p.number.toLowerCase().includes(searchFilter)) ||
+                    (p.description && p.description.toLowerCase().includes(searchFilter));
+                if (!projMatch && jobs.length === 0) return null;
+            }
+            return { ...p, filteredJobs: jobs };
+        }).filter(Boolean);
+
         if (filtered.length === 0) {
             container.innerHTML = '<div class="empty-state">No projects found. Add your first project to get started!</div>';
             return;
         }
-        let html = '<table><thead><tr><th>Project</th><th>Number</th><th>PM</th><th>Stage</th><th>Budget</th><th>Spent</th><th>Remaining</th><th>Weight</th><th>Actions</th></tr></thead><tbody>';
+
+        let html = '<table><thead><tr>';
+        html += '<th>Job</th><th>PM</th><th>Stage</th>';
+        html += '<th>Budget</th><th>Spent</th><th>Remaining</th>';
+        html += '<th>Weight</th><th>Proj</th><th>Actions</th>';
+        html += '</tr></thead><tbody>';
+
         filtered.forEach(p => {
             const tb = p.total_budget || 0;
             const bs = p.budget_spent || 0;
             const remaining = tb - bs;
-            const pct = tb > 0 ? (bs / tb) * 100 : 0;
-            const barClass = pct > 90 ? 'danger' : pct > 70 ? 'warning' : '';
-            const allocBadge = p.allocation_count > 0
-                ? ` <span onclick="toggleAllocations(${p.id})" style="cursor:pointer;font-size:11px;color:#3498db;border:1px solid #3498db;border-radius:3px;padding:1px 5px;margin-left:4px;" title="Show BU breakdown">${p.allocation_count} BU${p.allocation_count > 1 ? 's' : ''}</span>`
-                : '';
-            html += `<tr data-pid="${p.id}">`;
-            html += `<td><strong>${p.name}</strong>${p.description ? '<div style="color:#7f8c8d;font-size:12px;margin-top:2px;">' + p.description + '</div>' : ''}</td>`;
-            html += `<td>${p.number || '-'}${allocBadge}</td>`;
-            html += `<td>${p.pm || '-'}</td>`;
-            html += `<td><span class="status-badge ${getStageClass(p.stage)}">${p.stage}</span></td>`;
+            const jobs = p.filteredJobs || [];
+            const expanded = expandedProjects.has(p.id);
+            const jobCount = (p.jobs || []).length;
+
+            // Project header row
+            html += `<tr class="project-header" onclick="toggleProject(${p.id})">`;
+            html += `<td colspan="3">`;
+            html += `<div class="project-toggle">`;
+            html += `<span class="toggle-icon ${expanded ? 'expanded' : ''}">\u25B6</span>`;
+            html += `<span class="project-number">${esc(p.number) || '-'}</span>`;
+            html += `<span class="project-name">${esc(p.name)}</span>`;
+            if (jobCount > 0) html += `<span class="job-count-badge">${jobCount} job${jobCount > 1 ? 's' : ''}</span>`;
+            html += `</div>`;
+            if (p.description) html += `<div class="project-desc" style="margin-left:26px;">${esc(p.description)}</div>`;
+            html += `</td>`;
             html += `<td class="currency">$${tb.toLocaleString()}</td>`;
-            html += `<td>$${bs.toLocaleString()}<div class="budget-bar"><div class="budget-fill ${barClass}" style="width:${pct}%"></div></div></td>`;
+            html += `<td class="currency">$${bs.toLocaleString()}</td>`;
             html += `<td class="currency">$${remaining.toLocaleString()}</td>`;
-            html += `<td>${(p.weight_adjustment || 1.0)}x</td>`;
+            html += `<td></td><td></td>`;
             html += `<td><div class="action-buttons">`;
-            html += `<button class="action-btn secondary" onclick="editProject(${p.id})">Edit</button>`;
-            html += `<button class="action-btn danger" onclick="deleteProject(${p.id})">Delete</button>`;
-            html += `</div></td></tr>`;
+            html += `<button class="action-btn secondary" onclick="event.stopPropagation();editProject(${p.id})">Edit</button>`;
+            html += `<button class="action-btn danger" onclick="event.stopPropagation();deleteProject(${p.id})">Del</button>`;
+            html += `</div></td>`;
+            html += `</tr>`;
+
+            // Job rows (visible when expanded)
+            if (expanded) {
+                if (jobs.length === 0) {
+                    html += `<tr class="no-jobs-row"><td colspan="9">No jobs found for this project</td></tr>`;
+                } else {
+                    jobs.forEach(j => {
+                        const jb = j.allocated_budget || 0;
+                        html += `<tr class="job-row">`;
+                        // Job code + scope
+                        html += `<td><span class="job-code">${esc(j.job_code)}</span>`;
+                        if (j.scope_name) html += `<span class="job-scope">- ${esc(j.scope_name)}</span>`;
+                        html += `</td>`;
+                        // PM
+                        html += `<td>${esc(j.pm) || '-'}</td>`;
+                        // Stage dropdown
+                        html += `<td><select class="stage-select" onchange="updateJobStage(${j.id},this.value)" onclick="event.stopPropagation()">`;
+                        STAGES.forEach(s => {
+                            html += `<option value="${s}"${j.stage === s ? ' selected' : ''}>${s}</option>`;
+                        });
+                        html += `</select></td>`;
+                        // Budget
+                        html += `<td class="currency">$${jb.toLocaleString()}</td>`;
+                        // Spent (placeholder — transactions are project-level)
+                        html += `<td class="currency">-</td>`;
+                        // Remaining
+                        html += `<td class="currency">-</td>`;
+                        // Weight slider
+                        html += `<td><div class="weight-cell">`;
+                        html += `<input type="range" class="weight-slider" min="0" max="2" step="0.1" value="${j.weight_adjustment || 1.0}" `;
+                        html += `oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+'x'" `;
+                        html += `onchange="updateJobWeight(${j.id},this.value)" onclick="event.stopPropagation()">`;
+                        html += `<span class="weight-value">${(j.weight_adjustment || 1.0).toFixed(1)}x</span>`;
+                        html += `</div></td>`;
+                        // Projection toggle
+                        html += `<td><input type="checkbox" class="projection-toggle" ${j.projection_enabled ? 'checked' : ''} `;
+                        html += `onchange="updateJobProjection(${j.id},this.checked)" onclick="event.stopPropagation()" title="Include in projections"></td>`;
+                        // Actions (delete allocation)
+                        html += `<td><button class="action-btn danger" style="font-size:11px;padding:2px 8px;" `;
+                        html += `onclick="event.stopPropagation();deleteAllocationInline(${p.id},${j.id})">x</button></td>`;
+                        html += `</tr>`;
+                    });
+                }
+            }
         });
+
         html += '</tbody></table>';
         container.innerHTML = html;
+    }
+
+    // Inline edit handlers
+    async function updateJobWeight(allocId, value) {
+        try {
+            await fetch(`${API_BASE}/allocations/${allocId}/weight`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ weight: parseFloat(value) })
+            });
+        } catch (error) { showError('Failed to update weight'); }
+    }
+
+    async function updateJobProjection(allocId, enabled) {
+        try {
+            await fetch(`${API_BASE}/allocations/${allocId}/projection`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled })
+            });
+        } catch (error) { showError('Failed to update projection flag'); }
+    }
+
+    async function updateJobStage(allocId, stage) {
+        try {
+            await fetch(`${API_BASE}/allocations/${allocId}/stage`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stage })
+            });
+        } catch (error) { showError('Failed to update stage'); }
+    }
+
+    async function deleteAllocationInline(projectId, allocId) {
+        try {
+            const response = await fetch(`${API_BASE}/projects/${projectId}/allocations/${allocId}`, { method: 'DELETE' });
+            if (response.ok) loadProjects();
+        } catch (error) { showError('Failed to delete allocation'); }
     }
 
     function downloadTemplate() {
@@ -539,13 +688,13 @@
             html += `</div>`;
         }
         if (result.rows_skipped > 0) {
-            html += `<div style="color:#7f8c8d;margin-bottom:10px;font-size:13px;">${result.rows_skipped} row(s) skipped.</div>`;
+            html += `<div style="color:var(--color-text-muted);margin-bottom:10px;font-size:13px;">${result.rows_skipped} row(s) skipped.</div>`;
         }
         if (result.errors && result.errors.length > 0) {
             html += `<div class="error-message" style="display:block;margin-bottom:10px;">${result.errors.length} error(s) during import.</div>`;
             html += '<table style="margin-top:10px;font-size:13px;"><thead><tr><th>Row</th><th>Project</th><th>Error</th></tr></thead><tbody>';
             result.errors.forEach(err => {
-                html += `<tr><td>${err.row}</td><td>${err.name}</td><td style="color:#e74c3c;">${err.errors.join('; ')}</td></tr>`;
+                html += `<tr><td>${err.row}</td><td>${err.name}</td><td style="color:var(--color-danger);">${err.errors.join('; ')}</td></tr>`;
             });
             html += '</tbody></table>';
         }
@@ -562,7 +711,7 @@
             html += `<div class="error-message" style="display:block;margin-bottom:10px;">${result.errors.length} row${result.errors.length > 1 ? 's' : ''} had errors.</div>`;
             html += '<table style="margin-top:10px;font-size:13px;"><thead><tr><th>Row</th><th>Project</th><th>Error</th></tr></thead><tbody>';
             result.errors.forEach(err => {
-                html += `<tr><td>${err.row}</td><td>${err.project_name}</td><td style="color:#e74c3c;">${err.errors.join('; ')}</td></tr>`;
+                html += `<tr><td>${err.row}</td><td>${err.project_name}</td><td style="color:var(--color-danger);">${err.errors.join('; ')}</td></tr>`;
             });
             html += '</tbody></table>';
         }
@@ -570,19 +719,33 @@
     }
 
     function showSuccess(msg) {
-        const el = document.getElementById('successMessage');
+        const modalOpen = document.getElementById('projectModal').style.display === 'flex';
+        const el = document.getElementById(modalOpen ? 'successMessage' : 'pageSuccessMessage');
         el.textContent = msg; el.style.display = 'block';
         setTimeout(() => el.style.display = 'none', 3000);
     }
 
     function showError(msg) {
-        const el = document.getElementById('errorMessage');
+        const modalOpen = document.getElementById('projectModal').style.display === 'flex';
+        const el = document.getElementById(modalOpen ? 'errorMessage' : 'pageErrorMessage');
         el.textContent = msg; el.style.display = 'block';
         setTimeout(() => el.style.display = 'none', 5000);
     }
 
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('projectModal').style.display === 'flex') {
+            closeProjectModal();
+        }
+    });
+
+    // Close modal on overlay click
+    document.getElementById('projectModal').addEventListener('click', function(e) {
+        if (e.target === this) closeProjectModal();
+    });
+
     if (window.location.hash === '#import') {
-        setTimeout(() => document.getElementById('import').scrollIntoView({ behavior: 'smooth' }), 100);
+        document.getElementById('importSection').style.display = 'block';
     }
 
     loadBusinessUnits();

@@ -141,6 +141,11 @@ CREATE TABLE IF NOT EXISTS project_allocations (
     allocated_budget REAL NOT NULL DEFAULT 0,
     weight_adjustment REAL NOT NULL DEFAULT 1.0,
     notes TEXT,
+    stage TEXT DEFAULT 'Course of Construction',
+    projection_enabled INTEGER DEFAULT 1,
+    scope_name TEXT,
+    pm TEXT,
+    job_id INTEGER REFERENCES jobs(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(project_id, business_unit_id, subjob)

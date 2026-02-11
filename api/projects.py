@@ -194,6 +194,56 @@ def api_delete_allocation(pid, aid):
 
 
 # ---------------------------------------------------------------------------
+# Hierarchical Projects API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/projects/hierarchical", methods=["GET"])
+def api_list_projects_hierarchical():
+    return jsonify(budget.list_projects_hierarchical())
+
+
+@bp.route("/api/allocations/<int:aid>/weight", methods=["PATCH"])
+def api_update_allocation_weight(aid):
+    data = request.json
+    weight = data.get("weight")
+    if weight is None:
+        return jsonify({"error": "weight is required"}), 400
+    weight = float(weight)
+    if not (0 <= weight <= 2):
+        return jsonify({"error": "weight must be between 0 and 2"}), 400
+    with get_db() as conn:
+        ok = budget.update_allocation_field(conn, aid, "weight_adjustment", weight)
+    if not ok:
+        return jsonify({"error": "Allocation not found"}), 404
+    return jsonify({"message": "Weight updated"})
+
+
+@bp.route("/api/allocations/<int:aid>/projection", methods=["PATCH"])
+def api_update_allocation_projection(aid):
+    data = request.json
+    enabled = 1 if data.get("enabled") else 0
+    with get_db() as conn:
+        ok = budget.update_allocation_field(conn, aid, "projection_enabled", enabled)
+    if not ok:
+        return jsonify({"error": "Allocation not found"}), 404
+    return jsonify({"message": "Projection flag updated"})
+
+
+@bp.route("/api/allocations/<int:aid>/stage", methods=["PATCH"])
+def api_update_allocation_stage(aid):
+    data = request.json
+    stage = data.get("stage", "")
+    if stage not in VALID_STAGES:
+        return jsonify({"error": f"Invalid stage: {stage}"}), 400
+    with get_db() as conn:
+        ok = budget.update_allocation_field(conn, aid, "stage", stage)
+    if not ok:
+        return jsonify({"error": "Allocation not found"}), 404
+    return jsonify({"message": "Stage updated"})
+
+
+# ---------------------------------------------------------------------------
 # Business Units API
 # ---------------------------------------------------------------------------
 
