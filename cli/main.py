@@ -46,13 +46,16 @@ def migrate():
 def serve(
     port: int = typer.Option(5000, "--port", "-p", help="Port number"),
     host: str = typer.Option("127.0.0.1", "--host", "-h", help="Host address"),
+    debug: bool = typer.Option(True, "--debug/--no-debug", help="Enable auto-reload on file changes"),
 ):
     """Launch the QMS web interface."""
     from qms.api import create_app
 
     web = create_app()
     typer.echo(f"Starting QMS web server at http://{host}:{port}")
-    web.run(host=host, port=port, debug=False)
+    if debug:
+        typer.echo("Debug mode ON — auto-reloads on file changes")
+    web.run(host=host, port=port, debug=debug)
 
 
 def _register_modules():

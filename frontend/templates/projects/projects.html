@@ -173,12 +173,49 @@
             <option value="{{ stage }}">{{ stage }}</option>
             {% endfor %}
         </select>
+        <select id="sortBy" onchange="renderProjects()">
+            <option value="number-asc">Project # (Low → High)</option>
+            <option value="number-desc">Project # (High → Low)</option>
+            <option value="name-asc">Name (A → Z)</option>
+            <option value="name-desc">Name (Z → A)</option>
+            <option value="budget-desc">Budget (High → Low)</option>
+            <option value="budget-asc">Budget (Low → High)</option>
+            <option value="jobs-desc">Jobs (Most → Fewest)</option>
+            <option value="location-asc">Location (A → Z)</option>
+            <option value="newest" selected>Newest First</option>
+            <option value="oldest">Oldest First</option>
+        </select>
         <input type="text" id="searchFilter" placeholder="Search projects, jobs, PM..." oninput="renderProjects()">
-        <label style="display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-size:12.5px;color:var(--color-text-muted);cursor:pointer;">
-            <input type="checkbox" id="expandAll" onchange="toggleExpandAll(this.checked)" style="width:auto;accent-color:var(--color-primary);"> Expand All
-        </label>
+        <div class="view-toggle" style="margin-left:auto;display:flex;gap:0;">
+            <button id="viewProject" class="toggle-btn active" onclick="setViewMode('project')">By Project</button>
+            <button id="viewBU" class="toggle-btn" onclick="setViewMode('bu')">By BU</button>
+        </div>
+        <button id="expandAllBtn" class="secondary" onclick="toggleExpandAll()" style="font-size:12px;padding:4px 12px;">▶ Expand All</button>
     </div>
     <div id="projectsTable"><div class="loading">Loading projects...</div></div>
+</div>
+
+<!-- Bulk Actions Toolbar (fixed bottom bar) -->
+<div id="bulkToolbar" class="bulk-toolbar" style="display:none;">
+    <span id="bulkCount" class="bulk-count">0 jobs selected</span>
+    <div class="bulk-actions">
+        <select id="bulkStageSelect" class="bulk-input">
+            <option value="">Set Stage...</option>
+            {% for stage in stages %}
+            <option value="{{ stage }}">{{ stage }}</option>
+            {% endfor %}
+        </select>
+        <button class="bulk-btn" onclick="bulkSetStage()">Apply Stage</button>
+        <span class="bulk-sep">|</span>
+        <button class="bulk-btn" onclick="bulkAction('set_projection', true)">Proj ON</button>
+        <button class="bulk-btn" onclick="bulkAction('set_projection', false)">Proj OFF</button>
+        <span class="bulk-sep">|</span>
+        <input type="number" id="bulkWeightInput" class="bulk-input" min="0" max="2" step="0.1" value="1.0" style="width:70px;">
+        <button class="bulk-btn" onclick="bulkSetWeight()">Set Weight</button>
+        <span class="bulk-sep">|</span>
+        <button class="bulk-btn bulk-btn-danger" onclick="bulkAction('delete')">Delete</button>
+    </div>
+    <button class="bulk-btn bulk-btn-clear" onclick="clearSelection()">✕ Clear</button>
 </div>
 
 <div class="card" id="importSection" style="display:none;">
@@ -201,8 +238,87 @@
     let businessUnits = [];
     let currentEditId = null;
     let expandedProjects = new Set();
+    let viewMode = 'project'; // 'project' or 'bu'
+    let selectedJobs = new Set();
     const API_BASE = '/projects/api';
     const STAGES = {{ stages|tojson }};
+
+    function toggleJobSelect(allocId, checkbox) {
+        if (checkbox.checked) selectedJobs.add(allocId);
+        else selectedJobs.delete(allocId);
+        updateBulkToolbar();
+    }
+
+    function toggleSelectAll(masterCb) {
+        const checkboxes = document.querySelectorAll('.job-select-cb');
+        checkboxes.forEach(cb => {
+            const id = parseInt(cb.dataset.allocId);
+            cb.checked = masterCb.checked;
+            if (masterCb.checked) selectedJobs.add(id);
+            else selectedJobs.delete(id);
+        });
+        updateBulkToolbar();
+    }
+
+    function updateBulkToolbar() {
+        const toolbar = document.getElementById('bulkToolbar');
+        const count = selectedJobs.size;
+        if (count > 0) {
+            toolbar.style.display = 'flex';
+            document.getElementById('bulkCount').textContent = `${count} job${count > 1 ? 's' : ''} selected`;
+        } else {
+            toolbar.style.display = 'none';
+        }
+    }
+
+    function clearSelection() {
+        selectedJobs.clear();
+        document.querySelectorAll('.job-select-cb').forEach(cb => cb.checked = false);
+        const master = document.getElementById('selectAllCb');
+        if (master) master.checked = false;
+        updateBulkToolbar();
+    }
+
+    async function bulkAction(action, value) {
+        const ids = Array.from(selectedJobs);
+        if (ids.length === 0) return;
+        if (action === 'delete' && !confirm(`Delete ${ids.length} job allocation(s)? This cannot be undone.`)) return;
+        try {
+            const res = await fetch(`${API_BASE}/allocations/bulk`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids, action, value })
+            });
+            const result = await res.json();
+            if (res.ok) {
+                showSuccess(`Updated ${result.updated} allocation(s)`);
+                selectedJobs.clear();
+                loadProjects();
+            } else {
+                showError(result.error || 'Bulk action failed');
+            }
+        } catch (e) { showError('Bulk action failed'); }
+    }
+
+    function bulkSetStage() {
+        const stage = document.getElementById('bulkStageSelect').value;
+        if (stage) bulkAction('set_stage', stage);
+    }
+
+    function bulkSetWeight() {
+        const w = parseFloat(document.getElementById('bulkWeightInput').value);
+        if (!isNaN(w) && w >= 0 && w <= 2) bulkAction('set_weight', w);
+    }
+
+    function setViewMode(mode) {
+        viewMode = mode;
+        expandedProjects.clear();
+        document.getElementById('viewProject').classList.toggle('active', mode === 'project');
+        document.getElementById('viewBU').classList.toggle('active', mode === 'bu');
+        const btn = document.getElementById('expandAllBtn');
+        btn.textContent = '▶ Expand All';
+        renderProjects();
+    }
 
     document.getElementById('projectBase').addEventListener('input', function(e) {
         e.target.value = e.target.value.replace(/\D/g, '');
@@ -458,16 +574,29 @@
         renderProjects();
     }
 
-    function toggleExpandAll(checked) {
-        if (checked) {
-            projects.forEach(p => expandedProjects.add(p.id));
+    function toggleExpandAll() {
+        if (viewMode === 'bu') {
+            // Collect all BU keys
+            const buKeys = new Set();
+            projects.forEach(p => (p.jobs || []).forEach(j => buKeys.add('bu-' + j.bu_code)));
+            const allExpanded = buKeys.size > 0 && [...buKeys].every(k => expandedProjects.has(k));
+            if (allExpanded) { expandedProjects.clear(); } else { buKeys.forEach(k => expandedProjects.add(k)); }
+            renderProjects();
+            const btn = document.getElementById('expandAllBtn');
+            const nowExpanded = buKeys.size > 0 && [...buKeys].every(k => expandedProjects.has(k));
+            btn.textContent = nowExpanded ? '▼ Collapse All' : '▶ Expand All';
         } else {
-            expandedProjects.clear();
+            const allExpanded = projects.length > 0 && projects.every(p => expandedProjects.has(p.id));
+            if (allExpanded) { expandedProjects.clear(); } else { projects.forEach(p => expandedProjects.add(p.id)); }
+            renderProjects();
+            const btn = document.getElementById('expandAllBtn');
+            const nowExpanded = projects.length > 0 && projects.every(p => expandedProjects.has(p.id));
+            btn.textContent = nowExpanded ? '▼ Collapse All' : '▶ Expand All';
         }
-        renderProjects();
     }
 
     function renderProjects() {
+        if (viewMode === 'bu') return renderByBU();
         const container = document.getElementById('projectsTable');
         const stageFilter = document.getElementById('stageFilter').value;
         const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
@@ -504,12 +633,43 @@
             return { ...p, filteredJobs: jobs };
         }).filter(Boolean);
 
+        // Sort
+        const sortBy = document.getElementById('sortBy').value;
+        filtered.sort((a, b) => {
+            switch (sortBy) {
+                case 'number-asc':  return (a.number || '').localeCompare(b.number || '');
+                case 'number-desc': return (b.number || '').localeCompare(a.number || '');
+                case 'name-asc':    return (a.name || '').localeCompare(b.name || '');
+                case 'name-desc':   return (b.name || '').localeCompare(a.name || '');
+                case 'budget-desc': {
+                    const ab = (a.jobs||[]).reduce((s,j) => s+(j.allocated_budget||0), 0);
+                    const bb = (b.jobs||[]).reduce((s,j) => s+(j.allocated_budget||0), 0);
+                    return bb - ab;
+                }
+                case 'budget-asc': {
+                    const ab = (a.jobs||[]).reduce((s,j) => s+(j.allocated_budget||0), 0);
+                    const bb = (b.jobs||[]).reduce((s,j) => s+(j.allocated_budget||0), 0);
+                    return ab - bb;
+                }
+                case 'jobs-desc':   return (b.jobs||[]).length - (a.jobs||[]).length;
+                case 'location-asc': {
+                    const al = [a.city, a.state].filter(Boolean).join(', ');
+                    const bl = [b.city, b.state].filter(Boolean).join(', ');
+                    return al.localeCompare(bl);
+                }
+                case 'oldest':      return (a.id || 0) - (b.id || 0);
+                case 'newest':
+                default:            return (b.id || 0) - (a.id || 0);
+            }
+        });
+
         if (filtered.length === 0) {
             container.innerHTML = '<div class="empty-state">No projects found. Add your first project to get started!</div>';
             return;
         }
 
         let html = '<table><thead><tr>';
+        html += '<th style="width:30px;"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" title="Select all visible jobs"></th>';
         html += '<th>Job</th><th>PM</th><th>Stage</th>';
         html += '<th>Budget</th><th>Weight</th><th>Proj</th>';
         html += '<th>Actions</th>';
@@ -525,30 +685,35 @@
 
             // Project header row
             html += `<tr class="project-header" onclick="toggleProject(${p.id})">`;
+            html += `<td></td>`;
             html += `<td colspan="3">`;
             html += `<div class="project-toggle">`;
             html += `<span class="toggle-icon ${expanded ? 'expanded' : ''}">\u25B6</span>`;
             html += `<span class="project-number">${esc(p.number) || '-'}</span>`;
             html += `<span class="project-name">${esc(p.name)}</span>`;
-            if (jobCount > 0) html += `<span class="job-count-badge">${jobCount} job${jobCount > 1 ? 's' : ''}</span>`;
+            const loc = [p.city, p.state].filter(Boolean).join(', ');
+            if (loc) html += `<span class="project-location">${esc(loc)}</span>`;
+            if (p.description) html += `<span class="project-desc">${esc(p.description)}</span>`;
             html += `</div>`;
-            if (p.description) html += `<div class="project-desc" style="margin-left:26px;">${esc(p.description)}</div>`;
             html += `</td>`;
             html += `<td class="currency">${tb > 0 ? '$' + tb.toLocaleString() : ''}</td>`;
             html += `<td></td><td></td>`;
             html += `<td><div class="action-buttons">`;
             html += `<button class="action-btn secondary" onclick="event.stopPropagation();editProject(${p.id})">Edit</button>`;
+            if (jobCount > 0) html += `<span class="job-count-badge">${jobCount} job${jobCount > 1 ? 's' : ''}</span>`;
             html += `</div></td>`;
             html += `</tr>`;
 
             // Job rows (visible when expanded)
             if (expanded) {
                 if (jobs.length === 0) {
-                    html += `<tr class="no-jobs-row"><td colspan="7">No jobs found for this project</td></tr>`;
+                    html += `<tr class="no-jobs-row"><td colspan="8">No jobs found for this project</td></tr>`;
                 } else {
                     jobs.forEach(j => {
                         const jb = j.allocated_budget || 0;
                         html += `<tr class="job-row">`;
+                        // Selection checkbox
+                        html += `<td onclick="event.stopPropagation()"><input type="checkbox" class="job-select-cb" data-alloc-id="${j.id}" ${selectedJobs.has(j.id) ? 'checked' : ''} onchange="toggleJobSelect(${j.id},this)"></td>`;
                         // Job code + scope
                         html += `<td><span class="job-code">${esc(j.job_code)}</span>`;
                         if (j.scope_name) html += `<span class="job-scope">- ${esc(j.scope_name)}</span>`;
@@ -585,36 +750,191 @@
 
         html += '</tbody></table>';
         container.innerHTML = html;
+        updateBulkToolbar();
     }
 
-    // Inline edit handlers
+    function renderByBU() {
+        const container = document.getElementById('projectsTable');
+        const stageFilter = document.getElementById('stageFilter').value;
+        const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+
+        // Collect all jobs across all projects, attach parent project info
+        let allJobs = [];
+        projects.forEach(p => {
+            (p.jobs || []).forEach(j => {
+                allJobs.push({ ...j, project_name: p.name, project_number: p.number, project_id: p.id, project_city: p.city, project_state: p.state });
+            });
+        });
+
+        // Apply filters
+        if (stageFilter) allJobs = allJobs.filter(j => j.stage === stageFilter);
+        if (searchFilter) {
+            allJobs = allJobs.filter(j =>
+                (j.job_code && j.job_code.toLowerCase().includes(searchFilter)) ||
+                (j.scope_name && j.scope_name.toLowerCase().includes(searchFilter)) ||
+                (j.pm && j.pm.toLowerCase().includes(searchFilter)) ||
+                (j.bu_name && j.bu_name.toLowerCase().includes(searchFilter)) ||
+                (j.project_name && j.project_name.toLowerCase().includes(searchFilter)) ||
+                (j.project_number && j.project_number.toLowerCase().includes(searchFilter))
+            );
+        }
+
+        // Group by BU code
+        const buMap = {};
+        allJobs.forEach(j => {
+            const key = j.bu_code || '???';
+            if (!buMap[key]) buMap[key] = { code: j.bu_code, name: j.bu_name, jobs: [] };
+            buMap[key].jobs.push(j);
+        });
+
+        // Sort jobs within each BU group based on dropdown
+        const sortBy = document.getElementById('sortBy').value;
+        function sortJobs(jobs) {
+            return jobs.sort((a, b) => {
+                switch (sortBy) {
+                    case 'number-asc':  return (a.job_code || '').localeCompare(b.job_code || '');
+                    case 'number-desc': return (b.job_code || '').localeCompare(a.job_code || '');
+                    case 'name-asc':    return (a.project_name || '').localeCompare(b.project_name || '');
+                    case 'name-desc':   return (b.project_name || '').localeCompare(a.project_name || '');
+                    case 'budget-desc': return (b.allocated_budget || 0) - (a.allocated_budget || 0);
+                    case 'budget-asc':  return (a.allocated_budget || 0) - (b.allocated_budget || 0);
+                    case 'location-asc': {
+                        const al = [a.project_city, a.project_state].filter(Boolean).join(', ');
+                        const bl = [b.project_city, b.project_state].filter(Boolean).join(', ');
+                        return al.localeCompare(bl);
+                    }
+                    case 'oldest':      return (a.id || 0) - (b.id || 0);
+                    case 'newest':
+                    default:            return (b.id || 0) - (a.id || 0);
+                }
+            });
+        }
+        Object.values(buMap).forEach(bu => sortJobs(bu.jobs));
+
+        // Sort BU groups (by job count for 'jobs-desc', otherwise by code)
+        const buGroups = Object.values(buMap).sort((a, b) => {
+            if (sortBy === 'jobs-desc') return b.jobs.length - a.jobs.length;
+            return (a.code || '').localeCompare(b.code || '');
+        });
+
+        if (buGroups.length === 0) {
+            container.innerHTML = '<div class="empty-state">No jobs found matching filters.</div>';
+            return;
+        }
+
+        let html = '<table><thead><tr>';
+        html += '<th style="width:30px;"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" title="Select all visible jobs"></th>';
+        html += '<th>Job</th><th>Project</th><th>Stage</th>';
+        html += '<th>Budget</th><th>Weight</th><th>Proj</th>';
+        html += '<th>Actions</th>';
+        html += '</tr></thead><tbody>';
+
+        buGroups.forEach(bu => {
+            const buKey = 'bu-' + bu.code;
+            const expanded = expandedProjects.has(buKey);
+            const tb = bu.jobs.reduce((sum, j) => sum + (j.allocated_budget || 0), 0);
+            const jobCount = bu.jobs.length;
+
+            // BU header row
+            html += `<tr class="project-header" onclick="toggleProject('${buKey}')">`;
+            html += `<td></td>`;
+            html += `<td colspan="3">`;
+            html += `<div class="project-toggle">`;
+            html += `<span class="toggle-icon ${expanded ? 'expanded' : ''}">\u25B6</span>`;
+            html += `<span class="project-number">${esc(bu.code)}</span>`;
+            html += `<span class="project-name">${esc(bu.name)}</span>`;
+            html += `</div>`;
+            html += `</td>`;
+            html += `<td class="currency">${tb > 0 ? '$' + tb.toLocaleString() : ''}</td>`;
+            html += `<td></td><td></td>`;
+            html += `<td><div class="action-buttons">`;
+            if (jobCount > 0) html += `<span class="job-count-badge">${jobCount} job${jobCount > 1 ? 's' : ''}</span>`;
+            html += `</div></td>`;
+            html += `</tr>`;
+
+            if (expanded) {
+                bu.jobs.forEach(j => {
+                    const jb = j.allocated_budget || 0;
+                    html += `<tr class="job-row">`;
+                    // Selection checkbox
+                    html += `<td onclick="event.stopPropagation()"><input type="checkbox" class="job-select-cb" data-alloc-id="${j.id}" ${selectedJobs.has(j.id) ? 'checked' : ''} onchange="toggleJobSelect(${j.id},this)"></td>`;
+                    // Job code + scope
+                    html += `<td><span class="job-code">${esc(j.job_code)}</span>`;
+                    if (j.scope_name) html += `<span class="job-scope">- ${esc(j.scope_name)}</span>`;
+                    html += `</td>`;
+                    // Project name + number
+                    html += `<td><span class="job-code">${esc(j.project_number)}</span> <span style="color:var(--color-text-muted)">${esc(j.project_name)}</span></td>`;
+                    // Stage dropdown
+                    html += `<td><select class="stage-select" onchange="updateJobStage(${j.id},this.value)" onclick="event.stopPropagation()">`;
+                    STAGES.forEach(s => {
+                        html += `<option value="${s}"${j.stage === s ? ' selected' : ''}>${s}</option>`;
+                    });
+                    html += `</select></td>`;
+                    // Budget
+                    html += `<td><input type="number" class="budget-input" value="${jb}" step="0.01" min="0" `;
+                    html += `onchange="updateJobBudget(${j.id},this.value)" onclick="event.stopPropagation()" `;
+                    html += `onfocus="this.select()"></td>`;
+                    // Weight slider
+                    html += `<td><div class="weight-cell">`;
+                    html += `<input type="range" class="weight-slider" min="0" max="2" step="0.1" value="${j.weight_adjustment || 1.0}" `;
+                    html += `oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+'x'" `;
+                    html += `onchange="updateJobWeight(${j.id},this.value)" onclick="event.stopPropagation()">`;
+                    html += `<span class="weight-value">${(j.weight_adjustment || 1.0).toFixed(1)}x</span>`;
+                    html += `</div></td>`;
+                    // Projection toggle
+                    html += `<td><input type="checkbox" class="projection-toggle" ${j.projection_enabled ? 'checked' : ''} `;
+                    html += `onchange="updateJobProjection(${j.id},this.checked)" onclick="event.stopPropagation()" title="Include in projections"></td>`;
+                    // Actions
+                    html += `<td></td>`;
+                    html += `</tr>`;
+                });
+            }
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        updateBulkToolbar();
+    }
+
+    // Inline edit handlers — update local data after PATCH so re-renders stay in sync
+    function _findJob(allocId) {
+        for (const p of projects) {
+            const job = (p.jobs || []).find(j => j.id === allocId);
+            if (job) return job;
+        }
+        return null;
+    }
+
     async function updateJobWeight(allocId, value) {
         try {
-            await fetch(`${API_BASE}/allocations/${allocId}/weight`, {
+            const res = await fetch(`${API_BASE}/allocations/${allocId}/weight`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ weight: parseFloat(value) })
             });
+            if (res.ok) { const j = _findJob(allocId); if (j) j.weight_adjustment = parseFloat(value); }
         } catch (error) { showError('Failed to update weight'); }
     }
 
     async function updateJobProjection(allocId, enabled) {
         try {
-            await fetch(`${API_BASE}/allocations/${allocId}/projection`, {
+            const res = await fetch(`${API_BASE}/allocations/${allocId}/projection`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ enabled })
             });
+            if (res.ok) { const j = _findJob(allocId); if (j) j.projection_enabled = enabled ? 1 : 0; }
         } catch (error) { showError('Failed to update projection flag'); }
     }
 
     async function updateJobStage(allocId, stage) {
         try {
-            await fetch(`${API_BASE}/allocations/${allocId}/stage`, {
+            const res = await fetch(`${API_BASE}/allocations/${allocId}/stage`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ stage })
             });
+            if (res.ok) { const j = _findJob(allocId); if (j) j.stage = stage; }
         } catch (error) { showError('Failed to update stage'); }
     }
 

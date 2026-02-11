@@ -487,12 +487,15 @@ def upsert_project(
     pm: Optional[str] = None,
 ) -> Tuple[Optional[int], bool]:
     """
-    Find or create project by 5-digit number, optionally updating fields.
+    Look up an existing project by 5-digit number, optionally updating fields.
+
+    Projects must be created via the Projects UI or Procore import first.
+    The pipeline only links drawings/jobs to existing projects.
 
     Args:
         conn: Database connection.
         project_number: 5-digit project prefix.
-        project_name: Human-readable project name.
+        project_name: Human-readable project name (used for logging only).
         customer_name: Optional customer name for linkage.
         street: Optional street address.
         city: Optional city.
@@ -501,61 +504,56 @@ def upsert_project(
         pm: Optional project manager name.
 
     Returns:
-        (project_id, is_new) - database ID and whether it was just created.
+        (project_id, False) if found, or (None, False) if not found.
     """
-    customer_id = None
-    if customer_name:
-        customer_id = ensure_customer(conn, customer_name)
-
     cursor = conn.execute(
         "SELECT id FROM projects WHERE number = ?", (project_number,)
     )
     row = cursor.fetchone()
 
-    if row:
-        project_id = row['id']
-        updates = []
-        params = []
+    if not row:
+        logger.warning(
+            "Project %s (%s) not found — create it in the Projects page first",
+            project_number, project_name,
+        )
+        return None, False
 
-        if customer_id is not None:
-            updates.append("customer_id = ?")
-            params.append(customer_id)
-        if street and street.strip():
-            updates.append("street = ?")
-            params.append(street.strip())
-        if city and city.strip():
-            updates.append("city = ?")
-            params.append(city.strip())
-        if state and state.strip():
-            updates.append("state = ?")
-            params.append(state.strip())
-        if zip_code and zip_code.strip():
-            updates.append("zip = ?")
-            params.append(zip_code.strip())
-        if pm and pm.strip():
-            updates.append("pm = ?")
-            params.append(pm.strip())
+    project_id = row['id']
+    updates = []
+    params = []
 
-        if updates:
-            params.append(project_id)
-            conn.execute(
-                f"UPDATE projects SET {', '.join(updates)} WHERE id = ?",
-                params
-            )
-            conn.commit()
-            logger.debug("Updated project %s with new fields", project_number)
+    customer_id = None
+    if customer_name:
+        customer_id = ensure_customer(conn, customer_name)
+        updates.append("customer_id = ?")
+        params.append(customer_id)
 
-        return project_id, False
+    if street and street.strip():
+        updates.append("street = ?")
+        params.append(street.strip())
+    if city and city.strip():
+        updates.append("city = ?")
+        params.append(city.strip())
+    if state and state.strip():
+        updates.append("state = ?")
+        params.append(state.strip())
+    if zip_code and zip_code.strip():
+        updates.append("zip = ?")
+        params.append(zip_code.strip())
+    if pm and pm.strip():
+        updates.append("pm = ?")
+        params.append(pm.strip())
 
-    cursor = conn.execute(
-        """INSERT INTO projects (number, name, customer_id, street, city, state, zip, pm, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')""",
-        (project_number, project_name, customer_id,
-         street or '', city or '', state or '', zip_code or '', pm or '')
-    )
-    conn.commit()
-    logger.info("Created NEW project: %s (%s)", project_number, project_name)
-    return cursor.lastrowid, True
+    if updates:
+        params.append(project_id)
+        conn.execute(
+            f"UPDATE projects SET {', '.join(updates)} WHERE id = ?",
+            params
+        )
+        conn.commit()
+        logger.debug("Updated project %s with new fields", project_number)
+
+    return project_id, False
 
 
 def upsert_job(
@@ -1059,7 +1057,7 @@ def process_and_import(
         'jobsites_active': 0,
         'jobsites_inactive': 0,
         'jobsites_processed': 0,
-        'projects_created': 0,
+        'projects_skipped': set(),
         'projects_activated': 0,
         'projects_deactivated': 0,
         'personnel_processed': 0,
@@ -1147,7 +1145,7 @@ def process_and_import(
             cursor = conn.execute("SELECT id FROM projects WHERE number = ?", (proj_num,))
             existing_proj = cursor.fetchone()
 
-            project_id, is_new = upsert_project(
+            project_id, _ = upsert_project(
                 conn, proj_num, js.scope_name,
                 customer_name=None,
                 street=js.street,
@@ -1156,8 +1154,9 @@ def process_and_import(
                 zip_code=js.zip,
                 pm=js.pm,
             )
-            if is_new:
-                stats['projects_created'] += 1
+            if project_id is None:
+                stats.setdefault('projects_skipped', set()).add(proj_num)
+                continue
 
             has_personnel = js.job_number in jobsites_with_personnel
             if project_id not in projects_to_update:

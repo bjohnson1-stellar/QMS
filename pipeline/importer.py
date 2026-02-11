@@ -122,15 +122,18 @@ def upsert_project(
     project_name: str,
 ) -> Optional[int]:
     """
-    Find or create project by 5-digit number.
+    Look up an existing project by 5-digit number.
+
+    Projects must be created via the Projects UI or Procore import first.
+    Returns None if the project doesn't exist.
 
     Args:
         conn: Database connection.
         project_number: 5-digit project prefix.
-        project_name: Human-readable project name.
+        project_name: Human-readable project name (used for logging only).
 
     Returns:
-        Project database ID.
+        Project database ID, or None if not found.
     """
     cursor = conn.execute(
         "SELECT id FROM projects WHERE number = ?", (project_number,)
@@ -139,13 +142,11 @@ def upsert_project(
     if row:
         return row['id']
 
-    cursor = conn.execute(
-        "INSERT INTO projects (number, name, status) VALUES (?, ?, 'active')",
-        (project_number, project_name)
+    logger.warning(
+        "Project %s (%s) not found — create it in the Projects page first",
+        project_number, project_name,
     )
-    conn.commit()
-    logger.info("Created project: %s (%s)", project_number, project_name)
-    return cursor.lastrowid
+    return None
 
 
 def upsert_jobsite(
@@ -331,14 +332,10 @@ def import_single(
         for js in jobsite_rows:
             proj_num = extract_project_number(js['job_number'])
 
-            cursor = conn.execute(
-                "SELECT id FROM projects WHERE number = ?", (proj_num,)
-            )
-            existing_proj = cursor.fetchone()
-            if not existing_proj:
-                stats['projects_created'] += 1
-
             project_id = upsert_project(conn, proj_num, js['project_name'])
+            if project_id is None:
+                stats.setdefault('projects_skipped', set()).add(proj_num)
+                continue
 
             cursor = conn.execute(
                 "SELECT id FROM jobsites WHERE job_number = ?", (js['job_number'],)

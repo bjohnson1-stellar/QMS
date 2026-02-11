@@ -256,6 +256,24 @@ def api_update_allocation_stage(aid):
     return jsonify({"message": "Stage updated"})
 
 
+@bp.route("/api/allocations/bulk", methods=["PATCH"])
+def api_bulk_update_allocations():
+    data = request.json or {}
+    ids = data.get("ids", [])
+    action = data.get("action", "")
+    value = data.get("value")
+    if not ids or not isinstance(ids, list):
+        return jsonify({"error": "ids must be a non-empty list"}), 400
+    if action not in ("set_stage", "set_projection", "set_weight", "delete"):
+        return jsonify({"error": f"Invalid action: {action}"}), 400
+    try:
+        with get_db() as conn:
+            result = budget.bulk_update_allocations(conn, ids, action, value)
+        return jsonify(result)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+
 # ---------------------------------------------------------------------------
 # Business Units API
 # ---------------------------------------------------------------------------

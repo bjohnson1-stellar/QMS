@@ -29,15 +29,15 @@ _TWO_PART_CODE = re.compile(r"^(\d{5})-(\d{3})$")
 _BASE_CODE = re.compile(r"^\d{5}$")
 
 VALID_STAGES = [
-    "Archive",
+    "Proposal",
     "Bidding",
+    "Pre-Construction",
     "Construction and Bidding",
     "Course of Construction",
-    "Lost Proposal",
     "Post-Construction",
-    "Pre-Construction",
-    "Proposal",
     "Warranty",
+    "Archive",
+    "Lost Proposal",
 ]
 
 
@@ -510,6 +510,73 @@ def update_allocation_budget(
     sync_budget_rollup(conn, row["project_id"])
     conn.commit()
     return True
+
+
+def bulk_update_allocations(
+    conn: sqlite3.Connection,
+    allocation_ids: List[int],
+    action: str,
+    value: Any = None,
+) -> Dict[str, Any]:
+    """Apply a bulk action to multiple allocations.
+
+    Actions: 'set_stage', 'set_projection', 'set_weight', 'delete'.
+    Returns summary dict with counts.
+    """
+    if not allocation_ids:
+        return {"updated": 0}
+
+    placeholders = ",".join("?" for _ in allocation_ids)
+    updated = 0
+
+    if action == "set_stage":
+        if value not in VALID_STAGES:
+            raise ValueError(f"Invalid stage: {value}")
+        cursor = conn.execute(
+            f"UPDATE project_allocations SET stage=?, updated_at=CURRENT_TIMESTAMP "
+            f"WHERE id IN ({placeholders})",
+            [value] + list(allocation_ids),
+        )
+        updated = cursor.rowcount
+
+    elif action == "set_projection":
+        flag = 1 if value else 0
+        cursor = conn.execute(
+            f"UPDATE project_allocations SET projection_enabled=?, updated_at=CURRENT_TIMESTAMP "
+            f"WHERE id IN ({placeholders})",
+            [flag] + list(allocation_ids),
+        )
+        updated = cursor.rowcount
+
+    elif action == "set_weight":
+        weight = float(value)
+        if not (0 <= weight <= 2):
+            raise ValueError("Weight must be between 0 and 2")
+        cursor = conn.execute(
+            f"UPDATE project_allocations SET weight_adjustment=?, updated_at=CURRENT_TIMESTAMP "
+            f"WHERE id IN ({placeholders})",
+            [weight] + list(allocation_ids),
+        )
+        updated = cursor.rowcount
+
+    elif action == "delete":
+        # Gather affected project_ids for rollup sync
+        rows = conn.execute(
+            f"SELECT DISTINCT project_id FROM project_allocations WHERE id IN ({placeholders})",
+            list(allocation_ids),
+        ).fetchall()
+        cursor = conn.execute(
+            f"DELETE FROM project_allocations WHERE id IN ({placeholders})",
+            list(allocation_ids),
+        )
+        updated = cursor.rowcount
+        for row in rows:
+            sync_budget_rollup(conn, row["project_id"])
+    else:
+        raise ValueError(f"Unknown bulk action: {action}")
+
+    conn.commit()
+    return {"updated": updated}
 
 
 def sync_budget_rollup(conn: sqlite3.Connection, project_id: int) -> None:

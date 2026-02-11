@@ -140,7 +140,11 @@ def import_drawing(
     typer.echo(f"  - Updated:             {stats['jobsites_updated']}")
     typer.echo(f"  - Active (w/personnel):{stats['jobsites_active']}")
     typer.echo(f"  - Inactive (no staff): {stats['jobsites_inactive']}")
-    typer.echo(f"Projects created:        {stats['projects_created']}")
+    skipped = stats.get('projects_skipped', set())
+    if skipped:
+        typer.echo(f"Projects skipped:        {len(skipped)} (not in Projects table)")
+        for pn in sorted(skipped):
+            typer.echo(f"  ⚠ {pn} — create this project first, then re-import")
 
     if stats.get('projects_activated', 0) > 0 or stats.get('projects_deactivated', 0) > 0:
         typer.echo(f"  - Activated:           {stats['projects_activated']}")
