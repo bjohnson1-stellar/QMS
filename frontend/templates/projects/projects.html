@@ -853,7 +853,7 @@
 
         let html = '<table><thead><tr>';
         html += '<th style="width:40px;"><div class="select-all-cell"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" title="Select all visible jobs"><span class="select-all-label" id="selectAllLabel">All</span></div></th>';
-        html += '<th>Job</th><th>Project</th><th>Stage</th>';
+        html += '<th>Job</th><th>Stage</th>';
         html += '<th>Budget</th><th>Weight</th><th>Proj</th><th>GMP</th>';
         html += '<th></th>';
         html += '</tr></thead><tbody>';
@@ -867,7 +867,7 @@
             // BU header row
             html += `<tr class="project-header" onclick="toggleProject('${buKey}')">`;
             html += `<td></td>`;
-            html += `<td colspan="3">`;
+            html += `<td colspan="2">`;
             html += `<div class="project-toggle">`;
             html += `<span class="toggle-icon ${expanded ? 'expanded' : ''}">\u25B6</span>`;
             html += `<span class="project-number">${esc(bu.code)}</span>`;
@@ -891,8 +891,6 @@
                     html += `<td><span class="job-code">${esc(j.job_code)}</span>`;
                     if (j.scope_name) html += `<span class="job-scope">- ${esc(j.scope_name)}</span>`;
                     html += `</td>`;
-                    // Project name + number
-                    html += `<td><span class="job-code">${esc(j.project_number)}</span> <span style="color:var(--color-text-muted)">${esc(j.project_name)}</span></td>`;
                     // Stage dropdown
                     html += `<td><select class="stage-select" onchange="updateJobStage(${j.id},this.value)" onclick="event.stopPropagation()">`;
                     STAGES.forEach(s => {
