@@ -9,6 +9,7 @@ from flask import Blueprint, jsonify, request, render_template, send_file
 from qms.core import get_db
 from qms.projects import budget
 from qms.projects.budget import VALID_STAGES
+from qms.projects import timecard
 
 bp = Blueprint("projects", __name__, url_prefix="/projects")
 
@@ -462,6 +463,29 @@ def api_finalize_snapshot(sid):
     if not ok:
         return jsonify({"error": "Snapshot not found"}), 404
     return jsonify({"message": "Snapshot finalized"})
+
+
+# ---------------------------------------------------------------------------
+# Timecard Export API
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/timecard/<int:pid>", methods=["GET"])
+def api_get_timecard(pid):
+    """Export timecard entries for a projection period."""
+    from datetime import date as _date
+
+    start = request.args.get("start_date")
+    end = request.args.get("end_date")
+    sd = _date.fromisoformat(start) if start else None
+    ed = _date.fromisoformat(end) if end else None
+
+    with get_db(readonly=True) as conn:
+        result = timecard.generate_timecard_entries(conn, pid, start_date=sd, end_date=ed)
+
+    if "error" in result:
+        return jsonify(result), 400
+    return jsonify(result)
 
 
 # ---------------------------------------------------------------------------
