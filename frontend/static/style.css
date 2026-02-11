@@ -1113,6 +1113,12 @@ tr:hover {
     color: var(--color-success);
     text-align: right;
     transition: border-color 0.15s var(--ease);
+    -moz-appearance: textfield;
+}
+.budget-input::-webkit-outer-spin-button,
+.budget-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .budget-input:hover {
