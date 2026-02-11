@@ -210,6 +210,9 @@
         <button class="bulk-btn" onclick="bulkAction('set_projection', true)">Proj ON</button>
         <button class="bulk-btn" onclick="bulkAction('set_projection', false)">Proj OFF</button>
         <span class="bulk-sep">|</span>
+        <button class="bulk-btn" onclick="bulkAction('set_gmp', true)">GMP ON</button>
+        <button class="bulk-btn" onclick="bulkAction('set_gmp', false)">GMP OFF</button>
+        <span class="bulk-sep">|</span>
         <input type="number" id="bulkWeightInput" class="bulk-input" min="0" max="2" step="0.1" value="1.0" style="width:70px;">
         <button class="bulk-btn" onclick="bulkSetWeight()">Set Weight</button>
         <span class="bulk-sep">|</span>
@@ -524,6 +527,7 @@
     }
 
     async function deleteAllocation(projectId, allocId) {
+        if (!confirm('Delete this allocation? This cannot be undone.')) return;
         try {
             const response = await fetch(`${API_BASE}/projects/${projectId}/allocations/${allocId}`, { method: 'DELETE' });
             const result = await response.json();

@@ -275,7 +275,7 @@ def api_bulk_update_allocations():
     value = data.get("value")
     if not ids or not isinstance(ids, list):
         return jsonify({"error": "ids must be a non-empty list"}), 400
-    if action not in ("set_stage", "set_projection", "set_weight", "delete"):
+    if action not in ("set_stage", "set_projection", "set_gmp", "set_weight", "delete"):
         return jsonify({"error": f"Invalid action: {action}"}), 400
     try:
         with get_db() as conn:

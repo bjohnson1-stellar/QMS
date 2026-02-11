@@ -520,7 +520,7 @@ def bulk_update_allocations(
 ) -> Dict[str, Any]:
     """Apply a bulk action to multiple allocations.
 
-    Actions: 'set_stage', 'set_projection', 'set_weight', 'delete'.
+    Actions: 'set_stage', 'set_projection', 'set_gmp', 'set_weight', 'delete'.
     Returns summary dict with counts.
     """
     if not allocation_ids:
@@ -543,6 +543,15 @@ def bulk_update_allocations(
         flag = 1 if value else 0
         cursor = conn.execute(
             f"UPDATE project_allocations SET projection_enabled=?, updated_at=CURRENT_TIMESTAMP "
+            f"WHERE id IN ({placeholders})",
+            [flag] + list(allocation_ids),
+        )
+        updated = cursor.rowcount
+
+    elif action == "set_gmp":
+        flag = 1 if value else 0
+        cursor = conn.execute(
+            f"UPDATE project_allocations SET is_gmp=?, updated_at=CURRENT_TIMESTAMP "
             f"WHERE id IN ({placeholders})",
             [flag] + list(allocation_ids),
         )
