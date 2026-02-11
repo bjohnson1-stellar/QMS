@@ -90,6 +90,58 @@ def _get_active_wps(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
     ]
 
 
+def _get_field_employees(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
+    """Active employees with job/project assignment for jobsite filtering.
+
+    Power Automate uses the Project Number column to filter this list
+    when the supervisor selects a jobsite first.
+    """
+    rows = conn.execute(
+        """SELECT
+               e.employee_number,
+               e.first_name,
+               e.last_name,
+               e.preferred_name,
+               COALESCE(e.preferred_name, e.first_name) || ' ' || e.last_name
+                   AS display_name,
+               CASE WHEN e.is_employee = 1 THEN 'Employee'
+                    WHEN e.is_subcontractor = 1 THEN 'Subcontractor'
+                    ELSE 'Other' END AS employee_type,
+               e.position,
+               d.department_number,
+               d.name AS department_name,
+               j.job_number,
+               p.number AS project_number,
+               p.name AS project_name,
+               sup.first_name || ' ' || sup.last_name AS supervisor_name,
+               e.status
+           FROM employees e
+           LEFT JOIN departments d ON e.department_id = d.id
+           LEFT JOIN jobs j ON e.job_id = j.id
+           LEFT JOIN projects p ON j.project_id = p.id
+           LEFT JOIN employees sup ON e.supervisor_id = sup.id
+           WHERE e.status = 'active'
+           ORDER BY p.number, e.last_name, e.first_name"""
+    ).fetchall()
+    return [
+        {
+            "employee_number": r["employee_number"] or "",
+            "display_name": r["display_name"] or "",
+            "first_name": r["first_name"] or "",
+            "last_name": r["last_name"] or "",
+            "employee_type": r["employee_type"] or "",
+            "position": r["position"] or "",
+            "department_number": r["department_number"] or "",
+            "department_name": r["department_name"] or "",
+            "job_number": r["job_number"] or "",
+            "project_number": r["project_number"] or "",
+            "project_name": r["project_name"] or "",
+            "supervisor_name": r["supervisor_name"] or "",
+        }
+        for r in rows
+    ]
+
+
 def _get_active_projects(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
     """Active projects for job assignment."""
     rows = conn.execute(
@@ -235,6 +287,23 @@ def _get_filler_metals() -> List[Dict[str, Any]]:
 # (sheet_name, source_type, extractor, columns)
 # columns: list of (header_label, width, dict_key)
 SHEET_DEFS: List[Tuple[str, str, Any, List[Tuple[str, int, str]]]] = [
+    (
+        "Employees", "db", _get_field_employees,
+        [
+            ("Employee #", 14, "employee_number"),
+            ("Display Name", 24, "display_name"),
+            ("First Name", 14, "first_name"),
+            ("Last Name", 16, "last_name"),
+            ("Type", 14, "employee_type"),
+            ("Position", 18, "position"),
+            ("Dept #", 8, "department_number"),
+            ("Department", 16, "department_name"),
+            ("Job Number", 14, "job_number"),
+            ("Project Number", 16, "project_number"),
+            ("Project Name", 28, "project_name"),
+            ("Supervisor", 22, "supervisor_name"),
+        ],
+    ),
     (
         "Welders", "db", _get_active_welders,
         [
