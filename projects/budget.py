@@ -493,6 +493,25 @@ def update_allocation_field(
     return cursor.rowcount > 0
 
 
+def update_allocation_budget(
+    conn: sqlite3.Connection, allocation_id: int, budget: float
+) -> bool:
+    """Update an allocation's budget and sync the project rollup."""
+    row = conn.execute(
+        "SELECT project_id FROM project_allocations WHERE id = ?",
+        (allocation_id,),
+    ).fetchone()
+    if not row:
+        return False
+    conn.execute(
+        "UPDATE project_allocations SET allocated_budget=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+        (budget, allocation_id),
+    )
+    sync_budget_rollup(conn, row["project_id"])
+    conn.commit()
+    return True
+
+
 def sync_budget_rollup(conn: sqlite3.Connection, project_id: int) -> None:
     """Set project_budgets.total_budget = SUM of allocations."""
     result = conn.execute(

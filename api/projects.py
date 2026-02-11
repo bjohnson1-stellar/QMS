@@ -230,6 +230,19 @@ def api_update_allocation_projection(aid):
     return jsonify({"message": "Projection flag updated"})
 
 
+@bp.route("/api/allocations/<int:aid>/budget", methods=["PATCH"])
+def api_update_allocation_budget(aid):
+    data = request.json
+    amount = data.get("budget")
+    if amount is None:
+        return jsonify({"error": "budget is required"}), 400
+    with get_db() as conn:
+        ok = budget.update_allocation_budget(conn, aid, float(amount))
+    if not ok:
+        return jsonify({"error": "Allocation not found"}), 404
+    return jsonify({"message": "Budget updated"})
+
+
 @bp.route("/api/allocations/<int:aid>/stage", methods=["PATCH"])
 def api_update_allocation_stage(aid):
     data = request.json

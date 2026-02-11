@@ -51,9 +51,9 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Total Budget *</label>
-                    <input type="number" id="totalBudget" step="0.01" required>
-                    <div class="help-text" id="budgetHint"></div>
+                    <label>Total Budget</label>
+                    <input type="number" id="totalBudget" step="0.01" value="0" readonly style="background:var(--color-surface-alt);color:var(--color-text-muted);">
+                    <div class="help-text" id="budgetHint">Auto-calculated from job budgets</div>
                 </div>
                 <div class="form-group">
                     <label>Weight Adjustment</label>
@@ -297,7 +297,7 @@
         document.getElementById('ownerZip').value = '';
         document.getElementById('allocationSection').style.display = 'none';
         document.getElementById('allocationList').innerHTML = '';
-        document.getElementById('budgetHint').textContent = '';
+        document.getElementById('budgetHint').textContent = 'Auto-calculated from job budgets';
         currentEditId = null;
         document.getElementById('submitBtn').textContent = 'Add Project';
         document.getElementById('formTitle').textContent = 'Add New Project';
@@ -511,17 +511,17 @@
 
         let html = '<table><thead><tr>';
         html += '<th>Job</th><th>PM</th><th>Stage</th>';
-        html += '<th>Budget</th><th>Spent</th><th>Remaining</th>';
-        html += '<th>Weight</th><th>Proj</th><th>Actions</th>';
+        html += '<th>Budget</th><th>Weight</th><th>Proj</th>';
+        html += '<th>Actions</th>';
         html += '</tr></thead><tbody>';
 
         filtered.forEach(p => {
-            const tb = p.total_budget || 0;
-            const bs = p.budget_spent || 0;
-            const remaining = tb - bs;
+            // Project budget = sum of job budgets (organizational container)
             const jobs = p.filteredJobs || [];
+            const allJobs = p.jobs || [];
+            const tb = allJobs.reduce((sum, j) => sum + (j.allocated_budget || 0), 0);
             const expanded = expandedProjects.has(p.id);
-            const jobCount = (p.jobs || []).length;
+            const jobCount = allJobs.length;
 
             // Project header row
             html += `<tr class="project-header" onclick="toggleProject(${p.id})">`;
@@ -534,20 +534,17 @@
             html += `</div>`;
             if (p.description) html += `<div class="project-desc" style="margin-left:26px;">${esc(p.description)}</div>`;
             html += `</td>`;
-            html += `<td class="currency">$${tb.toLocaleString()}</td>`;
-            html += `<td class="currency">$${bs.toLocaleString()}</td>`;
-            html += `<td class="currency">$${remaining.toLocaleString()}</td>`;
+            html += `<td class="currency">${tb > 0 ? '$' + tb.toLocaleString() : ''}</td>`;
             html += `<td></td><td></td>`;
             html += `<td><div class="action-buttons">`;
             html += `<button class="action-btn secondary" onclick="event.stopPropagation();editProject(${p.id})">Edit</button>`;
-            html += `<button class="action-btn danger" onclick="event.stopPropagation();deleteProject(${p.id})">Del</button>`;
             html += `</div></td>`;
             html += `</tr>`;
 
             // Job rows (visible when expanded)
             if (expanded) {
                 if (jobs.length === 0) {
-                    html += `<tr class="no-jobs-row"><td colspan="9">No jobs found for this project</td></tr>`;
+                    html += `<tr class="no-jobs-row"><td colspan="7">No jobs found for this project</td></tr>`;
                 } else {
                     jobs.forEach(j => {
                         const jb = j.allocated_budget || 0;
@@ -564,12 +561,10 @@
                             html += `<option value="${s}"${j.stage === s ? ' selected' : ''}>${s}</option>`;
                         });
                         html += `</select></td>`;
-                        // Budget
-                        html += `<td class="currency">$${jb.toLocaleString()}</td>`;
-                        // Spent (placeholder — transactions are project-level)
-                        html += `<td class="currency">-</td>`;
-                        // Remaining
-                        html += `<td class="currency">-</td>`;
+                        // Budget (inline editable)
+                        html += `<td><input type="number" class="budget-input" value="${jb}" step="0.01" min="0" `;
+                        html += `onchange="updateJobBudget(${j.id},this.value)" onclick="event.stopPropagation()" `;
+                        html += `onfocus="this.select()"></td>`;
                         // Weight slider
                         html += `<td><div class="weight-cell">`;
                         html += `<input type="range" class="weight-slider" min="0" max="2" step="0.1" value="${j.weight_adjustment || 1.0}" `;
@@ -580,9 +575,8 @@
                         // Projection toggle
                         html += `<td><input type="checkbox" class="projection-toggle" ${j.projection_enabled ? 'checked' : ''} `;
                         html += `onchange="updateJobProjection(${j.id},this.checked)" onclick="event.stopPropagation()" title="Include in projections"></td>`;
-                        // Actions (delete allocation)
-                        html += `<td><button class="action-btn danger" style="font-size:11px;padding:2px 8px;" `;
-                        html += `onclick="event.stopPropagation();deleteAllocationInline(${p.id},${j.id})">x</button></td>`;
+                        // Actions (empty — delete moved to edit page)
+                        html += `<td></td>`;
                         html += `</tr>`;
                     });
                 }
@@ -624,11 +618,15 @@
         } catch (error) { showError('Failed to update stage'); }
     }
 
-    async function deleteAllocationInline(projectId, allocId) {
+    async function updateJobBudget(allocId, value) {
         try {
-            const response = await fetch(`${API_BASE}/projects/${projectId}/allocations/${allocId}`, { method: 'DELETE' });
-            if (response.ok) loadProjects();
-        } catch (error) { showError('Failed to delete allocation'); }
+            const response = await fetch(`${API_BASE}/allocations/${allocId}/budget`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ budget: parseFloat(value) || 0 })
+            });
+            if (response.ok) loadProjects(); // refresh rollup totals
+        } catch (error) { showError('Failed to update budget'); }
     }
 
     function downloadTemplate() {
