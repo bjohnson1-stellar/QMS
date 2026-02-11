@@ -165,7 +165,10 @@
 <div class="error-message" id="pageErrorMessage"></div>
 
 <div class="card">
-    <h2>All Projects</h2>
+    <div class="tab-bar" style="display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--color-border-light);">
+        <button id="tabActive" class="tab-btn active" onclick="setArchiveTab('active')">Active Projects</button>
+        <button id="tabArchived" class="tab-btn" onclick="setArchiveTab('archived')">Archived</button>
+    </div>
     <div class="filter-bar">
         <select id="stageFilter" onchange="renderProjects()">
             <option value="">All Stages</option>
@@ -244,6 +247,8 @@
     let expandedProjects = new Set();
     let viewMode = 'project'; // 'project' or 'bu'
     let projectionFilter = false;
+    let archiveTab = 'active';
+    const ARCHIVED_STAGES = ['Archive', 'Lost Proposal'];
     let selectedJobs = new Set();
     const API_BASE = '/projects/api';
     const STAGES = {{ stages|tojson }};
@@ -325,6 +330,19 @@
         document.getElementById('viewBU').classList.toggle('active', mode === 'bu');
         const btn = document.getElementById('expandAllBtn');
         btn.textContent = '▶ Expand All';
+        renderProjects();
+    }
+
+    function setArchiveTab(tab) {
+        archiveTab = tab;
+        document.getElementById('tabActive').classList.toggle('active', tab === 'active');
+        document.getElementById('tabArchived').classList.toggle('active', tab === 'archived');
+        // Update stage filter options
+        const sel = document.getElementById('stageFilter');
+        const current = sel.value;
+        sel.innerHTML = '<option value="">All Stages</option>';
+        STAGES.filter(s => tab === 'archived' ? ARCHIVED_STAGES.includes(s) : !ARCHIVED_STAGES.includes(s))
+            .forEach(s => { sel.innerHTML += `<option value="${s}"${s === current ? ' selected' : ''}>${s}</option>`; });
         renderProjects();
     }
 
@@ -622,6 +640,13 @@
 
         let filtered = projects.map(p => {
             let jobs = p.jobs || [];
+            // Archive tab filter: split active vs archived jobs
+            if (archiveTab === 'active') {
+                jobs = jobs.filter(j => !ARCHIVED_STAGES.includes(j.stage));
+            } else {
+                jobs = jobs.filter(j => ARCHIVED_STAGES.includes(j.stage));
+            }
+            if (jobs.length === 0) return null;
             // Stage filter applies at job level
             if (stageFilter) {
                 jobs = jobs.filter(j => j.stage === stageFilter);
@@ -795,6 +820,11 @@
         });
 
         // Apply filters
+        if (archiveTab === 'active') {
+            allJobs = allJobs.filter(j => !ARCHIVED_STAGES.includes(j.stage));
+        } else {
+            allJobs = allJobs.filter(j => ARCHIVED_STAGES.includes(j.stage));
+        }
         if (projectionFilter) allJobs = allJobs.filter(j => j.projection_enabled);
         if (stageFilter) allJobs = allJobs.filter(j => j.stage === stageFilter);
         if (searchFilter) {
@@ -1125,6 +1155,7 @@
     }, { passive: false });
 
     loadBusinessUnits();
+    setArchiveTab('active'); // sync stage dropdown on init
     loadProjects();
 </script>
 {% endblock %}
