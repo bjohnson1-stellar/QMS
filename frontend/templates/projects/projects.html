@@ -266,11 +266,14 @@
     function updateBulkToolbar() {
         const toolbar = document.getElementById('bulkToolbar');
         const count = selectedJobs.size;
+        const label = document.getElementById('selectAllLabel');
         if (count > 0) {
             toolbar.style.display = 'flex';
             document.getElementById('bulkCount').textContent = `${count} job${count > 1 ? 's' : ''} selected`;
+            if (label) { label.textContent = count; label.classList.add('active'); }
         } else {
             toolbar.style.display = 'none';
+            if (label) { label.textContent = 'All'; label.classList.remove('active'); }
         }
     }
 
@@ -673,7 +676,7 @@
         }
 
         let html = '<table><thead><tr>';
-        html += '<th style="width:30px;"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" title="Select all visible jobs"></th>';
+        html += '<th style="width:40px;"><div class="select-all-cell"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" title="Select all visible jobs"><span class="select-all-label" id="selectAllLabel">All</span></div></th>';
         html += '<th>Job</th><th>PM</th><th>Stage</th>';
         html += '<th>Budget</th><th>Weight</th><th>Proj</th><th>GMP</th>';
         html += '<th>Actions</th>';
@@ -831,7 +834,7 @@
         }
 
         let html = '<table><thead><tr>';
-        html += '<th style="width:30px;"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" title="Select all visible jobs"></th>';
+        html += '<th style="width:40px;"><div class="select-all-cell"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" title="Select all visible jobs"><span class="select-all-label" id="selectAllLabel">All</span></div></th>';
         html += '<th>Job</th><th>Project</th><th>Stage</th>';
         html += '<th>Budget</th><th>Weight</th><th>Proj</th><th>GMP</th>';
         html += '<th>Actions</th>';

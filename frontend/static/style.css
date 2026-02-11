@@ -1264,6 +1264,30 @@ tr:hover {
     color: #fff;
 }
 
+.select-all-cell {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.select-all-label {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    font-weight: 500;
+    min-width: 16px;
+    text-align: center;
+}
+
+.select-all-label.active {
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 8px;
+    min-width: 18px;
+}
+
 .job-select-cb {
     width: 15px;
     height: 15px;
