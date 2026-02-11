@@ -370,3 +370,18 @@ reference_extraction:
     sample_rate: 0.10
   paths:
     references_root: "data/quality-documents/References"
+
+# =============================================================================
+# SHAREPOINT INTEGRATION (Power App sync)
+# =============================================================================
+# Required for: qms welding sync-sharepoint
+# Setup: Register an app in Azure AD with Sites.ReadWrite.All permission.
+# See: qms/.planning/sharepoint-powerapp-integration.md
+
+sharepoint:
+  tenant_id: ""          # Azure AD tenant ID
+  client_id: ""          # App registration client ID
+  client_secret: ""      # App registration client secret
+  site_name: ""          # SharePoint site display name (e.g., "QualityManagement")
+  site_id: ""            # SharePoint site ID (auto-discovered if site_name is set)
+  list_prefix: "Weld"    # Prefix for all synced lists

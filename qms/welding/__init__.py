@@ -37,6 +37,7 @@ from qms.welding.registration import (
     register_new_welder,
     validate_registration,
 )
+from qms.welding.sharepoint import preview_sync_data
 
 __all__ = [
     # intake
@@ -64,4 +65,6 @@ __all__ = [
     "register_batch",
     "register_new_welder",
     "validate_registration",
+    # sharepoint (lazy — requires 'pip install qms[sharepoint]')
+    "preview_sync_data",
 ]

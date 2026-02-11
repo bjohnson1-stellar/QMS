@@ -1,5 +1,7 @@
 """Welding CLI sub-commands."""
 
+import json
+
 import typer
 from pathlib import Path
 from typing import Optional
@@ -427,3 +429,130 @@ def check_notifications(
             f"{n['id']:>5} {n['priority']:<8} {n['notification_type']:<15} "
             f"{n['days_until_due'] or 'N/A':<5} {n['title'][:45]}"
         )
+
+
+@app.command("sync-sharepoint")
+def sync_sharepoint(
+    push: bool = typer.Option(False, "--push", help="Push lookup data to SharePoint"),
+    pull: bool = typer.Option(False, "--pull", help="Pull form submissions from SharePoint"),
+    status: bool = typer.Option(False, "--status", help="Check sync status"),
+    list_name: Optional[str] = typer.Option(
+        None, "--list", "-l",
+        help="Specific list to sync (welders, processes, wps, positions, materials, fillers, wpq-status)",
+    ),
+    preview: bool = typer.Option(False, "--preview", help="Preview data without SharePoint connection"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Connect but don't write changes"),
+):
+    """Sync welding data with SharePoint Lists for Power App integration."""
+    from qms.welding.sharepoint import (
+        LIST_ALIASES,
+        SharePointClient,
+        preview_sync_data,
+        pull_submissions,
+        push_all,
+        push_list,
+        get_sync_status,
+    )
+
+    # --- Offline preview mode ---
+    if preview:
+        typer.echo("SharePoint Sync Preview (offline)")
+        typer.echo("=" * 50)
+        data = preview_sync_data(list_name)
+
+        if "error" in data:
+            typer.echo(f"ERROR: {data['error']}")
+            typer.echo(f"  Valid lists: {', '.join(sorted(LIST_ALIASES.keys()))}")
+            raise typer.Exit(1)
+
+        for lname, items in data.items():
+            typer.echo(f"\n{lname}: {len(items)} items")
+            typer.echo("-" * 40)
+            for item in items[:5]:
+                typer.echo(f"  {json.dumps(item, default=str)}")
+            if len(items) > 5:
+                typer.echo(f"  ... and {len(items) - 5} more")
+        return
+
+    if not push and not pull and not status:
+        typer.echo("Specify --push, --pull, --status, or --preview")
+        typer.echo("Use --preview to see data without SharePoint connection")
+        raise typer.Exit(1)
+
+    # --- Connect to SharePoint ---
+    try:
+        client = SharePointClient.from_config()
+    except ValueError as e:
+        typer.echo(f"Configuration error: {e}")
+        typer.echo()
+        typer.echo("Add to config.yaml:")
+        typer.echo("  sharepoint:")
+        typer.echo("    tenant_id: <Azure AD tenant ID>")
+        typer.echo("    client_id: <App registration client ID>")
+        typer.echo("    client_secret: <App registration client secret>")
+        typer.echo("    site_name: <SharePoint site name>")
+        raise typer.Exit(1)
+    except Exception as e:
+        typer.echo(f"SharePoint connection failed: {e}")
+        raise typer.Exit(1)
+
+    # --- Push ---
+    if push:
+        if list_name:
+            resolved = LIST_ALIASES.get(list_name, list_name)
+            typer.echo(f"Pushing {resolved} to SharePoint...")
+            result = push_list(client, resolved, dry_run=dry_run)
+            _print_push_result(result)
+        else:
+            typer.echo("Pushing all lists to SharePoint...")
+            results = push_all(client, dry_run=dry_run)
+            for lname, result in results.items():
+                _print_push_result(result)
+            typer.echo()
+            total = sum(r.get("items_added", r.get("items_count", 0)) for r in results.values())
+            typer.echo(f"Total items synced: {total}")
+
+    # --- Pull ---
+    if pull:
+        typer.echo("Pulling form submissions from SharePoint...")
+        result = pull_submissions(client, dry_run=dry_run)
+        typer.echo()
+        typer.echo("Submission Import")
+        typer.echo("=" * 40)
+        typer.echo(f"  Found:     {result['total_found']}")
+        typer.echo(f"  Imported:  {result.get('imported', 0)}")
+        if result.get("errors"):
+            typer.echo(f"  Errors:    {len(result['errors'])}")
+            for err in result["errors"][:5]:
+                typer.echo(f"    - {err}")
+        if result.get("preview"):
+            typer.echo("\n  Preview:")
+            for p in result["preview"]:
+                typer.echo(f"    {p['welder']} / {p['process']} / {p['test_date']} / {p['result']}")
+
+    # --- Status ---
+    if status:
+        typer.echo("SharePoint Sync Status")
+        typer.echo("=" * 50)
+        sp_status = get_sync_status(client)
+        for lname, info in sp_status.items():
+            marker = "OK" if info["exists"] else "--"
+            count = info["item_count"] if info["exists"] else "not created"
+            typer.echo(f"  [{marker}] {lname:<30} {count}")
+
+
+def _print_push_result(result: dict) -> None:
+    """Format a single push result for display."""
+    name = result["list_name"]
+    status = result.get("status", "unknown")
+    if status == "success":
+        typer.echo(
+            f"  {name:<30} {result.get('items_added', 0)} items "
+            f"(replaced {result.get('items_deleted', 0)})"
+        )
+    elif status == "dry_run":
+        typer.echo(f"  {name:<30} {result.get('items_count', 0)} items (dry run)")
+    elif status == "skipped":
+        typer.echo(f"  {name:<30} skipped ({result.get('reason', '')})")
+    else:
+        typer.echo(f"  {name:<30} ERROR: {result.get('error', 'unknown')}")

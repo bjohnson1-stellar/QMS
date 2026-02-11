@@ -31,6 +31,10 @@ pipeline = [
     # AI/LLM
     "anthropic>=0.25.0",
 ]
+sharepoint = [
+    "requests>=2.31.0",
+    "msal>=1.24.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
