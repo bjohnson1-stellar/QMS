@@ -564,8 +564,8 @@ def bulk_update_allocations(
 
     elif action == "set_weight":
         weight = float(value)
-        if not (0 <= weight <= 2):
-            raise ValueError("Weight must be between 0 and 2")
+        if not (0 <= weight <= 5):
+            raise ValueError("Weight must be between 0 and 5")
         cursor = conn.execute(
             f"UPDATE project_allocations SET weight_adjustment=?, updated_at=CURRENT_TIMESTAMP "
             f"WHERE id IN ({placeholders})",
