@@ -513,7 +513,7 @@ def api_calculate_projection():
     pid = data.get("periodId")
     if not pid:
         return jsonify({"error": "Period ID required"}), 400
-    with get_db(readonly=True) as conn:
+    with get_db() as conn:
         result = budget.calculate_projection(conn, int(pid))
     if "error" in result:
         return jsonify(result), 400
