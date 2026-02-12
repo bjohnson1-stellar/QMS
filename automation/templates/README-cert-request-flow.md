@@ -67,7 +67,17 @@ Value:  items('Apply_to_each')?['Welder Stamp']
 Replace the `${...}` placeholders in the card JSON with the resulting arrays
 before posting.
 
-### 3. Card-to-JSON Field Mapping
+### 3. WPS Lookup
+
+The card captures a single `wps_number` at the card level. After submission,
+look up the selected WPS row from the `WPS` table in `welding-lookups.xlsx` to
+extract `process`, `base_material`, and `filler_metal`. These values are
+shared across all coupons in the request.
+
+Use a **Filter array** action on the WPS table where `WPS Number` equals the
+submitted `wps_number` value, then read the first matching row.
+
+### 4. Card-to-JSON Field Mapping
 
 The submit payload uses flat field IDs. Map them to the nested JSON structure
 expected by `validate_cert_request_json()` in `welding/cert_requests.py`:
@@ -102,27 +112,28 @@ expected by `validate_cert_request_json()` in `welding/cert_requests.py`:
 if `welder_stamp` is not empty, use existing-welder mapping; otherwise use
 new-welder mapping.
 
-### 4. Build Coupons Array
+### 5. Build Coupons Array
 
-For each coupon slot (1–4), check if `cN_process` is non-empty. If so,
-append to the coupons array:
+For each coupon slot (1–4), check if `cN_position` is non-empty. If so,
+append to the coupons array. The `process`, `wps_number`, `base_material`,
+and `filler_metal` come from the WPS lookup (step 3), not from the card:
 
 ```json
 {
-  "process":       "@{body('Post_adaptive_card')?['data']?['c1_process']}",
+  "process":       "<from WPS lookup>",
   "position":      "@{body('Post_adaptive_card')?['data']?['c1_position']}",
-  "wps_number":    "@{body('Post_adaptive_card')?['data']?['c1_wps']}",
-  "base_material": "@{body('Post_adaptive_card')?['data']?['c1_base_material']}",
-  "filler_metal":  "@{body('Post_adaptive_card')?['data']?['c1_filler_metal']}",
+  "wps_number":    "@{body('Post_adaptive_card')?['data']?['wps_number']}",
+  "base_material": "<from WPS lookup>",
+  "filler_metal":  "<from WPS lookup>",
   "thickness":     "@{body('Post_adaptive_card')?['data']?['c1_thickness']}",
   "diameter":      "@{body('Post_adaptive_card')?['data']?['c1_diameter']}"
 }
 ```
 
-Repeat for `c2_*`, `c3_*`, `c4_*` — only include coupons where process is
-not empty.
+Repeat for `c2_*`, `c3_*`, `c4_*` — only include coupons where `cN_position`
+is not empty.
 
-### 5. Write JSON File
+### 6. Write JSON File
 
 Use **"Create file"** (OneDrive or file system connector) to write the
 composed JSON to `data/automation/incoming/`:

@@ -12,7 +12,7 @@
     },
     {
       "type": "TextBlock",
-      "text": "Submit a new weld cert test request. Select the project first, then choose a welder assigned to that jobsite, and add up to 4 test coupons.",
+      "text": "Submit a new weld cert test request. Select the project, choose a welder, pick the WPS, then add up to 4 test coupons.",
       "wrap": true,
       "spacing": "None",
       "isSubtle": true
@@ -138,6 +138,31 @@
     },
     {
       "type": "TextBlock",
+      "text": "Welding Procedure",
+      "weight": "Bolder",
+      "size": "Medium",
+      "spacing": "Large",
+      "separator": true
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "wps_number",
+      "label": "WPS",
+      "placeholder": "Search by WPS number or title...",
+      "style": "filtered",
+      "choices": "${wps_choices}",
+      "isRequired": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Process, base material, and filler metal are determined by the selected WPS.",
+      "wrap": true,
+      "spacing": "None",
+      "isSubtle": true,
+      "size": "Small"
+    },
+    {
+      "type": "TextBlock",
       "text": "Coupon 1",
       "weight": "Bolder",
       "size": "Medium",
@@ -147,45 +172,6 @@
     {
       "type": "ColumnSet",
       "columns": [
-        {
-          "type": "Column",
-          "width": "stretch",
-          "items": [
-            {
-              "type": "Input.ChoiceSet",
-              "id": "c1_process",
-              "label": "Process",
-              "placeholder": "Select...",
-              "isRequired": true,
-              "choices": [
-                {
-                  "title": "SMAW",
-                  "value": "SMAW"
-                },
-                {
-                  "title": "GTAW",
-                  "value": "GTAW"
-                },
-                {
-                  "title": "GMAW",
-                  "value": "GMAW"
-                },
-                {
-                  "title": "FCAW",
-                  "value": "FCAW"
-                },
-                {
-                  "title": "SAW",
-                  "value": "SAW"
-                },
-                {
-                  "title": "GTAW/SMAW",
-                  "value": "GTAW/SMAW"
-                }
-              ]
-            }
-          ]
-        },
         {
           "type": "Column",
           "width": "stretch",
@@ -248,156 +234,10 @@
               ]
             }
           ]
-        }
-      ]
-    },
-    {
-      "type": "ColumnSet",
-      "columns": [
-        {
-          "type": "Column",
-          "width": "stretch",
-          "items": [
-            {
-              "type": "Input.ChoiceSet",
-              "id": "c1_wps",
-              "label": "WPS",
-              "placeholder": "Search WPS...",
-              "style": "filtered",
-              "choices": "${wps_choices}",
-              "isRequired": false
-            }
-          ]
         },
         {
           "type": "Column",
           "width": "stretch",
-          "items": [
-            {
-              "type": "Input.ChoiceSet",
-              "id": "c1_base_material",
-              "label": "Base Material",
-              "placeholder": "Select...",
-              "choices": [
-                {
-                  "title": "A53",
-                  "value": "A53"
-                },
-                {
-                  "title": "A106",
-                  "value": "A106"
-                },
-                {
-                  "title": "A333",
-                  "value": "A333"
-                },
-                {
-                  "title": "A516",
-                  "value": "A516"
-                },
-                {
-                  "title": "CS",
-                  "value": "CS"
-                },
-                {
-                  "title": "A312",
-                  "value": "A312"
-                },
-                {
-                  "title": "A358",
-                  "value": "A358"
-                },
-                {
-                  "title": "A240",
-                  "value": "A240"
-                },
-                {
-                  "title": "SS",
-                  "value": "SS"
-                },
-                {
-                  "title": "SS304",
-                  "value": "SS304"
-                },
-                {
-                  "title": "SS316",
-                  "value": "SS316"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "ColumnSet",
-      "columns": [
-        {
-          "type": "Column",
-          "width": 2,
-          "items": [
-            {
-              "type": "Input.ChoiceSet",
-              "id": "c1_filler_metal",
-              "label": "Filler Metal",
-              "placeholder": "Type to filter...",
-              "style": "filtered",
-              "choices": [
-                {
-                  "title": "SMAW: 6010 (E6010)",
-                  "value": "6010"
-                },
-                {
-                  "title": "SMAW: 6011 (E6011)",
-                  "value": "6011"
-                },
-                {
-                  "title": "SMAW: 7018 (E7018)",
-                  "value": "7018"
-                },
-                {
-                  "title": "SMAW: 8018 (E8018)",
-                  "value": "8018"
-                },
-                {
-                  "title": "SMAW: 8010 (E8010)",
-                  "value": "8010"
-                },
-                {
-                  "title": "GTAW: ER70S (ER70S-2/ER70S-6)",
-                  "value": "ER70S"
-                },
-                {
-                  "title": "GTAW: ER70S2 (ER70S-2)",
-                  "value": "ER70S2"
-                },
-                {
-                  "title": "GTAW: ER70S6 (ER70S-6)",
-                  "value": "ER70S6"
-                },
-                {
-                  "title": "GTAW: ER80S (ER80S-Ni1)",
-                  "value": "ER80S"
-                },
-                {
-                  "title": "GTAW: ER308 (ER308L)",
-                  "value": "ER308"
-                },
-                {
-                  "title": "GTAW: ER309 (ER309L)",
-                  "value": "ER309"
-                },
-                {
-                  "title": "GTAW: ER316 (ER316L)",
-                  "value": "ER316"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Column",
-          "width": 1,
           "items": [
             {
               "type": "Input.Text",
@@ -409,7 +249,7 @@
         },
         {
           "type": "Column",
-          "width": 1,
+          "width": "stretch",
           "items": [
             {
               "type": "Input.Text",
@@ -470,47 +310,10 @@
               "items": [
                 {
                   "type": "Input.ChoiceSet",
-                  "id": "c2_process",
-                  "label": "Process",
-                  "placeholder": "Select...",
-                  "choices": [
-                    {
-                      "title": "SMAW",
-                      "value": "SMAW"
-                    },
-                    {
-                      "title": "GTAW",
-                      "value": "GTAW"
-                    },
-                    {
-                      "title": "GMAW",
-                      "value": "GMAW"
-                    },
-                    {
-                      "title": "FCAW",
-                      "value": "FCAW"
-                    },
-                    {
-                      "title": "SAW",
-                      "value": "SAW"
-                    },
-                    {
-                      "title": "GTAW/SMAW",
-                      "value": "GTAW/SMAW"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
                   "id": "c2_position",
                   "label": "Position",
                   "placeholder": "Select...",
+                  "isRequired": false,
                   "choices": [
                     {
                       "title": "1G",
@@ -563,155 +366,10 @@
                   ]
                 }
               ]
-            }
-          ]
-        },
-        {
-          "type": "ColumnSet",
-          "columns": [
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
-                  "id": "c2_wps",
-                  "label": "WPS",
-                  "placeholder": "Search WPS...",
-                  "style": "filtered",
-                  "choices": "${wps_choices}"
-                }
-              ]
             },
             {
               "type": "Column",
               "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
-                  "id": "c2_base_material",
-                  "label": "Base Material",
-                  "placeholder": "Select...",
-                  "choices": [
-                    {
-                      "title": "A53",
-                      "value": "A53"
-                    },
-                    {
-                      "title": "A106",
-                      "value": "A106"
-                    },
-                    {
-                      "title": "A333",
-                      "value": "A333"
-                    },
-                    {
-                      "title": "A516",
-                      "value": "A516"
-                    },
-                    {
-                      "title": "CS",
-                      "value": "CS"
-                    },
-                    {
-                      "title": "A312",
-                      "value": "A312"
-                    },
-                    {
-                      "title": "A358",
-                      "value": "A358"
-                    },
-                    {
-                      "title": "A240",
-                      "value": "A240"
-                    },
-                    {
-                      "title": "SS",
-                      "value": "SS"
-                    },
-                    {
-                      "title": "SS304",
-                      "value": "SS304"
-                    },
-                    {
-                      "title": "SS316",
-                      "value": "SS316"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "ColumnSet",
-          "columns": [
-            {
-              "type": "Column",
-              "width": 2,
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
-                  "id": "c2_filler_metal",
-                  "label": "Filler Metal",
-                  "placeholder": "Type to filter...",
-                  "style": "filtered",
-                  "choices": [
-                    {
-                      "title": "SMAW: 6010 (E6010)",
-                      "value": "6010"
-                    },
-                    {
-                      "title": "SMAW: 6011 (E6011)",
-                      "value": "6011"
-                    },
-                    {
-                      "title": "SMAW: 7018 (E7018)",
-                      "value": "7018"
-                    },
-                    {
-                      "title": "SMAW: 8018 (E8018)",
-                      "value": "8018"
-                    },
-                    {
-                      "title": "SMAW: 8010 (E8010)",
-                      "value": "8010"
-                    },
-                    {
-                      "title": "GTAW: ER70S (ER70S-2/ER70S-6)",
-                      "value": "ER70S"
-                    },
-                    {
-                      "title": "GTAW: ER70S2 (ER70S-2)",
-                      "value": "ER70S2"
-                    },
-                    {
-                      "title": "GTAW: ER70S6 (ER70S-6)",
-                      "value": "ER70S6"
-                    },
-                    {
-                      "title": "GTAW: ER80S (ER80S-Ni1)",
-                      "value": "ER80S"
-                    },
-                    {
-                      "title": "GTAW: ER308 (ER308L)",
-                      "value": "ER308"
-                    },
-                    {
-                      "title": "GTAW: ER309 (ER309L)",
-                      "value": "ER309"
-                    },
-                    {
-                      "title": "GTAW: ER316 (ER316L)",
-                      "value": "ER316"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Column",
-              "width": 1,
               "items": [
                 {
                   "type": "Input.Text",
@@ -723,7 +381,7 @@
             },
             {
               "type": "Column",
-              "width": 1,
+              "width": "stretch",
               "items": [
                 {
                   "type": "Input.Text",
@@ -759,47 +417,10 @@
               "items": [
                 {
                   "type": "Input.ChoiceSet",
-                  "id": "c3_process",
-                  "label": "Process",
-                  "placeholder": "Select...",
-                  "choices": [
-                    {
-                      "title": "SMAW",
-                      "value": "SMAW"
-                    },
-                    {
-                      "title": "GTAW",
-                      "value": "GTAW"
-                    },
-                    {
-                      "title": "GMAW",
-                      "value": "GMAW"
-                    },
-                    {
-                      "title": "FCAW",
-                      "value": "FCAW"
-                    },
-                    {
-                      "title": "SAW",
-                      "value": "SAW"
-                    },
-                    {
-                      "title": "GTAW/SMAW",
-                      "value": "GTAW/SMAW"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
                   "id": "c3_position",
                   "label": "Position",
                   "placeholder": "Select...",
+                  "isRequired": false,
                   "choices": [
                     {
                       "title": "1G",
@@ -852,155 +473,10 @@
                   ]
                 }
               ]
-            }
-          ]
-        },
-        {
-          "type": "ColumnSet",
-          "columns": [
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
-                  "id": "c3_wps",
-                  "label": "WPS",
-                  "placeholder": "Search WPS...",
-                  "style": "filtered",
-                  "choices": "${wps_choices}"
-                }
-              ]
             },
             {
               "type": "Column",
               "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
-                  "id": "c3_base_material",
-                  "label": "Base Material",
-                  "placeholder": "Select...",
-                  "choices": [
-                    {
-                      "title": "A53",
-                      "value": "A53"
-                    },
-                    {
-                      "title": "A106",
-                      "value": "A106"
-                    },
-                    {
-                      "title": "A333",
-                      "value": "A333"
-                    },
-                    {
-                      "title": "A516",
-                      "value": "A516"
-                    },
-                    {
-                      "title": "CS",
-                      "value": "CS"
-                    },
-                    {
-                      "title": "A312",
-                      "value": "A312"
-                    },
-                    {
-                      "title": "A358",
-                      "value": "A358"
-                    },
-                    {
-                      "title": "A240",
-                      "value": "A240"
-                    },
-                    {
-                      "title": "SS",
-                      "value": "SS"
-                    },
-                    {
-                      "title": "SS304",
-                      "value": "SS304"
-                    },
-                    {
-                      "title": "SS316",
-                      "value": "SS316"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "ColumnSet",
-          "columns": [
-            {
-              "type": "Column",
-              "width": 2,
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
-                  "id": "c3_filler_metal",
-                  "label": "Filler Metal",
-                  "placeholder": "Type to filter...",
-                  "style": "filtered",
-                  "choices": [
-                    {
-                      "title": "SMAW: 6010 (E6010)",
-                      "value": "6010"
-                    },
-                    {
-                      "title": "SMAW: 6011 (E6011)",
-                      "value": "6011"
-                    },
-                    {
-                      "title": "SMAW: 7018 (E7018)",
-                      "value": "7018"
-                    },
-                    {
-                      "title": "SMAW: 8018 (E8018)",
-                      "value": "8018"
-                    },
-                    {
-                      "title": "SMAW: 8010 (E8010)",
-                      "value": "8010"
-                    },
-                    {
-                      "title": "GTAW: ER70S (ER70S-2/ER70S-6)",
-                      "value": "ER70S"
-                    },
-                    {
-                      "title": "GTAW: ER70S2 (ER70S-2)",
-                      "value": "ER70S2"
-                    },
-                    {
-                      "title": "GTAW: ER70S6 (ER70S-6)",
-                      "value": "ER70S6"
-                    },
-                    {
-                      "title": "GTAW: ER80S (ER80S-Ni1)",
-                      "value": "ER80S"
-                    },
-                    {
-                      "title": "GTAW: ER308 (ER308L)",
-                      "value": "ER308"
-                    },
-                    {
-                      "title": "GTAW: ER309 (ER309L)",
-                      "value": "ER309"
-                    },
-                    {
-                      "title": "GTAW: ER316 (ER316L)",
-                      "value": "ER316"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Column",
-              "width": 1,
               "items": [
                 {
                   "type": "Input.Text",
@@ -1012,7 +488,7 @@
             },
             {
               "type": "Column",
-              "width": 1,
+              "width": "stretch",
               "items": [
                 {
                   "type": "Input.Text",
@@ -1048,47 +524,10 @@
               "items": [
                 {
                   "type": "Input.ChoiceSet",
-                  "id": "c4_process",
-                  "label": "Process",
-                  "placeholder": "Select...",
-                  "choices": [
-                    {
-                      "title": "SMAW",
-                      "value": "SMAW"
-                    },
-                    {
-                      "title": "GTAW",
-                      "value": "GTAW"
-                    },
-                    {
-                      "title": "GMAW",
-                      "value": "GMAW"
-                    },
-                    {
-                      "title": "FCAW",
-                      "value": "FCAW"
-                    },
-                    {
-                      "title": "SAW",
-                      "value": "SAW"
-                    },
-                    {
-                      "title": "GTAW/SMAW",
-                      "value": "GTAW/SMAW"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
                   "id": "c4_position",
                   "label": "Position",
                   "placeholder": "Select...",
+                  "isRequired": false,
                   "choices": [
                     {
                       "title": "1G",
@@ -1141,155 +580,10 @@
                   ]
                 }
               ]
-            }
-          ]
-        },
-        {
-          "type": "ColumnSet",
-          "columns": [
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
-                  "id": "c4_wps",
-                  "label": "WPS",
-                  "placeholder": "Search WPS...",
-                  "style": "filtered",
-                  "choices": "${wps_choices}"
-                }
-              ]
             },
             {
               "type": "Column",
               "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
-                  "id": "c4_base_material",
-                  "label": "Base Material",
-                  "placeholder": "Select...",
-                  "choices": [
-                    {
-                      "title": "A53",
-                      "value": "A53"
-                    },
-                    {
-                      "title": "A106",
-                      "value": "A106"
-                    },
-                    {
-                      "title": "A333",
-                      "value": "A333"
-                    },
-                    {
-                      "title": "A516",
-                      "value": "A516"
-                    },
-                    {
-                      "title": "CS",
-                      "value": "CS"
-                    },
-                    {
-                      "title": "A312",
-                      "value": "A312"
-                    },
-                    {
-                      "title": "A358",
-                      "value": "A358"
-                    },
-                    {
-                      "title": "A240",
-                      "value": "A240"
-                    },
-                    {
-                      "title": "SS",
-                      "value": "SS"
-                    },
-                    {
-                      "title": "SS304",
-                      "value": "SS304"
-                    },
-                    {
-                      "title": "SS316",
-                      "value": "SS316"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "ColumnSet",
-          "columns": [
-            {
-              "type": "Column",
-              "width": 2,
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
-                  "id": "c4_filler_metal",
-                  "label": "Filler Metal",
-                  "placeholder": "Type to filter...",
-                  "style": "filtered",
-                  "choices": [
-                    {
-                      "title": "SMAW: 6010 (E6010)",
-                      "value": "6010"
-                    },
-                    {
-                      "title": "SMAW: 6011 (E6011)",
-                      "value": "6011"
-                    },
-                    {
-                      "title": "SMAW: 7018 (E7018)",
-                      "value": "7018"
-                    },
-                    {
-                      "title": "SMAW: 8018 (E8018)",
-                      "value": "8018"
-                    },
-                    {
-                      "title": "SMAW: 8010 (E8010)",
-                      "value": "8010"
-                    },
-                    {
-                      "title": "GTAW: ER70S (ER70S-2/ER70S-6)",
-                      "value": "ER70S"
-                    },
-                    {
-                      "title": "GTAW: ER70S2 (ER70S-2)",
-                      "value": "ER70S2"
-                    },
-                    {
-                      "title": "GTAW: ER70S6 (ER70S-6)",
-                      "value": "ER70S6"
-                    },
-                    {
-                      "title": "GTAW: ER80S (ER80S-Ni1)",
-                      "value": "ER80S"
-                    },
-                    {
-                      "title": "GTAW: ER308 (ER308L)",
-                      "value": "ER308"
-                    },
-                    {
-                      "title": "GTAW: ER309 (ER309L)",
-                      "value": "ER309"
-                    },
-                    {
-                      "title": "GTAW: ER316 (ER316L)",
-                      "value": "ER316"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Column",
-              "width": 1,
               "items": [
                 {
                   "type": "Input.Text",
@@ -1301,7 +595,7 @@
             },
             {
               "type": "Column",
-              "width": 1,
+              "width": "stretch",
               "items": [
                 {
                   "type": "Input.Text",
