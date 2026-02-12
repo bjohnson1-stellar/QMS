@@ -1,0 +1,834 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Weld Certification Request",
+      "weight": "Bolder",
+      "size": "Large",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Submit a new weld cert test request. Select an existing welder or register a new one, choose the project, and add up to 4 test coupons.",
+      "wrap": true,
+      "spacing": "None",
+      "isSubtle": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Welder",
+      "weight": "Bolder",
+      "size": "Medium",
+      "spacing": "Large",
+      "separator": true
+    },
+    {
+      "type": "ActionSet",
+      "actions": [
+        {
+          "type": "Action.ToggleVisibility",
+          "title": "Select Existing",
+          "targetElements": [
+            { "elementId": "existing_welder_panel", "isVisible": true },
+            { "elementId": "new_welder_panel", "isVisible": false }
+          ]
+        },
+        {
+          "type": "Action.ToggleVisibility",
+          "title": "Register New",
+          "targetElements": [
+            { "elementId": "existing_welder_panel", "isVisible": false },
+            { "elementId": "new_welder_panel", "isVisible": true }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "existing_welder_panel",
+      "isVisible": true,
+      "items": [
+        {
+          "type": "Input.ChoiceSet",
+          "id": "welder_stamp",
+          "label": "Welder",
+          "placeholder": "Search by stamp or name...",
+          "style": "filtered",
+          "choices": "${welder_choices}",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "new_welder_panel",
+      "isVisible": false,
+      "items": [
+        {
+          "type": "Input.Text",
+          "id": "new_welder_emp_number",
+          "label": "Employee Number",
+          "placeholder": "e.g. 12345",
+          "isRequired": false
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "new_welder_first_name",
+                  "label": "First Name",
+                  "placeholder": "First",
+                  "isRequired": false
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "new_welder_last_name",
+                  "label": "Last Name",
+                  "placeholder": "Last",
+                  "isRequired": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "Project",
+      "weight": "Bolder",
+      "size": "Medium",
+      "spacing": "Large",
+      "separator": true
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "project_number",
+      "label": "Project",
+      "placeholder": "Search by number or name...",
+      "style": "filtered",
+      "choices": "${project_choices}",
+      "isRequired": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Coupon 1",
+      "weight": "Bolder",
+      "size": "Medium",
+      "spacing": "Large",
+      "separator": true
+    },
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.ChoiceSet",
+              "id": "c1_process",
+              "label": "Process",
+              "placeholder": "Select...",
+              "isRequired": true,
+              "choices": [
+                { "title": "SMAW", "value": "SMAW" },
+                { "title": "GTAW", "value": "GTAW" },
+                { "title": "GMAW", "value": "GMAW" },
+                { "title": "FCAW", "value": "FCAW" },
+                { "title": "SAW", "value": "SAW" },
+                { "title": "GTAW/SMAW", "value": "GTAW/SMAW" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.ChoiceSet",
+              "id": "c1_position",
+              "label": "Position",
+              "placeholder": "Select...",
+              "isRequired": true,
+              "choices": [
+                { "title": "1G", "value": "1G" },
+                { "title": "2G", "value": "2G" },
+                { "title": "3G", "value": "3G" },
+                { "title": "4G", "value": "4G" },
+                { "title": "5G", "value": "5G" },
+                { "title": "6G", "value": "6G" },
+                { "title": "6GR", "value": "6GR" },
+                { "title": "1F", "value": "1F" },
+                { "title": "2F", "value": "2F" },
+                { "title": "3F", "value": "3F" },
+                { "title": "4F", "value": "4F" },
+                { "title": "5F", "value": "5F" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.ChoiceSet",
+              "id": "c1_wps",
+              "label": "WPS",
+              "placeholder": "Search WPS...",
+              "style": "filtered",
+              "choices": "${wps_choices}",
+              "isRequired": false
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.ChoiceSet",
+              "id": "c1_base_material",
+              "label": "Base Material",
+              "placeholder": "Select...",
+              "choices": [
+                { "title": "A53", "value": "A53" },
+                { "title": "A106", "value": "A106" },
+                { "title": "A333", "value": "A333" },
+                { "title": "A516", "value": "A516" },
+                { "title": "CS", "value": "CS" },
+                { "title": "A312", "value": "A312" },
+                { "title": "A358", "value": "A358" },
+                { "title": "A240", "value": "A240" },
+                { "title": "SS", "value": "SS" },
+                { "title": "SS304", "value": "SS304" },
+                { "title": "SS316", "value": "SS316" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": 2,
+          "items": [
+            {
+              "type": "Input.ChoiceSet",
+              "id": "c1_filler_metal",
+              "label": "Filler Metal",
+              "placeholder": "Type to filter...",
+              "style": "filtered",
+              "choices": [
+                { "title": "SMAW: 6010 (E6010)", "value": "6010" },
+                { "title": "SMAW: 6011 (E6011)", "value": "6011" },
+                { "title": "SMAW: 7018 (E7018)", "value": "7018" },
+                { "title": "SMAW: 8018 (E8018)", "value": "8018" },
+                { "title": "SMAW: 8010 (E8010)", "value": "8010" },
+                { "title": "GTAW: ER70S (ER70S-2/ER70S-6)", "value": "ER70S" },
+                { "title": "GTAW: ER70S2 (ER70S-2)", "value": "ER70S2" },
+                { "title": "GTAW: ER70S6 (ER70S-6)", "value": "ER70S6" },
+                { "title": "GTAW: ER80S (ER80S-Ni1)", "value": "ER80S" },
+                { "title": "GTAW: ER308 (ER308L)", "value": "ER308" },
+                { "title": "GTAW: ER309 (ER309L)", "value": "ER309" },
+                { "title": "GTAW: ER316 (ER316L)", "value": "ER316" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": 1,
+          "items": [
+            {
+              "type": "Input.Text",
+              "id": "c1_thickness",
+              "label": "Thickness",
+              "placeholder": "e.g. 3/4\""
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": 1,
+          "items": [
+            {
+              "type": "Input.Text",
+              "id": "c1_diameter",
+              "label": "Diameter",
+              "placeholder": "e.g. 6\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ActionSet",
+      "spacing": "Medium",
+      "actions": [
+        {
+          "type": "Action.ToggleVisibility",
+          "title": "+ Add Coupon 2",
+          "targetElements": ["coupon_2_panel"]
+        },
+        {
+          "type": "Action.ToggleVisibility",
+          "title": "+ Add Coupon 3",
+          "targetElements": ["coupon_3_panel"]
+        },
+        {
+          "type": "Action.ToggleVisibility",
+          "title": "+ Add Coupon 4",
+          "targetElements": ["coupon_4_panel"]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "coupon_2_panel",
+      "isVisible": false,
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Coupon 2",
+          "weight": "Bolder",
+          "size": "Medium",
+          "spacing": "Medium",
+          "separator": true
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c2_process",
+                  "label": "Process",
+                  "placeholder": "Select...",
+                  "choices": [
+                    { "title": "SMAW", "value": "SMAW" },
+                    { "title": "GTAW", "value": "GTAW" },
+                    { "title": "GMAW", "value": "GMAW" },
+                    { "title": "FCAW", "value": "FCAW" },
+                    { "title": "SAW", "value": "SAW" },
+                    { "title": "GTAW/SMAW", "value": "GTAW/SMAW" }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c2_position",
+                  "label": "Position",
+                  "placeholder": "Select...",
+                  "choices": [
+                    { "title": "1G", "value": "1G" },
+                    { "title": "2G", "value": "2G" },
+                    { "title": "3G", "value": "3G" },
+                    { "title": "4G", "value": "4G" },
+                    { "title": "5G", "value": "5G" },
+                    { "title": "6G", "value": "6G" },
+                    { "title": "6GR", "value": "6GR" },
+                    { "title": "1F", "value": "1F" },
+                    { "title": "2F", "value": "2F" },
+                    { "title": "3F", "value": "3F" },
+                    { "title": "4F", "value": "4F" },
+                    { "title": "5F", "value": "5F" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c2_wps",
+                  "label": "WPS",
+                  "placeholder": "Search WPS...",
+                  "style": "filtered",
+                  "choices": "${wps_choices}"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c2_base_material",
+                  "label": "Base Material",
+                  "placeholder": "Select...",
+                  "choices": [
+                    { "title": "A53", "value": "A53" },
+                    { "title": "A106", "value": "A106" },
+                    { "title": "A333", "value": "A333" },
+                    { "title": "A516", "value": "A516" },
+                    { "title": "CS", "value": "CS" },
+                    { "title": "A312", "value": "A312" },
+                    { "title": "A358", "value": "A358" },
+                    { "title": "A240", "value": "A240" },
+                    { "title": "SS", "value": "SS" },
+                    { "title": "SS304", "value": "SS304" },
+                    { "title": "SS316", "value": "SS316" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": 2,
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c2_filler_metal",
+                  "label": "Filler Metal",
+                  "placeholder": "Type to filter...",
+                  "style": "filtered",
+                  "choices": [
+                    { "title": "SMAW: 6010 (E6010)", "value": "6010" },
+                    { "title": "SMAW: 6011 (E6011)", "value": "6011" },
+                    { "title": "SMAW: 7018 (E7018)", "value": "7018" },
+                    { "title": "SMAW: 8018 (E8018)", "value": "8018" },
+                    { "title": "SMAW: 8010 (E8010)", "value": "8010" },
+                    { "title": "GTAW: ER70S (ER70S-2/ER70S-6)", "value": "ER70S" },
+                    { "title": "GTAW: ER70S2 (ER70S-2)", "value": "ER70S2" },
+                    { "title": "GTAW: ER70S6 (ER70S-6)", "value": "ER70S6" },
+                    { "title": "GTAW: ER80S (ER80S-Ni1)", "value": "ER80S" },
+                    { "title": "GTAW: ER308 (ER308L)", "value": "ER308" },
+                    { "title": "GTAW: ER309 (ER309L)", "value": "ER309" },
+                    { "title": "GTAW: ER316 (ER316L)", "value": "ER316" }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": 1,
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "c2_thickness",
+                  "label": "Thickness",
+                  "placeholder": "e.g. 3/4\""
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": 1,
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "c2_diameter",
+                  "label": "Diameter",
+                  "placeholder": "e.g. 6\""
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "coupon_3_panel",
+      "isVisible": false,
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Coupon 3",
+          "weight": "Bolder",
+          "size": "Medium",
+          "spacing": "Medium",
+          "separator": true
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c3_process",
+                  "label": "Process",
+                  "placeholder": "Select...",
+                  "choices": [
+                    { "title": "SMAW", "value": "SMAW" },
+                    { "title": "GTAW", "value": "GTAW" },
+                    { "title": "GMAW", "value": "GMAW" },
+                    { "title": "FCAW", "value": "FCAW" },
+                    { "title": "SAW", "value": "SAW" },
+                    { "title": "GTAW/SMAW", "value": "GTAW/SMAW" }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c3_position",
+                  "label": "Position",
+                  "placeholder": "Select...",
+                  "choices": [
+                    { "title": "1G", "value": "1G" },
+                    { "title": "2G", "value": "2G" },
+                    { "title": "3G", "value": "3G" },
+                    { "title": "4G", "value": "4G" },
+                    { "title": "5G", "value": "5G" },
+                    { "title": "6G", "value": "6G" },
+                    { "title": "6GR", "value": "6GR" },
+                    { "title": "1F", "value": "1F" },
+                    { "title": "2F", "value": "2F" },
+                    { "title": "3F", "value": "3F" },
+                    { "title": "4F", "value": "4F" },
+                    { "title": "5F", "value": "5F" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c3_wps",
+                  "label": "WPS",
+                  "placeholder": "Search WPS...",
+                  "style": "filtered",
+                  "choices": "${wps_choices}"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c3_base_material",
+                  "label": "Base Material",
+                  "placeholder": "Select...",
+                  "choices": [
+                    { "title": "A53", "value": "A53" },
+                    { "title": "A106", "value": "A106" },
+                    { "title": "A333", "value": "A333" },
+                    { "title": "A516", "value": "A516" },
+                    { "title": "CS", "value": "CS" },
+                    { "title": "A312", "value": "A312" },
+                    { "title": "A358", "value": "A358" },
+                    { "title": "A240", "value": "A240" },
+                    { "title": "SS", "value": "SS" },
+                    { "title": "SS304", "value": "SS304" },
+                    { "title": "SS316", "value": "SS316" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": 2,
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c3_filler_metal",
+                  "label": "Filler Metal",
+                  "placeholder": "Type to filter...",
+                  "style": "filtered",
+                  "choices": [
+                    { "title": "SMAW: 6010 (E6010)", "value": "6010" },
+                    { "title": "SMAW: 6011 (E6011)", "value": "6011" },
+                    { "title": "SMAW: 7018 (E7018)", "value": "7018" },
+                    { "title": "SMAW: 8018 (E8018)", "value": "8018" },
+                    { "title": "SMAW: 8010 (E8010)", "value": "8010" },
+                    { "title": "GTAW: ER70S (ER70S-2/ER70S-6)", "value": "ER70S" },
+                    { "title": "GTAW: ER70S2 (ER70S-2)", "value": "ER70S2" },
+                    { "title": "GTAW: ER70S6 (ER70S-6)", "value": "ER70S6" },
+                    { "title": "GTAW: ER80S (ER80S-Ni1)", "value": "ER80S" },
+                    { "title": "GTAW: ER308 (ER308L)", "value": "ER308" },
+                    { "title": "GTAW: ER309 (ER309L)", "value": "ER309" },
+                    { "title": "GTAW: ER316 (ER316L)", "value": "ER316" }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": 1,
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "c3_thickness",
+                  "label": "Thickness",
+                  "placeholder": "e.g. 3/4\""
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": 1,
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "c3_diameter",
+                  "label": "Diameter",
+                  "placeholder": "e.g. 6\""
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "coupon_4_panel",
+      "isVisible": false,
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Coupon 4",
+          "weight": "Bolder",
+          "size": "Medium",
+          "spacing": "Medium",
+          "separator": true
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c4_process",
+                  "label": "Process",
+                  "placeholder": "Select...",
+                  "choices": [
+                    { "title": "SMAW", "value": "SMAW" },
+                    { "title": "GTAW", "value": "GTAW" },
+                    { "title": "GMAW", "value": "GMAW" },
+                    { "title": "FCAW", "value": "FCAW" },
+                    { "title": "SAW", "value": "SAW" },
+                    { "title": "GTAW/SMAW", "value": "GTAW/SMAW" }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c4_position",
+                  "label": "Position",
+                  "placeholder": "Select...",
+                  "choices": [
+                    { "title": "1G", "value": "1G" },
+                    { "title": "2G", "value": "2G" },
+                    { "title": "3G", "value": "3G" },
+                    { "title": "4G", "value": "4G" },
+                    { "title": "5G", "value": "5G" },
+                    { "title": "6G", "value": "6G" },
+                    { "title": "6GR", "value": "6GR" },
+                    { "title": "1F", "value": "1F" },
+                    { "title": "2F", "value": "2F" },
+                    { "title": "3F", "value": "3F" },
+                    { "title": "4F", "value": "4F" },
+                    { "title": "5F", "value": "5F" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c4_wps",
+                  "label": "WPS",
+                  "placeholder": "Search WPS...",
+                  "style": "filtered",
+                  "choices": "${wps_choices}"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c4_base_material",
+                  "label": "Base Material",
+                  "placeholder": "Select...",
+                  "choices": [
+                    { "title": "A53", "value": "A53" },
+                    { "title": "A106", "value": "A106" },
+                    { "title": "A333", "value": "A333" },
+                    { "title": "A516", "value": "A516" },
+                    { "title": "CS", "value": "CS" },
+                    { "title": "A312", "value": "A312" },
+                    { "title": "A358", "value": "A358" },
+                    { "title": "A240", "value": "A240" },
+                    { "title": "SS", "value": "SS" },
+                    { "title": "SS304", "value": "SS304" },
+                    { "title": "SS316", "value": "SS316" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": 2,
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "c4_filler_metal",
+                  "label": "Filler Metal",
+                  "placeholder": "Type to filter...",
+                  "style": "filtered",
+                  "choices": [
+                    { "title": "SMAW: 6010 (E6010)", "value": "6010" },
+                    { "title": "SMAW: 6011 (E6011)", "value": "6011" },
+                    { "title": "SMAW: 7018 (E7018)", "value": "7018" },
+                    { "title": "SMAW: 8018 (E8018)", "value": "8018" },
+                    { "title": "SMAW: 8010 (E8010)", "value": "8010" },
+                    { "title": "GTAW: ER70S (ER70S-2/ER70S-6)", "value": "ER70S" },
+                    { "title": "GTAW: ER70S2 (ER70S-2)", "value": "ER70S2" },
+                    { "title": "GTAW: ER70S6 (ER70S-6)", "value": "ER70S6" },
+                    { "title": "GTAW: ER80S (ER80S-Ni1)", "value": "ER80S" },
+                    { "title": "GTAW: ER308 (ER308L)", "value": "ER308" },
+                    { "title": "GTAW: ER309 (ER309L)", "value": "ER309" },
+                    { "title": "GTAW: ER316 (ER316L)", "value": "ER316" }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": 1,
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "c4_thickness",
+                  "label": "Thickness",
+                  "placeholder": "e.g. 3/4\""
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": 1,
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "c4_diameter",
+                  "label": "Diameter",
+                  "placeholder": "e.g. 6\""
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "Notes",
+      "weight": "Bolder",
+      "size": "Medium",
+      "spacing": "Large",
+      "separator": true
+    },
+    {
+      "type": "Input.Text",
+      "id": "notes",
+      "label": "Additional Notes",
+      "placeholder": "Special instructions, scheduling preferences, etc.",
+      "isMultiline": true
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Submit Request",
+      "style": "positive",
+      "data": {
+        "action": "submit_cert_request"
+      }
+    }
+  ]
+}
