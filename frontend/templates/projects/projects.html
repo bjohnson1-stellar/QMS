@@ -191,7 +191,7 @@
         </select>
         <input type="text" id="searchFilter" placeholder="Search projects, jobs, PM..." oninput="renderProjects()">
         <div class="view-toggle" style="margin-left:auto;display:flex;gap:0;">
-            <button id="viewProject" class="toggle-btn" onclick="setViewMode('project')">By Project</button>
+            <button id="viewLocation" class="toggle-btn" onclick="setViewMode('location')">By Location</button>
             <button id="viewBU" class="toggle-btn active" onclick="setViewMode('bu')">By BU</button>
         </div>
         <button id="projectionFilterBtn" class="secondary" onclick="toggleProjectionFilter()" style="font-size:12px;padding:4px 12px;" title="Show only projects with projections enabled">Projections</button>
@@ -329,7 +329,7 @@
     function setViewMode(mode) {
         viewMode = mode;
         expandedProjects.clear();
-        document.getElementById('viewProject').classList.toggle('active', mode === 'project');
+        document.getElementById('viewLocation').classList.toggle('active', mode === 'location');
         document.getElementById('viewBU').classList.toggle('active', mode === 'bu');
         const btn = document.getElementById('expandAllBtn');
         btn.textContent = '▶ Expand All';
@@ -619,194 +619,175 @@
     }
 
     function toggleExpandAll() {
+        const keys = new Set();
         if (viewMode === 'bu') {
-            // Collect all BU keys
-            const buKeys = new Set();
-            projects.forEach(p => (p.jobs || []).forEach(j => buKeys.add('bu-' + j.bu_code)));
-            const allExpanded = buKeys.size > 0 && [...buKeys].every(k => expandedProjects.has(k));
-            if (allExpanded) { expandedProjects.clear(); } else { buKeys.forEach(k => expandedProjects.add(k)); }
-            renderProjects();
-            const btn = document.getElementById('expandAllBtn');
-            const nowExpanded = buKeys.size > 0 && [...buKeys].every(k => expandedProjects.has(k));
-            btn.textContent = nowExpanded ? '▼ Collapse All' : '▶ Expand All';
+            projects.forEach(p => (p.jobs || []).forEach(j => keys.add('bu-' + j.bu_code)));
         } else {
-            const allExpanded = projects.length > 0 && projects.every(p => expandedProjects.has(p.id));
-            if (allExpanded) { expandedProjects.clear(); } else { projects.forEach(p => expandedProjects.add(p.id)); }
-            renderProjects();
-            const btn = document.getElementById('expandAllBtn');
-            const nowExpanded = projects.length > 0 && projects.every(p => expandedProjects.has(p.id));
-            btn.textContent = nowExpanded ? '▼ Collapse All' : '▶ Expand All';
+            projects.forEach(p => {
+                const loc = [p.city, p.state].filter(Boolean).join(', ') || 'No Location';
+                keys.add('loc-' + loc);
+            });
         }
+        const allExpanded = keys.size > 0 && [...keys].every(k => expandedProjects.has(k));
+        if (allExpanded) { expandedProjects.clear(); } else { keys.forEach(k => expandedProjects.add(k)); }
+        renderProjects();
+        const btn = document.getElementById('expandAllBtn');
+        const nowExpanded = keys.size > 0 && [...keys].every(k => expandedProjects.has(k));
+        btn.textContent = nowExpanded ? '▼ Collapse All' : '▶ Expand All';
     }
 
     function renderProjects() {
         if (viewMode === 'bu') return renderByBU();
+        return renderByLocation();
+    }
+
+    function renderByLocation() {
         const container = document.getElementById('projectsTable');
         const stageFilter = document.getElementById('stageFilter').value;
         const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
 
-        let filtered = projects.map(p => {
-            let jobs = p.jobs || [];
-            // Tab filter: active / warranty / archived
-            if (archiveTab === 'active') {
-                jobs = jobs.filter(j => !INACTIVE_STAGES.includes(j.stage));
-            } else if (archiveTab === 'warranty') {
-                jobs = jobs.filter(j => WARRANTY_STAGES.includes(j.stage));
-            } else {
-                jobs = jobs.filter(j => ARCHIVED_STAGES.includes(j.stage));
-            }
-            if (jobs.length === 0) return null;
-            // Stage filter applies at job level
-            if (stageFilter) {
-                jobs = jobs.filter(j => j.stage === stageFilter);
-            }
-            // Search matches project name/number/description AND job scope/PM
-            if (searchFilter) {
-                const projMatch = (p.name && p.name.toLowerCase().includes(searchFilter)) ||
-                    (p.number && p.number.toLowerCase().includes(searchFilter)) ||
-                    (p.description && p.description.toLowerCase().includes(searchFilter)) ||
-                    (p.pm && p.pm.toLowerCase().includes(searchFilter));
-                if (!projMatch) {
-                    jobs = jobs.filter(j =>
-                        (j.scope_name && j.scope_name.toLowerCase().includes(searchFilter)) ||
-                        (j.pm && j.pm.toLowerCase().includes(searchFilter)) ||
-                        (j.job_code && j.job_code.toLowerCase().includes(searchFilter)) ||
-                        (j.bu_name && j.bu_name.toLowerCase().includes(searchFilter))
-                    );
-                }
-            }
-            // Projection filter: only keep jobs with projection_enabled
-            if (projectionFilter) {
-                jobs = jobs.filter(j => j.projection_enabled);
-            }
-            // Show project if it matches or has matching jobs
-            if (stageFilter && jobs.length === 0) return null;
-            if (searchFilter) {
-                const projMatch = (p.name && p.name.toLowerCase().includes(searchFilter)) ||
-                    (p.number && p.number.toLowerCase().includes(searchFilter)) ||
-                    (p.description && p.description.toLowerCase().includes(searchFilter));
-                if (!projMatch && jobs.length === 0) return null;
-            }
-            if (projectionFilter && jobs.length === 0) return null;
-            return { ...p, filteredJobs: jobs };
-        }).filter(Boolean);
-
-        // Sort
-        const sortBy = document.getElementById('sortBy').value;
-        filtered.sort((a, b) => {
-            switch (sortBy) {
-                case 'number-asc':  return (a.number || '').localeCompare(b.number || '');
-                case 'number-desc': return (b.number || '').localeCompare(a.number || '');
-                case 'name-asc':    return (a.name || '').localeCompare(b.name || '');
-                case 'name-desc':   return (b.name || '').localeCompare(a.name || '');
-                case 'budget-desc': {
-                    const ab = (a.jobs||[]).reduce((s,j) => s+(j.allocated_budget||0), 0);
-                    const bb = (b.jobs||[]).reduce((s,j) => s+(j.allocated_budget||0), 0);
-                    return bb - ab;
-                }
-                case 'budget-asc': {
-                    const ab = (a.jobs||[]).reduce((s,j) => s+(j.allocated_budget||0), 0);
-                    const bb = (b.jobs||[]).reduce((s,j) => s+(j.allocated_budget||0), 0);
-                    return ab - bb;
-                }
-                case 'jobs-desc':   return (b.jobs||[]).length - (a.jobs||[]).length;
-                case 'location-asc': {
-                    const al = [a.city, a.state].filter(Boolean).join(', ');
-                    const bl = [b.city, b.state].filter(Boolean).join(', ');
-                    return al.localeCompare(bl);
-                }
-                case 'oldest':      return (a.id || 0) - (b.id || 0);
-                case 'newest':
-                default:            return (b.id || 0) - (a.id || 0);
-            }
+        // Collect all jobs with parent project info
+        let allJobs = [];
+        projects.forEach(p => {
+            (p.jobs || []).forEach(j => {
+                const loc = [p.city, p.state].filter(Boolean).join(', ') || 'No Location';
+                allJobs.push({ ...j, project_name: p.name, project_number: p.number, project_id: p.id, location: loc, project_description: p.description });
+            });
         });
 
-        if (filtered.length === 0) {
-            container.innerHTML = '<div class="empty-state">No projects found. Add your first project to get started!</div>';
+        // Apply filters
+        if (archiveTab === 'active') {
+            allJobs = allJobs.filter(j => !INACTIVE_STAGES.includes(j.stage));
+        } else if (archiveTab === 'warranty') {
+            allJobs = allJobs.filter(j => WARRANTY_STAGES.includes(j.stage));
+        } else {
+            allJobs = allJobs.filter(j => ARCHIVED_STAGES.includes(j.stage));
+        }
+        if (projectionFilter) allJobs = allJobs.filter(j => j.projection_enabled);
+        if (stageFilter) allJobs = allJobs.filter(j => j.stage === stageFilter);
+        if (searchFilter) {
+            allJobs = allJobs.filter(j =>
+                (j.job_code && j.job_code.toLowerCase().includes(searchFilter)) ||
+                (j.scope_name && j.scope_name.toLowerCase().includes(searchFilter)) ||
+                (j.pm && j.pm.toLowerCase().includes(searchFilter)) ||
+                (j.bu_name && j.bu_name.toLowerCase().includes(searchFilter)) ||
+                (j.project_name && j.project_name.toLowerCase().includes(searchFilter)) ||
+                (j.project_number && j.project_number.toLowerCase().includes(searchFilter)) ||
+                (j.location && j.location.toLowerCase().includes(searchFilter))
+            );
+        }
+
+        // Group by location
+        const locMap = {};
+        allJobs.forEach(j => {
+            const key = j.location;
+            if (!locMap[key]) locMap[key] = { location: key, jobs: [] };
+            locMap[key].jobs.push(j);
+        });
+
+        // Sort jobs within each location
+        const sortBy = document.getElementById('sortBy').value;
+        function sortJobs(jobs) {
+            return jobs.sort((a, b) => {
+                switch (sortBy) {
+                    case 'number-asc':  return (a.job_code || '').localeCompare(b.job_code || '');
+                    case 'number-desc': return (b.job_code || '').localeCompare(a.job_code || '');
+                    case 'name-asc':    return (a.project_name || '').localeCompare(b.project_name || '');
+                    case 'name-desc':   return (b.project_name || '').localeCompare(a.project_name || '');
+                    case 'budget-desc': return (b.allocated_budget || 0) - (a.allocated_budget || 0);
+                    case 'budget-asc':  return (a.allocated_budget || 0) - (b.allocated_budget || 0);
+                    case 'oldest':      return (a.id || 0) - (b.id || 0);
+                    case 'newest':
+                    default:            return (b.id || 0) - (a.id || 0);
+                }
+            });
+        }
+        Object.values(locMap).forEach(loc => sortJobs(loc.jobs));
+
+        // Sort location groups
+        const locGroups = Object.values(locMap).sort((a, b) => {
+            if (sortBy === 'jobs-desc') return b.jobs.length - a.jobs.length;
+            if (sortBy === 'budget-desc') {
+                const ab = a.jobs.reduce((s,j) => s+(j.allocated_budget||0), 0);
+                const bb = b.jobs.reduce((s,j) => s+(j.allocated_budget||0), 0);
+                return bb - ab;
+            }
+            if (sortBy === 'location-asc' || sortBy === 'name-asc') return a.location.localeCompare(b.location);
+            return a.location.localeCompare(b.location);
+        });
+
+        if (locGroups.length === 0) {
+            container.innerHTML = '<div class="empty-state">No projects found matching filters.</div>';
             return;
         }
 
         let html = '<table><thead><tr>';
         html += '<th style="width:40px;"><div class="select-all-cell"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" title="Select all visible jobs"><span class="select-all-label" id="selectAllLabel">All</span></div></th>';
-        html += '<th>Job</th><th>PM</th><th>Stage</th>';
+        html += '<th>Job</th><th>Stage</th>';
         html += '<th>Budget</th><th>Weight</th><th>Proj</th><th>GMP</th>';
         html += '<th></th>';
         html += '</tr></thead><tbody>';
 
-        filtered.forEach(p => {
-            // Project budget = sum of job budgets (organizational container)
-            const jobs = p.filteredJobs || [];
-            const allJobs = p.jobs || [];
-            const tb = allJobs.reduce((sum, j) => sum + (j.allocated_budget || 0), 0);
-            const expanded = expandedProjects.has(p.id);
-            const jobCount = allJobs.length;
+        locGroups.forEach(loc => {
+            const locKey = 'loc-' + loc.location;
+            const expanded = expandedProjects.has(locKey);
+            const tb = loc.jobs.reduce((sum, j) => sum + (j.allocated_budget || 0), 0);
+            const jobCount = loc.jobs.length;
 
-            // Project header row
-            html += `<tr class="project-header" onclick="toggleProject(${p.id})">`;
+            // Location header row
+            html += `<tr class="project-header" onclick="toggleProject('${locKey}')">`;
             html += `<td></td>`;
-            html += `<td colspan="3">`;
+            html += `<td colspan="2">`;
             html += `<div class="project-toggle">`;
             html += `<span class="toggle-icon ${expanded ? 'expanded' : ''}">\u25B6</span>`;
-            html += `<span class="project-number">${esc(p.number) || '-'}</span>`;
-            html += `<span class="project-name">${esc(p.name)}</span>`;
-            if ((p.jobs || []).some(j => j.is_gmp)) html += `<span class="gmp-badge">GMP</span>`;
-            const loc = [p.city, p.state].filter(Boolean).join(', ');
-            if (loc) html += `<span class="project-location">${esc(loc)}</span>`;
-            if (p.description) html += `<span class="project-desc">${esc(p.description)}</span>`;
+            html += `<span class="project-name">${esc(loc.location)}</span>`;
             html += `</div>`;
             html += `</td>`;
             html += `<td class="currency">${tb > 0 ? '$' + tb.toLocaleString() : ''}</td>`;
             html += `<td></td><td></td><td></td>`;
             html += `<td><div class="action-buttons">`;
-            html += `<button class="action-btn secondary" onclick="event.stopPropagation();editProject(${p.id})">Edit</button>`;
             if (jobCount > 0) html += `<span class="job-count-badge">${jobCount} job${jobCount > 1 ? 's' : ''}</span>`;
             html += `</div></td>`;
             html += `</tr>`;
 
-            // Job rows (visible when expanded)
             if (expanded) {
-                if (jobs.length === 0) {
-                    html += `<tr class="no-jobs-row"><td colspan="9">No jobs found for this project</td></tr>`;
-                } else {
-                    jobs.forEach(j => {
-                        const jb = j.allocated_budget || 0;
-                        html += `<tr class="job-row">`;
-                        // Selection checkbox
-                        html += `<td onclick="event.stopPropagation()"><input type="checkbox" class="job-select-cb" data-alloc-id="${j.id}" ${selectedJobs.has(j.id) ? 'checked' : ''} onchange="toggleJobSelect(${j.id},this)"></td>`;
-                        // Job code + scope
-                        html += `<td><span class="job-code">${esc(j.job_code)}</span>`;
-                        if (j.scope_name) html += `<span class="job-scope">- ${esc(j.scope_name)}</span>`;
-                        html += `</td>`;
-                        // PM
-                        html += `<td>${esc(j.pm) || '-'}</td>`;
-                        // Stage dropdown
-                        html += `<td><select class="stage-select" onchange="updateJobStage(${j.id},this.value)" onclick="event.stopPropagation()">`;
-                        STAGES.forEach(s => {
-                            html += `<option value="${s}"${j.stage === s ? ' selected' : ''}>${s}</option>`;
-                        });
-                        html += `</select></td>`;
-                        // Budget (inline editable)
-                        html += `<td><input type="number" class="budget-input" value="${jb}" step="0.01" min="0" `;
-                        html += `onchange="updateJobBudget(${j.id},this.value)" onclick="event.stopPropagation()" `;
-                        html += `onfocus="this.select()"></td>`;
-                        // Weight slider
-                        html += `<td><div class="weight-cell">`;
-                        html += `<input type="range" class="weight-slider" min="0" max="5" step="0.05" value="${j.weight_adjustment || 1.0}" `;
-                        html += `oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(2)+'x'" `;
-                        html += `onchange="updateJobWeight(${j.id},this.value)" onclick="event.stopPropagation()">`;
-                        html += `<span class="weight-value">${(j.weight_adjustment || 1.0).toFixed(2)}x</span>`;
-                        html += `</div></td>`;
-                        // Projection toggle
-                        html += `<td><input type="checkbox" class="projection-toggle" ${j.projection_enabled ? 'checked' : ''} `;
-                        html += `onchange="updateJobProjection(${j.id},this.checked)" onclick="event.stopPropagation()" title="Include in projections"></td>`;
-                        // GMP toggle
-                        html += `<td><input type="checkbox" class="projection-toggle" ${j.is_gmp ? 'checked' : ''} `;
-                        html += `onchange="updateJobGmp(${j.id},this.checked)" onclick="event.stopPropagation()" title="GMP contract"></td>`;
-                        // Actions (empty — delete moved to edit page)
-                        html += `<td></td>`;
-                        html += `</tr>`;
+                loc.jobs.forEach(j => {
+                    const jb = j.allocated_budget || 0;
+                    html += `<tr class="job-row">`;
+                    // Selection checkbox
+                    html += `<td onclick="event.stopPropagation()"><input type="checkbox" class="job-select-cb" data-alloc-id="${j.id}" ${selectedJobs.has(j.id) ? 'checked' : ''} onchange="toggleJobSelect(${j.id},this)"></td>`;
+                    // Job code + project name + scope
+                    html += `<td><span class="job-code">${esc(j.job_code)}</span>`;
+                    html += ` <span style="color:var(--color-text-muted)">${esc(j.project_name)}</span>`;
+                    if (j.scope_name) html += `<span class="job-scope">- ${esc(j.scope_name)}</span>`;
+                    html += `</td>`;
+                    // Stage dropdown
+                    html += `<td><select class="stage-select" onchange="updateJobStage(${j.id},this.value)" onclick="event.stopPropagation()">`;
+                    STAGES.forEach(s => {
+                        html += `<option value="${s}"${j.stage === s ? ' selected' : ''}>${s}</option>`;
                     });
-                }
+                    html += `</select></td>`;
+                    // Budget
+                    html += `<td><input type="number" class="budget-input" value="${jb}" step="0.01" min="0" `;
+                    html += `onchange="updateJobBudget(${j.id},this.value)" onclick="event.stopPropagation()" `;
+                    html += `onfocus="this.select()"></td>`;
+                    // Weight slider
+                    html += `<td><div class="weight-cell">`;
+                    html += `<input type="range" class="weight-slider" min="0" max="5" step="0.05" value="${j.weight_adjustment || 1.0}" `;
+                    html += `oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(2)+'x'" `;
+                    html += `onchange="updateJobWeight(${j.id},this.value)" onclick="event.stopPropagation()">`;
+                    html += `<span class="weight-value">${(j.weight_adjustment || 1.0).toFixed(2)}x</span>`;
+                    html += `</div></td>`;
+                    // Projection toggle
+                    html += `<td><input type="checkbox" class="projection-toggle" ${j.projection_enabled ? 'checked' : ''} `;
+                    html += `onchange="updateJobProjection(${j.id},this.checked)" onclick="event.stopPropagation()" title="Include in projections"></td>`;
+                    // GMP toggle
+                    html += `<td><input type="checkbox" class="projection-toggle" ${j.is_gmp ? 'checked' : ''} `;
+                    html += `onchange="updateJobGmp(${j.id},this.checked)" onclick="event.stopPropagation()" title="GMP contract"></td>`;
+                    // Actions
+                    html += `<td></td>`;
+                    html += `</tr>`;
+                });
             }
         });
 
