@@ -155,7 +155,7 @@
     },
     {
       "type": "TextBlock",
-      "text": "Process, base material, and filler metal are determined by the selected WPS.",
+      "text": "Process, base material, and filler metal are determined by the selected WPS. Position is 6G for all coupons.",
       "wrap": true,
       "spacing": "None",
       "isSubtle": true,
@@ -172,69 +172,6 @@
     {
       "type": "ColumnSet",
       "columns": [
-        {
-          "type": "Column",
-          "width": "stretch",
-          "items": [
-            {
-              "type": "Input.ChoiceSet",
-              "id": "c1_position",
-              "label": "Position",
-              "placeholder": "Select...",
-              "isRequired": true,
-              "choices": [
-                {
-                  "title": "1G",
-                  "value": "1G"
-                },
-                {
-                  "title": "2G",
-                  "value": "2G"
-                },
-                {
-                  "title": "3G",
-                  "value": "3G"
-                },
-                {
-                  "title": "4G",
-                  "value": "4G"
-                },
-                {
-                  "title": "5G",
-                  "value": "5G"
-                },
-                {
-                  "title": "6G",
-                  "value": "6G"
-                },
-                {
-                  "title": "6GR",
-                  "value": "6GR"
-                },
-                {
-                  "title": "1F",
-                  "value": "1F"
-                },
-                {
-                  "title": "2F",
-                  "value": "2F"
-                },
-                {
-                  "title": "3F",
-                  "value": "3F"
-                },
-                {
-                  "title": "4F",
-                  "value": "4F"
-                },
-                {
-                  "title": "5F",
-                  "value": "5F"
-                }
-              ]
-            }
-          ]
-        },
         {
           "type": "Column",
           "width": "stretch",
@@ -309,69 +246,6 @@
               "width": "stretch",
               "items": [
                 {
-                  "type": "Input.ChoiceSet",
-                  "id": "c2_position",
-                  "label": "Position",
-                  "placeholder": "Select...",
-                  "isRequired": false,
-                  "choices": [
-                    {
-                      "title": "1G",
-                      "value": "1G"
-                    },
-                    {
-                      "title": "2G",
-                      "value": "2G"
-                    },
-                    {
-                      "title": "3G",
-                      "value": "3G"
-                    },
-                    {
-                      "title": "4G",
-                      "value": "4G"
-                    },
-                    {
-                      "title": "5G",
-                      "value": "5G"
-                    },
-                    {
-                      "title": "6G",
-                      "value": "6G"
-                    },
-                    {
-                      "title": "6GR",
-                      "value": "6GR"
-                    },
-                    {
-                      "title": "1F",
-                      "value": "1F"
-                    },
-                    {
-                      "title": "2F",
-                      "value": "2F"
-                    },
-                    {
-                      "title": "3F",
-                      "value": "3F"
-                    },
-                    {
-                      "title": "4F",
-                      "value": "4F"
-                    },
-                    {
-                      "title": "5F",
-                      "value": "5F"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
                   "type": "Input.Text",
                   "id": "c2_thickness",
                   "label": "Thickness",
@@ -416,69 +290,6 @@
               "width": "stretch",
               "items": [
                 {
-                  "type": "Input.ChoiceSet",
-                  "id": "c3_position",
-                  "label": "Position",
-                  "placeholder": "Select...",
-                  "isRequired": false,
-                  "choices": [
-                    {
-                      "title": "1G",
-                      "value": "1G"
-                    },
-                    {
-                      "title": "2G",
-                      "value": "2G"
-                    },
-                    {
-                      "title": "3G",
-                      "value": "3G"
-                    },
-                    {
-                      "title": "4G",
-                      "value": "4G"
-                    },
-                    {
-                      "title": "5G",
-                      "value": "5G"
-                    },
-                    {
-                      "title": "6G",
-                      "value": "6G"
-                    },
-                    {
-                      "title": "6GR",
-                      "value": "6GR"
-                    },
-                    {
-                      "title": "1F",
-                      "value": "1F"
-                    },
-                    {
-                      "title": "2F",
-                      "value": "2F"
-                    },
-                    {
-                      "title": "3F",
-                      "value": "3F"
-                    },
-                    {
-                      "title": "4F",
-                      "value": "4F"
-                    },
-                    {
-                      "title": "5F",
-                      "value": "5F"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
                   "type": "Input.Text",
                   "id": "c3_thickness",
                   "label": "Thickness",
@@ -518,69 +329,6 @@
         {
           "type": "ColumnSet",
           "columns": [
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.ChoiceSet",
-                  "id": "c4_position",
-                  "label": "Position",
-                  "placeholder": "Select...",
-                  "isRequired": false,
-                  "choices": [
-                    {
-                      "title": "1G",
-                      "value": "1G"
-                    },
-                    {
-                      "title": "2G",
-                      "value": "2G"
-                    },
-                    {
-                      "title": "3G",
-                      "value": "3G"
-                    },
-                    {
-                      "title": "4G",
-                      "value": "4G"
-                    },
-                    {
-                      "title": "5G",
-                      "value": "5G"
-                    },
-                    {
-                      "title": "6G",
-                      "value": "6G"
-                    },
-                    {
-                      "title": "6GR",
-                      "value": "6GR"
-                    },
-                    {
-                      "title": "1F",
-                      "value": "1F"
-                    },
-                    {
-                      "title": "2F",
-                      "value": "2F"
-                    },
-                    {
-                      "title": "3F",
-                      "value": "3F"
-                    },
-                    {
-                      "title": "4F",
-                      "value": "4F"
-                    },
-                    {
-                      "title": "5F",
-                      "value": "5F"
-                    }
-                  ]
-                }
-              ]
-            },
             {
               "type": "Column",
               "width": "stretch",

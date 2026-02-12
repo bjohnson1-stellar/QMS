@@ -114,14 +114,15 @@ new-welder mapping.
 
 ### 5. Build Coupons Array
 
-For each coupon slot (1–4), check if `cN_position` is non-empty. If so,
+For each coupon slot (1–4), check if `cN_thickness` is non-empty. If so,
 append to the coupons array. The `process`, `wps_number`, `base_material`,
-and `filler_metal` come from the WPS lookup (step 3), not from the card:
+and `filler_metal` come from the WPS lookup (step 3). Position is hardcoded
+to `6G` (all processes on this card are non-brazing):
 
 ```json
 {
   "process":       "<from WPS lookup>",
-  "position":      "@{body('Post_adaptive_card')?['data']?['c1_position']}",
+  "position":      "6G",
   "wps_number":    "@{body('Post_adaptive_card')?['data']?['wps_number']}",
   "base_material": "<from WPS lookup>",
   "filler_metal":  "<from WPS lookup>",
@@ -130,7 +131,7 @@ and `filler_metal` come from the WPS lookup (step 3), not from the card:
 }
 ```
 
-Repeat for `c2_*`, `c3_*`, `c4_*` — only include coupons where `cN_position`
+Repeat for `c2_*`, `c3_*`, `c4_*` — only include coupons where `cN_thickness`
 is not empty.
 
 ### 6. Write JSON File
