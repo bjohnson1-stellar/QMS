@@ -1638,14 +1638,65 @@ def _distribute_single_job(total_hours: float, num_days: int) -> List[float]:
     return daily
 
 
+MAX_ENTRIES_PER_DAY = 3
+
+
+def _assign_days_to_jobs(
+    jobs: List[Dict[str, Any]], num_days: int, max_per_day: int = MAX_ENTRIES_PER_DAY
+) -> None:
+    """Assign each job to a subset of working days, respecting the per-day cap.
+
+    Mutates each job dict to add ``assigned_days`` (list of day indices).
+    Large-hour jobs get more days; small jobs get fewer but with bigger
+    daily entries.  Jobs are processed largest-first so they get first
+    pick of available slots.
+    """
+    total_hours = sum(j["hours"] for j in jobs)
+    total_slots = num_days * max_per_day
+
+    # Simple case: all jobs fit on every day
+    if len(jobs) <= max_per_day:
+        for job in jobs:
+            job["assigned_days"] = list(range(num_days))
+        return
+
+    # Calculate proportional day-count for each job
+    for job in jobs:
+        share = job["hours"] / total_hours if total_hours > 0 else 1 / len(jobs)
+        prop = share * total_slots
+        job["days_needed"] = max(1, min(num_days, round(prop)))
+
+    # Sort largest-first so big jobs get best slot availability
+    jobs.sort(key=lambda j: j["days_needed"], reverse=True)
+
+    day_counts = [0] * num_days  # how many jobs assigned per day
+
+    for job in jobs:
+        available = [i for i in range(num_days) if day_counts[i] < max_per_day]
+        if not available:
+            job["assigned_days"] = []
+            continue
+
+        n_pick = min(job["days_needed"], len(available))
+        stride = len(available) / n_pick
+        picked = [available[int(k * stride)] for k in range(n_pick)]
+
+        job["assigned_days"] = picked
+        for d in picked:
+            day_counts[d] += 1
+
+
 def distribute_projection_hours(
     conn: sqlite3.Connection, snapshot_id: int
 ) -> Dict[str, Any]:
     """Distribute a snapshot's job-level hours across M-F working days.
 
+    Each day has at most ``MAX_ENTRIES_PER_DAY`` job entries (default 3).
+    Jobs are rotated across days proportional to their hours — big jobs
+    appear on more days, small jobs on fewer.  Hours within a job's
+    assigned days use the floor-and-spread algorithm with 0.5-hr rounding.
+
     Returns a day-by-day schedule suitable for UKG timecard automation.
-    Each date carries a list of job entries and a day total.
-    Weekly totals are validated against the 40-hour cap.
     """
     snapshot = get_snapshot_with_details(conn, snapshot_id)
     if not snapshot:
@@ -1677,18 +1728,24 @@ def distribute_projection_hours(
                     "scope_name": detail.get("scope_name", ""),
                 })
 
-    # Distribute each job's hours across the working days
-    job_schedules: List[List[float]] = []
-    for job in jobs:
-        job_schedules.append(_distribute_single_job(job["hours"], num_days))
+    # Phase 1: Assign each job to a subset of days (max 3 per day)
+    _assign_days_to_jobs(jobs, num_days)
 
-    # Build the day-by-day schedule
+    # Phase 2: Distribute each job's hours across its assigned days only
+    for job in jobs:
+        n_assigned = len(job["assigned_days"])
+        job["daily_hours"] = _distribute_single_job(job["hours"], n_assigned)
+
+    # Phase 3: Build the day-by-day schedule
     schedule: List[Dict[str, Any]] = []
     for day_idx, day_date in enumerate(working_days):
         entries = []
         day_total = 0.0
-        for j_idx, job in enumerate(jobs):
-            hrs = job_schedules[j_idx][day_idx]
+        for job in jobs:
+            if day_idx not in job["assigned_days"]:
+                continue
+            pos = job["assigned_days"].index(day_idx)
+            hrs = job["daily_hours"][pos]
             if hrs > 0:
                 entries.append({
                     "job_code": job["job_code"],
@@ -1707,7 +1764,7 @@ def distribute_projection_hours(
             "day_total": round(day_total, 2),
         })
 
-    # Weekly totals and 40-hour validation
+    # Phase 4: Weekly totals and 40-hour validation
     weekly_totals: Dict[str, float] = {}
     warnings: List[str] = []
     for day in schedule:
@@ -1719,6 +1776,10 @@ def distribute_projection_hours(
         if total > 40:
             warnings.append(f"{week}: {total:.1f} hrs exceeds 40-hour cap")
 
+    max_entries = max((len(d["entries"]) for d in schedule), default=0)
+    if max_entries > MAX_ENTRIES_PER_DAY:
+        warnings.append(f"Some days have {max_entries} entries (cap is {MAX_ENTRIES_PER_DAY})")
+
     return {
         "snapshot_id": snapshot_id,
         "period": f"{period['year']}-{period['month']:02d}",
@@ -1727,5 +1788,6 @@ def distribute_projection_hours(
         "total_hours": round(sum(j["hours"] for j in jobs), 2),
         "num_working_days": num_days,
         "num_jobs": len(jobs),
+        "max_entries_per_day": MAX_ENTRIES_PER_DAY,
         "warnings": warnings,
     }

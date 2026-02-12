@@ -8,6 +8,8 @@ list/activate/commit/uncommit snapshots, budget summary, negative budgets.
 import pytest
 
 from qms.projects.budget import (
+    MAX_ENTRIES_PER_DAY,
+    _assign_days_to_jobs,
     _distribute_single_job,
     _get_working_days_mf,
     activate_snapshot,
@@ -736,6 +738,65 @@ class TestDistributeSingleJob:
         assert sum(result) == pytest.approx(37.5)
 
 
+class TestAssignDaysToJobs:
+    """Unit tests for the day-assignment scheduling algorithm."""
+
+    def test_few_jobs_get_all_days(self):
+        """When jobs <= max_per_day, every job gets every day."""
+        jobs = [
+            {"hours": 80, "job_code": "A"},
+            {"hours": 40, "job_code": "B"},
+        ]
+        _assign_days_to_jobs(jobs, num_days=20, max_per_day=3)
+        assert all(j["assigned_days"] == list(range(20)) for j in jobs)
+
+    def test_many_jobs_respects_cap(self):
+        """With 6 jobs and max 3/day, no day should have more than 3 entries."""
+        jobs = [
+            {"hours": 40, "job_code": f"J{i}"}
+            for i in range(6)
+        ]
+        _assign_days_to_jobs(jobs, num_days=20, max_per_day=3)
+
+        day_counts = [0] * 20
+        for j in jobs:
+            for d in j["assigned_days"]:
+                day_counts[d] += 1
+        assert all(c <= 3 for c in day_counts), f"Day counts: {day_counts}"
+
+    def test_big_job_gets_more_days(self):
+        """A job with more hours should be assigned to more days."""
+        jobs = [
+            {"hours": 80, "job_code": "BIG"},
+            {"hours": 10, "job_code": "SMALL1"},
+            {"hours": 10, "job_code": "SMALL2"},
+            {"hours": 10, "job_code": "SMALL3"},
+        ]
+        _assign_days_to_jobs(jobs, num_days=20, max_per_day=3)
+        big = next(j for j in jobs if j["job_code"] == "BIG")
+        smalls = [j for j in jobs if j["job_code"].startswith("SMALL")]
+        assert len(big["assigned_days"]) > max(len(s["assigned_days"]) for s in smalls)
+
+    def test_every_job_gets_at_least_one_day(self):
+        """Even tiny jobs should get at least 1 day."""
+        jobs = [{"hours": h, "job_code": f"J{i}"} for i, h in enumerate([80, 5, 3, 2, 1])]
+        _assign_days_to_jobs(jobs, num_days=20, max_per_day=3)
+        assert all(len(j["assigned_days"]) >= 1 for j in jobs)
+
+    def test_total_hours_preserved_per_job(self):
+        """After assignment + distribution, each job's total is exact."""
+        jobs = [
+            {"hours": 60, "job_code": "A"},
+            {"hours": 30, "job_code": "B"},
+            {"hours": 20, "job_code": "C"},
+            {"hours": 10, "job_code": "D"},
+        ]
+        _assign_days_to_jobs(jobs, num_days=20, max_per_day=3)
+        for job in jobs:
+            daily = _distribute_single_job(job["hours"], len(job["assigned_days"]))
+            assert sum(daily) == pytest.approx(job["hours"])
+
+
 class TestGetWorkingDaysMF:
     def test_february_2026(self):
         days = _get_working_days_mf(2026, 2)
@@ -863,3 +924,80 @@ class TestDistributeProjectionHours:
                     f"{entry['job_code']} on {day['date']}: {entry['hours']} "
                     f"is not a 0.5 increment"
                 )
+
+    def test_max_entries_per_day_enforced(self, memory_db):
+        """With many jobs, no day should exceed MAX_ENTRIES_PER_DAY."""
+        _seed_settings(memory_db)
+        bu_plumb = _seed_bu(memory_db, code="600", name="Plumbing")
+        bu_mech = _seed_bu(memory_db, code="650", name="Mechanical")
+        bu_elec = _seed_bu(memory_db, code="700", name="Electrical")
+        bu_refr = _seed_bu(memory_db, code="750", name="Refrigeration")
+
+        # Create 3 projects × 2 BUs = 6 jobs (exceeds cap of 3/day)
+        p1 = _seed_project(memory_db, number="07600", name="P1")
+        p2 = _seed_project(memory_db, number="07601", name="P2")
+        p3 = _seed_project(memory_db, number="07602", name="P3")
+
+        _seed_allocation(memory_db, p1, bu_plumb, budget=40000, subjob="00")
+        _seed_allocation(memory_db, p1, bu_mech, budget=30000, subjob="01")
+        _seed_allocation(memory_db, p2, bu_plumb, budget=25000, subjob="00")
+        _seed_allocation(memory_db, p2, bu_elec, budget=20000, subjob="01")
+        _seed_allocation(memory_db, p3, bu_refr, budget=15000, subjob="00")
+        _seed_allocation(memory_db, p3, bu_mech, budget=10000, subjob="01")
+
+        period = _seed_period(memory_db)
+        calc = calculate_projection(memory_db, period["id"])
+        assert len(calc["entries"]) == 6, f"Expected 6 jobs, got {len(calc['entries'])}"
+
+        # Build snapshot with details
+        from collections import defaultdict
+        proj_map = defaultdict(lambda: {"allocated_hours": 0, "projected_cost": 0})
+        detail_entries = []
+        for e in calc["entries"]:
+            proj_map[e["project_id"]]["allocated_hours"] += e["allocated_hours"]
+            proj_map[e["project_id"]]["projected_cost"] += e["projected_cost"]
+            detail_entries.append({
+                "project_id": e["project_id"],
+                "allocation_id": e["allocation_id"],
+                "job_code": e["job_code"],
+                "allocated_hours": e["allocated_hours"],
+                "projected_cost": e["projected_cost"],
+            })
+
+        entries = [
+            {"project_id": k, "allocated_hours": v["allocated_hours"],
+             "projected_cost": v["projected_cost"]}
+            for k, v in proj_map.items()
+        ]
+
+        snap = create_projection_snapshot(
+            memory_db, period["id"],
+            entries=entries,
+            detail_entries=detail_entries,
+            hourly_rate=calc["hourly_rate"],
+            total_hours=calc["total_hours"],
+        )
+
+        result = distribute_projection_hours(memory_db, snap["id"])
+        assert "error" not in result
+
+        # Verify the cap
+        for day in result["schedule"]:
+            assert len(day["entries"]) <= MAX_ENTRIES_PER_DAY, (
+                f"{day['date']}: {len(day['entries'])} entries exceeds cap of {MAX_ENTRIES_PER_DAY}"
+            )
+
+        # Verify all job hours still sum correctly
+        from collections import defaultdict as dd
+        job_totals = dd(float)
+        for day in result["schedule"]:
+            for entry in day["entries"]:
+                job_totals[entry["job_code"]] += entry["hours"]
+
+        snapshot = get_snapshot_with_details(memory_db, snap["id"])
+        for proj_entry in snapshot["entries"]:
+            for detail in proj_entry.get("details", []):
+                if detail["allocated_hours"] > 0:
+                    assert job_totals[detail["job_code"]] == pytest.approx(
+                        detail["allocated_hours"]
+                    ), f"Hour mismatch for {detail['job_code']}"
