@@ -1215,28 +1215,18 @@ def load_period_jobs(
     ``projection_period_jobs`` for this period, auto-populate from eligible
     allocations with ``included=1``.
     """
-    # Check if already populated
-    existing = conn.execute(
-        "SELECT COUNT(*) AS n FROM projection_period_jobs WHERE period_id = ?",
+    # Always sync: add any newly-enabled allocations (INSERT OR IGNORE preserves existing toggles)
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO projection_period_jobs (period_id, allocation_id, included)
+        SELECT ?, pa.id, 1
+        FROM project_allocations pa
+        WHERE pa.projection_enabled = 1
+          AND pa.stage NOT IN ('Archive', 'Lost Proposal', 'Warranty')
+        """,
         (period_id,),
-    ).fetchone()["n"]
-
-    if existing == 0:
-        # Auto-populate from globally enabled allocations with budget > 0
-        conn.execute(
-            """
-            INSERT OR IGNORE INTO projection_period_jobs (period_id, allocation_id, included)
-            SELECT ?, pa.id, 1
-            FROM project_allocations pa
-            JOIN projects p ON p.id = pa.project_id
-            WHERE pa.projection_enabled = 1
-              AND pa.allocated_budget > 0
-              AND p.stage IN ('Course of Construction', 'Construction and Bidding',
-                              'Pre-Construction')
-            """,
-            (period_id,),
-        )
-        conn.commit()
+    )
+    conn.commit()
 
     # Return all eligible jobs with details
     rows = conn.execute(

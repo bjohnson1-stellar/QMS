@@ -55,7 +55,8 @@ def _seed_project(conn, number="07600", name="Test Project", stage="Course of Co
     return pid
 
 
-def _seed_allocation(conn, project_id, bu_id, budget=50000, subjob="00", projection_enabled=1, is_gmp=0):
+def _seed_allocation(conn, project_id, bu_id, budget=50000, subjob="00",
+                     projection_enabled=1, is_gmp=0, stage="Course of Construction"):
     """Insert a project allocation and return its id."""
     proj = conn.execute("SELECT number FROM projects WHERE id = ?", (project_id,)).fetchone()
     bu = conn.execute("SELECT code FROM business_units WHERE id = ?", (bu_id,)).fetchone()
@@ -63,9 +64,9 @@ def _seed_allocation(conn, project_id, bu_id, budget=50000, subjob="00", project
     cursor = conn.execute(
         """INSERT INTO project_allocations
            (project_id, business_unit_id, subjob, job_code,
-            allocated_budget, weight_adjustment, projection_enabled, is_gmp)
-           VALUES (?, ?, ?, ?, ?, 1.0, ?, ?)""",
-        (project_id, bu_id, subjob, job_code, budget, projection_enabled, is_gmp),
+            allocated_budget, weight_adjustment, projection_enabled, is_gmp, stage)
+           VALUES (?, ?, ?, ?, ?, 1.0, ?, ?, ?)""",
+        (project_id, bu_id, subjob, job_code, budget, projection_enabled, is_gmp, stage),
     )
     conn.commit()
     sync_budget_rollup(conn, project_id)
@@ -117,7 +118,8 @@ class TestLoadPeriodJobs:
         jobs = load_period_jobs(memory_db, period["id"])
         assert len(jobs) == 0
 
-    def test_excludes_zero_budget(self, memory_db):
+    def test_includes_zero_budget(self, memory_db):
+        """Zero-budget jobs appear in selection list (but get 0 hours in calculation)."""
         _seed_settings(memory_db)
         bu_id = _seed_bu(memory_db)
         pid = _seed_project(memory_db)
@@ -125,13 +127,15 @@ class TestLoadPeriodJobs:
         period = _seed_period(memory_db)
 
         jobs = load_period_jobs(memory_db, period["id"])
-        assert len(jobs) == 0
+        assert len(jobs) == 1
+        assert jobs[0]["allocated_budget"] == 0
 
     def test_excludes_inactive_stage(self, memory_db):
+        """Allocations with inactive stage (Archive/Lost Proposal/Warranty) are excluded."""
         _seed_settings(memory_db)
         bu_id = _seed_bu(memory_db)
-        pid = _seed_project(memory_db, stage="Archive")
-        _seed_allocation(memory_db, pid, bu_id, budget=50000)
+        pid = _seed_project(memory_db)
+        _seed_allocation(memory_db, pid, bu_id, budget=50000, stage="Archive")
         period = _seed_period(memory_db)
 
         jobs = load_period_jobs(memory_db, period["id"])
