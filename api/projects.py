@@ -609,6 +609,15 @@ def api_uncommit_snapshot(sid):
     return jsonify(result)
 
 
+@bp.route("/api/projections/snapshot/<int:sid>/distribute", methods=["GET"])
+def api_distribute_snapshot(sid):
+    with get_db(readonly=True) as conn:
+        result = budget.distribute_projection_hours(conn, sid)
+    if "error" in result:
+        return jsonify(result), 404
+    return jsonify(result)
+
+
 @bp.route("/api/projects/budget-summary", methods=["GET"])
 def api_budget_summary():
     pid = request.args.get("project_id", type=int)

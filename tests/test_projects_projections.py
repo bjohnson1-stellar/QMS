@@ -8,12 +8,15 @@ list/activate/commit/uncommit snapshots, budget summary, negative budgets.
 import pytest
 
 from qms.projects.budget import (
+    _distribute_single_job,
+    _get_working_days_mf,
     activate_snapshot,
     bulk_toggle_period_jobs,
     calculate_projection,
     commit_snapshot,
     create_projection_period,
     create_projection_snapshot,
+    distribute_projection_hours,
     get_budget_summary,
     get_settings,
     get_snapshot_with_details,
@@ -682,3 +685,181 @@ class TestHasCommittedProjections:
 
         with pytest.raises(ValueError, match="committed projections"):
             delete_project(memory_db, pid)
+
+
+# ---------------------------------------------------------------------------
+# TestDistributeProjectionHours
+# ---------------------------------------------------------------------------
+
+
+class TestDistributeSingleJob:
+    """Unit tests for the pure distribution helper."""
+
+    def test_even_division(self):
+        """160 hours / 20 days = 8.0 each, no remainder."""
+        result = _distribute_single_job(160, 20)
+        assert len(result) == 20
+        assert all(h == 8.0 for h in result)
+        assert sum(result) == 160
+
+    def test_remainder_spread_evenly(self):
+        """47.5 hours / 20 days: base=2.0, 15 days get +0.5."""
+        result = _distribute_single_job(47.5, 20)
+        assert len(result) == 20
+        assert sum(result) == pytest.approx(47.5)
+        assert all(h in (2.0, 2.5) for h in result)
+        assert result.count(2.5) == 15
+        assert result.count(2.0) == 5
+
+    def test_small_hours_across_many_days(self):
+        """2.0 hours / 20 days: 4 days get 0.5, rest get 0."""
+        result = _distribute_single_job(2.0, 20)
+        assert sum(result) == pytest.approx(2.0)
+        assert result.count(0.5) == 4
+        assert result.count(0.0) == 16
+
+    def test_zero_hours(self):
+        result = _distribute_single_job(0, 20)
+        assert all(h == 0.0 for h in result)
+
+    def test_zero_days(self):
+        result = _distribute_single_job(40, 0)
+        assert result == []
+
+    def test_single_day(self):
+        result = _distribute_single_job(8.5, 1)
+        assert result == [8.5]
+
+    def test_sum_exact_with_odd_total(self):
+        """Verify rounding dust is corrected."""
+        result = _distribute_single_job(37.5, 22)
+        assert sum(result) == pytest.approx(37.5)
+
+
+class TestGetWorkingDaysMF:
+    def test_february_2026(self):
+        days = _get_working_days_mf(2026, 2)
+        assert len(days) == 20  # Feb 2026: 20 weekdays
+        assert all(d.weekday() < 5 for d in days)
+        assert days[0].day == 2  # Feb 1 is Sunday, first weekday is Feb 2
+
+    def test_march_2026(self):
+        days = _get_working_days_mf(2026, 3)
+        assert len(days) == 22  # March 2026: 22 weekdays
+        assert days[0].day == 2  # March 1 is Sunday
+
+    def test_no_weekends(self):
+        days = _get_working_days_mf(2026, 1)
+        for d in days:
+            assert d.weekday() < 5, f"{d} is a weekend"
+
+
+class TestDistributeProjectionHours:
+    """Integration test using snapshot with job-level details."""
+
+    def _make_snapshot_with_details(self, conn):
+        """Create a period, project, allocations, calculate, and save snapshot."""
+        _seed_settings(conn)
+        bu_id = _seed_bu(conn)
+        pid = _seed_project(conn)
+        aid1 = _seed_allocation(conn, pid, bu_id, budget=50000, subjob="00")
+        aid2 = _seed_allocation(conn, pid, bu_id, budget=30000, subjob="01")
+        period = _seed_period(conn)
+
+        calc = calculate_projection(conn, period["id"])
+        assert "error" not in calc, calc.get("error", "")
+
+        # Build project-level and detail-level entries
+        from collections import defaultdict
+        proj_map = defaultdict(lambda: {"allocated_hours": 0, "projected_cost": 0})
+        detail_entries = []
+        for e in calc["entries"]:
+            proj_map[e["project_id"]]["allocated_hours"] += e["allocated_hours"]
+            proj_map[e["project_id"]]["projected_cost"] += e["projected_cost"]
+            detail_entries.append({
+                "project_id": e["project_id"],
+                "allocation_id": e["allocation_id"],
+                "job_code": e["job_code"],
+                "allocated_hours": e["allocated_hours"],
+                "projected_cost": e["projected_cost"],
+                "weight_used": e.get("effective_budget", 0),
+            })
+
+        entries = [
+            {"project_id": k, "allocated_hours": v["allocated_hours"],
+             "projected_cost": v["projected_cost"]}
+            for k, v in proj_map.items()
+        ]
+
+        snap = create_projection_snapshot(
+            conn, period["id"],
+            entries=entries,
+            detail_entries=detail_entries,
+            hourly_rate=calc["hourly_rate"],
+            total_hours=calc["total_hours"],
+        )
+        return snap, period, calc
+
+    def test_returns_schedule(self, memory_db):
+        snap, period, calc = self._make_snapshot_with_details(memory_db)
+        result = distribute_projection_hours(memory_db, snap["id"])
+        assert "error" not in result
+        assert result["num_working_days"] == 20  # Feb 2026
+        assert len(result["schedule"]) == 20
+
+    def test_total_hours_match_snapshot(self, memory_db):
+        snap, period, calc = self._make_snapshot_with_details(memory_db)
+        result = distribute_projection_hours(memory_db, snap["id"])
+        schedule_total = sum(d["day_total"] for d in result["schedule"])
+        assert schedule_total == pytest.approx(result["total_hours"])
+
+    def test_each_day_has_entries(self, memory_db):
+        snap, period, calc = self._make_snapshot_with_details(memory_db)
+        result = distribute_projection_hours(memory_db, snap["id"])
+        for day in result["schedule"]:
+            assert isinstance(day["entries"], list)
+            assert isinstance(day["day_total"], float)
+            assert day["date"]  # ISO date string
+
+    def test_weekly_totals_computed(self, memory_db):
+        snap, period, calc = self._make_snapshot_with_details(memory_db)
+        result = distribute_projection_hours(memory_db, snap["id"])
+        assert len(result["weekly_totals"]) > 0
+        # Sum of weekly totals should equal total hours
+        weekly_sum = sum(result["weekly_totals"].values())
+        assert weekly_sum == pytest.approx(result["total_hours"])
+
+    def test_job_hours_sum_to_allocated(self, memory_db):
+        """Each job's distributed hours should sum to its snapshot allocation."""
+        snap, period, calc = self._make_snapshot_with_details(memory_db)
+        result = distribute_projection_hours(memory_db, snap["id"])
+
+        # Aggregate hours per job code from the schedule
+        from collections import defaultdict
+        job_totals = defaultdict(float)
+        for day in result["schedule"]:
+            for entry in day["entries"]:
+                job_totals[entry["job_code"]] += entry["hours"]
+
+        # Compare against snapshot detail entries
+        snapshot = get_snapshot_with_details(memory_db, snap["id"])
+        for proj_entry in snapshot["entries"]:
+            for detail in proj_entry.get("details", []):
+                if detail["allocated_hours"] > 0:
+                    assert job_totals[detail["job_code"]] == pytest.approx(
+                        detail["allocated_hours"]
+                    ), f"Mismatch for {detail['job_code']}"
+
+    def test_snapshot_not_found(self, memory_db):
+        result = distribute_projection_hours(memory_db, 9999)
+        assert result["error"] == "Snapshot not found"
+
+    def test_all_entries_half_hour_increments(self, memory_db):
+        snap, period, calc = self._make_snapshot_with_details(memory_db)
+        result = distribute_projection_hours(memory_db, snap["id"])
+        for day in result["schedule"]:
+            for entry in day["entries"]:
+                assert entry["hours"] % 0.5 == pytest.approx(0), (
+                    f"{entry['job_code']} on {day['date']}: {entry['hours']} "
+                    f"is not a 0.5 increment"
+                )

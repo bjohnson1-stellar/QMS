@@ -16,7 +16,8 @@ Functions are organized by domain:
 import re
 import sqlite3
 from calendar import monthrange
-from datetime import datetime
+from datetime import date, datetime, timedelta
+from math import floor
 from typing import Any, Dict, List, Optional, Tuple
 
 from qms.core import get_db, get_logger
@@ -1587,3 +1588,144 @@ def get_budget_summary(
         d["budget_remaining"] = d["total_budget"] - d["budget_spent"] - d["committed_cost"]
         result.append(d)
     return result
+
+
+# ---------------------------------------------------------------------------
+# Hour Distribution (UKG Timecard Prep)
+# ---------------------------------------------------------------------------
+
+
+def _get_working_days_mf(year: int, month: int) -> List[date]:
+    """Return all Monday–Friday dates in the given month, sorted."""
+    _, num_days = monthrange(year, month)
+    first = date(year, month, 1)
+    return [
+        first + timedelta(days=d)
+        for d in range(num_days)
+        if (first + timedelta(days=d)).weekday() < 5  # Mon=0 … Fri=4
+    ]
+
+
+def _distribute_single_job(total_hours: float, num_days: int) -> List[float]:
+    """Spread *total_hours* across *num_days*, rounding to 0.5 increments.
+
+    Uses floor-and-spread: base daily amount is floored to nearest 0.5,
+    then the remaining 0.5-blocks are distributed at evenly spaced
+    intervals so no part of the month looks disproportionately heavy.
+
+    Returns a list of length *num_days* whose sum equals *total_hours*.
+    """
+    if num_days == 0 or total_hours <= 0:
+        return [0.0] * num_days
+
+    base = floor(total_hours / num_days / 0.5) * 0.5
+    remainder = round(total_hours - base * num_days, 2)
+    extra_count = int(round(remainder / 0.5))
+
+    daily = [base] * num_days
+
+    if extra_count > 0:
+        stride = num_days / extra_count
+        for i in range(extra_count):
+            idx = int(i * stride)
+            daily[idx] += 0.5
+
+    # Guard against floating-point dust: force exact total
+    running = sum(daily)
+    if abs(running - total_hours) > 0.01:
+        daily[-1] += round(total_hours - running, 2)
+
+    return daily
+
+
+def distribute_projection_hours(
+    conn: sqlite3.Connection, snapshot_id: int
+) -> Dict[str, Any]:
+    """Distribute a snapshot's job-level hours across M-F working days.
+
+    Returns a day-by-day schedule suitable for UKG timecard automation.
+    Each date carries a list of job entries and a day total.
+    Weekly totals are validated against the 40-hour cap.
+    """
+    snapshot = get_snapshot_with_details(conn, snapshot_id)
+    if not snapshot:
+        return {"error": "Snapshot not found"}
+
+    period = conn.execute(
+        "SELECT * FROM projection_periods WHERE id = ?",
+        (snapshot["period_id"],),
+    ).fetchone()
+    if not period:
+        return {"error": "Period not found"}
+
+    working_days = _get_working_days_mf(period["year"], period["month"])
+    num_days = len(working_days)
+
+    # Collect job-level entries with hours > 0
+    jobs: List[Dict[str, Any]] = []
+    for entry in snapshot["entries"]:
+        for detail in entry.get("details", []):
+            hrs = detail.get("allocated_hours", 0) or 0
+            if hrs > 0:
+                jobs.append({
+                    "allocation_id": detail["allocation_id"],
+                    "job_code": detail["job_code"],
+                    "hours": hrs,
+                    "project_name": entry.get("project_name", ""),
+                    "project_code": entry.get("project_code", ""),
+                    "bu_code": detail.get("bu_code", ""),
+                    "scope_name": detail.get("scope_name", ""),
+                })
+
+    # Distribute each job's hours across the working days
+    job_schedules: List[List[float]] = []
+    for job in jobs:
+        job_schedules.append(_distribute_single_job(job["hours"], num_days))
+
+    # Build the day-by-day schedule
+    schedule: List[Dict[str, Any]] = []
+    for day_idx, day_date in enumerate(working_days):
+        entries = []
+        day_total = 0.0
+        for j_idx, job in enumerate(jobs):
+            hrs = job_schedules[j_idx][day_idx]
+            if hrs > 0:
+                entries.append({
+                    "job_code": job["job_code"],
+                    "hours": hrs,
+                    "project_name": job["project_name"],
+                    "project_code": job["project_code"],
+                    "bu_code": job["bu_code"],
+                    "scope_name": job["scope_name"],
+                    "allocation_id": job["allocation_id"],
+                })
+                day_total += hrs
+        schedule.append({
+            "date": day_date.isoformat(),
+            "weekday": day_date.strftime("%a"),
+            "entries": entries,
+            "day_total": round(day_total, 2),
+        })
+
+    # Weekly totals and 40-hour validation
+    weekly_totals: Dict[str, float] = {}
+    warnings: List[str] = []
+    for day in schedule:
+        iso_week = f"{period['year']}-W{date.fromisoformat(day['date']).isocalendar()[1]:02d}"
+        weekly_totals[iso_week] = round(
+            weekly_totals.get(iso_week, 0) + day["day_total"], 2
+        )
+    for week, total in weekly_totals.items():
+        if total > 40:
+            warnings.append(f"{week}: {total:.1f} hrs exceeds 40-hour cap")
+
+    return {
+        "snapshot_id": snapshot_id,
+        "period": f"{period['year']}-{period['month']:02d}",
+        "schedule": schedule,
+        "weekly_totals": weekly_totals,
+        "total_hours": round(sum(j["hours"] for j in jobs), 2),
+        "num_working_days": num_days,
+        "num_jobs": len(jobs),
+        "warnings": warnings,
+    }
