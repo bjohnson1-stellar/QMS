@@ -377,3 +377,22 @@ reference_extraction:
     sample_rate: 0.10
   paths:
     references_root: "data/quality-documents/References"
+
+# =============================================================================
+# AUTOMATION
+# =============================================================================
+
+automation:
+  incoming: "data/automation/incoming"
+  processed: "data/automation/processed"
+  failed: "data/automation/failed"
+
+# =============================================================================
+# WELDING CERT REQUESTS
+# =============================================================================
+
+welding:
+  cert_requests:
+    wcr_prefix: "WCR"
+    max_coupons_per_request: 4
+    default_wpq_expiration_months: 6

@@ -99,7 +99,8 @@ D:\qms\                          # Repo root = package root
 │   ├── base.py                  # DisciplineCalculator ABC
 │   └── cli.py                   # 8 commands
 │
-├── welding/                     # WPS/WPQ/continuity tracking
+├── automation/                  # JSON request dispatcher (Power Automate intake)
+├── welding/                     # WPS/WPQ/continuity tracking + cert requests
 ├── qualitydocs/                 # Quality manual loader
 ├── references/                  # Reference standard extraction
 ├── projects/                    # Project scanner + budget tracking
@@ -129,13 +130,14 @@ D:\qms\                          # Repo root = package root
 
 All paths in `config.yaml` are **relative** to the package root. The `QMS_PATHS` singleton resolves them automatically.
 
-## CLI Commands (35 total)
+## CLI Commands (44 total)
 
 | Module | Commands |
 |--------|----------|
 | `qms` (top-level) | `version`, `migrate`, `serve` |
 | `qms eng` | `history`, `line-sizing`, `relief-valve`, `pump`, `ventilation`, `charge`, `validate-pipes`, `validate-relief` |
-| `qms welding` | `dashboard`, `continuity`, `import-wps`, `import-weekly`, `check-notifications` |
+| `qms welding` | `dashboard`, `continuity`, `import-wps`, `import-weekly`, `check-notifications`, `register`, `export-lookups`, `cert-requests`, `cert-results`, `approve-wcr`, `assign-wpq`, `schedule-retest`, `process-requests` |
+| `qms automation` | `process`, `status` |
 | `qms docs` | `load-module`, `summary`, `search`, `detail` |
 | `qms refs` | `extract`, `list`, `search`, `clauses` |
 | `qms projects` | `scan`, `list`, `summary`, `migrate-timetracker` |

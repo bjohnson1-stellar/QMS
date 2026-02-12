@@ -30,6 +30,23 @@ from qms.welding.notifications import (
     get_notification_summary,
     list_active_notifications,
 )
+from qms.welding.registration import (
+    get_next_stamp,
+    validate_registration,
+    register_new_welder,
+    add_initial_wpq,
+    register_batch,
+)
+from qms.welding.export_lookups import export_lookups
+from qms.welding.cert_requests import (
+    process_cert_request,
+    list_cert_requests,
+    get_cert_request_detail,
+    enter_coupon_result,
+    assign_wpq_from_coupon,
+    schedule_retest,
+    approve_cert_request,
+)
 
 __all__ = [
     # intake
@@ -51,4 +68,20 @@ __all__ = [
     "generate_all_notifications",
     "get_notification_summary",
     "list_active_notifications",
+    # registration
+    "get_next_stamp",
+    "validate_registration",
+    "register_new_welder",
+    "add_initial_wpq",
+    "register_batch",
+    # export
+    "export_lookups",
+    # cert requests
+    "process_cert_request",
+    "list_cert_requests",
+    "get_cert_request_detail",
+    "enter_coupon_result",
+    "assign_wpq_from_coupon",
+    "schedule_retest",
+    "approve_cert_request",
 ]

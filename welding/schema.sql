@@ -748,3 +748,61 @@ CREATE TABLE IF NOT EXISTS weld_document_revisions (
     new_file_path TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- =========== WELD CERT REQUESTS ===========
+
+CREATE TABLE IF NOT EXISTS weld_cert_requests (
+    id              INTEGER PRIMARY KEY,
+    wcr_number      TEXT UNIQUE NOT NULL,
+    welder_id       INTEGER REFERENCES weld_welder_registry(id),
+    employee_number TEXT,
+    welder_name     TEXT,
+    welder_stamp    TEXT,
+    project_number  TEXT,
+    project_name    TEXT,
+    request_date    TEXT,
+    submitted_by    TEXT,
+    submitted_at    TEXT,
+    status          TEXT NOT NULL DEFAULT 'pending_approval',
+    is_new_welder   INTEGER DEFAULT 0,
+    notes           TEXT,
+    approved_by     TEXT,
+    approved_at     TEXT,
+    source_file     TEXT,
+    created_at      TEXT DEFAULT (datetime('now')),
+    updated_at      TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_wcr_status ON weld_cert_requests(status);
+CREATE INDEX IF NOT EXISTS idx_wcr_welder ON weld_cert_requests(welder_id);
+CREATE INDEX IF NOT EXISTS idx_wcr_project ON weld_cert_requests(project_number);
+
+CREATE TABLE IF NOT EXISTS weld_cert_request_coupons (
+    id              INTEGER PRIMARY KEY,
+    wcr_id          INTEGER NOT NULL REFERENCES weld_cert_requests(id) ON DELETE CASCADE,
+    coupon_number   INTEGER NOT NULL,
+    process         TEXT,
+    position        TEXT,
+    wps_number      TEXT,
+    base_material   TEXT,
+    filler_metal    TEXT,
+    thickness       TEXT,
+    diameter        TEXT,
+    status          TEXT NOT NULL DEFAULT 'pending',
+    test_result     TEXT,
+    visual_result   TEXT,
+    bend_result     TEXT,
+    rt_result       TEXT,
+    failure_reason  TEXT,
+    tested_by       TEXT,
+    tested_at       TEXT,
+    wpq_id          INTEGER REFERENCES weld_wpq(id),
+    retest_wcr_id   INTEGER REFERENCES weld_cert_requests(id),
+    notes           TEXT,
+    created_at      TEXT DEFAULT (datetime('now')),
+    updated_at      TEXT DEFAULT (datetime('now')),
+    UNIQUE(wcr_id, coupon_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wcr_coupon_wcr ON weld_cert_request_coupons(wcr_id);
+CREATE INDEX IF NOT EXISTS idx_wcr_coupon_status ON weld_cert_request_coupons(status);

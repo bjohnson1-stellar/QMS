@@ -277,3 +277,332 @@ def check_notifications(
             f"{n['id']:>5} {n['priority']:<8} {n['notification_type']:<15} "
             f"{n['days_until_due'] or 'N/A':<5} {n['title'][:45]}"
         )
+
+
+# =========================================================================
+# REGISTRATION COMMANDS
+# =========================================================================
+
+
+@app.command("register")
+def register_cmd(
+    employee_number: Optional[str] = typer.Option(None, "--employee-number", "-e", help="Employee number"),
+    first_name: Optional[str] = typer.Option(None, "--first-name", "-f", help="First name"),
+    last_name: Optional[str] = typer.Option(None, "--last-name", "-l", help="Last name"),
+    stamp: Optional[str] = typer.Option(None, "--stamp", help="Welder stamp (auto-assigned if omitted)"),
+    department: Optional[str] = typer.Option(None, "--department", help="Department"),
+    supervisor: Optional[str] = typer.Option(None, "--supervisor", help="Supervisor"),
+    business_unit: Optional[str] = typer.Option(None, "--business-unit", help="Business unit"),
+    batch: Optional[str] = typer.Option(None, "--batch", help="Path to CSV for batch registration"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview without changes"),
+):
+    """Register a new welder (interactive, CLI args, or batch CSV)."""
+    from qms.welding.registration import register_new_welder, register_batch
+
+    if batch:
+        from pathlib import Path as P
+        csv_path = P(batch)
+        stats = register_batch(csv_path, dry_run=dry_run)
+
+        typer.echo()
+        typer.echo("Batch Registration Summary")
+        typer.echo("=" * 40)
+        typer.echo(f"  Total rows:    {stats['total']}")
+        typer.echo(f"  Created:       {stats['created']}")
+        typer.echo(f"  Skipped:       {stats['skipped']}")
+        typer.echo(f"  Errors:        {len(stats['errors'])}")
+
+        if stats["errors"]:
+            typer.echo("\n  Errors:")
+            for err in stats["errors"][:10]:
+                typer.echo(f"    Row {err.get('row', '?')}: {err.get('error', '')}")
+        return
+
+    # CLI args mode
+    if employee_number and first_name and last_name:
+        from qms.core import get_db
+
+        with get_db() as conn:
+            result = register_new_welder(
+                conn,
+                employee_number=employee_number,
+                first_name=first_name,
+                last_name=last_name,
+                stamp=stamp,
+                department=department,
+                supervisor=supervisor,
+                business_unit=business_unit,
+            )
+
+        if result["errors"]:
+            typer.echo("Registration FAILED:")
+            for err in result["errors"]:
+                typer.echo(f"  - {err}")
+            raise typer.Exit(1)
+
+        typer.echo(f"Registered: {result['name']} (stamp: {result['stamp']}, ID: {result['id']})")
+        return
+
+    # Interactive mode
+    typer.echo("Interactive welder registration")
+    typer.echo("-" * 30)
+    emp = employee_number or typer.prompt("Employee number")
+    first = first_name or typer.prompt("First name")
+    last = last_name or typer.prompt("Last name")
+    stmp = stamp or typer.prompt("Stamp (blank for auto)", default="")
+    dept = department or typer.prompt("Department", default="")
+    sup = supervisor or typer.prompt("Supervisor", default="")
+    bu = business_unit or typer.prompt("Business unit", default="")
+
+    from qms.core import get_db
+
+    with get_db() as conn:
+        result = register_new_welder(
+            conn,
+            employee_number=emp,
+            first_name=first,
+            last_name=last,
+            stamp=stmp or None,
+            department=dept or None,
+            supervisor=sup or None,
+            business_unit=bu or None,
+        )
+
+    if result["errors"]:
+        typer.echo("Registration FAILED:")
+        for err in result["errors"]:
+            typer.echo(f"  - {err}")
+        raise typer.Exit(1)
+
+    typer.echo(f"\nRegistered: {result['name']} (stamp: {result['stamp']}, ID: {result['id']})")
+
+
+@app.command("export-lookups")
+def export_lookups_cmd(
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output Excel path"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview row counts only"),
+):
+    """Export welding lookup data to Excel for Power Automate."""
+    from qms.welding.export_lookups import export_lookups
+
+    output_path = Path(output) if output else None
+    result = export_lookups(output_path=output_path, dry_run=dry_run)
+
+    prefix = "[DRY RUN] " if dry_run else ""
+    typer.echo(f"\n{prefix}Export Summary")
+    typer.echo("=" * 40)
+    for sheet, count in result["sheets"].items():
+        typer.echo(f"  {sheet:<20} {count:>5} rows")
+    typer.echo(f"  {'Total':<20} {result['total_rows']:>5} rows")
+    typer.echo(f"\n  Output: {result['output_path']}")
+
+
+# =========================================================================
+# CERT REQUEST COMMANDS
+# =========================================================================
+
+
+@app.command("cert-requests")
+def cert_requests_cmd(
+    status: Optional[str] = typer.Option(None, "--status", "-s", help="Filter by status"),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="Filter by project number"),
+    welder: Optional[str] = typer.Option(None, "--welder", "-w", help="Filter by welder name/stamp"),
+    limit: int = typer.Option(20, "--limit", "-n", help="Max results"),
+    detail: Optional[str] = typer.Option(None, "--detail", "-d", help="Show detail for WCR number"),
+):
+    """List and view weld certification requests."""
+    from qms.welding.cert_requests import list_cert_requests, get_cert_request_detail
+
+    if detail:
+        wcr = get_cert_request_detail(detail)
+        if not wcr:
+            typer.echo(f"WCR not found: {detail}")
+            raise typer.Exit(1)
+
+        typer.echo(f"\n{wcr['wcr_number']}  [{wcr['status']}]")
+        typer.echo("=" * 50)
+        typer.echo(f"  Welder:    {wcr['welder_name']} (stamp: {wcr['welder_stamp']})")
+        typer.echo(f"  Project:   {wcr['project_number']} - {wcr['project_name']}")
+        typer.echo(f"  Submitted: {wcr['submitted_by']} on {wcr['request_date']}")
+        if wcr.get("approved_by"):
+            typer.echo(f"  Approved:  {wcr['approved_by']} on {wcr.get('approved_at', '')[:10]}")
+        if wcr.get("notes"):
+            typer.echo(f"  Notes:     {wcr['notes']}")
+
+        coupons = wcr.get("coupons", [])
+        if coupons:
+            typer.echo(f"\n  Coupons ({len(coupons)}):")
+            typer.echo(f"  {'#':<3} {'Process':<10} {'Position':<8} {'WPS':<12} {'Status':<15} {'Result'}")
+            typer.echo("  " + "-" * 60)
+            for c in coupons:
+                result_str = c.get("test_result", "") or ""
+                typer.echo(
+                    f"  {c['coupon_number']:<3} {(c['process'] or ''):<10} "
+                    f"{(c['position'] or ''):<8} {(c['wps_number'] or ''):<12} "
+                    f"{c['status']:<15} {result_str}"
+                )
+        return
+
+    requests = list_cert_requests(status=status, project=project, welder=welder, limit=limit)
+
+    if not requests:
+        typer.echo("No cert requests found.")
+        return
+
+    typer.echo(f"\n{'WCR Number':<18} {'Status':<18} {'Welder':<20} {'Project':<10} {'Coupons':>7}")
+    typer.echo("-" * 80)
+    for r in requests:
+        typer.echo(
+            f"{r['wcr_number']:<18} {r['status']:<18} "
+            f"{(r['welder_name'] or '')[:19]:<20} "
+            f"{(r['project_number'] or ''):<10} {r['coupon_count']:>7}"
+        )
+
+
+@app.command("cert-results")
+def cert_results_cmd(
+    wcr_number: str = typer.Argument(..., help="WCR number (e.g. WCR-2026-0001)"),
+    coupon: Optional[int] = typer.Option(None, "--coupon", "-c", help="Coupon number"),
+    result: Optional[str] = typer.Option(None, "--result", "-r", help="pass or fail"),
+    date_str: Optional[str] = typer.Option(None, "--date", help="Test date (YYYY-MM-DD)"),
+    tester: Optional[str] = typer.Option(None, "--tester", help="Tested by"),
+    notes: Optional[str] = typer.Option(None, "--notes", help="Notes"),
+):
+    """Enter test results for cert request coupons."""
+    from qms.welding.cert_requests import enter_coupon_result, get_cert_request_detail
+
+    if coupon and result:
+        # Direct entry mode
+        output = enter_coupon_result(
+            wcr_number, coupon, result,
+            test_date=date_str, tested_by=tester, notes=notes,
+        )
+        if output["errors"]:
+            for err in output["errors"]:
+                typer.echo(f"ERROR: {err}")
+            raise typer.Exit(1)
+
+        typer.echo(
+            f"Coupon {coupon}: {output['status']} "
+            f"(WCR status: {output['wcr_status']})"
+        )
+        return
+
+    # Interactive mode — show WCR and prompt for each pending coupon
+    wcr = get_cert_request_detail(wcr_number)
+    if not wcr:
+        typer.echo(f"WCR not found: {wcr_number}")
+        raise typer.Exit(1)
+
+    typer.echo(f"\n{wcr['wcr_number']} — {wcr['welder_name']}")
+    coupons = [c for c in wcr.get("coupons", []) if c["status"] in ("pending", "testing")]
+
+    if not coupons:
+        typer.echo("No pending coupons to enter results for.")
+        return
+
+    for c in coupons:
+        typer.echo(f"\n  Coupon {c['coupon_number']}: {c['process']} {c['position']}")
+        res = typer.prompt("  Result (pass/fail/skip)", default="skip")
+        if res.lower() == "skip":
+            continue
+
+        output = enter_coupon_result(
+            wcr_number, c["coupon_number"], res.lower(),
+            test_date=date_str, tested_by=tester,
+        )
+        if output["errors"]:
+            for err in output["errors"]:
+                typer.echo(f"  ERROR: {err}")
+        else:
+            typer.echo(f"  -> {output['status']}")
+
+
+@app.command("approve-wcr")
+def approve_wcr_cmd(
+    wcr_number: str = typer.Argument(..., help="WCR number to approve"),
+    approved_by: str = typer.Option(..., "--by", help="Approver name"),
+):
+    """Approve a pending cert request."""
+    from qms.welding.cert_requests import approve_cert_request
+
+    output = approve_cert_request(wcr_number, approved_by)
+    if output["errors"]:
+        for err in output["errors"]:
+            typer.echo(f"ERROR: {err}")
+        raise typer.Exit(1)
+
+    typer.echo(f"Approved: {wcr_number}")
+
+
+@app.command("assign-wpq")
+def assign_wpq_cmd(
+    wcr_number: str = typer.Argument(..., help="WCR number"),
+    coupon: int = typer.Option(..., "--coupon", "-c", help="Coupon number"),
+    months: Optional[int] = typer.Option(None, "--months", help="Expiration months (default from config)"),
+):
+    """Create a WPQ from a passed certification coupon."""
+    from qms.welding.cert_requests import assign_wpq_from_coupon
+
+    output = assign_wpq_from_coupon(wcr_number, coupon, expiration_months=months)
+    if output["errors"]:
+        for err in output["errors"]:
+            typer.echo(f"ERROR: {err}")
+        raise typer.Exit(1)
+
+    typer.echo(f"Created WPQ: {output['wpq_number']}")
+    typer.echo(f"  Expires: {output['expiration_date']}")
+
+
+@app.command("schedule-retest")
+def schedule_retest_cmd(
+    wcr_number: str = typer.Argument(..., help="Original WCR number"),
+    coupon: int = typer.Option(..., "--coupon", "-c", help="Failed coupon number"),
+    notes: Optional[str] = typer.Option(None, "--notes", help="Notes"),
+):
+    """Schedule a retest for a failed certification coupon."""
+    from qms.welding.cert_requests import schedule_retest
+
+    output = schedule_retest(wcr_number, coupon, notes=notes)
+    if output["errors"]:
+        for err in output["errors"]:
+            typer.echo(f"ERROR: {err}")
+        raise typer.Exit(1)
+
+    typer.echo(f"Retest scheduled: {output['new_wcr_number']}")
+
+
+@app.command("process-requests")
+def process_requests_cmd(
+    file: Optional[str] = typer.Argument(None, help="Single JSON file to process"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview without processing"),
+):
+    """Process weld cert request JSON files (alias for automation process)."""
+    # Trigger handler registration
+    import qms.welding.cert_requests  # noqa: F401
+    from qms.automation.dispatcher import process_all, process_file
+
+    if file:
+        filepath = Path(file)
+        if not filepath.exists():
+            typer.echo(f"ERROR: File not found: {filepath}")
+            raise typer.Exit(1)
+
+        result = process_file(filepath, dry_run=dry_run)
+        prefix = "[DRY RUN] " if dry_run else ""
+        typer.echo(f"{prefix}{result['file']}: {result['status']}")
+        if result["error"]:
+            typer.echo(f"  Error: {result['error']}")
+        if result["result_summary"]:
+            typer.echo(f"  Result: {result['result_summary']}")
+    else:
+        results = process_all(dry_run=dry_run)
+        if not results:
+            typer.echo("No files to process.")
+            return
+
+        for r in results:
+            status_marker = "OK" if r["status"] == "success" else r["status"].upper()
+            typer.echo(f"  [{status_marker}] {r['file']} ({r['type'] or 'unknown'})")
+            if r["error"]:
+                typer.echo(f"         Error: {r['error']}")

@@ -75,6 +75,7 @@ SCHEMA_ORDER = [
     "welding",
     "pipeline",
     "engineering",
+    "automation",
 ]
 
 

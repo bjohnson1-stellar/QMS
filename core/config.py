@@ -123,6 +123,10 @@ class QMSPaths:
         return _PACKAGE_DIR
 
     @property
+    def root(self) -> Path:
+        return _PACKAGE_DIR
+
+    @property
     def needs_review(self) -> Path:
         self._ensure_config()
         subdir = self._config.get("inbox", {}).get("subdirs", {}).get(

@@ -20,12 +20,12 @@ def test_execute_query_returns_rows(mock_db):
 
 
 def test_schema_order_length():
-    assert len(SCHEMA_ORDER) == 8
+    assert len(SCHEMA_ORDER) == 9
 
 
 def test_schema_order_starts_with_core():
     assert SCHEMA_ORDER[0] == "core"
 
 
-def test_schema_order_engineering_last():
-    assert SCHEMA_ORDER[-1] == "engineering"
+def test_schema_order_automation_last():
+    assert SCHEMA_ORDER[-1] == "automation"

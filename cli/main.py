@@ -68,6 +68,7 @@ def _register_modules():
         ("qms.qualitydocs.cli", "docs", "Quality manual & documents"),
         ("qms.references.cli", "refs", "Reference standards library"),
         ("qms.engineering.cli", "eng", "Engineering calculations"),
+        ("qms.automation.cli", "automation", "Automation request processing"),
         ("qms.reporting.cli", "report", "Reports & dashboards"),
         ("qms.vectordb.cli", "vectordb", "Vector search & embeddings"),
     ]

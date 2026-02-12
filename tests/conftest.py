@@ -41,7 +41,9 @@ def mock_db(memory_db):
 
     with patch("qms.core.db.get_db", _get_db), \
          patch("qms.core.get_db", _get_db), \
-         patch("qms.engineering.db.get_db", _get_db):
+         patch("qms.engineering.db.get_db", _get_db), \
+         patch("qms.welding.cert_requests.get_db", _get_db), \
+         patch("qms.automation.dispatcher.get_db", _get_db):
         yield memory_db
 
 
