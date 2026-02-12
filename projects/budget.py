@@ -1215,7 +1215,20 @@ def load_period_jobs(
     ``projection_period_jobs`` for this period, auto-populate from eligible
     allocations with ``included=1``.
     """
-    # Always sync: add any newly-enabled allocations (INSERT OR IGNORE preserves existing toggles)
+    # Sync: remove allocations that are no longer eligible
+    conn.execute(
+        """
+        DELETE FROM projection_period_jobs
+        WHERE period_id = ?
+          AND allocation_id IN (
+              SELECT pa.id FROM project_allocations pa
+              WHERE pa.projection_enabled = 0
+                 OR pa.stage IN ('Archive', 'Lost Proposal', 'Warranty')
+          )
+        """,
+        (period_id,),
+    )
+    # Sync: add any newly-enabled allocations (INSERT OR IGNORE preserves existing toggles)
     conn.execute(
         """
         INSERT OR IGNORE INTO projection_period_jobs (period_id, allocation_id, included)
