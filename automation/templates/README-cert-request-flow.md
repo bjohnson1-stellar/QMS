@@ -78,20 +78,25 @@ shared across all coupons in the request.
 Use a **Filter array** action on the WPS table where `WPS Number` equals the
 submitted `wps_number` value, then read the first matching row.
 
-### 4. Employee → Welder Lookup
+### 4. Welder Stamp Check (optional enrichment)
 
-After submission, check if the selected employee is a registered welder:
+The employee dropdown pulls from the **Employees** table — not the Welders
+table. Most cert test candidates are not yet registered welders (pipefitters,
+apprentices, etc.), so this is expected.
 
-1. **Filter** the `Welders` table from `welding-lookups.xlsx` where
-   `Employee #` equals the submitted `employee_number` value.
-2. **If found:** use the welder's `Welder Stamp` and `Display Name` in the
-   JSON. Set `is_new` to `false`.
-3. **If not found:** the employee needs welder registration. Use the
-   employee's number and name from the `Employees` table. Set `is_new`
-   to `true`. The backend will auto-register them via
-   `_lookup_or_register_welder()`.
+After submission, optionally check the `Welders` table to see if the
+selected employee already has a welder stamp:
 
-For the "New Employee" path (manual entry), use the typed fields directly.
+1. **Filter** the `Welders` table where `Employee #` equals the submitted
+   `employee_number`.
+2. **If found:** include the `Welder Stamp` in the JSON and set `is_new`
+   to `false`.
+3. **If not found (common case):** set `is_new` to `true`. The backend
+   auto-registers the employee as a new welder via
+   `_lookup_or_register_welder()` when the request is processed.
+
+For the "New Employee" path (manual entry of someone not yet in the employee
+system), use the typed fields directly.
 
 ### 5. Card-to-JSON Field Mapping
 
