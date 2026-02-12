@@ -1531,3 +1531,127 @@ tr:hover {
     background: var(--color-surface-alt);
     font-family: var(--font-heading);
 }
+
+/* ── Hour Distribution Grid ── */
+.distribution-week {
+    margin-bottom: 20px;
+}
+
+.distribution-week-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px 8px 0 0;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.distribution-week-total {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.distribution-week-total.over-40 {
+    color: var(--color-danger);
+    font-weight: 700;
+}
+
+.distribution-days {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    border: 1px solid var(--color-border-light);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+}
+
+.distribution-day {
+    padding: 8px;
+    border-right: 1px solid var(--color-border-light);
+    min-height: 80px;
+}
+
+.distribution-day:last-child {
+    border-right: none;
+}
+
+.distribution-day.outside-month {
+    background: var(--color-surface-alt);
+    opacity: 0.4;
+}
+
+.distribution-day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.distribution-day-name {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.distribution-day-date {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.distribution-day-total {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.distribution-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 4px;
+    margin-bottom: 2px;
+    border-radius: 4px;
+    background: var(--color-primary-subtle);
+    font-size: 11px;
+}
+
+.distribution-entry .job-code {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-primary);
+}
+
+.distribution-entry .dist-hours {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.distribution-summary {
+    display: flex;
+    gap: 24px;
+    padding: 12px 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--color-border-light);
+    font-size: 14px;
+}
+
+.distribution-summary .stat-label {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.distribution-summary .stat-value {
+    font-family: var(--font-mono);
+    font-weight: 600;
+}

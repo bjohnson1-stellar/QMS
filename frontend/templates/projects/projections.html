@@ -82,6 +82,17 @@
     <h2>Snapshot History</h2>
     <div id="snapshotList"><div class="empty-state">No saved projections yet</div></div>
 </div>
+
+<!-- Card 5: Hour Distribution -->
+<div class="card" id="distributionCard" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 id="distributionTitle">Hour Distribution</h2>
+        <button class="secondary" onclick="hideDistribution()">Close</button>
+    </div>
+    <div class="distribution-summary" id="distributionSummary"></div>
+    <div id="distributionWarnings"></div>
+    <div id="distributionGrid"></div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -421,6 +432,7 @@
 
             html += '<div class="snapshot-actions">';
             html += `<button class="secondary" onclick="loadSnapshot(${s.id})">Load</button>`;
+            html += `<button class="secondary" onclick="showDistribution(${s.id})">Distribution</button>`;
             if (s.status === 'Draft') {
                 if (!s.is_active) html += `<button class="secondary" onclick="activateSnap(${s.id})">Activate</button>`;
                 html += `<button class="success" onclick="commitSnap(${s.id})">Commit</button>`;
@@ -550,6 +562,117 @@
         if (calcBtn) calcBtn.disabled = isReadOnly;
         const saveSection = document.getElementById('saveSection');
         if (saveSection) saveSection.style.display = isReadOnly ? 'none' : 'flex';
+    }
+
+    // ---- Distribution ----
+
+    async function showDistribution(snapshotId) {
+        try {
+            const res = await fetch(`${API_BASE}/projections/snapshot/${snapshotId}/distribute`);
+            if (!res.ok) { showError((await res.json()).error || 'Failed to load distribution'); return; }
+            const data = await res.json();
+            renderDistribution(data);
+            document.getElementById('distributionCard').style.display = '';
+            document.getElementById('distributionCard').scrollIntoView({ behavior: 'smooth' });
+        } catch (err) { showError('Distribution failed: ' + err.message); }
+    }
+
+    function hideDistribution() {
+        document.getElementById('distributionCard').style.display = 'none';
+    }
+
+    function renderDistribution(data) {
+        document.getElementById('distributionTitle').textContent =
+            `Hour Distribution — ${data.period}`;
+
+        // Summary bar
+        const summary = document.getElementById('distributionSummary');
+        summary.innerHTML = `
+            <div><div class="stat-label">Working Days</div><div class="stat-value">${data.num_working_days}</div></div>
+            <div><div class="stat-label">Jobs</div><div class="stat-value">${data.num_jobs}</div></div>
+            <div><div class="stat-label">Total Hours</div><div class="stat-value">${data.total_hours}</div></div>
+            <div><div class="stat-label">Schedule</div><div class="stat-value">Mon–Fri</div></div>
+        `;
+
+        // Warnings
+        const warningsEl = document.getElementById('distributionWarnings');
+        if (data.warnings && data.warnings.length > 0) {
+            warningsEl.innerHTML = data.warnings.map(w =>
+                `<div class="hours-warning" style="display:flex;margin-bottom:8px;"><span>${w}</span></div>`
+            ).join('');
+        } else {
+            warningsEl.innerHTML = '';
+        }
+
+        // Build weekly grid
+        const schedule = data.schedule;
+        if (!schedule || schedule.length === 0) {
+            document.getElementById('distributionGrid').innerHTML =
+                '<div class="empty-state">No entries to distribute</div>';
+            return;
+        }
+
+        // Group days by ISO week
+        const weeks = {};
+        schedule.forEach(day => {
+            const d = new Date(day.date + 'T00:00:00');
+            const isoWeek = getISOWeek(d);
+            const key = `${d.getFullYear()}-W${String(isoWeek).padStart(2, '0')}`;
+            if (!weeks[key]) weeks[key] = [];
+            weeks[key].push(day);
+        });
+
+        let html = '';
+        for (const [weekKey, days] of Object.entries(weeks)) {
+            const weekTotal = days.reduce((s, d) => s + d.day_total, 0);
+            const overClass = weekTotal > 40 ? ' over-40' : '';
+
+            html += '<div class="distribution-week">';
+            html += `<div class="distribution-week-header">
+                <span>${weekKey}</span>
+                <span class="distribution-week-total${overClass}">${weekTotal.toFixed(1)} hrs</span>
+            </div>`;
+            html += '<div class="distribution-days">';
+
+            // Pad to 5 columns (Mon-Fri), filling missing days
+            const dayMap = {};
+            days.forEach(d => {
+                const dow = new Date(d.date + 'T00:00:00').getDay(); // 0=Sun..6=Sat
+                dayMap[dow] = d;
+            });
+
+            for (let dow = 1; dow <= 5; dow++) { // Mon=1..Fri=5
+                const day = dayMap[dow];
+                if (day) {
+                    html += '<div class="distribution-day">';
+                    html += `<div class="distribution-day-header">
+                        <span><span class="distribution-day-name">${day.weekday}</span>
+                        <span class="distribution-day-date">${day.date.slice(5)}</span></span>
+                        <span class="distribution-day-total">${day.day_total.toFixed(1)}</span>
+                    </div>`;
+                    day.entries.forEach(e => {
+                        html += `<div class="distribution-entry">
+                            <span class="job-code">${e.job_code}</span>
+                            <span class="dist-hours">${e.hours.toFixed(1)}</span>
+                        </div>`;
+                    });
+                    html += '</div>';
+                } else {
+                    html += '<div class="distribution-day outside-month"></div>';
+                }
+            }
+
+            html += '</div></div>';
+        }
+
+        document.getElementById('distributionGrid').innerHTML = html;
+    }
+
+    function getISOWeek(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     }
 
     // ---- Utilities ----
