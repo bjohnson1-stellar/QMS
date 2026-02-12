@@ -12,7 +12,7 @@
     },
     {
       "type": "TextBlock",
-      "text": "Submit a new weld cert test request. Select the project, choose a welder, pick the WPS, then add up to 4 test coupons.",
+      "text": "Submit a new weld cert test request. Select the project, choose an employee, pick the WPS, then add up to 4 test coupons.",
       "wrap": true,
       "spacing": "None",
       "isSubtle": true
@@ -36,7 +36,7 @@
     },
     {
       "type": "TextBlock",
-      "text": "Welder",
+      "text": "Employee",
       "weight": "Bolder",
       "size": "Medium",
       "spacing": "Large",
@@ -47,28 +47,28 @@
       "actions": [
         {
           "type": "Action.ToggleVisibility",
-          "title": "Select Existing",
+          "title": "Select Employee",
           "targetElements": [
             {
-              "elementId": "existing_welder_panel",
+              "elementId": "existing_employee_panel",
               "isVisible": true
             },
             {
-              "elementId": "new_welder_panel",
+              "elementId": "new_employee_panel",
               "isVisible": false
             }
           ]
         },
         {
           "type": "Action.ToggleVisibility",
-          "title": "Register New",
+          "title": "New Employee",
           "targetElements": [
             {
-              "elementId": "existing_welder_panel",
+              "elementId": "existing_employee_panel",
               "isVisible": false
             },
             {
-              "elementId": "new_welder_panel",
+              "elementId": "new_employee_panel",
               "isVisible": true
             }
           ]
@@ -77,23 +77,23 @@
     },
     {
       "type": "Container",
-      "id": "existing_welder_panel",
+      "id": "existing_employee_panel",
       "isVisible": true,
       "items": [
         {
           "type": "Input.ChoiceSet",
-          "id": "welder_stamp",
-          "label": "Welder",
-          "placeholder": "Search by stamp or name (filtered by project)...",
+          "id": "employee_number",
+          "label": "Employee",
+          "placeholder": "Search by name or employee number...",
           "style": "filtered",
-          "choices": "${welder_choices}",
+          "choices": "${employee_choices}",
           "isRequired": false
         }
       ]
     },
     {
       "type": "Container",
-      "id": "new_welder_panel",
+      "id": "new_employee_panel",
       "isVisible": false,
       "items": [
         {

@@ -16,10 +16,11 @@ Trigger: Teams adaptive card submission
    |
    v
 1. Read lookup tables from welding-lookups.xlsx (OneDrive)
-2. Build dynamic choice arrays for Welders, WPS, Projects
+2. Build dynamic choice arrays for Employees, WPS, Projects
 3. Post adaptive card to Teams (with populated dropdowns)
-4. On submit → map card fields to JSON schema
-5. Write JSON file to data/automation/incoming/
+4. On submit → look up employee in Welders table for stamp
+5. Map card fields to JSON schema (enrich from WPS + Welders)
+6. Write JSON file to data/automation/incoming/
 ```
 
 ## Step-by-Step
@@ -34,22 +35,22 @@ Use **"When someone responds to an adaptive card"** or post the card via
 Add three **"List rows present in a table"** actions (Excel Online connector)
 pointing at `welding-lookups.xlsx` on OneDrive:
 
-| Action Name       | Excel Table  | Choice Format                       | Card Placeholder     |
-|-------------------|--------------|-------------------------------------|----------------------|
-| List Projects     | `Projects`   | `{Project Number} - {Project Name}` | `${project_choices}` |
-| List Welders      | `Employees`  | `{Welder Stamp} - {Display Name}`   | `${welder_choices}`  |
-| List WPS          | `WPS`        | `{WPS Number} - {Title}`            | `${wps_choices}`     |
+| Action Name       | Excel Table  | Choice Format                            | Card Placeholder       |
+|-------------------|--------------|------------------------------------------|------------------------|
+| List Projects     | `Projects`   | `{Project Number} - {Project Name}`      | `${project_choices}`   |
+| List Employees    | `Employees`  | `{Employee #} - {Display Name}`          | `${employee_choices}`  |
+| List WPS          | `WPS`        | `{WPS Number} - {Title}`                 | `${wps_choices}`       |
 
-**Filtering welders by project:** The `Employees` table includes a `Project Number`
-column. After the user selects a project, use a **Filter array** action on the
-Employees rows where `Project Number` equals the submitted `project_number` value.
-This reduces the welder dropdown from ~100 entries to only those assigned to the
-selected jobsite (~5-15).
+**Filtering employees by project:** The `Employees` table includes a
+`Project Number` column. After the user selects a project, use a **Filter array**
+action on the Employees rows where `Project Number` equals the submitted
+`project_number` value. This reduces the employee dropdown from ~100 entries to
+only those assigned to the selected jobsite (~5-15).
 
-For a single-card flow (no refresh), pre-populate `${welder_choices}` with all
-welders — the `style: "filtered"` typeahead still makes it easy to find someone.
+For a single-card flow (no refresh), pre-populate `${employee_choices}` with all
+employees — the `style: "filtered"` typeahead still makes it easy to find someone.
 For a two-step flow, post a project-picker card first, then post the full form
-with a filtered welder list.
+with a filtered employee list.
 
 For each choice list, use a **Select** action to transform rows into
 `{"title": "...", "value": "..."}` objects:
@@ -59,9 +60,9 @@ For each choice list, use a **Select** action to transform rows into
 Title:  concat(items('Apply_to_each')?['Project Number'], ' - ', items('Apply_to_each')?['Project Name'])
 Value:  items('Apply_to_each')?['Project Number']
 
-// Welders example (filtered by project)
-Title:  concat(items('Apply_to_each')?['Welder Stamp'], ' - ', items('Apply_to_each')?['Display Name'])
-Value:  items('Apply_to_each')?['Welder Stamp']
+// Employees example (filtered by project)
+Title:  concat(items('Apply_to_each')?['Employee #'], ' - ', items('Apply_to_each')?['Display Name'])
+Value:  items('Apply_to_each')?['Employee #']
 ```
 
 Replace the `${...}` placeholders in the card JSON with the resulting arrays
@@ -77,7 +78,22 @@ shared across all coupons in the request.
 Use a **Filter array** action on the WPS table where `WPS Number` equals the
 submitted `wps_number` value, then read the first matching row.
 
-### 4. Card-to-JSON Field Mapping
+### 4. Employee → Welder Lookup
+
+After submission, check if the selected employee is a registered welder:
+
+1. **Filter** the `Welders` table from `welding-lookups.xlsx` where
+   `Employee #` equals the submitted `employee_number` value.
+2. **If found:** use the welder's `Welder Stamp` and `Display Name` in the
+   JSON. Set `is_new` to `false`.
+3. **If not found:** the employee needs welder registration. Use the
+   employee's number and name from the `Employees` table. Set `is_new`
+   to `true`. The backend will auto-register them via
+   `_lookup_or_register_welder()`.
+
+For the "New Employee" path (manual entry), use the typed fields directly.
+
+### 5. Card-to-JSON Field Mapping
 
 The submit payload uses flat field IDs. Map them to the nested JSON structure
 expected by `validate_cert_request_json()` in `welding/cert_requests.py`:
@@ -88,16 +104,16 @@ expected by `validate_cert_request_json()` in `welding/cert_requests.py`:
   "submitted_by": "@{body('Post_adaptive_card')?['responder']['displayName']}",
   "request_date": "@{utcNow('yyyy-MM-dd')}",
   "welder": {
-    // EXISTING welder (welder_stamp has a value):
-    "stamp": "@{body('Post_adaptive_card')?['data']?['welder_stamp']}",
-    "employee_number": "<lookup from Welders table by stamp>",
-    "name": "<lookup from Welders table by stamp>",
-    "is_new": false,
+    // EXISTING employee (employee_number has a value):
+    "employee_number": "@{body('Post_adaptive_card')?['data']?['employee_number']}",
+    "stamp": "<from Welders table lookup, or empty if not a welder>",
+    "name": "<from Employees table lookup by employee_number>",
+    "is_new": "<true if not found in Welders table>"
 
-    // NEW welder (new_welder_emp_number has a value):
-    "employee_number": "@{body('Post_adaptive_card')?['data']?['new_welder_emp_number']}",
-    "name": "@{concat(body('Post_adaptive_card')?['data']?['new_welder_first_name'], ' ', body('Post_adaptive_card')?['data']?['new_welder_last_name'])}",
-    "is_new": true
+    // NEW employee (new_welder_emp_number has a value):
+    // "employee_number": "@{body('Post_adaptive_card')?['data']?['new_welder_emp_number']}",
+    // "name": "@{concat(first_name, ' ', last_name)}",
+    // "is_new": true
   },
   "project": {
     "number": "@{body('Post_adaptive_card')?['data']?['project_number']}",
@@ -108,11 +124,11 @@ expected by `validate_cert_request_json()` in `welding/cert_requests.py`:
 }
 ```
 
-**Welder mode detection:** Use a Condition action —
-if `welder_stamp` is not empty, use existing-welder mapping; otherwise use
-new-welder mapping.
+**Employee mode detection:** Use a Condition action —
+if `employee_number` is not empty, use existing-employee mapping; otherwise use
+new-employee mapping (from the manual entry fields).
 
-### 5. Build Coupons Array
+### 6. Build Coupons Array
 
 For each coupon slot (1–4), check if `cN_thickness` is non-empty. If so,
 append to the coupons array. The `process`, `wps_number`, `base_material`,
@@ -134,7 +150,7 @@ to `6G` (all processes on this card are non-brazing):
 Repeat for `c2_*`, `c3_*`, `c4_*` — only include coupons where `cN_thickness`
 is not empty.
 
-### 6. Write JSON File
+### 7. Write JSON File
 
 Use **"Create file"** (OneDrive or file system connector) to write the
 composed JSON to `data/automation/incoming/`:
