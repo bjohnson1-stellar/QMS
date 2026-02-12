@@ -135,6 +135,16 @@ def import_wps(
         if len(errors) > 10:
             typer.echo(f"    ... and {len(errors) - 10} more")
 
+    # Auto-refresh lookups Excel so Power Automate picks up new WPS/welders
+    if not dry_run and not validate:
+        try:
+            from qms.welding.export_lookups import export_lookups
+
+            result = export_lookups()
+            typer.echo(f"\n  Lookups refreshed: {result['total_rows']} rows -> {result['output_path']}")
+        except Exception as e:
+            typer.echo(f"\n  Warning: lookups export failed: {e}")
+
 
 @app.command("import-weekly")
 def import_weekly(
