@@ -34,16 +34,32 @@ Use **"When someone responds to an adaptive card"** or post the card via
 Add three **"List rows present in a table"** actions (Excel Online connector)
 pointing at `welding-lookups.xlsx` on OneDrive:
 
-| Action Name       | Excel Table | Choice Format                       | Card Placeholder     |
-|-------------------|-------------|-------------------------------------|----------------------|
-| List Welders      | `Welders`   | `{Welder Stamp} - {Display Name}`   | `${welder_choices}`  |
-| List WPS          | `WPS`       | `{WPS Number} - {Title}`            | `${wps_choices}`     |
-| List Projects     | `Projects`  | `{Project Number} - {Project Name}` | `${project_choices}` |
+| Action Name       | Excel Table  | Choice Format                       | Card Placeholder     |
+|-------------------|--------------|-------------------------------------|----------------------|
+| List Projects     | `Projects`   | `{Project Number} - {Project Name}` | `${project_choices}` |
+| List Welders      | `Employees`  | `{Welder Stamp} - {Display Name}`   | `${welder_choices}`  |
+| List WPS          | `WPS`        | `{WPS Number} - {Title}`            | `${wps_choices}`     |
 
-For each, use a **Select** action to transform rows into `{"title": "...", "value": "..."}` objects:
+**Filtering welders by project:** The `Employees` table includes a `Project Number`
+column. After the user selects a project, use a **Filter array** action on the
+Employees rows where `Project Number` equals the submitted `project_number` value.
+This reduces the welder dropdown from ~100 entries to only those assigned to the
+selected jobsite (~5-15).
+
+For a single-card flow (no refresh), pre-populate `${welder_choices}` with all
+welders — the `style: "filtered"` typeahead still makes it easy to find someone.
+For a two-step flow, post a project-picker card first, then post the full form
+with a filtered welder list.
+
+For each choice list, use a **Select** action to transform rows into
+`{"title": "...", "value": "..."}` objects:
 
 ```
-// Welders example
+// Projects example
+Title:  concat(items('Apply_to_each')?['Project Number'], ' - ', items('Apply_to_each')?['Project Name'])
+Value:  items('Apply_to_each')?['Project Number']
+
+// Welders example (filtered by project)
 Title:  concat(items('Apply_to_each')?['Welder Stamp'], ' - ', items('Apply_to_each')?['Display Name'])
 Value:  items('Apply_to_each')?['Welder Stamp']
 ```

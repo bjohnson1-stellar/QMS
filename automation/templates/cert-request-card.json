@@ -12,10 +12,27 @@
     },
     {
       "type": "TextBlock",
-      "text": "Submit a new weld cert test request. Select an existing welder or register a new one, choose the project, and add up to 4 test coupons.",
+      "text": "Submit a new weld cert test request. Select the project first, then choose a welder assigned to that jobsite, and add up to 4 test coupons.",
       "wrap": true,
       "spacing": "None",
       "isSubtle": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Project",
+      "weight": "Bolder",
+      "size": "Medium",
+      "spacing": "Large",
+      "separator": true
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "project_number",
+      "label": "Project",
+      "placeholder": "Search by number or name...",
+      "style": "filtered",
+      "choices": "${project_choices}",
+      "isRequired": true
     },
     {
       "type": "TextBlock",
@@ -32,16 +49,28 @@
           "type": "Action.ToggleVisibility",
           "title": "Select Existing",
           "targetElements": [
-            { "elementId": "existing_welder_panel", "isVisible": true },
-            { "elementId": "new_welder_panel", "isVisible": false }
+            {
+              "elementId": "existing_welder_panel",
+              "isVisible": true
+            },
+            {
+              "elementId": "new_welder_panel",
+              "isVisible": false
+            }
           ]
         },
         {
           "type": "Action.ToggleVisibility",
           "title": "Register New",
           "targetElements": [
-            { "elementId": "existing_welder_panel", "isVisible": false },
-            { "elementId": "new_welder_panel", "isVisible": true }
+            {
+              "elementId": "existing_welder_panel",
+              "isVisible": false
+            },
+            {
+              "elementId": "new_welder_panel",
+              "isVisible": true
+            }
           ]
         }
       ]
@@ -55,7 +84,7 @@
           "type": "Input.ChoiceSet",
           "id": "welder_stamp",
           "label": "Welder",
-          "placeholder": "Search by stamp or name...",
+          "placeholder": "Search by stamp or name (filtered by project)...",
           "style": "filtered",
           "choices": "${welder_choices}",
           "isRequired": false
@@ -109,23 +138,6 @@
     },
     {
       "type": "TextBlock",
-      "text": "Project",
-      "weight": "Bolder",
-      "size": "Medium",
-      "spacing": "Large",
-      "separator": true
-    },
-    {
-      "type": "Input.ChoiceSet",
-      "id": "project_number",
-      "label": "Project",
-      "placeholder": "Search by number or name...",
-      "style": "filtered",
-      "choices": "${project_choices}",
-      "isRequired": true
-    },
-    {
-      "type": "TextBlock",
       "text": "Coupon 1",
       "weight": "Bolder",
       "size": "Medium",
@@ -146,12 +158,30 @@
               "placeholder": "Select...",
               "isRequired": true,
               "choices": [
-                { "title": "SMAW", "value": "SMAW" },
-                { "title": "GTAW", "value": "GTAW" },
-                { "title": "GMAW", "value": "GMAW" },
-                { "title": "FCAW", "value": "FCAW" },
-                { "title": "SAW", "value": "SAW" },
-                { "title": "GTAW/SMAW", "value": "GTAW/SMAW" }
+                {
+                  "title": "SMAW",
+                  "value": "SMAW"
+                },
+                {
+                  "title": "GTAW",
+                  "value": "GTAW"
+                },
+                {
+                  "title": "GMAW",
+                  "value": "GMAW"
+                },
+                {
+                  "title": "FCAW",
+                  "value": "FCAW"
+                },
+                {
+                  "title": "SAW",
+                  "value": "SAW"
+                },
+                {
+                  "title": "GTAW/SMAW",
+                  "value": "GTAW/SMAW"
+                }
               ]
             }
           ]
@@ -167,18 +197,54 @@
               "placeholder": "Select...",
               "isRequired": true,
               "choices": [
-                { "title": "1G", "value": "1G" },
-                { "title": "2G", "value": "2G" },
-                { "title": "3G", "value": "3G" },
-                { "title": "4G", "value": "4G" },
-                { "title": "5G", "value": "5G" },
-                { "title": "6G", "value": "6G" },
-                { "title": "6GR", "value": "6GR" },
-                { "title": "1F", "value": "1F" },
-                { "title": "2F", "value": "2F" },
-                { "title": "3F", "value": "3F" },
-                { "title": "4F", "value": "4F" },
-                { "title": "5F", "value": "5F" }
+                {
+                  "title": "1G",
+                  "value": "1G"
+                },
+                {
+                  "title": "2G",
+                  "value": "2G"
+                },
+                {
+                  "title": "3G",
+                  "value": "3G"
+                },
+                {
+                  "title": "4G",
+                  "value": "4G"
+                },
+                {
+                  "title": "5G",
+                  "value": "5G"
+                },
+                {
+                  "title": "6G",
+                  "value": "6G"
+                },
+                {
+                  "title": "6GR",
+                  "value": "6GR"
+                },
+                {
+                  "title": "1F",
+                  "value": "1F"
+                },
+                {
+                  "title": "2F",
+                  "value": "2F"
+                },
+                {
+                  "title": "3F",
+                  "value": "3F"
+                },
+                {
+                  "title": "4F",
+                  "value": "4F"
+                },
+                {
+                  "title": "5F",
+                  "value": "5F"
+                }
               ]
             }
           ]
@@ -213,17 +279,50 @@
               "label": "Base Material",
               "placeholder": "Select...",
               "choices": [
-                { "title": "A53", "value": "A53" },
-                { "title": "A106", "value": "A106" },
-                { "title": "A333", "value": "A333" },
-                { "title": "A516", "value": "A516" },
-                { "title": "CS", "value": "CS" },
-                { "title": "A312", "value": "A312" },
-                { "title": "A358", "value": "A358" },
-                { "title": "A240", "value": "A240" },
-                { "title": "SS", "value": "SS" },
-                { "title": "SS304", "value": "SS304" },
-                { "title": "SS316", "value": "SS316" }
+                {
+                  "title": "A53",
+                  "value": "A53"
+                },
+                {
+                  "title": "A106",
+                  "value": "A106"
+                },
+                {
+                  "title": "A333",
+                  "value": "A333"
+                },
+                {
+                  "title": "A516",
+                  "value": "A516"
+                },
+                {
+                  "title": "CS",
+                  "value": "CS"
+                },
+                {
+                  "title": "A312",
+                  "value": "A312"
+                },
+                {
+                  "title": "A358",
+                  "value": "A358"
+                },
+                {
+                  "title": "A240",
+                  "value": "A240"
+                },
+                {
+                  "title": "SS",
+                  "value": "SS"
+                },
+                {
+                  "title": "SS304",
+                  "value": "SS304"
+                },
+                {
+                  "title": "SS316",
+                  "value": "SS316"
+                }
               ]
             }
           ]
@@ -244,18 +343,54 @@
               "placeholder": "Type to filter...",
               "style": "filtered",
               "choices": [
-                { "title": "SMAW: 6010 (E6010)", "value": "6010" },
-                { "title": "SMAW: 6011 (E6011)", "value": "6011" },
-                { "title": "SMAW: 7018 (E7018)", "value": "7018" },
-                { "title": "SMAW: 8018 (E8018)", "value": "8018" },
-                { "title": "SMAW: 8010 (E8010)", "value": "8010" },
-                { "title": "GTAW: ER70S (ER70S-2/ER70S-6)", "value": "ER70S" },
-                { "title": "GTAW: ER70S2 (ER70S-2)", "value": "ER70S2" },
-                { "title": "GTAW: ER70S6 (ER70S-6)", "value": "ER70S6" },
-                { "title": "GTAW: ER80S (ER80S-Ni1)", "value": "ER80S" },
-                { "title": "GTAW: ER308 (ER308L)", "value": "ER308" },
-                { "title": "GTAW: ER309 (ER309L)", "value": "ER309" },
-                { "title": "GTAW: ER316 (ER316L)", "value": "ER316" }
+                {
+                  "title": "SMAW: 6010 (E6010)",
+                  "value": "6010"
+                },
+                {
+                  "title": "SMAW: 6011 (E6011)",
+                  "value": "6011"
+                },
+                {
+                  "title": "SMAW: 7018 (E7018)",
+                  "value": "7018"
+                },
+                {
+                  "title": "SMAW: 8018 (E8018)",
+                  "value": "8018"
+                },
+                {
+                  "title": "SMAW: 8010 (E8010)",
+                  "value": "8010"
+                },
+                {
+                  "title": "GTAW: ER70S (ER70S-2/ER70S-6)",
+                  "value": "ER70S"
+                },
+                {
+                  "title": "GTAW: ER70S2 (ER70S-2)",
+                  "value": "ER70S2"
+                },
+                {
+                  "title": "GTAW: ER70S6 (ER70S-6)",
+                  "value": "ER70S6"
+                },
+                {
+                  "title": "GTAW: ER80S (ER80S-Ni1)",
+                  "value": "ER80S"
+                },
+                {
+                  "title": "GTAW: ER308 (ER308L)",
+                  "value": "ER308"
+                },
+                {
+                  "title": "GTAW: ER309 (ER309L)",
+                  "value": "ER309"
+                },
+                {
+                  "title": "GTAW: ER316 (ER316L)",
+                  "value": "ER316"
+                }
               ]
             }
           ]
@@ -293,17 +428,23 @@
         {
           "type": "Action.ToggleVisibility",
           "title": "+ Add Coupon 2",
-          "targetElements": ["coupon_2_panel"]
+          "targetElements": [
+            "coupon_2_panel"
+          ]
         },
         {
           "type": "Action.ToggleVisibility",
           "title": "+ Add Coupon 3",
-          "targetElements": ["coupon_3_panel"]
+          "targetElements": [
+            "coupon_3_panel"
+          ]
         },
         {
           "type": "Action.ToggleVisibility",
           "title": "+ Add Coupon 4",
-          "targetElements": ["coupon_4_panel"]
+          "targetElements": [
+            "coupon_4_panel"
+          ]
         }
       ]
     },
@@ -333,12 +474,30 @@
                   "label": "Process",
                   "placeholder": "Select...",
                   "choices": [
-                    { "title": "SMAW", "value": "SMAW" },
-                    { "title": "GTAW", "value": "GTAW" },
-                    { "title": "GMAW", "value": "GMAW" },
-                    { "title": "FCAW", "value": "FCAW" },
-                    { "title": "SAW", "value": "SAW" },
-                    { "title": "GTAW/SMAW", "value": "GTAW/SMAW" }
+                    {
+                      "title": "SMAW",
+                      "value": "SMAW"
+                    },
+                    {
+                      "title": "GTAW",
+                      "value": "GTAW"
+                    },
+                    {
+                      "title": "GMAW",
+                      "value": "GMAW"
+                    },
+                    {
+                      "title": "FCAW",
+                      "value": "FCAW"
+                    },
+                    {
+                      "title": "SAW",
+                      "value": "SAW"
+                    },
+                    {
+                      "title": "GTAW/SMAW",
+                      "value": "GTAW/SMAW"
+                    }
                   ]
                 }
               ]
@@ -353,18 +512,54 @@
                   "label": "Position",
                   "placeholder": "Select...",
                   "choices": [
-                    { "title": "1G", "value": "1G" },
-                    { "title": "2G", "value": "2G" },
-                    { "title": "3G", "value": "3G" },
-                    { "title": "4G", "value": "4G" },
-                    { "title": "5G", "value": "5G" },
-                    { "title": "6G", "value": "6G" },
-                    { "title": "6GR", "value": "6GR" },
-                    { "title": "1F", "value": "1F" },
-                    { "title": "2F", "value": "2F" },
-                    { "title": "3F", "value": "3F" },
-                    { "title": "4F", "value": "4F" },
-                    { "title": "5F", "value": "5F" }
+                    {
+                      "title": "1G",
+                      "value": "1G"
+                    },
+                    {
+                      "title": "2G",
+                      "value": "2G"
+                    },
+                    {
+                      "title": "3G",
+                      "value": "3G"
+                    },
+                    {
+                      "title": "4G",
+                      "value": "4G"
+                    },
+                    {
+                      "title": "5G",
+                      "value": "5G"
+                    },
+                    {
+                      "title": "6G",
+                      "value": "6G"
+                    },
+                    {
+                      "title": "6GR",
+                      "value": "6GR"
+                    },
+                    {
+                      "title": "1F",
+                      "value": "1F"
+                    },
+                    {
+                      "title": "2F",
+                      "value": "2F"
+                    },
+                    {
+                      "title": "3F",
+                      "value": "3F"
+                    },
+                    {
+                      "title": "4F",
+                      "value": "4F"
+                    },
+                    {
+                      "title": "5F",
+                      "value": "5F"
+                    }
                   ]
                 }
               ]
@@ -398,17 +593,50 @@
                   "label": "Base Material",
                   "placeholder": "Select...",
                   "choices": [
-                    { "title": "A53", "value": "A53" },
-                    { "title": "A106", "value": "A106" },
-                    { "title": "A333", "value": "A333" },
-                    { "title": "A516", "value": "A516" },
-                    { "title": "CS", "value": "CS" },
-                    { "title": "A312", "value": "A312" },
-                    { "title": "A358", "value": "A358" },
-                    { "title": "A240", "value": "A240" },
-                    { "title": "SS", "value": "SS" },
-                    { "title": "SS304", "value": "SS304" },
-                    { "title": "SS316", "value": "SS316" }
+                    {
+                      "title": "A53",
+                      "value": "A53"
+                    },
+                    {
+                      "title": "A106",
+                      "value": "A106"
+                    },
+                    {
+                      "title": "A333",
+                      "value": "A333"
+                    },
+                    {
+                      "title": "A516",
+                      "value": "A516"
+                    },
+                    {
+                      "title": "CS",
+                      "value": "CS"
+                    },
+                    {
+                      "title": "A312",
+                      "value": "A312"
+                    },
+                    {
+                      "title": "A358",
+                      "value": "A358"
+                    },
+                    {
+                      "title": "A240",
+                      "value": "A240"
+                    },
+                    {
+                      "title": "SS",
+                      "value": "SS"
+                    },
+                    {
+                      "title": "SS304",
+                      "value": "SS304"
+                    },
+                    {
+                      "title": "SS316",
+                      "value": "SS316"
+                    }
                   ]
                 }
               ]
@@ -429,18 +657,54 @@
                   "placeholder": "Type to filter...",
                   "style": "filtered",
                   "choices": [
-                    { "title": "SMAW: 6010 (E6010)", "value": "6010" },
-                    { "title": "SMAW: 6011 (E6011)", "value": "6011" },
-                    { "title": "SMAW: 7018 (E7018)", "value": "7018" },
-                    { "title": "SMAW: 8018 (E8018)", "value": "8018" },
-                    { "title": "SMAW: 8010 (E8010)", "value": "8010" },
-                    { "title": "GTAW: ER70S (ER70S-2/ER70S-6)", "value": "ER70S" },
-                    { "title": "GTAW: ER70S2 (ER70S-2)", "value": "ER70S2" },
-                    { "title": "GTAW: ER70S6 (ER70S-6)", "value": "ER70S6" },
-                    { "title": "GTAW: ER80S (ER80S-Ni1)", "value": "ER80S" },
-                    { "title": "GTAW: ER308 (ER308L)", "value": "ER308" },
-                    { "title": "GTAW: ER309 (ER309L)", "value": "ER309" },
-                    { "title": "GTAW: ER316 (ER316L)", "value": "ER316" }
+                    {
+                      "title": "SMAW: 6010 (E6010)",
+                      "value": "6010"
+                    },
+                    {
+                      "title": "SMAW: 6011 (E6011)",
+                      "value": "6011"
+                    },
+                    {
+                      "title": "SMAW: 7018 (E7018)",
+                      "value": "7018"
+                    },
+                    {
+                      "title": "SMAW: 8018 (E8018)",
+                      "value": "8018"
+                    },
+                    {
+                      "title": "SMAW: 8010 (E8010)",
+                      "value": "8010"
+                    },
+                    {
+                      "title": "GTAW: ER70S (ER70S-2/ER70S-6)",
+                      "value": "ER70S"
+                    },
+                    {
+                      "title": "GTAW: ER70S2 (ER70S-2)",
+                      "value": "ER70S2"
+                    },
+                    {
+                      "title": "GTAW: ER70S6 (ER70S-6)",
+                      "value": "ER70S6"
+                    },
+                    {
+                      "title": "GTAW: ER80S (ER80S-Ni1)",
+                      "value": "ER80S"
+                    },
+                    {
+                      "title": "GTAW: ER308 (ER308L)",
+                      "value": "ER308"
+                    },
+                    {
+                      "title": "GTAW: ER309 (ER309L)",
+                      "value": "ER309"
+                    },
+                    {
+                      "title": "GTAW: ER316 (ER316L)",
+                      "value": "ER316"
+                    }
                   ]
                 }
               ]
@@ -499,12 +763,30 @@
                   "label": "Process",
                   "placeholder": "Select...",
                   "choices": [
-                    { "title": "SMAW", "value": "SMAW" },
-                    { "title": "GTAW", "value": "GTAW" },
-                    { "title": "GMAW", "value": "GMAW" },
-                    { "title": "FCAW", "value": "FCAW" },
-                    { "title": "SAW", "value": "SAW" },
-                    { "title": "GTAW/SMAW", "value": "GTAW/SMAW" }
+                    {
+                      "title": "SMAW",
+                      "value": "SMAW"
+                    },
+                    {
+                      "title": "GTAW",
+                      "value": "GTAW"
+                    },
+                    {
+                      "title": "GMAW",
+                      "value": "GMAW"
+                    },
+                    {
+                      "title": "FCAW",
+                      "value": "FCAW"
+                    },
+                    {
+                      "title": "SAW",
+                      "value": "SAW"
+                    },
+                    {
+                      "title": "GTAW/SMAW",
+                      "value": "GTAW/SMAW"
+                    }
                   ]
                 }
               ]
@@ -519,18 +801,54 @@
                   "label": "Position",
                   "placeholder": "Select...",
                   "choices": [
-                    { "title": "1G", "value": "1G" },
-                    { "title": "2G", "value": "2G" },
-                    { "title": "3G", "value": "3G" },
-                    { "title": "4G", "value": "4G" },
-                    { "title": "5G", "value": "5G" },
-                    { "title": "6G", "value": "6G" },
-                    { "title": "6GR", "value": "6GR" },
-                    { "title": "1F", "value": "1F" },
-                    { "title": "2F", "value": "2F" },
-                    { "title": "3F", "value": "3F" },
-                    { "title": "4F", "value": "4F" },
-                    { "title": "5F", "value": "5F" }
+                    {
+                      "title": "1G",
+                      "value": "1G"
+                    },
+                    {
+                      "title": "2G",
+                      "value": "2G"
+                    },
+                    {
+                      "title": "3G",
+                      "value": "3G"
+                    },
+                    {
+                      "title": "4G",
+                      "value": "4G"
+                    },
+                    {
+                      "title": "5G",
+                      "value": "5G"
+                    },
+                    {
+                      "title": "6G",
+                      "value": "6G"
+                    },
+                    {
+                      "title": "6GR",
+                      "value": "6GR"
+                    },
+                    {
+                      "title": "1F",
+                      "value": "1F"
+                    },
+                    {
+                      "title": "2F",
+                      "value": "2F"
+                    },
+                    {
+                      "title": "3F",
+                      "value": "3F"
+                    },
+                    {
+                      "title": "4F",
+                      "value": "4F"
+                    },
+                    {
+                      "title": "5F",
+                      "value": "5F"
+                    }
                   ]
                 }
               ]
@@ -564,17 +882,50 @@
                   "label": "Base Material",
                   "placeholder": "Select...",
                   "choices": [
-                    { "title": "A53", "value": "A53" },
-                    { "title": "A106", "value": "A106" },
-                    { "title": "A333", "value": "A333" },
-                    { "title": "A516", "value": "A516" },
-                    { "title": "CS", "value": "CS" },
-                    { "title": "A312", "value": "A312" },
-                    { "title": "A358", "value": "A358" },
-                    { "title": "A240", "value": "A240" },
-                    { "title": "SS", "value": "SS" },
-                    { "title": "SS304", "value": "SS304" },
-                    { "title": "SS316", "value": "SS316" }
+                    {
+                      "title": "A53",
+                      "value": "A53"
+                    },
+                    {
+                      "title": "A106",
+                      "value": "A106"
+                    },
+                    {
+                      "title": "A333",
+                      "value": "A333"
+                    },
+                    {
+                      "title": "A516",
+                      "value": "A516"
+                    },
+                    {
+                      "title": "CS",
+                      "value": "CS"
+                    },
+                    {
+                      "title": "A312",
+                      "value": "A312"
+                    },
+                    {
+                      "title": "A358",
+                      "value": "A358"
+                    },
+                    {
+                      "title": "A240",
+                      "value": "A240"
+                    },
+                    {
+                      "title": "SS",
+                      "value": "SS"
+                    },
+                    {
+                      "title": "SS304",
+                      "value": "SS304"
+                    },
+                    {
+                      "title": "SS316",
+                      "value": "SS316"
+                    }
                   ]
                 }
               ]
@@ -595,18 +946,54 @@
                   "placeholder": "Type to filter...",
                   "style": "filtered",
                   "choices": [
-                    { "title": "SMAW: 6010 (E6010)", "value": "6010" },
-                    { "title": "SMAW: 6011 (E6011)", "value": "6011" },
-                    { "title": "SMAW: 7018 (E7018)", "value": "7018" },
-                    { "title": "SMAW: 8018 (E8018)", "value": "8018" },
-                    { "title": "SMAW: 8010 (E8010)", "value": "8010" },
-                    { "title": "GTAW: ER70S (ER70S-2/ER70S-6)", "value": "ER70S" },
-                    { "title": "GTAW: ER70S2 (ER70S-2)", "value": "ER70S2" },
-                    { "title": "GTAW: ER70S6 (ER70S-6)", "value": "ER70S6" },
-                    { "title": "GTAW: ER80S (ER80S-Ni1)", "value": "ER80S" },
-                    { "title": "GTAW: ER308 (ER308L)", "value": "ER308" },
-                    { "title": "GTAW: ER309 (ER309L)", "value": "ER309" },
-                    { "title": "GTAW: ER316 (ER316L)", "value": "ER316" }
+                    {
+                      "title": "SMAW: 6010 (E6010)",
+                      "value": "6010"
+                    },
+                    {
+                      "title": "SMAW: 6011 (E6011)",
+                      "value": "6011"
+                    },
+                    {
+                      "title": "SMAW: 7018 (E7018)",
+                      "value": "7018"
+                    },
+                    {
+                      "title": "SMAW: 8018 (E8018)",
+                      "value": "8018"
+                    },
+                    {
+                      "title": "SMAW: 8010 (E8010)",
+                      "value": "8010"
+                    },
+                    {
+                      "title": "GTAW: ER70S (ER70S-2/ER70S-6)",
+                      "value": "ER70S"
+                    },
+                    {
+                      "title": "GTAW: ER70S2 (ER70S-2)",
+                      "value": "ER70S2"
+                    },
+                    {
+                      "title": "GTAW: ER70S6 (ER70S-6)",
+                      "value": "ER70S6"
+                    },
+                    {
+                      "title": "GTAW: ER80S (ER80S-Ni1)",
+                      "value": "ER80S"
+                    },
+                    {
+                      "title": "GTAW: ER308 (ER308L)",
+                      "value": "ER308"
+                    },
+                    {
+                      "title": "GTAW: ER309 (ER309L)",
+                      "value": "ER309"
+                    },
+                    {
+                      "title": "GTAW: ER316 (ER316L)",
+                      "value": "ER316"
+                    }
                   ]
                 }
               ]
@@ -665,12 +1052,30 @@
                   "label": "Process",
                   "placeholder": "Select...",
                   "choices": [
-                    { "title": "SMAW", "value": "SMAW" },
-                    { "title": "GTAW", "value": "GTAW" },
-                    { "title": "GMAW", "value": "GMAW" },
-                    { "title": "FCAW", "value": "FCAW" },
-                    { "title": "SAW", "value": "SAW" },
-                    { "title": "GTAW/SMAW", "value": "GTAW/SMAW" }
+                    {
+                      "title": "SMAW",
+                      "value": "SMAW"
+                    },
+                    {
+                      "title": "GTAW",
+                      "value": "GTAW"
+                    },
+                    {
+                      "title": "GMAW",
+                      "value": "GMAW"
+                    },
+                    {
+                      "title": "FCAW",
+                      "value": "FCAW"
+                    },
+                    {
+                      "title": "SAW",
+                      "value": "SAW"
+                    },
+                    {
+                      "title": "GTAW/SMAW",
+                      "value": "GTAW/SMAW"
+                    }
                   ]
                 }
               ]
@@ -685,18 +1090,54 @@
                   "label": "Position",
                   "placeholder": "Select...",
                   "choices": [
-                    { "title": "1G", "value": "1G" },
-                    { "title": "2G", "value": "2G" },
-                    { "title": "3G", "value": "3G" },
-                    { "title": "4G", "value": "4G" },
-                    { "title": "5G", "value": "5G" },
-                    { "title": "6G", "value": "6G" },
-                    { "title": "6GR", "value": "6GR" },
-                    { "title": "1F", "value": "1F" },
-                    { "title": "2F", "value": "2F" },
-                    { "title": "3F", "value": "3F" },
-                    { "title": "4F", "value": "4F" },
-                    { "title": "5F", "value": "5F" }
+                    {
+                      "title": "1G",
+                      "value": "1G"
+                    },
+                    {
+                      "title": "2G",
+                      "value": "2G"
+                    },
+                    {
+                      "title": "3G",
+                      "value": "3G"
+                    },
+                    {
+                      "title": "4G",
+                      "value": "4G"
+                    },
+                    {
+                      "title": "5G",
+                      "value": "5G"
+                    },
+                    {
+                      "title": "6G",
+                      "value": "6G"
+                    },
+                    {
+                      "title": "6GR",
+                      "value": "6GR"
+                    },
+                    {
+                      "title": "1F",
+                      "value": "1F"
+                    },
+                    {
+                      "title": "2F",
+                      "value": "2F"
+                    },
+                    {
+                      "title": "3F",
+                      "value": "3F"
+                    },
+                    {
+                      "title": "4F",
+                      "value": "4F"
+                    },
+                    {
+                      "title": "5F",
+                      "value": "5F"
+                    }
                   ]
                 }
               ]
@@ -730,17 +1171,50 @@
                   "label": "Base Material",
                   "placeholder": "Select...",
                   "choices": [
-                    { "title": "A53", "value": "A53" },
-                    { "title": "A106", "value": "A106" },
-                    { "title": "A333", "value": "A333" },
-                    { "title": "A516", "value": "A516" },
-                    { "title": "CS", "value": "CS" },
-                    { "title": "A312", "value": "A312" },
-                    { "title": "A358", "value": "A358" },
-                    { "title": "A240", "value": "A240" },
-                    { "title": "SS", "value": "SS" },
-                    { "title": "SS304", "value": "SS304" },
-                    { "title": "SS316", "value": "SS316" }
+                    {
+                      "title": "A53",
+                      "value": "A53"
+                    },
+                    {
+                      "title": "A106",
+                      "value": "A106"
+                    },
+                    {
+                      "title": "A333",
+                      "value": "A333"
+                    },
+                    {
+                      "title": "A516",
+                      "value": "A516"
+                    },
+                    {
+                      "title": "CS",
+                      "value": "CS"
+                    },
+                    {
+                      "title": "A312",
+                      "value": "A312"
+                    },
+                    {
+                      "title": "A358",
+                      "value": "A358"
+                    },
+                    {
+                      "title": "A240",
+                      "value": "A240"
+                    },
+                    {
+                      "title": "SS",
+                      "value": "SS"
+                    },
+                    {
+                      "title": "SS304",
+                      "value": "SS304"
+                    },
+                    {
+                      "title": "SS316",
+                      "value": "SS316"
+                    }
                   ]
                 }
               ]
@@ -761,18 +1235,54 @@
                   "placeholder": "Type to filter...",
                   "style": "filtered",
                   "choices": [
-                    { "title": "SMAW: 6010 (E6010)", "value": "6010" },
-                    { "title": "SMAW: 6011 (E6011)", "value": "6011" },
-                    { "title": "SMAW: 7018 (E7018)", "value": "7018" },
-                    { "title": "SMAW: 8018 (E8018)", "value": "8018" },
-                    { "title": "SMAW: 8010 (E8010)", "value": "8010" },
-                    { "title": "GTAW: ER70S (ER70S-2/ER70S-6)", "value": "ER70S" },
-                    { "title": "GTAW: ER70S2 (ER70S-2)", "value": "ER70S2" },
-                    { "title": "GTAW: ER70S6 (ER70S-6)", "value": "ER70S6" },
-                    { "title": "GTAW: ER80S (ER80S-Ni1)", "value": "ER80S" },
-                    { "title": "GTAW: ER308 (ER308L)", "value": "ER308" },
-                    { "title": "GTAW: ER309 (ER309L)", "value": "ER309" },
-                    { "title": "GTAW: ER316 (ER316L)", "value": "ER316" }
+                    {
+                      "title": "SMAW: 6010 (E6010)",
+                      "value": "6010"
+                    },
+                    {
+                      "title": "SMAW: 6011 (E6011)",
+                      "value": "6011"
+                    },
+                    {
+                      "title": "SMAW: 7018 (E7018)",
+                      "value": "7018"
+                    },
+                    {
+                      "title": "SMAW: 8018 (E8018)",
+                      "value": "8018"
+                    },
+                    {
+                      "title": "SMAW: 8010 (E8010)",
+                      "value": "8010"
+                    },
+                    {
+                      "title": "GTAW: ER70S (ER70S-2/ER70S-6)",
+                      "value": "ER70S"
+                    },
+                    {
+                      "title": "GTAW: ER70S2 (ER70S-2)",
+                      "value": "ER70S2"
+                    },
+                    {
+                      "title": "GTAW: ER70S6 (ER70S-6)",
+                      "value": "ER70S6"
+                    },
+                    {
+                      "title": "GTAW: ER80S (ER80S-Ni1)",
+                      "value": "ER80S"
+                    },
+                    {
+                      "title": "GTAW: ER308 (ER308L)",
+                      "value": "ER308"
+                    },
+                    {
+                      "title": "GTAW: ER309 (ER309L)",
+                      "value": "ER309"
+                    },
+                    {
+                      "title": "GTAW: ER316 (ER316L)",
+                      "value": "ER316"
+                    }
                   ]
                 }
               ]
