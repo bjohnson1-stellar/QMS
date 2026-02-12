@@ -817,8 +817,9 @@ def get_settings(conn: Optional[sqlite3.Connection] = None) -> Dict[str, Any]:
         if not row:
             c.execute(
                 "INSERT INTO budget_settings (id, company_name, default_hourly_rate, "
-                "working_hours_per_month, fiscal_year_start_month, gmp_weight_multiplier) "
-                "VALUES (1, 'My Company', 150.0, 176, 1, 1.5)"
+                "working_hours_per_month, fiscal_year_start_month, gmp_weight_multiplier, "
+                "max_hours_per_week) "
+                "VALUES (1, 'My Company', 150.0, 176, 1, 1.5, 40.0)"
             )
             c.commit()
             row = c.execute("SELECT * FROM budget_settings WHERE id = 1").fetchone()
@@ -838,17 +839,19 @@ def update_settings(
     working_hours_per_month: int = 176,
     fiscal_year_start_month: int = 1,
     gmp_weight_multiplier: float = 1.5,
+    max_hours_per_week: float = 40.0,
 ) -> None:
     conn.execute(
         """
         UPDATE budget_settings
         SET company_name=?, default_hourly_rate=?, working_hours_per_month=?,
             fiscal_year_start_month=?, gmp_weight_multiplier=?,
+            max_hours_per_week=?,
             updated_at=CURRENT_TIMESTAMP
         WHERE id=1
         """,
         (company_name, default_hourly_rate, working_hours_per_month,
-         fiscal_year_start_month, gmp_weight_multiplier),
+         fiscal_year_start_month, gmp_weight_multiplier, max_hours_per_week),
     )
     conn.commit()
 
@@ -1686,17 +1689,48 @@ def _assign_days_to_jobs(
             day_counts[d] += 1
 
 
+def _group_days_by_week(
+    working_days: List[date],
+) -> List[Dict[str, Any]]:
+    """Group M-F working days into ISO weeks.
+
+    Returns list of ``{'week_key': '2026-W06', 'days': [date, ...]}``.
+    """
+    weeks: List[Dict[str, Any]] = []
+    current_key: Optional[str] = None
+    current_days: List[date] = []
+    for d in working_days:
+        iso_yr, iso_wk, _ = d.isocalendar()
+        key = f"{iso_yr}-W{iso_wk:02d}"
+        if key != current_key:
+            if current_days:
+                weeks.append({"week_key": current_key, "days": current_days})
+            current_key = key
+            current_days = []
+        current_days.append(d)
+    if current_days:
+        weeks.append({"week_key": current_key, "days": current_days})
+    return weeks
+
+
 def distribute_projection_hours(
     conn: sqlite3.Connection, snapshot_id: int
 ) -> Dict[str, Any]:
     """Distribute a snapshot's job-level hours across M-F working days.
 
-    Each day has at most ``MAX_ENTRIES_PER_DAY`` job entries (default 3).
-    Jobs are rotated across days proportional to their hours — big jobs
-    appear on more days, small jobs on fewer.  Hours within a job's
-    assigned days use the floor-and-spread algorithm with 0.5-hr rounding.
+    Schedules week-by-week so that no week exceeds ``max_hours_per_week``
+    (from budget_settings, default 40).  Each day has at most
+    ``MAX_ENTRIES_PER_DAY`` job entries (default 3).
 
-    Returns a day-by-day schedule suitable for UKG timecard automation.
+    Algorithm:
+      1. Group working days into ISO weeks.
+      2. Budget each week proportionally by its number of days, capped at
+         ``max_hours_per_week``.  Excess is redistributed to under-cap weeks.
+      3. Within each week, allocate per-job hours proportionally, assign
+         jobs to days (max 3/day), then floor-and-spread with 0.5 rounding.
+      4. The last week uses each job's remaining hours (capped by the
+         weekly budget) to absorb rounding drift.  If total hours exceed
+         weekly capacity, undistributed hours generate a warning.
     """
     snapshot = get_snapshot_with_details(conn, snapshot_id)
     if not snapshot:
@@ -1708,6 +1742,9 @@ def distribute_projection_hours(
     ).fetchone()
     if not period:
         return {"error": "Period not found"}
+
+    settings = get_settings(conn)
+    max_hrs_week = settings.get("max_hours_per_week", 40.0)
 
     working_days = _get_working_days_mf(period["year"], period["month"])
     num_days = len(working_days)
@@ -1728,57 +1765,151 @@ def distribute_projection_hours(
                     "scope_name": detail.get("scope_name", ""),
                 })
 
-    # Phase 1: Assign each job to a subset of days (max 3 per day)
-    _assign_days_to_jobs(jobs, num_days)
+    total_job_hours = sum(j["hours"] for j in jobs)
+    if not jobs or num_days == 0:
+        return {
+            "snapshot_id": snapshot_id,
+            "period": f"{period['year']}-{period['month']:02d}",
+            "schedule": [],
+            "weekly_totals": {},
+            "total_hours": 0,
+            "num_working_days": num_days,
+            "num_jobs": 0,
+            "max_entries_per_day": MAX_ENTRIES_PER_DAY,
+            "max_hours_per_week": max_hrs_week,
+            "warnings": [],
+        }
 
-    # Phase 2: Distribute each job's hours across its assigned days only
-    for job in jobs:
-        n_assigned = len(job["assigned_days"])
-        job["daily_hours"] = _distribute_single_job(job["hours"], n_assigned)
+    # ── Phase 1: Group days into weeks and budget each week ──
+    week_groups = _group_days_by_week(working_days)
+    week_budgets: List[float] = []
+    for wg in week_groups:
+        share = total_job_hours * len(wg["days"]) / num_days
+        week_budgets.append(min(share, max_hrs_week))
 
-    # Phase 3: Build the day-by-day schedule
+    # Redistribute any excess from capped weeks to under-cap weeks
+    allocated = sum(week_budgets)
+    shortfall = total_job_hours - allocated
+    warnings: List[str] = []
+    if shortfall > 0.01:
+        for i, wg in enumerate(week_groups):
+            room = max_hrs_week - week_budgets[i]
+            if room > 0 and shortfall > 0:
+                add = min(room, shortfall)
+                week_budgets[i] += add
+                shortfall -= add
+        if shortfall > 0.5:
+            warnings.append(
+                f"Cannot fit {shortfall:.1f} hrs within {max_hrs_week}-hour weekly cap"
+            )
+
+    # ── Phase 2: Schedule each week independently ──
     schedule: List[Dict[str, Any]] = []
-    for day_idx, day_date in enumerate(working_days):
-        entries = []
-        day_total = 0.0
+    weekly_totals: Dict[str, float] = {}
+    job_allocated: Dict[str, float] = {j["job_code"]: 0.0 for j in jobs}
+
+    for w_idx, wg in enumerate(week_groups):
+        week_budget = week_budgets[w_idx]
+        week_days = wg["days"]
+        n_week_days = len(week_days)
+        is_last_week = w_idx == len(week_groups) - 1
+
+        # Calculate per-job hours for this week
+        week_jobs: List[Dict[str, Any]] = []
         for job in jobs:
-            if day_idx not in job["assigned_days"]:
+            remaining = job["hours"] - job_allocated[job["job_code"]]
+            if remaining < 0.25:
                 continue
-            pos = job["assigned_days"].index(day_idx)
-            hrs = job["daily_hours"][pos]
+            if is_last_week:
+                # Last week: allocate remaining hours for this job
+                raw = remaining
+            else:
+                # Proportional share, capped at what the job still needs
+                raw = week_budget * job["hours"] / total_job_hours if total_job_hours > 0 else 0
+                raw = min(raw, remaining)
+            hrs = round(raw / 0.5) * 0.5
+            hrs = max(0.0, hrs)
             if hrs > 0:
-                entries.append({
+                week_jobs.append({
+                    "allocation_id": job["allocation_id"],
                     "job_code": job["job_code"],
                     "hours": hrs,
                     "project_name": job["project_name"],
                     "project_code": job["project_code"],
                     "bu_code": job["bu_code"],
                     "scope_name": job["scope_name"],
-                    "allocation_id": job["allocation_id"],
                 })
-                day_total += hrs
-        schedule.append({
-            "date": day_date.isoformat(),
-            "weekday": day_date.strftime("%a"),
-            "entries": entries,
-            "day_total": round(day_total, 2),
-        })
 
-    # Phase 4: Weekly totals and 40-hour validation
-    weekly_totals: Dict[str, float] = {}
-    warnings: List[str] = []
-    for day in schedule:
-        iso_week = f"{period['year']}-W{date.fromisoformat(day['date']).isocalendar()[1]:02d}"
-        weekly_totals[iso_week] = round(
-            weekly_totals.get(iso_week, 0) + day["day_total"], 2
-        )
-    for week, total in weekly_totals.items():
-        if total > 40:
-            warnings.append(f"{week}: {total:.1f} hrs exceeds 40-hour cap")
+        # Enforce weekly budget cap — scale down if over
+        wj_total = sum(j["hours"] for j in week_jobs)
+        if week_jobs and wj_total > week_budget + 0.01:
+            scale = week_budget / wj_total
+            for j in week_jobs:
+                j["hours"] = round(j["hours"] * scale / 0.5) * 0.5
+            # Re-adjust largest to hit budget after rounding
+            wj_total = sum(j["hours"] for j in week_jobs)
+            diff = round((week_budget - wj_total) / 0.5) * 0.5
+            if abs(diff) >= 0.5:
+                week_jobs.sort(key=lambda j: j["hours"], reverse=True)
+                week_jobs[0]["hours"] = max(0.5, week_jobs[0]["hours"] + diff)
+        elif week_jobs and not is_last_week:
+            # Normal weeks: nudge largest to fill budget exactly
+            diff = round((week_budget - wj_total) / 0.5) * 0.5
+            if abs(diff) >= 0.5:
+                week_jobs.sort(key=lambda j: j["hours"], reverse=True)
+                week_jobs[0]["hours"] = max(0.5, week_jobs[0]["hours"] + diff)
+
+        # Assign jobs to days within this week (max 3/day)
+        _assign_days_to_jobs(week_jobs, n_week_days, MAX_ENTRIES_PER_DAY)
+
+        # Distribute each job's weekly hours across its assigned days
+        for job in week_jobs:
+            job["daily_hours"] = _distribute_single_job(
+                job["hours"], len(job["assigned_days"])
+            )
+
+        # Build daily schedule entries
+        week_total = 0.0
+        for d_idx, day_date in enumerate(week_days):
+            entries = []
+            day_total = 0.0
+            for job in week_jobs:
+                if d_idx not in job["assigned_days"]:
+                    continue
+                pos = job["assigned_days"].index(d_idx)
+                hrs = job["daily_hours"][pos]
+                if hrs > 0:
+                    entries.append({
+                        "job_code": job["job_code"],
+                        "hours": hrs,
+                        "project_name": job["project_name"],
+                        "project_code": job["project_code"],
+                        "bu_code": job["bu_code"],
+                        "scope_name": job["scope_name"],
+                        "allocation_id": job["allocation_id"],
+                    })
+                    day_total += hrs
+                    job_allocated[job["job_code"]] += hrs
+            schedule.append({
+                "date": day_date.isoformat(),
+                "weekday": day_date.strftime("%a"),
+                "entries": entries,
+                "day_total": round(day_total, 2),
+            })
+            week_total += day_total
+
+        weekly_totals[wg["week_key"]] = round(week_total, 2)
+
+    # ── Phase 3: Validation ──
+    for week_key, total in weekly_totals.items():
+        if total > max_hrs_week + 0.01:
+            warnings.append(f"{week_key}: {total:.1f} hrs exceeds {max_hrs_week}-hour cap")
 
     max_entries = max((len(d["entries"]) for d in schedule), default=0)
     if max_entries > MAX_ENTRIES_PER_DAY:
-        warnings.append(f"Some days have {max_entries} entries (cap is {MAX_ENTRIES_PER_DAY})")
+        warnings.append(
+            f"Some days have {max_entries} entries (cap is {MAX_ENTRIES_PER_DAY})"
+        )
 
     return {
         "snapshot_id": snapshot_id,
@@ -1789,5 +1920,6 @@ def distribute_projection_hours(
         "num_working_days": num_days,
         "num_jobs": len(jobs),
         "max_entries_per_day": MAX_ENTRIES_PER_DAY,
+        "max_hours_per_week": max_hrs_week,
         "warnings": warnings,
     }

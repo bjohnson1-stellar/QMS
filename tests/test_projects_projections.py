@@ -12,6 +12,7 @@ from qms.projects.budget import (
     _assign_days_to_jobs,
     _distribute_single_job,
     _get_working_days_mf,
+    _group_days_by_week,
     activate_snapshot,
     bulk_toggle_period_jobs,
     calculate_projection,
@@ -797,6 +798,22 @@ class TestAssignDaysToJobs:
             assert sum(daily) == pytest.approx(job["hours"])
 
 
+class TestGroupDaysByWeek:
+    def test_february_2026_has_correct_weeks(self):
+        days = _get_working_days_mf(2026, 2)
+        weeks = _group_days_by_week(days)
+        # Feb 2026: W06 (2-6), W07 (9-13), W08 (16-20), W09 (23-27) = 4 full weeks
+        assert len(weeks) == 4
+        assert all(len(w["days"]) == 5 for w in weeks)
+
+    def test_month_with_partial_weeks(self):
+        """January 2026 starts on Thursday → W01 has 2 days."""
+        days = _get_working_days_mf(2026, 1)
+        weeks = _group_days_by_week(days)
+        assert len(weeks[0]["days"]) == 2  # Thu Jan 1, Fri Jan 2
+        assert weeks[0]["week_key"] == "2026-W01"
+
+
 class TestGetWorkingDaysMF:
     def test_february_2026(self):
         days = _get_working_days_mf(2026, 2)
@@ -1001,3 +1018,36 @@ class TestDistributeProjectionHours:
                     assert job_totals[detail["job_code"]] == pytest.approx(
                         detail["allocated_hours"]
                     ), f"Hour mismatch for {detail['job_code']}"
+
+    def test_weekly_hours_respect_cap(self, memory_db):
+        """No week should exceed the configured max_hours_per_week."""
+        snap, period, calc = self._make_snapshot_with_details(memory_db)
+        result = distribute_projection_hours(memory_db, snap["id"])
+        max_cap = result["max_hours_per_week"]
+        for week_key, total in result["weekly_totals"].items():
+            assert total <= max_cap + 0.01, (
+                f"{week_key}: {total} hrs exceeds cap of {max_cap}"
+            )
+
+    def test_custom_max_hours_per_week(self, memory_db):
+        """Changing max_hours_per_week in settings is respected."""
+        from qms.projects.budget import update_settings
+        _seed_settings(memory_db)
+        # Lower the weekly cap to 32 hours
+        settings = get_settings(memory_db)
+        update_settings(
+            memory_db,
+            company_name=settings["company_name"],
+            default_hourly_rate=settings["default_hourly_rate"],
+            working_hours_per_month=settings["working_hours_per_month"],
+            fiscal_year_start_month=settings["fiscal_year_start_month"],
+            gmp_weight_multiplier=settings["gmp_weight_multiplier"],
+            max_hours_per_week=32.0,
+        )
+        snap, period, calc = self._make_snapshot_with_details(memory_db)
+        result = distribute_projection_hours(memory_db, snap["id"])
+        assert result["max_hours_per_week"] == 32.0
+        for week_key, total in result["weekly_totals"].items():
+            assert total <= 32.0 + 0.01, (
+                f"{week_key}: {total} hrs exceeds custom cap of 32"
+            )

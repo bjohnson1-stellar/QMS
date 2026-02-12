@@ -180,6 +180,7 @@ CREATE TABLE IF NOT EXISTS budget_settings (
     working_hours_per_month INTEGER DEFAULT 176,
     fiscal_year_start_month INTEGER DEFAULT 1,
     gmp_weight_multiplier REAL NOT NULL DEFAULT 1.5,
+    max_hours_per_week REAL NOT NULL DEFAULT 40.0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

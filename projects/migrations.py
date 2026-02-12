@@ -320,6 +320,18 @@ def migrate_projection_overhaul(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def migrate_add_max_hours_per_week(conn: sqlite3.Connection) -> None:
+    """Add max_hours_per_week to budget_settings for configurable weekly cap."""
+    if _table_exists(conn, "budget_settings") and not _column_exists(
+        conn, "budget_settings", "max_hours_per_week"
+    ):
+        conn.execute(
+            "ALTER TABLE budget_settings ADD COLUMN max_hours_per_week REAL NOT NULL DEFAULT 40.0"
+        )
+        logger.info("Added column budget_settings.max_hours_per_week")
+        conn.commit()
+
+
 def run_all_migrations() -> None:
     """Run all incremental migrations against the active database."""
     with get_db() as conn:
@@ -332,3 +344,4 @@ def run_all_migrations() -> None:
         migrate_allocations_add_job_fields(conn)
         migrate_add_project_gmp(conn)
         migrate_projection_overhaul(conn)
+        migrate_add_max_hours_per_week(conn)
