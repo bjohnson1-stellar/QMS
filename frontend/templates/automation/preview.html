@@ -176,6 +176,33 @@
     border-radius: 4px;
     font-size: 0.8rem;
 }
+.wps-checklist {
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: var(--surface, #1a1a2e);
+    padding: 0.25rem 0;
+}
+.wps-checklist label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+}
+.wps-checklist label:hover {
+    background: rgba(91,95,199,0.15);
+}
+.wps-checklist input[type="checkbox"] {
+    accent-color: #5b5fc7;
+    width: auto;
+}
 </style>
 {% endblock %}
 
@@ -204,10 +231,7 @@
             </div>
             <div class="control-group">
                 <label>Selected WPS</label>
-                <select id="sim-wps" multiple size="5" onchange="onSimWpsChange()" style="width:100%; padding:0.35rem; background:var(--surface,#1a1a2e); color:var(--text,#e0e0e0); border:1px solid var(--border,#333); border-radius:6px; font-size:0.85rem;">
-                    <option value="">Loading...</option>
-                </select>
-                <small style="color:#888; font-size:0.75rem;">Ctrl+click to select multiple</small>
+                <div id="sim-wps" class="wps-checklist">Loading...</div>
             </div>
         </div>
 
@@ -287,16 +311,20 @@ async function fetchAll() {
         sel.appendChild(opt);
     });
 
-    // Populate sim-wps multi-select
-    const wpsSel = document.getElementById('sim-wps');
+    // Populate sim-wps checklist
+    const wpsDiv = document.getElementById('sim-wps');
     const prevSelected = selectedWpsList.slice();
-    wpsSel.innerHTML = '';
+    wpsDiv.innerHTML = '';
     wps.choices.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.value;
-        opt.textContent = c.title;
-        if (prevSelected.includes(c.value)) opt.selected = true;
-        wpsSel.appendChild(opt);
+        const lbl = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = c.value;
+        cb.checked = prevSelected.includes(c.value);
+        cb.addEventListener('change', onSimWpsChange);
+        lbl.appendChild(cb);
+        lbl.appendChild(document.createTextNode(c.title));
+        wpsDiv.appendChild(lbl);
     });
 }
 
@@ -446,8 +474,8 @@ async function onSimJobChange() {
 }
 
 function onSimWpsChange() {
-    const sel = document.getElementById('sim-wps');
-    selectedWpsList = Array.from(sel.selectedOptions).map(o => o.value);
+    const checks = document.querySelectorAll('#sim-wps input[type="checkbox"]:checked');
+    selectedWpsList = Array.from(checks).map(cb => cb.value);
     if (currentStep === 2) rerender();
 }
 
