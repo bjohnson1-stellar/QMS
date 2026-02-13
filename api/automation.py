@@ -99,10 +99,7 @@ def api_employees():
         rows = conn.execute(sql, params).fetchall()
 
     choices = [
-        {
-            "title": f"{r['display_name']} ({r['employee_number'].replace('EMP-', '')})",
-            "value": r["employee_number"],
-        }
+        {"title": r["display_name"], "value": r["employee_number"]}
         for r in rows
     ]
     details = {
