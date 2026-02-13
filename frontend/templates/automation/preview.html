@@ -204,7 +204,10 @@
             </div>
             <div class="control-group">
                 <label>Selected WPS</label>
-                <div id="sim-wps-tags">None selected</div>
+                <select id="sim-wps" multiple size="5" onchange="onSimWpsChange()" style="width:100%; padding:0.35rem; background:var(--surface,#1a1a2e); color:var(--text,#e0e0e0); border:1px solid var(--border,#333); border-radius:6px; font-size:0.85rem;">
+                    <option value="">Loading...</option>
+                </select>
+                <small style="color:#888; font-size:0.75rem;">Ctrl+click to select multiple</small>
             </div>
         </div>
 
@@ -282,6 +285,18 @@ async function fetchAll() {
         opt.value = c.value;
         opt.textContent = c.title;
         sel.appendChild(opt);
+    });
+
+    // Populate sim-wps multi-select
+    const wpsSel = document.getElementById('sim-wps');
+    const prevSelected = selectedWpsList.slice();
+    wpsSel.innerHTML = '';
+    wps.choices.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.value;
+        opt.textContent = c.title;
+        if (prevSelected.includes(c.value)) opt.selected = true;
+        wpsSel.appendChild(opt);
     });
 }
 
@@ -428,6 +443,12 @@ function updateWpsTags() {
 async function onSimJobChange() {
     selectedJob = document.getElementById('sim-job').value;
     if (currentStep === 2) await rerender();
+}
+
+function onSimWpsChange() {
+    const sel = document.getElementById('sim-wps');
+    selectedWpsList = Array.from(sel.selectedOptions).map(o => o.value);
+    if (currentStep === 2) rerender();
 }
 
 // ── Main render orchestrator ──────────────────────────
