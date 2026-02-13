@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+{% block title %}Card Preview — QMS{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Layout ─────────────────────────────────────────── */
+.preview-wrapper {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+.preview-controls {
+    flex: 0 0 280px;
+    position: sticky;
+    top: 1rem;
+}
+.preview-main {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ── Card container (Teams-like dark theme) ────────── */
+.card-frame {
+    background: #292929;
+    border-radius: 8px;
+    padding: 16px;
+    max-width: 520px;
+    margin: 0 auto;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.card-frame .ac-adaptiveCard {
+    background: #1e1e1e !important;
+    border-radius: 6px;
+}
+/* Override AC default styles for dark mode */
+.card-frame .ac-textBlock {
+    color: #e0e0e0 !important;
+}
+.card-frame .ac-input {
+    background: #333 !important;
+    color: #e0e0e0 !important;
+    border-color: #555 !important;
+}
+.card-frame .ac-pushButton {
+    background: #5b5fc7 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 6px 16px !important;
+    cursor: pointer;
+}
+.card-frame .ac-pushButton:hover {
+    background: #4a4eb5 !important;
+}
+
+/* ── Controls panel ────────────────────────────────── */
+.control-group {
+    margin-bottom: 1.25rem;
+}
+.control-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.control-group select,
+.control-group input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border, #333);
+    border-radius: 6px;
+    background: var(--surface, #1a1a2e);
+    color: var(--text, #e0e0e0);
+    font-size: 0.9rem;
+}
+.control-group select:focus,
+.control-group input:focus {
+    outline: none;
+    border-color: #5b5fc7;
+}
+
+/* ── JSON panel ────────────────────────────────────── */
+.json-panel {
+    margin-top: 2rem;
+}
+.json-panel summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0.5rem 0;
+    color: var(--text-secondary, #888);
+}
+.json-panel pre {
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 1rem;
+    max-height: 500px;
+    overflow: auto;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: #b5cea8;
+}
+
+/* ── Status bar ────────────────────────────────────── */
+.status-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary, #888);
+}
+.status-bar .badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #2a3a2a;
+    color: #8cc88c;
+    font-weight: 500;
+}
+.status-bar .badge.warn {
+    background: #3a3a2a;
+    color: #c8c88c;
+}
+
+/* ── Step indicator ────────────────────────────────── */
+.step-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+}
+.step-tab {
+    flex: 1;
+    text-align: center;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    border: 1px solid #333;
+    background: transparent;
+    color: var(--text-secondary, #888);
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+}
+.step-tab:first-child { border-radius: 6px 0 0 6px; }
+.step-tab:last-child { border-radius: 0 6px 6px 0; }
+.step-tab.active {
+    background: #5b5fc7;
+    color: white;
+    border-color: #5b5fc7;
+}
+.step-tab:hover:not(.active) {
+    background: rgba(91,95,199,0.15);
+}
+
+/* ── Sim controls (step 2 params) ──────────────────── */
+.sim-params {
+    padding: 0.75rem;
+    border: 1px dashed #444;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    background: rgba(91,95,199,0.05);
+}
+.sim-params h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.8rem;
+    color: #5b5fc7;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.sim-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 2px;
+    background: #333;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Adaptive Card Preview</h1>
+<p style="color: var(--text-secondary, #888); margin-bottom: 1.5rem;">
+    Live preview with database data. Cards render as they appear in Teams.
+</p>
+
+<div class="preview-wrapper">
+    <!-- Left: Controls -->
+    <div class="preview-controls">
+        <div class="step-tabs">
+            <div class="step-tab active" data-step="1" onclick="switchStep(1)">Step 1</div>
+            <div class="step-tab" data-step="2" onclick="switchStep(2)">Step 2</div>
+        </div>
+
+        <!-- Step 2 simulation params -->
+        <div id="sim-params" class="sim-params" style="display:none;">
+            <h4>Simulated Step 1 Response</h4>
+            <div class="control-group">
+                <label>Job Number</label>
+                <select id="sim-job" onchange="onSimJobChange()">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Selected WPS</label>
+                <div id="sim-wps-tags">None selected</div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span>Jobs: <span id="stat-jobs" class="badge">-</span></span>
+            <span>Employees: <span id="stat-emps" class="badge">-</span></span>
+            <span>WPS: <span id="stat-wps" class="badge">-</span></span>
+        </div>
+
+        <div class="control-group">
+            <label>Theme</label>
+            <select id="theme-select" onchange="rerender()">
+                <option value="dark">Teams Dark</option>
+                <option value="light">Teams Light</option>
+            </select>
+        </div>
+
+        <button onclick="rerender()" style="width:100%; padding:0.5rem; border-radius:6px; background:#5b5fc7; color:white; border:none; cursor:pointer; font-weight:500;">
+            Refresh Data
+        </button>
+    </div>
+
+    <!-- Right: Card preview -->
+    <div class="preview-main">
+        <div id="card-frame" class="card-frame">
+            <div id="card-container" style="padding:8px;">Loading...</div>
+        </div>
+
+        <details class="json-panel">
+            <summary>Card JSON (expanded)</summary>
+            <pre id="json-output">{}</pre>
+        </details>
+
+        <details class="json-panel">
+            <summary>Data Context</summary>
+            <pre id="data-output">{}</pre>
+        </details>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Adaptive Cards SDK -->
+<script src="https://unpkg.com/adaptivecards@3.0.4/dist/adaptivecards.min.js"></script>
+<script src="https://unpkg.com/adaptivecards-templating@2.3.1/dist/adaptivecards-templating.min.js"></script>
+<script>
+// ── State ─────────────────────────────────────────────
+let currentStep = 1;
+let jobsData = {choices: [], details: {}};
+let employeesData = {choices: [], details: {}};
+let wpsData = {choices: [], details: {}};
+let selectedJob = '';
+let selectedWpsList = [];
+
+// ── Data fetching ─────────────────────────────────────
+async function fetchAll() {
+    const [jobs, emps, wps] = await Promise.all([
+        fetch('/automation/api/jobs').then(r => r.json()),
+        fetch('/automation/api/employees').then(r => r.json()),
+        fetch('/automation/api/wps').then(r => r.json()),
+    ]);
+    jobsData = jobs;
+    employeesData = emps;
+    wpsData = wps;
+
+    document.getElementById('stat-jobs').textContent = jobs.choices.length;
+    document.getElementById('stat-emps').textContent = emps.count || emps.choices.length;
+    document.getElementById('stat-wps').textContent = wps.choices.length;
+
+    // Populate sim-job dropdown
+    const sel = document.getElementById('sim-job');
+    sel.innerHTML = '<option value="">-- Select job --</option>';
+    jobs.choices.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.value;
+        opt.textContent = c.title;
+        sel.appendChild(opt);
+    });
+}
+
+async function fetchFilteredEmployees(jobNumber) {
+    const url = jobNumber
+        ? `/automation/api/employees?job_number=${encodeURIComponent(jobNumber)}`
+        : '/automation/api/employees';
+    const data = await fetch(url).then(r => r.json());
+    return data;
+}
+
+async function fetchCard(name) {
+    return fetch(`/automation/api/card/${encodeURIComponent(name)}`).then(r => r.json());
+}
+
+// ── Card rendering ────────────────────────────────────
+function renderCard(cardJson, dataContext) {
+    const container = document.getElementById('card-container');
+    container.innerHTML = '';
+
+    // Template expansion
+    let expandedCard;
+    try {
+        const template = new ACData.Template(cardJson);
+        const ctx = new ACData.EvaluationContext();
+        ctx.$root = dataContext;
+        expandedCard = template.expand(ctx);
+    } catch (e) {
+        // If templating fails, use raw card
+        console.warn('Template expansion failed, using raw:', e);
+        expandedCard = cardJson;
+    }
+
+    // Show JSON
+    document.getElementById('json-output').textContent = JSON.stringify(expandedCard, null, 2);
+    document.getElementById('data-output').textContent = JSON.stringify(dataContext, null, 2);
+
+    // Render with Adaptive Cards SDK
+    const adaptiveCard = new AdaptiveCards.AdaptiveCard();
+
+    // Host config for Teams-like appearance
+    const theme = document.getElementById('theme-select').value;
+    adaptiveCard.hostConfig = new AdaptiveCards.HostConfig(
+        theme === 'dark' ? darkHostConfig : lightHostConfig
+    );
+
+    // Handle submit actions
+    adaptiveCard.onExecuteAction = function(action) {
+        if (action instanceof AdaptiveCards.SubmitAction) {
+            const data = action.data || {};
+            const inputs = adaptiveCard.getAllInputs();
+            const submission = {...data};
+            inputs.forEach(input => {
+                if (input.id && input.value !== undefined) {
+                    submission[input.id] = input.value;
+                }
+            });
+
+            console.log('Card submission:', submission);
+
+            // If Step 1 submit, capture and switch to Step 2
+            if (submission.action === 'select_project' || currentStep === 1) {
+                selectedJob = submission.project_number || submission.job_number || '';
+                // Capture WPS selections
+                selectedWpsList = [];
+                for (let i = 1; i <= 5; i++) {
+                    const wps = submission[`wps_${i}`] || submission[`wps_number`];
+                    if (wps) selectedWpsList.push(wps);
+                }
+                if (selectedWpsList.length === 0 && submission.wps_number) {
+                    selectedWpsList.push(submission.wps_number);
+                }
+
+                // Update sim controls
+                document.getElementById('sim-job').value = selectedJob;
+                updateWpsTags();
+
+                // Switch to Step 2
+                switchStep(2);
+                return;
+            }
+
+            // Step 2 submit — show the full payload
+            alert('Submission captured! Check console for payload.\n\n' +
+                  JSON.stringify(submission, null, 2));
+        }
+    };
+
+    try {
+        adaptiveCard.parse(expandedCard);
+        const rendered = adaptiveCard.render();
+        if (rendered) {
+            container.appendChild(rendered);
+        } else {
+            container.innerHTML = '<p style="color:#f44;">Card render returned null</p>';
+        }
+    } catch (e) {
+        container.innerHTML = `<p style="color:#f44;">Render error: ${e.message}</p>`;
+        console.error('Card render error:', e);
+    }
+}
+
+// ── Step switching ────────────────────────────────────
+async function switchStep(step) {
+    currentStep = step;
+    document.querySelectorAll('.step-tab').forEach(t => {
+        t.classList.toggle('active', parseInt(t.dataset.step) === step);
+    });
+
+    document.getElementById('sim-params').style.display = step === 2 ? 'block' : 'none';
+
+    await rerender();
+}
+
+function updateWpsTags() {
+    const container = document.getElementById('sim-wps-tags');
+    if (selectedWpsList.length === 0) {
+        container.innerHTML = '<span style="color:#888;">None selected</span>';
+    } else {
+        container.innerHTML = selectedWpsList
+            .map(w => `<span class="sim-tag">${w}</span>`)
+            .join('');
+    }
+}
+
+async function onSimJobChange() {
+    selectedJob = document.getElementById('sim-job').value;
+    if (currentStep === 2) await rerender();
+}
+
+// ── Main render orchestrator ──────────────────────────
+async function rerender() {
+    await fetchAll();
+
+    if (currentStep === 1) {
+        await renderStep1();
+    } else {
+        await renderStep2();
+    }
+}
+
+async function renderStep1() {
+    let card;
+    try {
+        card = await fetchCard('cert-request-card-step1');
+    } catch (e) {
+        document.getElementById('card-container').innerHTML =
+            '<p style="color:#f44;">Step 1 card template not found</p>';
+        return;
+    }
+
+    const dataContext = {
+        project_choices: jobsData.choices,
+        employee_choices: employeesData.choices,
+        wps_choices: wpsData.choices,
+    };
+    renderCard(card, dataContext);
+}
+
+async function renderStep2() {
+    let card;
+    try {
+        card = await fetchCard('cert-request-card');
+    } catch (e) {
+        document.getElementById('card-container').innerHTML =
+            '<p style="color:#f44;">Step 2 card template not found</p>';
+        return;
+    }
+
+    // Filter employees by selected job
+    let filteredEmps = employeesData;
+    if (selectedJob) {
+        filteredEmps = await fetchFilteredEmployees(selectedJob);
+    }
+
+    // Build project display
+    const jobDetail = jobsData.details[selectedJob];
+    const projectDisplay = jobDetail
+        ? `${selectedJob} - ${jobDetail.name}`
+        : selectedJob || 'No project selected';
+
+    const dataContext = {
+        project_display: projectDisplay,
+        employee_choices: filteredEmps.choices,
+        wps_choices: wpsData.choices,
+    };
+    renderCard(card, dataContext);
+}
+
+// ── Host configs ──────────────────────────────────────
+const darkHostConfig = {
+    fontFamily: "Segoe UI, system-ui, sans-serif",
+    containerStyles: {
+        default: {
+            backgroundColor: "#1e1e1e",
+            foregroundColors: {
+                default: { default: "#e0e0e0", subtle: "#999" },
+                accent: { default: "#5b5fc7", subtle: "#8b8fd7" },
+                attention: { default: "#f44", subtle: "#f88" },
+                good: { default: "#8c8", subtle: "#aca" },
+                warning: { default: "#fc3", subtle: "#fd8" },
+            }
+        },
+        emphasis: {
+            backgroundColor: "#2a2a2a",
+            foregroundColors: {
+                default: { default: "#e0e0e0", subtle: "#999" },
+            }
+        }
+    },
+    actions: {
+        actionAlignment: "stretch",
+        actionsOrientation: "horizontal",
+        buttonSpacing: 8,
+        maxActions: 6,
+        showCard: { actionMode: "inline" },
+    },
+    inputs: {
+        label: { requiredInputs: { weight: "bolder" } },
+    },
+};
+
+const lightHostConfig = {
+    fontFamily: "Segoe UI, system-ui, sans-serif",
+    containerStyles: {
+        default: {
+            backgroundColor: "#ffffff",
+            foregroundColors: {
+                default: { default: "#333333", subtle: "#666" },
+                accent: { default: "#5b5fc7", subtle: "#8b8fd7" },
+                attention: { default: "#d13438", subtle: "#e06466" },
+                good: { default: "#107c10", subtle: "#54a254" },
+                warning: { default: "#e69500", subtle: "#f0b840" },
+            }
+        },
+        emphasis: {
+            backgroundColor: "#f5f5f5",
+            foregroundColors: {
+                default: { default: "#333333", subtle: "#666" },
+            }
+        }
+    },
+    actions: {
+        actionAlignment: "stretch",
+        actionsOrientation: "horizontal",
+        buttonSpacing: 8,
+        maxActions: 6,
+    },
+};
+
+// ── Init ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    rerender();
+});
+</script>
+{% endblock %}

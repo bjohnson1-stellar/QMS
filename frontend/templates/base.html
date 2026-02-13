@@ -38,6 +38,12 @@
             <a href="{{ url_for('pipeline.intake_dashboard') }}"
                class="{% if request.endpoint == 'pipeline.intake_dashboard' %}active{% endif %}">Document Intake</a>
         </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">Automation</div>
+            <a href="{{ url_for('automation.preview') }}"
+               class="{% if request.endpoint == 'automation.preview' %}active{% endif %}">Card Preview</a>
+        </div>
     </div>
 
     <div class="main-content">
