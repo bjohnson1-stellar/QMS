@@ -12,14 +12,25 @@
     },
     {
       "type": "TextBlock",
-      "text": "Step 1 of 2 — Select the project site for this certification request.",
+      "text": "Step 1 of 2 \u2014 Select the job site, employee, and welding procedures.",
       "wrap": true,
       "spacing": "None",
       "isSubtle": true
     },
     {
+      "type": "Input.ChoiceSet",
+      "id": "job_number",
+      "label": "Job Number",
+      "placeholder": "Search by number or name...",
+      "style": "filtered",
+      "choices": "${job_choices}",
+      "isRequired": true,
+      "spacing": "Large",
+      "separator": true
+    },
+    {
       "type": "TextBlock",
-      "text": "Project",
+      "text": "Employee",
       "weight": "Bolder",
       "size": "Medium",
       "spacing": "Large",
@@ -27,12 +38,218 @@
     },
     {
       "type": "Input.ChoiceSet",
-      "id": "project_number",
-      "label": "Project",
-      "placeholder": "Search by number or name...",
+      "id": "employee_number",
+      "label": "Select Employee",
+      "placeholder": "Search by name or employee number...",
       "style": "filtered",
-      "choices": "${project_choices}",
+      "choices": "${employee_choices}",
+      "isRequired": false
+    },
+    {
+      "type": "ColumnSet",
+      "spacing": "Small",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.Text",
+              "id": "employee_phone",
+              "label": "Phone",
+              "placeholder": "555-123-4567"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.Text",
+              "id": "employee_email",
+              "label": "Email",
+              "placeholder": "name@company.com"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ActionSet",
+      "spacing": "Small",
+      "actions": [
+        {
+          "type": "Action.ToggleVisibility",
+          "title": "Employee not in system? Enter manually",
+          "targetElements": [
+            {
+              "elementId": "new_employee_panel",
+              "isVisible": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "new_employee_panel",
+      "isVisible": false,
+      "style": "emphasis",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "New Employee",
+          "weight": "Bolder",
+          "spacing": "Small"
+        },
+        {
+          "type": "Input.Text",
+          "id": "new_emp_number",
+          "label": "Employee Number",
+          "placeholder": "e.g. 12345"
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "new_emp_first_name",
+                  "label": "First Name",
+                  "placeholder": "First"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "new_emp_last_name",
+                  "label": "Last Name",
+                  "placeholder": "Last"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "Welding Procedures",
+      "weight": "Bolder",
+      "size": "Medium",
+      "spacing": "Large",
+      "separator": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Select 1\u20135 WPS for this certification request.",
+      "wrap": true,
+      "spacing": "None",
+      "isSubtle": true,
+      "size": "Small"
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "wps_1",
+      "label": "WPS 1",
+      "placeholder": "Search by WPS number...",
+      "style": "filtered",
+      "choices": "${wps_choices}",
       "isRequired": true
+    },
+    {
+      "type": "ActionSet",
+      "spacing": "Small",
+      "actions": [
+        {
+          "type": "Action.ToggleVisibility",
+          "title": "+ WPS 2",
+          "targetElements": ["wps_2_panel"]
+        },
+        {
+          "type": "Action.ToggleVisibility",
+          "title": "+ WPS 3",
+          "targetElements": ["wps_3_panel"]
+        },
+        {
+          "type": "Action.ToggleVisibility",
+          "title": "+ WPS 4",
+          "targetElements": ["wps_4_panel"]
+        },
+        {
+          "type": "Action.ToggleVisibility",
+          "title": "+ WPS 5",
+          "targetElements": ["wps_5_panel"]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "wps_2_panel",
+      "isVisible": false,
+      "items": [
+        {
+          "type": "Input.ChoiceSet",
+          "id": "wps_2",
+          "label": "WPS 2",
+          "placeholder": "Search by WPS number...",
+          "style": "filtered",
+          "choices": "${wps_choices}"
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "wps_3_panel",
+      "isVisible": false,
+      "items": [
+        {
+          "type": "Input.ChoiceSet",
+          "id": "wps_3",
+          "label": "WPS 3",
+          "placeholder": "Search by WPS number...",
+          "style": "filtered",
+          "choices": "${wps_choices}"
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "wps_4_panel",
+      "isVisible": false,
+      "items": [
+        {
+          "type": "Input.ChoiceSet",
+          "id": "wps_4",
+          "label": "WPS 4",
+          "placeholder": "Search by WPS number...",
+          "style": "filtered",
+          "choices": "${wps_choices}"
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "id": "wps_5_panel",
+      "isVisible": false,
+      "items": [
+        {
+          "type": "Input.ChoiceSet",
+          "id": "wps_5",
+          "label": "WPS 5",
+          "placeholder": "Search by WPS number...",
+          "style": "filtered",
+          "choices": "${wps_choices}"
+        }
+      ]
     }
   ],
   "actions": [
@@ -41,7 +258,7 @@
       "title": "Next \u2192",
       "style": "positive",
       "data": {
-        "action": "select_project"
+        "action": "select_job_and_wps"
       }
     }
   ]

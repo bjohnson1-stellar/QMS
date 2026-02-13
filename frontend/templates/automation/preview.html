@@ -343,8 +343,8 @@ function renderCard(cardJson, dataContext) {
             console.log('Card submission:', submission);
 
             // If Step 1 submit, capture and switch to Step 2
-            if (submission.action === 'select_project' || currentStep === 1) {
-                selectedJob = submission.project_number || submission.job_number || '';
+            if (submission.action === 'select_job_and_wps' || submission.action === 'select_project' || currentStep === 1) {
+                selectedJob = submission.job_number || submission.project_number || '';
                 // Capture WPS selections
                 selectedWpsList = [];
                 for (let i = 1; i <= 5; i++) {
@@ -434,6 +434,7 @@ async function renderStep1() {
     }
 
     const dataContext = {
+        job_choices: jobsData.choices,
         project_choices: jobsData.choices,
         employee_choices: employeesData.choices,
         wps_choices: wpsData.choices,
