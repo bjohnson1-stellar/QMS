@@ -12,7 +12,7 @@
     },
     {
       "type": "TextBlock",
-      "text": "Step 2 of 2 — Complete the certification request details below.",
+      "text": "Submit a new weld cert test request. Select the project, choose an employee, pick the WPS, then add up to 4 test coupons.",
       "wrap": true,
       "spacing": "None",
       "isSubtle": true
@@ -26,9 +26,30 @@
       "separator": true
     },
     {
-      "type": "TextBlock",
-      "text": "${project_display}",
-      "wrap": true
+      "type": "Input.ChoiceSet",
+      "id": "project_number",
+      "label": "Project",
+      "placeholder": "Search by number or name...",
+      "style": "filtered",
+      "choices": [
+        {
+          "title": "07645 - Cold Storage Facility",
+          "value": "07645"
+        },
+        {
+          "title": "07650 - Distribution Center",
+          "value": "07650"
+        },
+        {
+          "title": "07660 - Process Plant Expansion",
+          "value": "07660"
+        },
+        {
+          "title": "07670 - Ammonia Engine Room",
+          "value": "07670"
+        }
+      ],
+      "isRequired": true
     },
     {
       "type": "TextBlock",
@@ -82,7 +103,36 @@
           "label": "Employee",
           "placeholder": "Search by name or employee number...",
           "style": "filtered",
-          "choices": "${employee_choices}",
+          "choices": [
+            {
+              "title": "10042 - Mike Rodriguez",
+              "value": "10042"
+            },
+            {
+              "title": "10088 - James Wilson",
+              "value": "10088"
+            },
+            {
+              "title": "10103 - Carlos Hernandez",
+              "value": "10103"
+            },
+            {
+              "title": "10115 - David Thompson",
+              "value": "10115"
+            },
+            {
+              "title": "10127 - Robert Garcia",
+              "value": "10127"
+            },
+            {
+              "title": "10134 - Sarah Mitchell",
+              "value": "10134"
+            },
+            {
+              "title": "10156 - Antonio Reyes",
+              "value": "10156"
+            }
+          ],
           "isRequired": false
         }
       ]
@@ -146,7 +196,28 @@
       "label": "WPS",
       "placeholder": "Search by WPS number or title...",
       "style": "filtered",
-      "choices": "${wps_choices}",
+      "choices": [
+        {
+          "title": "WPS-001 - CS Groove SMAW (A106 / 7018)",
+          "value": "WPS-001"
+        },
+        {
+          "title": "WPS-002 - CS Groove GTAW/SMAW (A106 / ER70S+7018)",
+          "value": "WPS-002"
+        },
+        {
+          "title": "WPS-003 - SS Groove GTAW (A312 / ER308)",
+          "value": "WPS-003"
+        },
+        {
+          "title": "WPS-004 - CS Fillet SMAW (A53 / 7018)",
+          "value": "WPS-004"
+        },
+        {
+          "title": "WPS-005 - SS Fillet GTAW (A240 / ER316)",
+          "value": "WPS-005"
+        }
+      ],
       "isRequired": true
     },
     {

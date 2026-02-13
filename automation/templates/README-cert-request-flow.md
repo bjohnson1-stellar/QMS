@@ -1,180 +1,219 @@
 # Weld Certification Request — Power Automate Flow Guide
 
-How to wire `cert-request-card.json` into a Power Automate flow that delivers
-JSON files to `data/automation/incoming/` for processing by `qms automation process`.
+Two-step Adaptive Card flow that posts to a Teams channel. Superintendents
+pick a project first, then fill out the full cert request form with employees
+filtered to that jobsite. The flow writes a JSON file for backend processing
+by `qms automation process`.
 
 ## Prerequisites
 
-- `welding-lookups.xlsx` synced to OneDrive (run `qms welding export-lookups`)
+- `welding-lookups.xlsx` on SharePoint (run `qms welding export-lookups`)
 - Power Automate with standard connectors (no premium required)
 - Teams channel or group chat where superintendents submit requests
+
+## Card Templates
+
+| File | Purpose | Placeholders |
+|------|---------|-------------|
+| `cert-request-card-step1.json` | Project picker (Step 1) | `${project_choices}` |
+| `cert-request-card.json` | Full form (Step 2) | `${project_display}`, `${employee_choices}`, `${wps_choices}` |
 
 ## Flow Overview
 
 ```
-Trigger: Teams adaptive card submission
+Trigger (manual or scheduled)
    |
    v
-1. Read lookup tables from welding-lookups.xlsx (OneDrive)
-2. Build dynamic choice arrays for Employees, WPS, Projects
-3. Post adaptive card to Teams (with populated dropdowns)
-4. On submit → look up employee in Welders table for stamp
-5. Map card fields to JSON schema (enrich from WPS + Welders)
-6. Write JSON file to data/automation/incoming/
+1. Read lookup tables from welding-lookups.xlsx (SharePoint)
+2. Build project choice array
+3. Post Step 1 card (project picker) --> wait for response
+   |
+   v
+4. Filter Employees by selected project
+5. Build employee + WPS choice arrays
+6. Build Step 2 card with project display + filtered employees
+7. Post Step 2 card (full form) --> wait for response
+   |
+   v
+8. Look up employee in Welders table for stamp
+9. Look up WPS for process/material details
+10. Build coupons array from card fields
+11. Compose JSON payload
+12. Write JSON file to SharePoint
 ```
 
 ## Step-by-Step
 
 ### 1. Trigger
 
-Use **"When someone responds to an adaptive card"** or post the card via
-**"Post adaptive card and wait for a response"** in a Teams channel.
+Use **"Manually trigger a flow"** for testing, or schedule it. The trigger
+kicks off the lookup reads.
 
-### 2. Populate Dynamic Choices
+### 2. Read Lookup Tables
 
-Add three **"List rows present in a table"** actions (Excel Online connector)
-pointing at `welding-lookups.xlsx` on OneDrive:
+Add **"List rows present in a table"** actions (Excel Online connector)
+pointing at `welding-lookups.xlsx` on SharePoint:
 
-| Action Name       | Excel Table  | Choice Format                            | Card Placeholder       |
-|-------------------|--------------|------------------------------------------|------------------------|
-| List Projects     | `Projects`   | `{Project Number} - {Project Name}`      | `${project_choices}`   |
-| List Employees    | `Employees`  | `{Employee #} - {Display Name}`          | `${employee_choices}`  |
-| List WPS          | `WPS`        | `{WPS Number} - {Title}`                 | `${wps_choices}`       |
+| Action Name       | Excel Table  | When Read |
+|-------------------|--------------|-----------|
+| List Projects     | `Projects`   | Before Step 1 card |
+| List Employees    | `Employees`  | Before Step 1 card (filtered after project selection) |
+| List WPS          | `WPS`        | Before Step 2 card |
 
-**Filtering employees by project:** The `Employees` table includes a
-`Project Number` column. After the user selects a project, use a **Filter array**
-action on the Employees rows where `Project Number` equals the submitted
-`project_number` value. This reduces the employee dropdown from ~100 entries to
-only those assigned to the selected jobsite (~5-15).
+### 3. Build Project Choices & Post Step 1 Card
 
-For a single-card flow (no refresh), pre-populate `${employee_choices}` with all
-employees — the `style: "filtered"` typeahead still makes it easy to find someone.
-For a two-step flow, post a project-picker card first, then post the full form
-with a filtered employee list.
-
-For each choice list, use a **Select** action to transform rows into
-`{"title": "...", "value": "..."}` objects:
+Use a **Select** action to transform project rows into choice objects:
 
 ```
-// Projects example
-Title:  concat(items('Apply_to_each')?['Project Number'], ' - ', items('Apply_to_each')?['Project Name'])
-Value:  items('Apply_to_each')?['Project Number']
-
-// Employees example (filtered by project)
-Title:  concat(items('Apply_to_each')?['Employee #'], ' - ', items('Apply_to_each')?['Display Name'])
-Value:  items('Apply_to_each')?['Employee #']
+Title:  concat(item()?['Project Number'], ' - ', item()?['Project Name'])
+Value:  item()?['Project Number']
 ```
 
-Replace the `${...}` placeholders in the card JSON with the resulting arrays
-before posting.
+Build the Step 1 card JSON from `cert-request-card-step1.json`, replacing
+`${project_choices}` with the Select output. Post with **"Post adaptive card
+and wait for a response"** to the Teams channel.
 
-### 3. WPS Lookup
+### 4. Filter Employees by Project
 
-The card captures a single `wps_number` at the card level. After submission,
-look up the selected WPS row from the `WPS` table in `welding-lookups.xlsx` to
-extract `process`, `base_material`, and `filler_metal`. These values are
-shared across all coupons in the request.
+After the superintendent selects a project in Step 1, use a **Filter array**
+action on the Employees table where `Project Number` equals the submitted
+`project_number` from Step 1's response:
 
-Use a **Filter array** action on the WPS table where `WPS Number` equals the
-submitted `wps_number` value, then read the first matching row.
+```
+body('Post_Step_1_Card')?['data']?['project_number']
+```
 
-### 4. Welder Stamp Check (optional enrichment)
+This reduces the employee dropdown from ~80 entries to only those assigned
+to the selected jobsite (~5-15 people).
+
+### 5. Build Step 2 Choices
+
+Two **Select** actions:
+
+**Employees** (from filtered array):
+```
+Title:  concat(item()?['Employee #'], ' - ', item()?['Display Name'])
+Value:  item()?['Employee #']
+```
+
+**WPS**:
+```
+Title:  concat(item()?['WPS Number'], ' - ', item()?['Title'])
+Value:  item()?['WPS Number']
+```
+
+### 6. Build & Post Step 2 Card
+
+Build the Step 2 card JSON from `cert-request-card.json`. Replace:
+
+| Placeholder | Value |
+|-------------|-------|
+| `${project_display}` | `concat(project_number, ' - ', project_name)` from Step 1 response + Projects lookup |
+| `${employee_choices}` | Filtered employee Select output |
+| `${wps_choices}` | WPS Select output |
+
+Post with a second **"Post adaptive card and wait for a response"** action.
+
+### 7. WPS Lookup
+
+After Step 2 submission, filter the WPS table where `WPS Number` equals the
+submitted `wps_number` to extract `process`, `base_material`, and
+`filler_metal`. These values are shared across all coupons.
+
+### 8. Welder Stamp Check
 
 The employee dropdown pulls from the **Employees** table — not the Welders
 table. Most cert test candidates are not yet registered welders (pipefitters,
 apprentices, etc.), so this is expected.
 
-After submission, optionally check the `Welders` table to see if the
-selected employee already has a welder stamp:
+After Step 2 submission, check the `Welders` table:
 
-1. **Filter** the `Welders` table where `Employee #` equals the submitted
-   `employee_number`.
-2. **If found:** include the `Welder Stamp` in the JSON and set `is_new`
-   to `false`.
-3. **If not found (common case):** set `is_new` to `true`. The backend
-   auto-registers the employee as a new welder via
-   `_lookup_or_register_welder()` when the request is processed.
+1. **Filter** where `Employee #` equals the submitted `employee_number`.
+2. **If found:** include `Welder Stamp` and set `is_new = false`.
+3. **If not found (common):** set `is_new = true`. The backend auto-registers
+   via `_lookup_or_register_welder()`.
 
-For the "New Employee" path (manual entry of someone not yet in the employee
-system), use the typed fields directly.
+### 9. Card-to-JSON Field Mapping
 
-### 5. Card-to-JSON Field Mapping
-
-The submit payload uses flat field IDs. Map them to the nested JSON structure
-expected by `validate_cert_request_json()` in `welding/cert_requests.py`:
+Map flat card field IDs to the nested JSON structure expected by
+`validate_cert_request_json()` in `welding/cert_requests.py`:
 
 ```json
 {
   "type": "weld_cert_request",
-  "submitted_by": "@{body('Post_adaptive_card')?['responder']['displayName']}",
-  "request_date": "@{utcNow('yyyy-MM-dd')}",
+  "submitted_by": "<Step 2 responder displayName>",
+  "request_date": "<utcNow yyyy-MM-dd>",
   "welder": {
-    // EXISTING employee (employee_number has a value):
-    "employee_number": "@{body('Post_adaptive_card')?['data']?['employee_number']}",
-    "stamp": "<from Welders table lookup, or empty if not a welder>",
-    "name": "<from Employees table lookup by employee_number>",
-    "is_new": "<true if not found in Welders table>"
-
-    // NEW employee (new_welder_emp_number has a value):
-    // "employee_number": "@{body('Post_adaptive_card')?['data']?['new_welder_emp_number']}",
-    // "name": "@{concat(first_name, ' ', last_name)}",
-    // "is_new": true
+    "employee_number": "<from Step 2 card: employee_number or new_welder_emp_number>",
+    "name": "<from Employees lookup or manual entry>",
+    "stamp": "<from Welders lookup, or empty>",
+    "is_new": "<true if not in Welders table>"
   },
   "project": {
-    "number": "@{body('Post_adaptive_card')?['data']?['project_number']}",
-    "name": "<lookup from Projects table by number>"
+    "number": "<from Step 1 card: project_number>",
+    "name": "<from Projects lookup>"
   },
   "coupons": [],
-  "notes": "@{body('Post_adaptive_card')?['data']?['notes']}"
+  "notes": "<from Step 2 card: notes>"
 }
 ```
 
-**Employee mode detection:** Use a Condition action —
-if `employee_number` is not empty, use existing-employee mapping; otherwise use
-new-employee mapping (from the manual entry fields).
+**Employee mode detection:** If `employee_number` is not empty, use
+existing-employee path; otherwise use new-employee manual entry fields.
 
-### 6. Build Coupons Array
+**Project number source:** Comes from the Step 1 card response, NOT Step 2.
 
-For each coupon slot (1–4), check if `cN_thickness` is non-empty. If so,
-append to the coupons array. The `process`, `wps_number`, `base_material`,
-and `filler_metal` come from the WPS lookup (step 3). Position is hardcoded
-to `6G` (all processes on this card are non-brazing):
+### 10. Build Coupons Array
+
+For each coupon slot (1-4), check if `cN_thickness` is non-empty. If so,
+append a coupon object:
 
 ```json
 {
   "process":       "<from WPS lookup>",
   "position":      "6G",
-  "wps_number":    "@{body('Post_adaptive_card')?['data']?['wps_number']}",
+  "wps_number":    "<from Step 2 card>",
   "base_material": "<from WPS lookup>",
   "filler_metal":  "<from WPS lookup>",
-  "thickness":     "@{body('Post_adaptive_card')?['data']?['c1_thickness']}",
-  "diameter":      "@{body('Post_adaptive_card')?['data']?['c1_diameter']}"
+  "thickness":     "<from Step 2 card: cN_thickness>",
+  "diameter":      "<from Step 2 card: cN_diameter>"
 }
 ```
 
-Repeat for `c2_*`, `c3_*`, `c4_*` — only include coupons where `cN_thickness`
-is not empty.
+### 11. Write JSON File
 
-### 7. Write JSON File
+Use **"Create file"** (SharePoint connector) to write the composed JSON:
 
-Use **"Create file"** (OneDrive or file system connector) to write the
-composed JSON to `data/automation/incoming/`:
-
-- **Filename:** `wcr-@{utcNow('yyyyMMdd-HHmmss')}.json`
-- **Content:** The composed JSON object from steps 3–4
+- **Site:** SIS Quality Management
+- **Folder:** `/Shared Documents/General/Welding Program/automation/incoming`
+- **Filename:** `wcr-<utcNow('yyyyMMdd-HHmmss')>.json`
+- **Content:** `string(outputs('Compose_2'))`
 
 The automation dispatcher picks up files from this directory when
-`qms automation process` runs (manually or on a schedule).
+`qms automation process` runs.
+
+## Data Filtering
+
+The `Employees` sheet in `welding-lookups.xlsx` includes `Project Number`
+and `Project Name` columns. Only employees with active job assignments
+appear (generated by `_get_field_employees()` in `export_lookups.py`).
+
+The `Projects` sheet only includes projects that have active field
+personnel (generated by `_get_active_projects()` via JOIN through
+jobs/employees tables).
 
 ## Keeping Lookups Fresh
 
-Run `qms welding export-lookups` periodically (or on a schedule) to refresh
-`welding-lookups.xlsx`. The Excel file syncs to OneDrive, so Power Automate
-always reads current data.
+Run `qms welding export-lookups` periodically to refresh
+`welding-lookups.xlsx`. The Excel file syncs to SharePoint, so Power
+Automate always reads current data.
 
 ## Testing
 
-1. Paste the card JSON into https://adaptivecards.io/designer/ to preview
-2. Replace `${...}` placeholders with sample choice arrays for testing
-3. Submit a test card and verify the JSON file lands in `data/automation/incoming/`
-4. Process with `qms automation process` and check `qms welding cert-requests`
+1. Paste card JSON into https://adaptivecards.io/designer/ to preview
+2. Replace `${...}` placeholders with sample choice arrays
+3. Run the flow manually (Test > Manually > Run flow)
+4. Verify Step 1 card posts to Teams with project dropdown
+5. Select a project, verify Step 2 card shows filtered employees
+6. Submit Step 2, verify JSON file lands on SharePoint
+7. Process with `qms automation process` and check `qms welding cert-requests`

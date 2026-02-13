@@ -1,0 +1,48 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Weld Certification Request",
+      "weight": "Bolder",
+      "size": "Large",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Step 1 of 2 — Select the project site for this certification request.",
+      "wrap": true,
+      "spacing": "None",
+      "isSubtle": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Project",
+      "weight": "Bolder",
+      "size": "Medium",
+      "spacing": "Large",
+      "separator": true
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "project_number",
+      "label": "Project",
+      "placeholder": "Search by number or name...",
+      "style": "filtered",
+      "choices": "${project_choices}",
+      "isRequired": true
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Next \u2192",
+      "style": "positive",
+      "data": {
+        "action": "select_project"
+      }
+    }
+  ]
+}
