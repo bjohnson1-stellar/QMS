@@ -116,7 +116,7 @@ def _get_field_employees(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
            LEFT JOIN jobs j ON e.job_id = j.id
            LEFT JOIN projects p ON j.project_id = p.id
            LEFT JOIN employees sup ON e.supervisor_id = sup.id
-           WHERE e.status = 'active'
+           WHERE e.status = 'active' AND e.job_id IS NOT NULL
            ORDER BY p.number, e.last_name, e.first_name"""
     ).fetchall()
     return [
@@ -139,12 +139,15 @@ def _get_field_employees(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
 
 
 def _get_active_projects(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
-    """Active projects for job assignment."""
+    """Projects that have active field personnel assigned."""
     rows = conn.execute(
-        """SELECT number, name, client, pm, status
-           FROM projects
-           WHERE status IN ('active', 'in_progress', 'bidding')
-           ORDER BY number"""
+        """SELECT p.number, p.name, p.client, p.pm, p.status,
+                  COUNT(e.id) AS employee_count
+           FROM projects p
+           JOIN jobs j ON j.project_id = p.id
+           JOIN employees e ON e.job_id = j.id AND e.is_active = 1
+           GROUP BY p.number, p.name, p.client, p.pm, p.status
+           ORDER BY p.number"""
     ).fetchall()
     return [
         {
@@ -153,6 +156,7 @@ def _get_active_projects(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
             "client": r["client"] or "",
             "pm": r["pm"] or "",
             "status": r["status"] or "",
+            "employee_count": r["employee_count"],
         }
         for r in rows
     ]
@@ -330,6 +334,7 @@ SHEET_DEFS: List[Tuple[str, str, Any, List[Tuple[str, int, str]]]] = [
             ("Client", 24, "client"),
             ("PM", 20, "pm"),
             ("Status", 12, "status"),
+            ("Employee Count", 16, "employee_count"),
         ],
     ),
     (
