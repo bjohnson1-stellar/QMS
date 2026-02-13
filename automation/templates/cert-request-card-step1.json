@@ -12,7 +12,7 @@
     },
     {
       "type": "TextBlock",
-      "text": "Step 1 of 2 \u2014 Select the job site, employee, and welding procedures.",
+      "text": "Step 1 of 2 \u2014 Select the job site and welding procedures.",
       "wrap": true,
       "spacing": "None",
       "isSubtle": true
@@ -27,118 +27,6 @@
       "isRequired": true,
       "spacing": "Large",
       "separator": true
-    },
-    {
-      "type": "TextBlock",
-      "text": "Employee",
-      "weight": "Bolder",
-      "size": "Medium",
-      "spacing": "Large",
-      "separator": true
-    },
-    {
-      "type": "Input.ChoiceSet",
-      "id": "employee_number",
-      "label": "Select Employee",
-      "placeholder": "Search by name or employee number...",
-      "style": "filtered",
-      "choices": "${employee_choices}",
-      "isRequired": false
-    },
-    {
-      "type": "ColumnSet",
-      "spacing": "Small",
-      "columns": [
-        {
-          "type": "Column",
-          "width": "stretch",
-          "items": [
-            {
-              "type": "Input.Text",
-              "id": "employee_phone",
-              "label": "Phone",
-              "placeholder": "555-123-4567"
-            }
-          ]
-        },
-        {
-          "type": "Column",
-          "width": "stretch",
-          "items": [
-            {
-              "type": "Input.Text",
-              "id": "employee_email",
-              "label": "Email",
-              "placeholder": "name@company.com"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "ActionSet",
-      "spacing": "Small",
-      "actions": [
-        {
-          "type": "Action.ToggleVisibility",
-          "title": "Employee not in system? Enter manually",
-          "targetElements": [
-            {
-              "elementId": "new_employee_panel",
-              "isVisible": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "Container",
-      "id": "new_employee_panel",
-      "isVisible": false,
-      "style": "emphasis",
-      "items": [
-        {
-          "type": "TextBlock",
-          "text": "New Employee",
-          "weight": "Bolder",
-          "spacing": "Small"
-        },
-        {
-          "type": "Input.Text",
-          "id": "new_emp_number",
-          "label": "Employee Number",
-          "placeholder": "e.g. 12345"
-        },
-        {
-          "type": "ColumnSet",
-          "columns": [
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.Text",
-                  "id": "new_emp_first_name",
-                  "label": "First Name",
-                  "placeholder": "First"
-                }
-              ]
-            },
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
-                  "type": "Input.Text",
-                  "id": "new_emp_last_name",
-                  "label": "Last Name",
-                  "placeholder": "Last"
-                }
-              ]
-            }
-          ]
-        }
-      ]
     },
     {
       "type": "TextBlock",

@@ -298,22 +298,40 @@ async function fetchCard(name) {
 }
 
 // ── Card rendering ────────────────────────────────────
+
+// Walk an object tree and replace any string matching "${key}" with data[key]
+function expandPlaceholders(obj, data) {
+    if (typeof obj === 'string') {
+        // Check if entire string is a placeholder like "${job_choices}"
+        const match = obj.match(/^\$\{(\w+)\}$/);
+        if (match && data.hasOwnProperty(match[1])) {
+            return data[match[1]];
+        }
+        // Also handle inline placeholders in text
+        return obj.replace(/\$\{(\w+)\}/g, (_, key) => {
+            return data.hasOwnProperty(key) ? String(data[key]) : '${' + key + '}';
+        });
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(item => expandPlaceholders(item, data));
+    }
+    if (obj && typeof obj === 'object') {
+        const result = {};
+        for (const [k, v] of Object.entries(obj)) {
+            result[k] = expandPlaceholders(v, data);
+        }
+        return result;
+    }
+    return obj;
+}
+
 function renderCard(cardJson, dataContext) {
     const container = document.getElementById('card-container');
     container.innerHTML = '';
 
-    // Template expansion
-    let expandedCard;
-    try {
-        const template = new ACData.Template(cardJson);
-        const ctx = new ACData.EvaluationContext();
-        ctx.$root = dataContext;
-        expandedCard = template.expand(ctx);
-    } catch (e) {
-        // If templating fails, use raw card
-        console.warn('Template expansion failed, using raw:', e);
-        expandedCard = cardJson;
-    }
+    // Expand ${...} placeholders by walking the object tree.
+    // This mirrors how Power Automate replaces placeholders before posting.
+    const expandedCard = expandPlaceholders(cardJson, dataContext);
 
     // Show JSON
     document.getElementById('json-output').textContent = JSON.stringify(expandedCard, null, 2);
@@ -458,14 +476,21 @@ async function renderStep2() {
         filteredEmps = await fetchFilteredEmployees(selectedJob);
     }
 
-    // Build project display
+    // Build job display
     const jobDetail = jobsData.details[selectedJob];
-    const projectDisplay = jobDetail
+    const jobDisplay = jobDetail
         ? `${selectedJob} - ${jobDetail.name}`
-        : selectedJob || 'No project selected';
+        : selectedJob || 'No job selected';
+
+    // Build WPS display
+    const wpsDisplay = selectedWpsList.length > 0
+        ? selectedWpsList.join(', ')
+        : 'No WPS selected';
 
     const dataContext = {
-        project_display: projectDisplay,
+        job_display: jobDisplay,
+        wps_display: wpsDisplay,
+        project_display: jobDisplay,
         employee_choices: filteredEmps.choices,
         wps_choices: wpsData.choices,
     };

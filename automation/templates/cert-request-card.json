@@ -12,23 +12,25 @@
     },
     {
       "type": "TextBlock",
-      "text": "Step 2 of 2 — Complete the certification request details below.",
+      "text": "Step 2 of 2 \u2014 Select employee and configure test coupons.",
       "wrap": true,
       "spacing": "None",
       "isSubtle": true
     },
     {
-      "type": "TextBlock",
-      "text": "Project",
-      "weight": "Bolder",
-      "size": "Medium",
+      "type": "FactSet",
       "spacing": "Large",
-      "separator": true
-    },
-    {
-      "type": "TextBlock",
-      "text": "${project_display}",
-      "wrap": true
+      "separator": true,
+      "facts": [
+        {
+          "title": "Job",
+          "value": "${job_display}"
+        },
+        {
+          "title": "WPS",
+          "value": "${wps_display}"
+        }
+      ]
     },
     {
       "type": "TextBlock",
@@ -39,51 +41,57 @@
       "separator": true
     },
     {
-      "type": "ActionSet",
-      "actions": [
+      "type": "Input.ChoiceSet",
+      "id": "employee_number",
+      "label": "Select Employee",
+      "placeholder": "Search by name or employee number...",
+      "style": "filtered",
+      "choices": "${employee_choices}",
+      "isRequired": false
+    },
+    {
+      "type": "ColumnSet",
+      "spacing": "Small",
+      "columns": [
         {
-          "type": "Action.ToggleVisibility",
-          "title": "Select Employee",
-          "targetElements": [
+          "type": "Column",
+          "width": "stretch",
+          "items": [
             {
-              "elementId": "existing_employee_panel",
-              "isVisible": true
-            },
-            {
-              "elementId": "new_employee_panel",
-              "isVisible": false
+              "type": "Input.Text",
+              "id": "employee_phone",
+              "label": "Phone",
+              "placeholder": "555-123-4567"
             }
           ]
         },
         {
-          "type": "Action.ToggleVisibility",
-          "title": "New Employee",
-          "targetElements": [
+          "type": "Column",
+          "width": "stretch",
+          "items": [
             {
-              "elementId": "existing_employee_panel",
-              "isVisible": false
-            },
-            {
-              "elementId": "new_employee_panel",
-              "isVisible": true
+              "type": "Input.Text",
+              "id": "employee_email",
+              "label": "Email",
+              "placeholder": "name@company.com"
             }
           ]
         }
       ]
     },
     {
-      "type": "Container",
-      "id": "existing_employee_panel",
-      "isVisible": true,
-      "items": [
+      "type": "ActionSet",
+      "spacing": "Small",
+      "actions": [
         {
-          "type": "Input.ChoiceSet",
-          "id": "employee_number",
-          "label": "Employee",
-          "placeholder": "Search by name or employee number...",
-          "style": "filtered",
-          "choices": "${employee_choices}",
-          "isRequired": false
+          "type": "Action.ToggleVisibility",
+          "title": "Employee not in system? Enter manually",
+          "targetElements": [
+            {
+              "elementId": "new_employee_panel",
+              "isVisible": true
+            }
+          ]
         }
       ]
     },
@@ -91,13 +99,19 @@
       "type": "Container",
       "id": "new_employee_panel",
       "isVisible": false,
+      "style": "emphasis",
       "items": [
         {
+          "type": "TextBlock",
+          "text": "New Employee",
+          "weight": "Bolder",
+          "spacing": "Small"
+        },
+        {
           "type": "Input.Text",
-          "id": "new_welder_emp_number",
+          "id": "new_emp_number",
           "label": "Employee Number",
-          "placeholder": "e.g. 12345",
-          "isRequired": false
+          "placeholder": "e.g. 12345"
         },
         {
           "type": "ColumnSet",
@@ -108,10 +122,9 @@
               "items": [
                 {
                   "type": "Input.Text",
-                  "id": "new_welder_first_name",
+                  "id": "new_emp_first_name",
                   "label": "First Name",
-                  "placeholder": "First",
-                  "isRequired": false
+                  "placeholder": "First"
                 }
               ]
             },
@@ -121,10 +134,9 @@
               "items": [
                 {
                   "type": "Input.Text",
-                  "id": "new_welder_last_name",
+                  "id": "new_emp_last_name",
                   "label": "Last Name",
-                  "placeholder": "Last",
-                  "isRequired": false
+                  "placeholder": "Last"
                 }
               ]
             }
@@ -134,24 +146,15 @@
     },
     {
       "type": "TextBlock",
-      "text": "Welding Procedure",
+      "text": "Test Coupons",
       "weight": "Bolder",
       "size": "Medium",
       "spacing": "Large",
       "separator": true
     },
     {
-      "type": "Input.ChoiceSet",
-      "id": "wps_number",
-      "label": "WPS",
-      "placeholder": "Search by WPS number or title...",
-      "style": "filtered",
-      "choices": "${wps_choices}",
-      "isRequired": true
-    },
-    {
       "type": "TextBlock",
-      "text": "Process, base material, and filler metal are determined by the selected WPS. Position is 6G for all coupons.",
+      "text": "Material and process are determined by the selected WPS. Configure size for each coupon.",
       "wrap": true,
       "spacing": "None",
       "isSubtle": true,
@@ -161,9 +164,7 @@
       "type": "TextBlock",
       "text": "Coupon 1",
       "weight": "Bolder",
-      "size": "Medium",
-      "spacing": "Large",
-      "separator": true
+      "spacing": "Medium"
     },
     {
       "type": "ColumnSet",
@@ -173,10 +174,15 @@
           "width": "stretch",
           "items": [
             {
-              "type": "Input.Text",
-              "id": "c1_thickness",
-              "label": "Thickness",
-              "placeholder": "e.g. 3/4\""
+              "type": "Input.ChoiceSet",
+              "id": "c1_type",
+              "label": "Type",
+              "value": "pipe",
+              "choices": [
+                {"title": "Pipe", "value": "pipe"},
+                {"title": "Plate", "value": "plate"},
+                {"title": "Tube", "value": "tube"}
+              ]
             }
           ]
         },
@@ -185,10 +191,14 @@
           "width": "stretch",
           "items": [
             {
-              "type": "Input.Text",
-              "id": "c1_diameter",
-              "label": "Diameter",
-              "placeholder": "e.g. 6\""
+              "type": "Input.ChoiceSet",
+              "id": "c1_size",
+              "label": "Size",
+              "value": "2",
+              "choices": [
+                {"title": "2\"", "value": "2"},
+                {"title": "6\"", "value": "6"}
+              ]
             }
           ]
         }
@@ -196,28 +206,22 @@
     },
     {
       "type": "ActionSet",
-      "spacing": "Medium",
+      "spacing": "Small",
       "actions": [
         {
           "type": "Action.ToggleVisibility",
           "title": "+ Add Coupon 2",
-          "targetElements": [
-            "coupon_2_panel"
-          ]
+          "targetElements": ["coupon_2_panel"]
         },
         {
           "type": "Action.ToggleVisibility",
           "title": "+ Add Coupon 3",
-          "targetElements": [
-            "coupon_3_panel"
-          ]
+          "targetElements": ["coupon_3_panel"]
         },
         {
           "type": "Action.ToggleVisibility",
           "title": "+ Add Coupon 4",
-          "targetElements": [
-            "coupon_4_panel"
-          ]
+          "targetElements": ["coupon_4_panel"]
         }
       ]
     },
@@ -230,7 +234,6 @@
           "type": "TextBlock",
           "text": "Coupon 2",
           "weight": "Bolder",
-          "size": "Medium",
           "spacing": "Medium",
           "separator": true
         },
@@ -242,10 +245,15 @@
               "width": "stretch",
               "items": [
                 {
-                  "type": "Input.Text",
-                  "id": "c2_thickness",
-                  "label": "Thickness",
-                  "placeholder": "e.g. 3/4\""
+                  "type": "Input.ChoiceSet",
+                  "id": "c2_type",
+                  "label": "Type",
+                  "value": "pipe",
+                  "choices": [
+                    {"title": "Pipe", "value": "pipe"},
+                    {"title": "Plate", "value": "plate"},
+                    {"title": "Tube", "value": "tube"}
+                  ]
                 }
               ]
             },
@@ -254,10 +262,14 @@
               "width": "stretch",
               "items": [
                 {
-                  "type": "Input.Text",
-                  "id": "c2_diameter",
-                  "label": "Diameter",
-                  "placeholder": "e.g. 6\""
+                  "type": "Input.ChoiceSet",
+                  "id": "c2_size",
+                  "label": "Size",
+                  "value": "2",
+                  "choices": [
+                    {"title": "2\"", "value": "2"},
+                    {"title": "6\"", "value": "6"}
+                  ]
                 }
               ]
             }
@@ -274,7 +286,6 @@
           "type": "TextBlock",
           "text": "Coupon 3",
           "weight": "Bolder",
-          "size": "Medium",
           "spacing": "Medium",
           "separator": true
         },
@@ -286,10 +297,15 @@
               "width": "stretch",
               "items": [
                 {
-                  "type": "Input.Text",
-                  "id": "c3_thickness",
-                  "label": "Thickness",
-                  "placeholder": "e.g. 3/4\""
+                  "type": "Input.ChoiceSet",
+                  "id": "c3_type",
+                  "label": "Type",
+                  "value": "pipe",
+                  "choices": [
+                    {"title": "Pipe", "value": "pipe"},
+                    {"title": "Plate", "value": "plate"},
+                    {"title": "Tube", "value": "tube"}
+                  ]
                 }
               ]
             },
@@ -298,10 +314,14 @@
               "width": "stretch",
               "items": [
                 {
-                  "type": "Input.Text",
-                  "id": "c3_diameter",
-                  "label": "Diameter",
-                  "placeholder": "e.g. 6\""
+                  "type": "Input.ChoiceSet",
+                  "id": "c3_size",
+                  "label": "Size",
+                  "value": "2",
+                  "choices": [
+                    {"title": "2\"", "value": "2"},
+                    {"title": "6\"", "value": "6"}
+                  ]
                 }
               ]
             }
@@ -318,7 +338,6 @@
           "type": "TextBlock",
           "text": "Coupon 4",
           "weight": "Bolder",
-          "size": "Medium",
           "spacing": "Medium",
           "separator": true
         },
@@ -330,10 +349,15 @@
               "width": "stretch",
               "items": [
                 {
-                  "type": "Input.Text",
-                  "id": "c4_thickness",
-                  "label": "Thickness",
-                  "placeholder": "e.g. 3/4\""
+                  "type": "Input.ChoiceSet",
+                  "id": "c4_type",
+                  "label": "Type",
+                  "value": "pipe",
+                  "choices": [
+                    {"title": "Pipe", "value": "pipe"},
+                    {"title": "Plate", "value": "plate"},
+                    {"title": "Tube", "value": "tube"}
+                  ]
                 }
               ]
             },
@@ -342,10 +366,14 @@
               "width": "stretch",
               "items": [
                 {
-                  "type": "Input.Text",
-                  "id": "c4_diameter",
-                  "label": "Diameter",
-                  "placeholder": "e.g. 6\""
+                  "type": "Input.ChoiceSet",
+                  "id": "c4_size",
+                  "label": "Size",
+                  "value": "2",
+                  "choices": [
+                    {"title": "2\"", "value": "2"},
+                    {"title": "6\"", "value": "6"}
+                  ]
                 }
               ]
             }
