@@ -1533,3 +1533,15 @@ CREATE TABLE IF NOT EXISTS document_intake_log (
     notes TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS onedrive_sync_log (
+    id INTEGER PRIMARY KEY,
+    file_name TEXT NOT NULL,
+    source_path TEXT,
+    source_folder TEXT,
+    destination_path TEXT,
+    file_size INTEGER,
+    action TEXT NOT NULL,
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);

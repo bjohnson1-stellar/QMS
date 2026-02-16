@@ -318,6 +318,15 @@ intake:
   on_no_match: move_to_needs_review
 
 # =============================================================================
+# ONEDRIVE SYNC (Power Automate → local inbox)
+# =============================================================================
+
+onedrive_sync:
+  enabled: true
+  source_root: "C:/Users/bjohnson1/OneDrive - Stellar Group Incorporated/QMS-Intake"
+  delete_after_sync: true
+
+# =============================================================================
 # DEPARTMENTS
 # =============================================================================
 

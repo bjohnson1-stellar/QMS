@@ -372,6 +372,116 @@ def _log_actions(actions: List[ProcessAction]) -> None:
 # ---------------------------------------------------------------------------
 
 
+def sync_from_sources(dry_run: bool = False) -> List[dict]:
+    """
+    Copy/move files from configured OneDrive sync folders into the QMS inbox.
+
+    Scans all subdirectories under onedrive_sync.source_root, copies files
+    to QMS_PATHS.inbox, and logs each action to onedrive_sync_log.
+
+    Returns list of {filename, source, action, notes} dicts.
+    """
+    cfg = get_config()
+    sync_cfg = cfg.get("onedrive_sync", {})
+
+    if not sync_cfg.get("enabled", False):
+        logger.info("OneDrive sync is disabled in config")
+        return []
+
+    source_root = Path(sync_cfg.get("source_root", ""))
+    if not source_root.exists():
+        logger.warning("OneDrive sync source_root does not exist: %s", source_root)
+        return []
+
+    delete_after = sync_cfg.get("delete_after_sync", True)
+    inbox = QMS_PATHS.inbox
+    results: List[dict] = []
+
+    for path in sorted(source_root.rglob("*")):
+        if not path.is_file():
+            continue
+
+        # Skip hidden / temp files (OneDrive lock files, Office temp files)
+        if path.name.startswith(".") or path.name.startswith("~$"):
+            continue
+
+        # Determine the source subfolder name (e.g. "Field-Locations")
+        try:
+            source_folder = path.relative_to(source_root).parts[0]
+        except (ValueError, IndexError):
+            source_folder = ""
+
+        dest = inbox / path.name
+        entry = {
+            "filename": path.name,
+            "source": str(path),
+            "source_folder": source_folder,
+            "file_size": path.stat().st_size,
+            "action": "synced",
+            "notes": None,
+        }
+
+        # Skip if same filename already in inbox
+        if dest.exists():
+            entry["action"] = "skipped"
+            entry["notes"] = "File already exists in inbox"
+            results.append(entry)
+            continue
+
+        if dry_run:
+            entry["action"] = "would_sync"
+            results.append(entry)
+            continue
+
+        try:
+            inbox.mkdir(parents=True, exist_ok=True)
+            if delete_after:
+                shutil.move(str(path), str(dest))
+            else:
+                shutil.copy2(str(path), str(dest))
+            entry["action"] = "synced"
+        except Exception as exc:
+            entry["action"] = "error"
+            entry["notes"] = str(exc)
+            logger.error("OneDrive sync failed for %s: %s", path.name, exc)
+
+        results.append(entry)
+
+    # Log to database (skip in dry-run mode)
+    if not dry_run and results:
+        _log_sync_actions(results)
+
+    return results
+
+
+def _log_sync_actions(entries: List[dict]) -> None:
+    """Write sync actions to onedrive_sync_log table."""
+    try:
+        with get_db() as conn:
+            conn.executemany(
+                """
+                INSERT INTO onedrive_sync_log
+                    (file_name, source_path, source_folder, destination_path, file_size, action, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        e["filename"],
+                        e["source"],
+                        e.get("source_folder", ""),
+                        str(QMS_PATHS.inbox / e["filename"]),
+                        e.get("file_size", 0),
+                        e["action"],
+                        e.get("notes"),
+                    )
+                    for e in entries
+                ],
+            )
+            conn.commit()
+    except Exception as exc:
+        logger.error("Failed to log sync actions: %s", exc)
+
+
 def get_intake_stats() -> Dict:
     """Aggregate statistics from document_intake_log."""
     try:

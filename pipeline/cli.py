@@ -349,6 +349,7 @@ def intake(
     file: Optional[str] = typer.Option(None, "--file", "-f", help="Classify a single file"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview without moving files"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show destination paths and patterns"),
+    sync: bool = typer.Option(False, "--sync", "-s", help="Sync files from OneDrive before processing"),
 ):
     """Classify and route inbox documents to their destinations."""
     from qms.pipeline.classifier import (
@@ -357,6 +358,26 @@ def intake(
         process_files,
         scan_inbox,
     )
+
+    # OneDrive sync step (runs before classify/route)
+    if sync:
+        from qms.pipeline.classifier import sync_from_sources
+
+        synced = sync_from_sources(dry_run=dry_run)
+        if synced:
+            synced_count = sum(1 for s in synced if s["action"] in ("synced", "would_sync"))
+            skipped_count = sum(1 for s in synced if s["action"] == "skipped")
+            error_count = sum(1 for s in synced if s["action"] == "error")
+            typer.echo(f"OneDrive Sync: {synced_count} new files, {skipped_count} skipped", nl=False)
+            if error_count:
+                typer.echo(f", {error_count} errors", nl=False)
+            typer.echo()
+            if verbose:
+                for s in synced:
+                    typer.echo(f"  [{s['action']}] {s['filename']} ({s.get('source_folder', '')})")
+        else:
+            typer.echo("OneDrive Sync: no files found")
+        typer.echo()
 
     # Single file mode
     if file:

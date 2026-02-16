@@ -24,6 +24,7 @@ venv/
 # IDE
 .vscode/
 .idea/
+*.code-workspace
 
 # Claude Code / MCP (machine-specific)
 .claude/
