@@ -57,8 +57,8 @@ def find_existing_employee(
     Returns a dict with the employee row *plus* a ``match_method`` key,
     or ``None`` if no match was found.
     """
-    # Level 1 -- employee number
-    if employee_number:
+    # Level 1 -- employee number (skip shared subcontractor prefixes like SO/ULG)
+    if employee_number and not employee_number.startswith(("SO/", "CONTRACT")):
         existing = find_employee_by_number(conn, employee_number=employee_number)
         if existing:
             return {**existing, "match_method": "employee_number"}
@@ -267,9 +267,19 @@ def _create_new(
     """Create a brand-new employee from an SIS record."""
     is_employee = not (
         record.employee_number.startswith("CONTRACT")
+        or record.employee_number.startswith("SO/")
         or "contractor" in (record.designation or "").lower()
     )
     is_subcontractor = not is_employee
+
+    # Build notes: include sub-org label (e.g. "ULG", "NCW") for subcontractors
+    notes_parts = []
+    if record.employee_number.startswith("SO/"):
+        sub_org = record.employee_number.split("/", 1)[1]
+        notes_parts.append(f"Sub-org: {sub_org}")
+    if record.designation:
+        notes_parts.append(record.designation)
+    notes = "; ".join(notes_parts) if notes_parts else None
 
     role_row = conn.execute(
         "SELECT id FROM roles WHERE role_code = 'TECH'"
@@ -289,7 +299,7 @@ def _create_new(
         current_hire_date=str(week_ending),
         original_hire_date=str(week_ending),
         status="active",
-        notes=record.designation if record.designation else None,
+        notes=notes,
         created_by="SIS-IMPORT",
     )
 
