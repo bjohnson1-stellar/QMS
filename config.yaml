@@ -183,6 +183,12 @@ document_types:
     destination: "{quality_documents}/Welding/Production-Logs/{year}"
     handler: "weld-weekly-import"
 
+  field_locations:
+    patterns:
+      - "^FIELD LOCATIONS"
+    destination: "{projects}/Field-Locations"
+    handler: "field-locations"
+
 # =============================================================================
 # MODEL ROUTING
 # =============================================================================
