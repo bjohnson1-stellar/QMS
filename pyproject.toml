@@ -34,6 +34,13 @@ pipeline = [
     # AI/LLM
     "anthropic>=0.25.0",
 ]
+welding = [
+    # PDF extraction (shared with pipeline)
+    "PyMuPDF>=1.23.0",
+
+    # AI/LLM for form extraction
+    "anthropic>=0.25.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",

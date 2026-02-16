@@ -47,6 +47,8 @@ from qms.welding.cert_requests import (
     schedule_retest,
     approve_cert_request,
 )
+from qms.welding.seed_lookups import seed_all_lookups, get_valid_values
+from qms.welding.validation import validate_form_data
 
 __all__ = [
     # intake
@@ -84,4 +86,8 @@ __all__ = [
     "assign_wpq_from_coupon",
     "schedule_retest",
     "approve_cert_request",
+    # seed & validation
+    "seed_all_lookups",
+    "get_valid_values",
+    "validate_form_data",
 ]

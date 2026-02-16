@@ -396,3 +396,17 @@ welding:
     wcr_prefix: "WCR"
     max_coupons_per_request: 4
     default_wpq_expiration_months: 6
+  forms:
+    extraction:
+      models:
+        primary: sonnet
+        secondary: sonnet
+        shadow: opus
+      confidence:
+        minimum: 0.6
+        high: 0.9
+        shadow_review_rate: 0.10
+      numeric_tolerance: 0.05
+    generation:
+      output_dir: "data/quality-documents/Welding"
+      default_format: "excel"

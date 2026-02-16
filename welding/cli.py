@@ -616,3 +616,175 @@ def process_requests_cmd(
             typer.echo(f"  [{status_marker}] {r['file']} ({r['type'] or 'unknown'})")
             if r["error"]:
                 typer.echo(f"         Error: {r['error']}")
+
+
+# =========================================================================
+# FORM PIPELINE COMMANDS
+# =========================================================================
+
+
+@app.command("seed-lookups")
+def seed_lookups_cmd(
+    force: bool = typer.Option(False, "--force", help="Delete existing data and re-seed"),
+):
+    """Populate ASME IX / QB lookup tables with reference data."""
+    from qms.welding.seed_lookups import seed_all_lookups
+
+    results = seed_all_lookups(force=force)
+
+    typer.echo("\nLookup Seed Summary")
+    typer.echo("=" * 50)
+    for table, count in results.items():
+        short = table.replace("weld_valid_", "")
+        typer.echo(f"  {short:<20} {count:>4} rows")
+    typer.echo(f"  {'Total':<20} {sum(results.values()):>4} rows")
+
+
+@app.command("extract")
+def extract_cmd(
+    form_type: str = typer.Argument(..., help="Form type: wps, pqr, wpq, bps, bpq"),
+    source: str = typer.Argument(..., help="PDF file or directory path"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Validate without writing to DB"),
+    batch: bool = typer.Option(False, "--batch", help="Process all PDFs in directory"),
+    pattern: str = typer.Option("*.pdf", "--pattern", help="Glob pattern for batch mode"),
+):
+    """Extract form data from PDF into the database."""
+    from qms.welding.extraction.pipeline import run_pipeline, run_batch
+
+    form_type = form_type.lower()
+    valid_types = ("wps", "pqr", "wpq", "bps", "bpq")
+    if form_type not in valid_types:
+        typer.echo(f"ERROR: Invalid form type '{form_type}'. Use: {', '.join(valid_types)}")
+        raise typer.Exit(1)
+
+    source_path = Path(source)
+    if not source_path.exists():
+        typer.echo(f"ERROR: Path not found: {source_path}")
+        raise typer.Exit(1)
+
+    prefix = "[DRY RUN] " if dry_run else ""
+
+    if batch or source_path.is_dir():
+        if not source_path.is_dir():
+            typer.echo(f"ERROR: --batch requires a directory: {source_path}")
+            raise typer.Exit(1)
+
+        results = run_batch(source_path, form_type=form_type, pattern=pattern, dry_run=dry_run)
+
+        typer.echo(f"\n{prefix}Batch Extraction Summary")
+        typer.echo("=" * 60)
+        for r in results:
+            status_marker = {
+                "success": "OK", "partial": "!!", "failed": "XX", "skipped": "--",
+            }.get(r.status, "??")
+            typer.echo(
+                f"  [{status_marker}] {r.source_file:<30} "
+                f"{r.identifier or '?':<15} conf={r.confidence:.2f}"
+            )
+            for err in r.errors:
+                typer.echo(f"         Error: {err}")
+
+        success = sum(1 for r in results if r.status == "success")
+        partial = sum(1 for r in results if r.status == "partial")
+        failed = sum(1 for r in results if r.status == "failed")
+        typer.echo(f"\n  Total: {len(results)} | Success: {success} | "
+                   f"Partial: {partial} | Failed: {failed}")
+    else:
+        result = run_pipeline(source_path, form_type=form_type, dry_run=dry_run)
+
+        typer.echo(f"\n{prefix}Extraction Result")
+        typer.echo("=" * 50)
+        typer.echo(f"  File:        {result.source_file}")
+        typer.echo(f"  Form type:   {result.form_type}")
+        typer.echo(f"  Identifier:  {result.identifier or '?'}")
+        typer.echo(f"  Status:      {result.status}")
+        typer.echo(f"  Confidence:  {result.confidence:.2f}")
+        typer.echo(f"  Time:        {result.processing_time_ms}ms")
+
+        if result.disagreements:
+            typer.echo(f"\n  Disagreements ({len(result.disagreements)}):")
+            for d in result.disagreements[:5]:
+                typer.echo(f"    {d['field']}: primary={d['primary']} vs secondary={d['secondary']}")
+
+        if result.validation_issues:
+            errors = [i for i in result.validation_issues if i["severity"] == "error"]
+            warnings = [i for i in result.validation_issues if i["severity"] == "warning"]
+            if errors:
+                typer.echo(f"\n  Validation Errors ({len(errors)}):")
+                for i in errors[:5]:
+                    typer.echo(f"    [{i['code']}] {i['message']}")
+            if warnings:
+                typer.echo(f"\n  Validation Warnings ({len(warnings)}):")
+                for i in warnings[:5]:
+                    typer.echo(f"    [{i['code']}] {i['message']}")
+
+        if result.child_record_counts:
+            typer.echo(f"\n  Records inserted:")
+            for table, count in result.child_record_counts.items():
+                typer.echo(f"    {table}: {count}")
+
+        if result.errors:
+            typer.echo(f"\n  Errors:")
+            for err in result.errors:
+                typer.echo(f"    {err}")
+
+
+@app.command("generate")
+def generate_cmd(
+    form_type: str = typer.Argument(..., help="Form type: wps, pqr, wpq, bps, bpq"),
+    identifier: str = typer.Argument(..., help="Document identifier (e.g. CS-01, WPQ-001)"),
+    format: str = typer.Option("excel", "--format", "-f", help="Output format: excel, pdf, both"),
+    output_dir: Optional[str] = typer.Option(None, "--output-dir", "-o", help="Output directory"),
+):
+    """Generate a filled-out form from database data."""
+    from qms.welding.generation.generator import generate
+
+    form_type = form_type.lower()
+    valid_types = ("wps", "pqr", "wpq", "bps", "bpq")
+    if form_type not in valid_types:
+        typer.echo(f"ERROR: Invalid form type '{form_type}'. Use: {', '.join(valid_types)}")
+        raise typer.Exit(1)
+
+    out_dir = Path(output_dir) if output_dir else None
+    result = generate(form_type, identifier, output_format=format, output_dir=out_dir)
+
+    if result:
+        typer.echo(f"Generated: {result}")
+    else:
+        typer.echo(f"Generation failed for {form_type} '{identifier}'. "
+                   f"Check that the record exists and a template is registered.")
+        raise typer.Exit(1)
+
+
+@app.command("register-template")
+def register_template_cmd(
+    form_type: str = typer.Argument(..., help="Form type: wps, pqr, wpq, bps, bpq"),
+    format: str = typer.Argument(..., help="Template format: excel or pdf"),
+    file: str = typer.Argument(..., help="Path to template file"),
+    variant: Optional[str] = typer.Option(None, "--variant", "-v", help="Template variant (e.g. WPS number)"),
+    default: bool = typer.Option(False, "--default", help="Set as default template"),
+    auto_discover: bool = typer.Option(False, "--auto-discover", help="Scan standard dirs for templates"),
+):
+    """Register a template file for form generation."""
+    from qms.welding.generation.generator import register_template, auto_discover_templates
+
+    if auto_discover:
+        counts = auto_discover_templates()
+        typer.echo("\nAuto-Discovery Summary")
+        typer.echo("=" * 40)
+        for ft, count in counts.items():
+            typer.echo(f"  {ft}: {count} templates")
+        typer.echo(f"  Total: {sum(counts.values())} templates")
+        return
+
+    template_path = Path(file)
+    if not template_path.exists():
+        typer.echo(f"ERROR: File not found: {template_path}")
+        raise typer.Exit(1)
+
+    record_id = register_template(
+        form_type.lower(), format.lower(), template_path,
+        variant=variant, is_default=default,
+    )
+    typer.echo(f"Registered template #{record_id}: {form_type} {format} "
+               f"{'(variant: ' + variant + ')' if variant else '(default)' if default else ''}")

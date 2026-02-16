@@ -806,3 +806,156 @@ CREATE TABLE IF NOT EXISTS weld_cert_request_coupons (
 
 CREATE INDEX IF NOT EXISTS idx_wcr_coupon_wcr ON weld_cert_request_coupons(wcr_id);
 CREATE INDEX IF NOT EXISTS idx_wcr_coupon_status ON weld_cert_request_coupons(status);
+
+-- =========== LOOKUP TABLES (ASME IX Reference Data) ===========
+
+CREATE TABLE IF NOT EXISTS weld_valid_processes (
+    id INTEGER PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    category TEXT DEFAULT 'welding',
+    aws_letter TEXT,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_p_numbers (
+    id INTEGER PRIMARY KEY,
+    p_number INTEGER NOT NULL,
+    group_number INTEGER,
+    material_type TEXT NOT NULL,
+    common_specs TEXT,
+    notes TEXT,
+    UNIQUE(p_number, group_number)
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_f_numbers (
+    id INTEGER PRIMARY KEY,
+    f_number INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    process_category TEXT,
+    notes TEXT,
+    UNIQUE(f_number, process_category)
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_a_numbers (
+    id INTEGER PRIMARY KEY,
+    a_number INTEGER UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    weld_deposit_type TEXT,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_positions (
+    id INTEGER PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    joint_type TEXT,
+    qualifies_for TEXT,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_sfa_specs (
+    id INTEGER PRIMARY KEY,
+    spec_number TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    filler_type TEXT,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_aws_classes (
+    id INTEGER PRIMARY KEY,
+    aws_class TEXT NOT NULL,
+    sfa_spec TEXT,
+    f_number INTEGER,
+    a_number INTEGER,
+    description TEXT,
+    UNIQUE(aws_class, sfa_spec)
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_current_types (
+    id INTEGER PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    compatible_processes TEXT,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_filler_forms (
+    id INTEGER PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_joint_types (
+    id INTEGER PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    category TEXT,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_groove_types (
+    id INTEGER PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_bead_types (
+    id INTEGER PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS weld_valid_gas_types (
+    id INTEGER PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    chemical_symbol TEXT,
+    category TEXT,
+    notes TEXT
+);
+
+-- =========== EXTRACTION AUDIT LOG ===========
+
+CREATE TABLE IF NOT EXISTS weld_extraction_log (
+    id INTEGER PRIMARY KEY,
+    form_type TEXT NOT NULL,
+    source_file TEXT NOT NULL,
+    source_path TEXT,
+    identifier TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    confidence REAL,
+    primary_model TEXT,
+    secondary_model TEXT,
+    shadow_model TEXT,
+    disagreements_json TEXT,
+    extracted_data_json TEXT,
+    validation_issues_json TEXT,
+    parent_record_id INTEGER,
+    child_records_json TEXT,
+    processed_by TEXT,
+    processing_time_ms INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_extraction_log_form ON weld_extraction_log(form_type);
+CREATE INDEX IF NOT EXISTS idx_extraction_log_status ON weld_extraction_log(status);
+CREATE INDEX IF NOT EXISTS idx_extraction_log_identifier ON weld_extraction_log(identifier);
+
+-- =========== FORM TEMPLATE REGISTRY ===========
+
+CREATE TABLE IF NOT EXISTS weld_form_templates (
+    id INTEGER PRIMARY KEY,
+    form_type TEXT NOT NULL,
+    format TEXT NOT NULL,
+    variant TEXT,
+    file_path TEXT NOT NULL,
+    description TEXT,
+    is_default INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(form_type, format, variant)
+);
