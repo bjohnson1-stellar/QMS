@@ -275,7 +275,7 @@ def dispatch_handler(result: ClassificationResult) -> Tuple[bool, Optional[str]]
     handler = result.handler or "none"
 
     if result.handler == "field-locations":
-        logger.info("[handler] %s → %s", result.filename, handler)
+        logger.info("[handler] %s -> %s", result.filename, handler)
         t0 = time.perf_counter()
         success, error = _handle_field_locations(result)
         elapsed = time.perf_counter() - t0
@@ -287,7 +287,7 @@ def dispatch_handler(result: ClassificationResult) -> Tuple[bool, Optional[str]]
 
     # Other handler types just file (no pre-processing needed):
     # sis-intake, sis-spec-intake, qm-intake, procore-import, weld-intake, etc.
-    logger.debug("[handler] %s → passthrough (handler=%s)", result.filename, handler)
+    logger.debug("[handler] %s -> passthrough (handler=%s)", result.filename, handler)
     return (True, None)
 
 
