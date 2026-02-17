@@ -712,6 +712,59 @@ CREATE TABLE IF NOT EXISTS weld_bpqr_tests (
     examiner_date DATE
 );
 
+-- =========== QUALIFICATION DERIVATIONS (Per-Code Ranges) ===========
+
+CREATE TABLE IF NOT EXISTS weld_wpq_qualifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    wpq_id INTEGER NOT NULL REFERENCES weld_wpq(id) ON DELETE CASCADE,
+    code_id TEXT NOT NULL,
+    code_name TEXT NOT NULL,
+    code_reference TEXT,
+    thickness_qualified_min REAL,
+    thickness_qualified_max REAL,
+    thickness_reference TEXT,
+    diameter_qualified_min REAL,
+    diameter_qualified_max REAL,
+    diameter_reference TEXT,
+    groove_positions_qualified TEXT,
+    fillet_positions_qualified TEXT,
+    positions_reference TEXT,
+    p_number_qualified TEXT,
+    f_number_qualified TEXT,
+    backing_type TEXT,
+    deposit_thickness_max REAL,
+    filler_type_qualified TEXT,
+    derived_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(wpq_id, code_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wpq_qualifications_wpq ON weld_wpq_qualifications(wpq_id);
+
+CREATE TABLE IF NOT EXISTS weld_bpqr_qualifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bpqr_id INTEGER NOT NULL REFERENCES weld_bpqr(id) ON DELETE CASCADE,
+    code_id TEXT NOT NULL,
+    code_name TEXT NOT NULL,
+    code_reference TEXT,
+    thickness_qualified_min REAL,
+    thickness_qualified_max REAL,
+    thickness_reference TEXT,
+    diameter_qualified_min REAL,
+    diameter_qualified_max REAL,
+    diameter_reference TEXT,
+    positions_qualified TEXT,
+    positions_reference TEXT,
+    joint_type_qualified TEXT,
+    overlap_qualified TEXT,
+    p_number_qualified TEXT,
+    f_number_qualified TEXT,
+    backing_type TEXT,
+    derived_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(bpqr_id, code_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bpqr_qualifications_bpqr ON weld_bpqr_qualifications(bpqr_id);
+
 -- =========== CONTINUITY & PRODUCTION ===========
 
 CREATE TABLE IF NOT EXISTS weld_continuity_events (

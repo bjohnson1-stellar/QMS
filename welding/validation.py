@@ -306,6 +306,9 @@ def validate_cross_field(data: Dict[str, Any], form_type: str,
         _validate_pqr_cross_field(data, result)
     elif form_type == "wpq":
         _validate_wpq_cross_field(data, result, conn)
+        _check_derived_ranges(data, result, form_type)
+    elif form_type == "bpqr":
+        _check_derived_ranges(data, result, form_type)
 
     return result
 
@@ -462,6 +465,47 @@ def _validate_wpq_cross_field(data: Dict, result: ValidationResult,
             "No test results found for WPQ",
             "tests",
         ))
+
+
+def _check_derived_ranges(data: Dict, result: ValidationResult, form_type: str):
+    """
+    Compare derived qualification ranges against any existing extracted values.
+    Warns when extracted ranges differ significantly from computed ranges.
+    """
+    parent = data.get("parent", {})
+    if not parent.get("coupon_thickness"):
+        return  # Can't derive without actual values
+
+    try:
+        from qms.welding.qualification_rules import derive_qualified_ranges
+        derivation = derive_qualified_ranges(data, form_type)
+    except Exception:
+        return  # Non-fatal: derivation engine unavailable
+
+    # Check numeric range fields
+    range_checks = [
+        ("thickness_qualified_min", "thickness min"),
+        ("thickness_qualified_max", "thickness max"),
+        ("diameter_qualified_min", "diameter min"),
+        ("diameter_qualified_max", "diameter max"),
+    ]
+
+    for field_name, label in range_checks:
+        extracted = parent.get(field_name)
+        derived = derivation.governing.get(field_name)
+        if extracted is not None and derived is not None:
+            try:
+                e_val = float(extracted)
+                d_val = float(derived)
+                # Allow 5% tolerance for rounding
+                if abs(e_val - d_val) > max(0.01, 0.05 * d_val):
+                    result.add_issue(ValidationIssue(
+                        f"DERIVE-{form_type.upper()}-001", "warning",
+                        f"Extracted {label} ({e_val}) differs from derived ({d_val:.4f})",
+                        field_name,
+                    ))
+            except (ValueError, TypeError):
+                pass
 
 
 # ---------------------------------------------------------------------------

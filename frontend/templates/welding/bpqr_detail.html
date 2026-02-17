@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}{% if bpqr %}{{ bpqr.bpqr_number }} - BPQR{% else %}New BPQR{% endif %} - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header page-header-actions">
+    <div>
+        <h1>{% if bpqr %}{{ bpqr.bpqr_number }}{% else %}New BPQR{% endif %}</h1>
+        <p class="subtitle">
+            Brazer Performance Qualification Record
+            {% if bpqr and bpqr.status %}
+            <span class="status-badge status-{{ bpqr.status }}" style="margin-left:8px;">{{ bpqr.status }}</span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="action-buttons">
+        {% if bpqr and not edit %}
+        <a href="?edit=1"><button>Edit</button></a>
+        <button class="secondary" onclick="deriveAndSave()">Re-derive Ranges</button>
+        {% elif bpqr and edit %}
+        <a href="?"><button class="secondary">Cancel</button></a>
+        <button class="success" onclick="saveForm()">Save</button>
+        {% else %}
+        <a href="{{ url_for('welding.forms_list') }}"><button class="secondary">Cancel</button></a>
+        <button class="success" onclick="createForm()">Create</button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="success-message" id="successMsg"></div>
+<div class="error-message" id="errorMsg"></div>
+
+<div class="card">
+    <h2>Brazer &amp; Test Information</h2>
+    <div class="detail-header-grid">
+        {% set fields = [
+            ('Brazer Name', 'brazer_name'),
+            ('Brazer Stamp', 'brazer_stamp'),
+            ('BPS Number', 'bps_number'),
+            ('Process', 'brazing_process'),
+            ('Torch Type', 'torch_type'),
+            ('Test Date', 'test_date'),
+            ('Status', 'status'),
+            ('Certified By', 'certified_by'),
+        ] %}
+        {% for label, field in fields %}
+        <div class="detail-field">
+            <div class="detail-field-label">{{ label }}</div>
+            {% if edit %}
+            <input type="{% if 'date' in field %}date{% else %}text{% endif %}"
+                   class="edit-field" id="field_{{ field }}"
+                   value="{{ bpqr[field] if bpqr and bpqr.get(field) else '' }}">
+            {% else %}
+            <div class="detail-field-value">
+                {% if bpqr and bpqr.get(field) %}
+                    {% if field == 'status' %}
+                    <span class="status-badge status-{{ bpqr[field] }}">{{ bpqr[field] }}</span>
+                    {% elif field == 'brazer_stamp' %}
+                    <a href="{{ url_for('welding.welder_profile', welder_stamp=bpqr[field]) }}" style="color:var(--color-primary);font-weight:600;text-decoration:none;">{{ bpqr[field] }}</a>
+                    {% else %}{{ bpqr[field] }}{% endif %}
+                {% else %}-{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <h2>Qualification Ranges <span id="derivingDot" style="display:none;" class="deriving-indicator"></span></h2>
+    <table class="qual-table">
+        <thead>
+            <tr>
+                <th style="width:180px;">Variable</th>
+                <th style="width:120px;">Actual Value</th>
+                {% for q in qualifications %}
+                <th>{{ q.code_name }}</th>
+                {% endfor %}
+                {% if not qualifications %}
+                <th>ASME IX</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% set rows = [
+                ('Thickness (min)', 'coupon_thickness', 'thickness_qualified_min'),
+                ('Thickness (max)', '', 'thickness_qualified_max'),
+                ('Diameter (min)', 'coupon_diameter', 'diameter_qualified_min'),
+                ('Diameter (max)', '', 'diameter_qualified_max'),
+                ('P-Number', 'p_number_actual', 'p_number_qualified'),
+                ('F-Number', '', 'f_number_qualified'),
+                ('Positions', 'test_position', 'positions_qualified'),
+                ('Joint Type', 'joint_type', 'joint_type_qualified'),
+                ('Overlap', 'overlap_length', 'overlap_qualified'),
+            ] %}
+            {% for label, actual_field, qual_field in rows %}
+            <tr>
+                <td>{{ label }}</td>
+                <td>
+                    {% if edit and actual_field %}
+                    <input type="text" class="edit-field" id="actual_{{ actual_field }}"
+                           value="{{ bpqr[actual_field] if bpqr and bpqr.get(actual_field) else '' }}"
+                           data-actual="1" onblur="liveDerive()">
+                    {% elif actual_field and bpqr and bpqr.get(actual_field) %}
+                    {{ bpqr[actual_field] }}
+                    {% else %}-{% endif %}
+                </td>
+                {% for q in qualifications %}
+                <td id="qual_{{ q.code_id }}_{{ qual_field }}">
+                    {% set val = q.get(qual_field) %}
+                    {% if val == 999.0 %}Unlimited
+                    {% elif val is not none %}{{ val }}
+                    {% else %}<span class="qual-value-na">n/a</span>{% endif %}
+                </td>
+                {% endfor %}
+                {% if not qualifications %}
+                <td id="qual_asme_ix_{{ qual_field }}"><span class="qual-value-na">-</span></td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if bpqr and tests is defined %}
+<div class="card">
+    <h2>Test Results</h2>
+    {% if tests %}
+    <table>
+        <thead><tr><th>Type</th><th>Standard</th><th>Position</th><th>Result</th><th>Examiner</th></tr></thead>
+        <tbody>
+            {% for t in tests %}
+            <tr>
+                <td>{{ t.test_type or '-' }}</td>
+                <td>{{ t.test_standard or '-' }}</td>
+                <td>{{ t.position or '-' }}</td>
+                <td>
+                    {% if t.result == 'Accept' %}<span class="status-badge status-active">{{ t.result }}</span>
+                    {% elif t.result == 'Reject' %}<span class="status-badge status-expired">{{ t.result }}</span>
+                    {% else %}{{ t.result or '-' }}{% endif %}
+                </td>
+                <td>{{ t.examiner_name or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">No test results recorded.</div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const BPQR_ID = {{ bpqr.id if bpqr else 'null' }};
+const IS_EDIT = {{ 'true' if edit else 'false' }};
+
+function getActualValues() {
+    const parent = {};
+    document.querySelectorAll('[data-actual="1"]').forEach(el => {
+        const field = el.id.replace('actual_', '');
+        const val = el.value.trim();
+        if (val) {
+            const num = parseFloat(val);
+            parent[field] = isNaN(num) ? val : num;
+        }
+    });
+    return parent;
+}
+
+let deriveTimer = null;
+function liveDerive() {
+    if (deriveTimer) clearTimeout(deriveTimer);
+    deriveTimer = setTimeout(async () => {
+        document.getElementById('derivingDot').style.display = 'inline-block';
+        const parent = getActualValues();
+        try {
+            const res = await fetch('/welding/api/derive', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({form_type: 'bpqr', parent}),
+            });
+            const data = await res.json();
+            for (const [codeId, codeData] of Object.entries(data.per_code)) {
+                for (const [f, v] of Object.entries(codeData)) {
+                    const el = document.getElementById(`qual_${codeId}_${f}`);
+                    if (el) {
+                        if (v === 'Unlimited') el.textContent = 'Unlimited';
+                        else if (v == null) el.innerHTML = '<span class="qual-value-na">n/a</span>';
+                        else el.textContent = v;
+                    }
+                }
+            }
+        } catch (err) { console.error(err); }
+        document.getElementById('derivingDot').style.display = 'none';
+    }, 300);
+}
+
+async function saveForm() {
+    const parent = getActualValues();
+    document.querySelectorAll('[id^="field_"]').forEach(el => {
+        const f = el.id.replace('field_', '');
+        if (el.value.trim()) parent[f] = el.value.trim();
+    });
+    try {
+        const res = await fetch(`/welding/api/forms/bpqr/${BPQR_ID}`, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(parent),
+        });
+        if (res.ok) {
+            await fetch(`/welding/api/derive/bpqr/${BPQR_ID}`, {method: 'POST'});
+            showMsg('successMsg', 'BPQR updated.');
+            setTimeout(() => window.location = `/welding/bpqr/${BPQR_ID}`, 1000);
+        }
+    } catch (err) { showMsg('errorMsg', err.message); }
+}
+
+async function createForm() {
+    const parent = getActualValues();
+    document.querySelectorAll('[id^="field_"]').forEach(el => {
+        const f = el.id.replace('field_', '');
+        if (el.value.trim()) parent[f] = el.value.trim();
+    });
+    try {
+        const res = await fetch('/welding/api/forms/bpqr', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(parent),
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showMsg('successMsg', 'BPQR created.');
+            setTimeout(() => window.location = `/welding/bpqr/${data.id}`, 1000);
+        } else { showMsg('errorMsg', data.error); }
+    } catch (err) { showMsg('errorMsg', err.message); }
+}
+
+async function deriveAndSave() {
+    const res = await fetch(`/welding/api/derive/bpqr/${BPQR_ID}`, {method: 'POST'});
+    if (res.ok) { showMsg('successMsg', 'Ranges re-derived.'); setTimeout(() => location.reload(), 1000); }
+}
+
+function showMsg(id, text) {
+    const el = document.getElementById(id);
+    el.textContent = text; el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 5000);
+}
+
+if (IS_EDIT) {
+    document.querySelectorAll('[data-actual="1"]').forEach(el => {
+        el.addEventListener('blur', liveDerive);
+    });
+    setTimeout(liveDerive, 200);
+}
+</script>
+{% endblock %}

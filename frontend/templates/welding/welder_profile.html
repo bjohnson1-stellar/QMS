@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}{{ welder.name or stamp }} - Welder Profile - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ welder.name or 'Unknown Welder' }}</h1>
+    <p class="subtitle">
+        Stamp: <strong style="font-family:var(--font-mono);color:var(--color-primary);">{{ stamp }}</strong>
+        &mdash; {{ wpqs|length }} WPQ{{ 's' if wpqs|length != 1 else '' }},
+        {{ bpqrs|length }} BPQR{{ 's' if bpqrs|length != 1 else '' }}
+    </p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ wpqs|selectattr('status', 'equalto', 'active')|list|length }}</div>
+        <div class="stat-label">Active WPQs</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ bpqrs|selectattr('status', 'equalto', 'active')|list|length }}</div>
+        <div class="stat-label">Active BPQRs</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ wpqs|selectattr('status', 'equalto', 'expired')|list|length + bpqrs|selectattr('status', 'equalto', 'expired')|list|length }}</div>
+        <div class="stat-label">Expired</div>
+    </div>
+</div>
+
+{% if wpqs %}
+<div class="card">
+    <h2>Welding Qualifications (WPQ)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>WPQ Number</th>
+                <th>Process</th>
+                <th>Position</th>
+                <th>Status</th>
+                <th>Expiration</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for w in wpqs %}
+            <tr class="clickable" onclick="window.location='/welding/wpq/{{ w.id }}'">
+                <td><strong>{{ w.wpq_number }}</strong></td>
+                <td>{{ w.process_type or '-' }}</td>
+                <td>{{ w.test_position or '-' }}</td>
+                <td><span class="status-badge status-{{ w.status or 'pending' }}">{{ w.status or 'pending' }}</span></td>
+                <td>{{ w.current_expiration_date or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if bpqrs %}
+<div class="card">
+    <h2>Brazing Qualifications (BPQR)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>BPQR Number</th>
+                <th>Process</th>
+                <th>Status</th>
+                <th>Expiration</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in bpqrs %}
+            <tr class="clickable" onclick="window.location='/welding/bpqr/{{ b.id }}'">
+                <td><strong>{{ b.bpqr_number }}</strong></td>
+                <td>{{ b.brazing_process or '-' }}</td>
+                <td><span class="status-badge status-{{ b.status or 'pending' }}">{{ b.status or 'pending' }}</span></td>
+                <td>{{ b.current_expiration_date or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if not wpqs and not bpqrs %}
+<div class="card">
+    <div class="empty-state">No qualifications found for this welder.</div>
+</div>
+{% endif %}
+{% endblock %}

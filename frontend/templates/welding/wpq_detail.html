@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}{% if wpq %}{{ wpq.wpq_number }} - WPQ{% else %}New WPQ{% endif %} - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header page-header-actions">
+    <div>
+        <h1>{% if wpq %}{{ wpq.wpq_number }}{% else %}New WPQ{% endif %}</h1>
+        <p class="subtitle">
+            {% if wpq %}
+            Welder Performance Qualification
+            {% if wpq.status %}
+            <span class="status-badge status-{{ wpq.status }}" style="margin-left:8px;">{{ wpq.status }}</span>
+            {% endif %}
+            {% else %}
+            Create a new Welder Performance Qualification record
+            {% endif %}
+        </p>
+    </div>
+    <div class="action-buttons">
+        {% if wpq and not edit %}
+        <a href="?edit=1"><button>Edit</button></a>
+        <button class="secondary" onclick="deriveAndSave()">Re-derive Ranges</button>
+        {% elif wpq and edit %}
+        <a href="?"><button class="secondary">Cancel</button></a>
+        <button class="success" onclick="saveForm()">Save</button>
+        {% else %}
+        <a href="{{ url_for('welding.forms_list') }}"><button class="secondary">Cancel</button></a>
+        <button class="success" onclick="createForm()">Create</button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="success-message" id="successMsg"></div>
+<div class="error-message" id="errorMsg"></div>
+
+<!-- Header Info -->
+<div class="card">
+    <h2>Welder &amp; Test Information</h2>
+    <div class="detail-header-grid">
+        {% set fields = [
+            ('Welder Name', 'welder_name', false),
+            ('Welder Stamp', 'welder_stamp', true),
+            ('WPS Number', 'wps_number', true),
+            ('Process', 'process_type', false),
+            ('Test Date', 'test_date', false),
+            ('Expiration', 'current_expiration_date', false),
+            ('Status', 'status', false),
+            ('Certified By', 'certified_by', false),
+        ] %}
+        {% for label, field, is_mono in fields %}
+        <div class="detail-field">
+            <div class="detail-field-label">{{ label }}</div>
+            {% if edit %}
+            <input type="{% if 'date' in field %}date{% else %}text{% endif %}"
+                   class="edit-field" id="field_{{ field }}"
+                   value="{{ wpq[field] if wpq and wpq[field] else '' }}"
+                   {% if field in ('process_type', 'welder_stamp', 'wps_number') %}data-actual="1"{% endif %}>
+            {% else %}
+            <div class="detail-field-value {% if is_mono %}mono{% endif %}">
+                {% if wpq and wpq[field] %}
+                    {% if field == 'status' %}
+                    <span class="status-badge status-{{ wpq[field] }}">{{ wpq[field] }}</span>
+                    {% elif field == 'welder_stamp' and wpq[field] %}
+                    <a href="{{ url_for('welding.welder_profile', welder_stamp=wpq[field]) }}" style="color:var(--color-primary);text-decoration:none;font-weight:600;">{{ wpq[field] }}</a>
+                    {% else %}
+                    {{ wpq[field] }}
+                    {% endif %}
+                {% else %}-{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Actual Values + Qualification Ranges -->
+<div class="card">
+    <h2>Qualification Ranges <span id="derivingDot" style="display:none;" class="deriving-indicator"></span></h2>
+    <table class="qual-table">
+        <thead>
+            <tr>
+                <th style="width:180px;">Variable</th>
+                <th style="width:120px;">Actual Value</th>
+                {% for q in qualifications %}
+                <th>{{ q.code_name }}</th>
+                {% endfor %}
+                {% if not qualifications %}
+                <th>ASME IX</th>
+                <th>AWS D1.1</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% set rows = [
+                ('Thickness (min)', 'coupon_thickness', 'thickness_qualified_min', ''),
+                ('Thickness (max)', '', 'thickness_qualified_max', ''),
+                ('Diameter (min)', 'coupon_diameter', 'diameter_qualified_min', ''),
+                ('Diameter (max)', '', 'diameter_qualified_max', ''),
+                ('P-Number', 'p_number_actual', 'p_number_qualified', ''),
+                ('F-Number', 'f_number_actual', 'f_number_qualified', ''),
+                ('Groove Positions', 'test_position', 'groove_positions_qualified', ''),
+                ('Fillet Positions', '', 'fillet_positions_qualified', ''),
+                ('Backing', 'backing_actual', 'backing_type', ''),
+                ('Deposit Thickness', 'deposit_thickness_actual', 'deposit_thickness_max', ''),
+                ('Filler Type', 'filler_type', 'filler_type_qualified', ''),
+            ] %}
+            {% for label, actual_field, qual_field, _ in rows %}
+            <tr>
+                <td>{{ label }}</td>
+                <td>
+                    {% if edit and actual_field %}
+                    <input type="text" class="edit-field" id="actual_{{ actual_field }}"
+                           value="{{ wpq[actual_field] if wpq and wpq.get(actual_field) else '' }}"
+                           data-actual="1" onblur="liveDerive()">
+                    {% elif actual_field and wpq and wpq.get(actual_field) %}
+                    {{ wpq[actual_field] }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                {% for q in qualifications %}
+                <td id="qual_{{ q.code_id }}_{{ qual_field }}">
+                    {% set val = q.get(qual_field) %}
+                    {% if val == 999.0 %}Unlimited
+                    {% elif val is not none %}{{ val }}
+                    {% else %}<span class="qual-value-na">n/a</span>
+                    {% endif %}
+                </td>
+                {% endfor %}
+                {% if not qualifications %}
+                <td id="qual_asme_ix_{{ qual_field }}"><span class="qual-value-na">-</span></td>
+                <td id="qual_aws_d1_1_{{ qual_field }}"><span class="qual-value-na">-</span></td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Test Results -->
+{% if wpq and tests is defined %}
+<div class="card">
+    <h2>Test Results</h2>
+    {% if tests %}
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Specimen</th>
+                <th>Bend Type</th>
+                <th>Result</th>
+                <th>Examiner</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in tests %}
+            <tr>
+                <td>{{ t.test_type or '-' }}</td>
+                <td>{{ t.specimen_number or '-' }}</td>
+                <td>{{ t.bend_type or '-' }}</td>
+                <td>
+                    {% if t.result == 'Acceptable' %}
+                    <span class="status-badge status-active">{{ t.result }}</span>
+                    {% elif t.result == 'Rejected' %}
+                    <span class="status-badge status-expired">{{ t.result }}</span>
+                    {% else %}
+                    {{ t.result or '-' }}
+                    {% endif %}
+                </td>
+                <td>{{ t.examiner_name or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">No test results recorded.</div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const WPQ_ID = {{ wpq.id if wpq else 'null' }};
+const IS_EDIT = {{ 'true' if edit else 'false' }};
+
+// Collect actual values from the form
+function getActualValues() {
+    const parent = {};
+    document.querySelectorAll('[data-actual="1"]').forEach(el => {
+        const field = el.id.replace('actual_', '').replace('field_', '');
+        const val = el.value.trim();
+        if (val) {
+            // Try parsing as number for numeric fields
+            const num = parseFloat(val);
+            parent[field] = isNaN(num) ? val : num;
+        }
+    });
+    return parent;
+}
+
+// Live derivation — called when actual value fields change
+let deriveTimer = null;
+function liveDerive() {
+    if (deriveTimer) clearTimeout(deriveTimer);
+    deriveTimer = setTimeout(async () => {
+        const dot = document.getElementById('derivingDot');
+        dot.style.display = 'inline-block';
+
+        const parent = getActualValues();
+        try {
+            const res = await fetch('/welding/api/derive', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({form_type: 'wpq', parent}),
+            });
+            const data = await res.json();
+            updateQualColumns(data.per_code);
+        } catch (err) {
+            console.error('Derivation error:', err);
+        }
+        dot.style.display = 'none';
+    }, 300);
+}
+
+function updateQualColumns(perCode) {
+    const fields = [
+        'thickness_qualified_min', 'thickness_qualified_max',
+        'diameter_qualified_min', 'diameter_qualified_max',
+        'p_number_qualified', 'f_number_qualified',
+        'groove_positions_qualified', 'fillet_positions_qualified',
+        'backing_type', 'deposit_thickness_max', 'filler_type_qualified',
+    ];
+
+    for (const [codeId, codeData] of Object.entries(perCode)) {
+        fields.forEach(f => {
+            const el = document.getElementById(`qual_${codeId}_${f}`);
+            if (el) {
+                const val = codeData[f];
+                if (val === 'Unlimited') el.textContent = 'Unlimited';
+                else if (val === undefined || val === null) el.innerHTML = '<span class="qual-value-na">n/a</span>';
+                else el.textContent = val;
+            }
+        });
+    }
+}
+
+// Save existing record
+async function saveForm() {
+    const parent = getActualValues();
+    try {
+        const res = await fetch(`/welding/api/forms/wpq/${WPQ_ID}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(parent),
+        });
+        const data = await res.json();
+        if (res.ok) {
+            // Also re-derive and save qualifications
+            await fetch(`/welding/api/derive/wpq/${WPQ_ID}`, {method: 'POST'});
+            showMsg('successMsg', 'WPQ updated and ranges re-derived.');
+            setTimeout(() => window.location = `/welding/wpq/${WPQ_ID}`, 1000);
+        } else {
+            showMsg('errorMsg', data.error || 'Save failed');
+        }
+    } catch (err) {
+        showMsg('errorMsg', 'Network error: ' + err.message);
+    }
+}
+
+// Create new record
+async function createForm() {
+    const parent = getActualValues();
+    // Include header fields
+    document.querySelectorAll('[id^="field_"]').forEach(el => {
+        const field = el.id.replace('field_', '');
+        if (el.value.trim()) parent[field] = el.value.trim();
+    });
+
+    if (!parent.wpq_number) {
+        // Generate a placeholder number if not provided
+        const numField = document.getElementById('field_wpq_number');
+        if (numField) parent.wpq_number = numField.value.trim();
+    }
+
+    try {
+        const res = await fetch('/welding/api/forms/wpq', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(parent),
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showMsg('successMsg', 'WPQ created.');
+            setTimeout(() => window.location = `/welding/wpq/${data.id}`, 1000);
+        } else {
+            showMsg('errorMsg', data.error || 'Create failed');
+        }
+    } catch (err) {
+        showMsg('errorMsg', 'Network error: ' + err.message);
+    }
+}
+
+// Derive and save (from view mode)
+async function deriveAndSave() {
+    try {
+        const res = await fetch(`/welding/api/derive/wpq/${WPQ_ID}`, {method: 'POST'});
+        const data = await res.json();
+        if (res.ok) {
+            showMsg('successMsg', `Ranges re-derived. ${data.rules_fired} rules applied.`);
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showMsg('errorMsg', data.error || 'Derivation failed');
+        }
+    } catch (err) {
+        showMsg('errorMsg', 'Network error: ' + err.message);
+    }
+}
+
+function showMsg(id, text) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+// Wire up live derivation on all actual value inputs
+if (IS_EDIT) {
+    document.querySelectorAll('[data-actual="1"]').forEach(el => {
+        el.addEventListener('blur', liveDerive);
+        el.addEventListener('change', liveDerive);
+    });
+    // Initial derivation
+    setTimeout(liveDerive, 200);
+}
+</script>
+{% endblock %}

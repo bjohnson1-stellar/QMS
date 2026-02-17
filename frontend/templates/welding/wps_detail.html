@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ wps.wps_number }} - WPS - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header page-header-actions">
+    <div>
+        <h1>{{ wps.wps_number }}</h1>
+        <p class="subtitle">
+            Welding Procedure Specification
+            {% if wps.status %}
+            <span class="status-badge status-{{ wps.status }}" style="margin-left:8px;">{{ wps.status }}</span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="action-buttons">
+        {% if not edit %}
+        <a href="?edit=1"><button>Edit</button></a>
+        {% else %}
+        <a href="?"><button class="secondary">Cancel</button></a>
+        <button class="success" onclick="saveWPS()">Save</button>
+        {% endif %}
+        <a href="{{ url_for('welding.forms_list') }}"><button class="secondary">Back to Forms</button></a>
+    </div>
+</div>
+
+<div class="success-message" id="successMsg"></div>
+<div class="error-message" id="errorMsg"></div>
+
+<div class="card">
+    <h2>Procedure Details</h2>
+    <div class="detail-header-grid">
+        {% set fields = [
+            ('WPS Number', 'wps_number'),
+            ('Revision', 'revision'),
+            ('Title', 'title'),
+            ('Status', 'status'),
+            ('Revision Date', 'revision_date'),
+            ('Description', 'description'),
+        ] %}
+        {% for label, field in fields %}
+        <div class="detail-field">
+            <div class="detail-field-label">{{ label }}</div>
+            {% if edit %}
+            <input type="text" class="edit-field" id="field_{{ field }}"
+                   value="{{ wps.get(field, '') or '' }}">
+            {% else %}
+            <div class="detail-field-value">
+                {% if field == 'status' and wps.get(field) %}
+                <span class="status-badge status-{{ wps[field] }}">{{ wps[field] }}</span>
+                {% else %}{{ wps.get(field) or '-' }}{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if wps.notes %}
+<div class="card">
+    <h2>Notes</h2>
+    <p>{{ wps.notes }}</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveWPS() {
+    const data = {};
+    document.querySelectorAll('[id^="field_"]').forEach(el => {
+        const f = el.id.replace('field_', '');
+        if (el.value.trim()) data[f] = el.value.trim();
+    });
+    try {
+        const res = await fetch(`/welding/api/forms/wps/{{ wps.id }}`, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data),
+        });
+        if (res.ok) {
+            document.getElementById('successMsg').textContent = 'WPS updated.';
+            document.getElementById('successMsg').style.display = 'block';
+            setTimeout(() => window.location = `/welding/wps/{{ wps.id }}`, 1000);
+        }
+    } catch (err) {
+        document.getElementById('errorMsg').textContent = err.message;
+        document.getElementById('errorMsg').style.display = 'block';
+    }
+}
+</script>
+{% endblock %}

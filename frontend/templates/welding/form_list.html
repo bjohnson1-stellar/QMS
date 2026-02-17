@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Welding Forms - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header page-header-actions">
+    <div>
+        <h1>Welding Forms</h1>
+        <p class="subtitle">View and manage all welding qualification documents</p>
+    </div>
+    <div class="action-buttons">
+        <button onclick="window.location='/welding/wpq/new'">+ New WPQ</button>
+        <button class="secondary" onclick="window.location='/welding/bpqr/new'">+ New BPQR</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="tab-bar" id="tabBar">
+        <button class="tab-btn active" data-tab="wps" onclick="switchTab('wps')">WPS</button>
+        <button class="tab-btn" data-tab="pqr" onclick="switchTab('pqr')">PQR</button>
+        <button class="tab-btn" data-tab="wpq" onclick="switchTab('wpq')">WPQ</button>
+        <button class="tab-btn" data-tab="bps" onclick="switchTab('bps')">BPS</button>
+        <button class="tab-btn" data-tab="bpq" onclick="switchTab('bpq')">BPQ</button>
+        <button class="tab-btn" data-tab="bpqr" onclick="switchTab('bpqr')">BPQR</button>
+    </div>
+
+    <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="Search..." onkeyup="filterTable()" style="min-width:250px;">
+        <select id="statusFilter" onchange="filterTable()">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="draft">Draft</option>
+        </select>
+    </div>
+
+    <div id="tableContainer"><div class="loading">Loading...</div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API_BASE = '/welding/api';
+let currentTab = 'wps';
+let currentData = [];
+
+const TABLE_CONFIG = {
+    wps: {
+        id_col: 'wps_number', name_col: null,
+        columns: ['wps_number', 'title', 'status', 'revision'],
+        headers: ['WPS Number', 'Title', 'Status', 'Rev'],
+        link: id => `/welding/wps/${id}`,
+    },
+    pqr: {
+        id_col: 'pqr_number', name_col: null,
+        columns: ['pqr_number', 'wps_number', 'status', 'revision'],
+        headers: ['PQR Number', 'WPS', 'Status', 'Rev'],
+        link: id => `/welding/pqr/${id}`,
+    },
+    wpq: {
+        id_col: 'wpq_number', name_col: 'welder_name',
+        columns: ['wpq_number', 'welder_name', 'welder_stamp', 'process_type', 'test_position', 'status', 'current_expiration_date'],
+        headers: ['WPQ Number', 'Welder', 'Stamp', 'Process', 'Position', 'Status', 'Expiration'],
+        link: id => `/welding/wpq/${id}`,
+    },
+    bps: {
+        id_col: 'bps_number', name_col: null,
+        columns: ['bps_number', 'brazing_process', 'status', 'revision'],
+        headers: ['BPS Number', 'Process', 'Status', 'Rev'],
+        link: id => '#',
+    },
+    bpq: {
+        id_col: 'bpq_number', name_col: null,
+        columns: ['bpq_number', 'bps_number', 'status', 'test_date'],
+        headers: ['BPQ Number', 'BPS', 'Status', 'Test Date'],
+        link: id => '#',
+    },
+    bpqr: {
+        id_col: 'bpqr_number', name_col: 'brazer_name',
+        columns: ['bpqr_number', 'brazer_name', 'brazer_stamp', 'brazing_process', 'status', 'current_expiration_date'],
+        headers: ['BPQR Number', 'Brazer', 'Stamp', 'Process', 'Status', 'Expiration'],
+        link: id => `/welding/bpqr/${id}`,
+    },
+};
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    loadForms(tab);
+}
+
+async function loadForms(tab) {
+    const container = document.getElementById('tableContainer');
+    container.innerHTML = '<div class="loading">Loading...</div>';
+
+    try {
+        const res = await fetch(`${API_BASE}/forms/${tab}`);
+        currentData = await res.json();
+        renderTable();
+    } catch (err) {
+        container.innerHTML = '<div class="empty-state">Failed to load records.</div>';
+    }
+}
+
+function filterTable() {
+    renderTable();
+}
+
+function renderTable() {
+    const container = document.getElementById('tableContainer');
+    const config = TABLE_CONFIG[currentTab];
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+
+    let filtered = currentData;
+    if (search) {
+        filtered = filtered.filter(r =>
+            config.columns.some(c => String(r[c] || '').toLowerCase().includes(search))
+        );
+    }
+    if (statusFilter) {
+        filtered = filtered.filter(r => (r.status || '').toLowerCase() === statusFilter);
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state">No records found.</div>';
+        return;
+    }
+
+    let html = '<table><thead><tr>';
+    config.headers.forEach(h => { html += `<th>${h}</th>`; });
+    html += '</tr></thead><tbody>';
+
+    filtered.forEach(row => {
+        const link = config.link(row.id);
+        html += `<tr class="clickable" onclick="window.location='${link}'">`;
+        config.columns.forEach(col => {
+            let val = row[col] ?? '-';
+            if (col === 'status') {
+                val = `<span class="status-badge status-${val}">${val}</span>`;
+            } else if (col.includes('stamp')) {
+                val = `<span style="font-family:var(--font-mono);color:var(--color-primary);font-weight:600;">${val}</span>`;
+            }
+            html += `<td>${val}</td>`;
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+// Load initial tab
+loadForms('wps');
+</script>
+{% endblock %}

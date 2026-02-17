@@ -32,3 +32,9 @@ venv/
 
 # Large binary files
 *.pdf
+
+# Directus (separate CMS installation)
+directus/
+
+# Windows artifacts
+NUL

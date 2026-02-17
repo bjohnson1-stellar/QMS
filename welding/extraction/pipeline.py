@@ -36,6 +36,7 @@ class PipelineResult:
     errors: List[str] = field(default_factory=list)
     parent_record_id: Optional[int] = None
     child_record_counts: Dict[str, int] = field(default_factory=dict)
+    derivation_rules: List[Dict] = field(default_factory=list)
     processing_time_ms: int = 0
 
 
@@ -343,6 +344,34 @@ def run_pipeline(pdf_path: str | Path, form_type: Optional[str] = None,
                 result.status = "partial"
         else:
             result.status = "success"
+
+        # Step 7.5: Derive qualification ranges (WPQ/BPQR only)
+        if form_type in ("wpq", "bpqr"):
+            try:
+                from qms.welding.qualification_rules import derive_qualified_ranges
+                derivation = derive_qualified_ranges(merged_data, form_type)
+                for w in derivation.warnings:
+                    result.validation_issues.append({
+                        "code": "DERIVE-WARN", "severity": "warning",
+                        "message": w, "field": None,
+                    })
+                # Merge governing values into parent (backward compat)
+                parent = merged_data.get("parent", {})
+                for fld, val in derivation.governing.items():
+                    if parent.get(fld) is None:
+                        parent[fld] = val
+                merged_data["parent"] = parent
+                # Attach per-code results for child table storage
+                merged_data["_qualifications"] = derivation.per_code
+                result.derivation_rules = [r for r in derivation.rules_fired]
+                logger.info("Derived ranges: %d rules fired across %d codes",
+                            len(derivation.rules_fired), len(derivation.per_code))
+            except Exception as e:
+                logger.warning("Derivation failed (non-fatal): %s", e)
+                result.validation_issues.append({
+                    "code": "DERIVE-ERR", "severity": "warning",
+                    "message": f"Derivation error: {e}", "field": None,
+                })
 
         # Step 8: Load to database
         if not dry_run:

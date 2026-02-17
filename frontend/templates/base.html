@@ -34,6 +34,14 @@
         </div>
 
         <div class="sidebar-section">
+            <div class="sidebar-section-title">Welding</div>
+            <a href="{{ url_for('welding.dashboard') }}"
+               class="{% if request.endpoint and request.endpoint.startswith('welding.dashboard') %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('welding.forms_list') }}"
+               class="{% if request.endpoint and request.endpoint.startswith('welding.forms_list') %}active{% endif %}">Forms</a>
+        </div>
+
+        <div class="sidebar-section">
             <div class="sidebar-section-title">Pipeline</div>
             <a href="{{ url_for('pipeline.intake_dashboard') }}"
                class="{% if request.endpoint == 'pipeline.intake_dashboard' %}active{% endif %}">Document Intake</a>

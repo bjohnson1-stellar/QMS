@@ -788,3 +788,117 @@ def register_template_cmd(
     )
     typer.echo(f"Registered template #{record_id}: {form_type} {format} "
                f"{'(variant: ' + variant + ')' if variant else '(default)' if default else ''}")
+
+
+@app.command("derive-ranges")
+def derive_ranges_cmd(
+    form_type: str = typer.Argument(..., help="Form type: wpq or bpqr"),
+    identifier: str = typer.Argument(..., help="Record identifier (number) or 'all'"),
+    dry_run: bool = typer.Option(True, "--dry-run/--write", help="Show derivations without writing (default: dry-run)"),
+    codes: Optional[str] = typer.Option(None, "--codes", help="Comma-separated code IDs (default: all applicable)"),
+):
+    """Derive qualification ranges from actual test values using ASME IX / AWS D1.1 rules."""
+    from qms.core import get_db
+    from qms.welding.qualification_rules import derive_qualified_ranges, list_codes, UNLIMITED
+
+    ft = form_type.lower().strip()
+    if ft not in ("wpq", "bpqr"):
+        typer.echo(f"ERROR: form_type must be 'wpq' or 'bpqr', got '{form_type}'")
+        raise typer.Exit(1)
+
+    code_tuple = tuple(c.strip() for c in codes.split(",")) if codes else None
+
+    table = "weld_wpq" if ft == "wpq" else "weld_bpqr"
+    id_col = "wpq_number" if ft == "wpq" else "bpqr_number"
+
+    with get_db(readonly=dry_run) as conn:
+        if identifier.lower() == "all":
+            rows = conn.execute(f"SELECT * FROM {table}").fetchall()
+        else:
+            rows = conn.execute(
+                f"SELECT * FROM {table} WHERE {id_col} = ?", (identifier,)
+            ).fetchall()
+
+        if not rows:
+            typer.echo(f"No {ft.upper()} records found for '{identifier}'")
+            raise typer.Exit(1)
+
+        typer.echo(f"\nDeriving ranges for {len(rows)} {ft.upper()} record(s)")
+        typer.echo(f"Codes: {', '.join(code_tuple) if code_tuple else 'all applicable'}")
+        typer.echo(f"Mode: {'DRY RUN' if dry_run else 'WRITE'}")
+        typer.echo("=" * 60)
+
+        for row in rows:
+            row_dict = dict(row)
+            data = {"parent": row_dict}
+            result = derive_qualified_ranges(data, ft, conn, codes=code_tuple)
+
+            typer.echo(f"\n{row_dict.get(id_col, '?')}")
+            typer.echo("-" * 40)
+
+            if result.warnings:
+                for w in result.warnings:
+                    typer.echo(f"  WARNING: {w}")
+
+            # Display per-code results
+            for code_id, code_data in result.per_code.items():
+                typer.echo(f"\n  [{code_data.get('code_name', code_id)}]")
+                for k, v in sorted(code_data.items()):
+                    if k in ("code_id", "code_name"):
+                        continue
+                    display_val = "Unlimited" if v == UNLIMITED else v
+                    typer.echo(f"    {k}: {display_val}")
+
+            # Display governing
+            if result.governing:
+                typer.echo(f"\n  [Governing (most restrictive)]")
+                for k, v in sorted(result.governing.items()):
+                    display_val = "Unlimited" if v == UNLIMITED else v
+                    code_from = result.governing_code.get(k, "?")
+                    typer.echo(f"    {k}: {display_val}  (from {code_from})")
+
+            # Write if not dry-run
+            if not dry_run:
+                parent = data["parent"]
+                for fld, val in result.governing.items():
+                    parent[fld] = val
+                set_clauses = []
+                values = []
+                for fld, val in result.governing.items():
+                    set_clauses.append(f"{fld} = ?")
+                    values.append(val)
+                if set_clauses:
+                    values.append(row_dict["id"])
+                    conn.execute(
+                        f"UPDATE {table} SET {', '.join(set_clauses)} WHERE id = ?",
+                        values,
+                    )
+
+                # Write per-code child rows
+                qual_table = "weld_wpq_qualifications" if ft == "wpq" else "weld_bpqr_qualifications"
+                fk_col = "wpq_id" if ft == "wpq" else "bpqr_id"
+                try:
+                    from qms.welding.extraction.loader import _get_table_columns
+                    cols = set(_get_table_columns(conn, qual_table))
+                    conn.execute(f"DELETE FROM {qual_table} WHERE {fk_col} = ?",
+                                 (row_dict["id"],))
+                    for code_id, code_data in result.per_code.items():
+                        filtered = {k: v for k, v in code_data.items()
+                                    if k in cols and k not in ("id",)}
+                        filtered[fk_col] = row_dict["id"]
+                        q_columns = list(filtered.keys())
+                        q_placeholders = ", ".join(["?"] * len(q_columns))
+                        q_col_str = ", ".join(q_columns)
+                        q_values = [filtered[c] for c in q_columns]
+                        conn.execute(
+                            f"INSERT INTO {qual_table} ({q_col_str}) VALUES ({q_placeholders})",
+                            q_values,
+                        )
+                except Exception as e:
+                    typer.echo(f"  Note: Could not write to {qual_table}: {e}")
+
+                conn.commit()
+                typer.echo(f"  -> Written to database")
+
+        typer.echo(f"\n{'=' * 60}")
+        typer.echo(f"Done. {len(rows)} record(s) processed.")

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ pqr.pqr_number }} - PQR - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header page-header-actions">
+    <div>
+        <h1>{{ pqr.pqr_number }}</h1>
+        <p class="subtitle">
+            Procedure Qualification Record
+            {% if pqr.status %}
+            <span class="status-badge status-{{ pqr.status }}" style="margin-left:8px;">{{ pqr.status }}</span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="action-buttons">
+        {% if not edit %}
+        <a href="?edit=1"><button>Edit</button></a>
+        {% else %}
+        <a href="?"><button class="secondary">Cancel</button></a>
+        <button class="success" onclick="savePQR()">Save</button>
+        {% endif %}
+        <a href="{{ url_for('welding.forms_list') }}"><button class="secondary">Back to Forms</button></a>
+    </div>
+</div>
+
+<div class="success-message" id="successMsg"></div>
+<div class="error-message" id="errorMsg"></div>
+
+<div class="card">
+    <h2>Record Details</h2>
+    <div class="detail-header-grid">
+        {% set fields = [
+            ('PQR Number', 'pqr_number'),
+            ('WPS Number', 'wps_number'),
+            ('Revision', 'revision'),
+            ('Status', 'status'),
+            ('Test Date', 'test_date'),
+            ('Organization', 'organization'),
+        ] %}
+        {% for label, field in fields %}
+        <div class="detail-field">
+            <div class="detail-field-label">{{ label }}</div>
+            {% if edit %}
+            <input type="text" class="edit-field" id="field_{{ field }}"
+                   value="{{ pqr.get(field, '') or '' }}">
+            {% else %}
+            <div class="detail-field-value">
+                {% if field == 'status' and pqr.get(field) %}
+                <span class="status-badge status-{{ pqr[field] }}">{{ pqr[field] }}</span>
+                {% else %}{{ pqr.get(field) or '-' }}{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if pqr.notes %}
+<div class="card">
+    <h2>Notes</h2>
+    <p>{{ pqr.notes }}</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function savePQR() {
+    const data = {};
+    document.querySelectorAll('[id^="field_"]').forEach(el => {
+        const f = el.id.replace('field_', '');
+        if (el.value.trim()) data[f] = el.value.trim();
+    });
+    try {
+        const res = await fetch(`/welding/api/forms/pqr/{{ pqr.id }}`, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data),
+        });
+        if (res.ok) {
+            document.getElementById('successMsg').textContent = 'PQR updated.';
+            document.getElementById('successMsg').style.display = 'block';
+            setTimeout(() => window.location = `/welding/pqr/{{ pqr.id }}`, 1000);
+        }
+    } catch (err) {
+        document.getElementById('errorMsg').textContent = err.message;
+        document.getElementById('errorMsg').style.display = 'block';
+    }
+}
+</script>
+{% endblock %}

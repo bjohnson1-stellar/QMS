@@ -249,6 +249,45 @@ def load_to_database(data: Dict[str, Any], conn: sqlite3.Connection,
 
     result["parent_id"] = parent_id
 
+    # Insert qualification derivation rows (per-code child tables)
+    qualifications = data.get("_qualifications")
+    if qualifications and isinstance(qualifications, dict):
+        qual_table = {
+            "wpq": ("weld_wpq_qualifications", "wpq_id"),
+            "bpqr": ("weld_bpqr_qualifications", "bpqr_id"),
+        }.get(form_type)
+
+        if qual_table:
+            q_table, q_fk = qual_table
+            # Check if table exists (schema may not be migrated yet)
+            try:
+                cols = set(_get_table_columns(conn, q_table))
+                if cols:
+                    # Delete existing qualifications before re-inserting
+                    conn.execute(f"DELETE FROM {q_table} WHERE {q_fk} = ?",
+                                 (parent_id,))
+                    q_count = 0
+                    for code_id, code_data in qualifications.items():
+                        filtered = {k: v for k, v in code_data.items()
+                                    if k in cols and k not in ("id",)}
+                        filtered[q_fk] = parent_id
+                        if filtered:
+                            q_columns = list(filtered.keys())
+                            q_placeholders = ", ".join(["?"] * len(q_columns))
+                            q_col_str = ", ".join(q_columns)
+                            q_values = [filtered[c] for c in q_columns]
+                            conn.execute(
+                                f"INSERT INTO {q_table} ({q_col_str}) VALUES ({q_placeholders})",
+                                q_values,
+                            )
+                            q_count += 1
+                    result["child_counts"][q_table] = q_count
+                    logger.info("  Inserted %d qualification rows into %s",
+                                q_count, q_table)
+            except Exception:
+                # Table doesn't exist yet — skip silently
+                pass
+
     # Insert child records
     form_type = form_def.form_type
     form_overrides = FORM_CHILD_MAP.get(form_type, {})
@@ -284,6 +323,7 @@ def _infer_fk_column(child_table: str, form_type: str) -> Optional[str]:
         "wpq": "wpq_id",
         "bps": "bps_id",
         "bpq": "bpq_id",
+        "bpqr": "bpqr_id",
     }
     return fk_map.get(form_type)
 

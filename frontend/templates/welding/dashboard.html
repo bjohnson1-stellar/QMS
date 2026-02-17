@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Welding Dashboard - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Welding Dashboard</h1>
+    <p class="subtitle">Qualification tracking and certification management</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.active_wpq }}</div>
+        <div class="stat-label">Active WPQs</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.active_bpqr }}</div>
+        <div class="stat-label">Active BPQRs</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.active_wps }}</div>
+        <div class="stat-label">Active WPSs</div>
+    </div>
+    <div class="stat-card" {% if stats.expiring_soon > 0 %}style="border-left: 3px solid var(--color-warning);"{% endif %}>
+        <div class="stat-value" {% if stats.expiring_soon > 0 %}style="color: var(--color-warning);"{% endif %}>{{ stats.expiring_soon }}</div>
+        <div class="stat-label">Expiring Soon</div>
+    </div>
+</div>
+
+<div class="main-grid-equal">
+    <div class="card">
+        <h2>Recent Qualifications</h2>
+        {% if recent %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Number</th>
+                    <th>Welder</th>
+                    <th>Process</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in recent %}
+                <tr class="clickable" onclick="window.location='/welding/{{ r.type }}/{{ r.id }}'">
+                    <td><strong>{{ r.number }}</strong></td>
+                    <td>{{ r.name or '-' }}<br><small style="color:var(--color-text-muted);">{{ r.stamp or '' }}</small></td>
+                    <td>{{ r.process_type or '-' }}</td>
+                    <td>{{ r.test_date or '-' }}</td>
+                    <td><span class="status-badge status-{{ r.status or 'pending' }}">{{ r.status or 'pending' }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">No qualifications recorded yet.</div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Upcoming Expirations</h2>
+        {% if expiring %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Number</th>
+                    <th>Welder</th>
+                    <th>Process</th>
+                    <th>Expires</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in expiring %}
+                <tr class="clickable" onclick="window.location='/welding/{{ e.type }}/{{ e.id }}'">
+                    <td><strong>{{ e.number }}</strong></td>
+                    <td>{{ e.name or '-' }}<br><small style="color:var(--color-text-muted);">{{ e.stamp or '' }}</small></td>
+                    <td>{{ e.process_type or '-' }}</td>
+                    <td>{{ e.expiration or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">No upcoming expirations.</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <h2>Quick Actions</h2>
+    <div class="quick-links">
+        <a href="{{ url_for('welding.forms_list') }}" class="quick-link">
+            <span class="quick-link-icon">&#9776;</span>
+            <span class="quick-link-label">Browse Forms</span>
+        </a>
+        <a href="{{ url_for('welding.wpq_new') }}" class="quick-link">
+            <span class="quick-link-icon">+</span>
+            <span class="quick-link-label">New WPQ</span>
+        </a>
+        <a href="{{ url_for('welding.bpqr_new') }}" class="quick-link">
+            <span class="quick-link-icon">+</span>
+            <span class="quick-link-label">New BPQR</span>
+        </a>
+    </div>
+</div>
+{% endblock %}
