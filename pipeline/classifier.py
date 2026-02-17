@@ -299,10 +299,36 @@ def _handle_field_locations(result: ClassificationResult) -> Tuple[bool, Optiona
             stats.get("personnel_processed", 0),
             stats.get("employees_created", 0),
         )
-        return (True, None)
     except Exception as exc:
         logger.error("Field locations import failed for %s: %s", result.filename, exc)
         return (False, str(exc))
+
+    # Strip Construction and Thermal sheets — only SIS data is needed
+    _strip_unused_sheets(result.source_path)
+
+    return (True, None)
+
+
+# Sheets to keep in field location workbooks (all others are deleted)
+_KEEP_SHEETS = {"SIS"}
+
+
+def _strip_unused_sheets(filepath: Path) -> None:
+    """Remove Construction and Thermal sheets from a field location Excel file."""
+    try:
+        import openpyxl
+
+        wb = openpyxl.load_workbook(str(filepath))
+        removed = [name for name in wb.sheetnames if name not in _KEEP_SHEETS]
+        if not removed:
+            return
+        for name in removed:
+            del wb[name]
+        wb.save(str(filepath))
+        logger.info("Stripped sheets from %s: %s", filepath.name, ", ".join(removed))
+    except Exception as exc:
+        # Non-fatal — file was already imported successfully
+        logger.warning("Could not strip sheets from %s: %s", filepath.name, exc)
 
 
 def process_files(
