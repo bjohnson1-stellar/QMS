@@ -70,86 +70,123 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* === Sidebar === */
-.sidebar {
-    width: 230px;
-    background: var(--color-sidebar);
-    color: var(--color-sidebar-text);
-    padding: 0;
-    flex-shrink: 0;
-    min-height: 100vh;
+/* === Top Bar === */
+.top-bar {
     position: fixed;
     top: 0;
     left: 0;
-    overflow-y: auto;
+    right: 0;
+    height: 52px;
+    background: var(--color-sidebar);
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
     z-index: 100;
-    border-right: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.sidebar-brand {
-    padding: 22px 22px 18px;
-    border-bottom: 1px solid var(--color-sidebar-border);
+.top-bar-brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-right: 36px;
+    flex-shrink: 0;
 }
 
-.sidebar-brand h2 {
+.top-bar-logo {
     font-family: var(--font-heading);
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     color: #ffffff;
     letter-spacing: -0.02em;
 }
 
-.sidebar-brand small {
+.top-bar-tagline {
     color: var(--color-sidebar-heading);
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.02em;
+    white-space: nowrap;
 }
 
-.sidebar-section {
-    padding: 14px 0 6px;
+.top-bar-modules {
+    display: flex;
+    gap: 2px;
+    height: 100%;
+    align-items: stretch;
 }
 
-.sidebar-section-title {
-    padding: 6px 22px 8px;
-    font-family: var(--font-heading);
-    font-size: 10.5px;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: var(--color-sidebar-heading);
-    letter-spacing: 0.08em;
-}
-
-.sidebar a {
-    display: block;
-    padding: 8px 22px;
+.module-tab {
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
     color: var(--color-sidebar-text);
     text-decoration: none;
-    font-size: 13.5px;
-    font-weight: 450;
-    transition: all 0.15s var(--ease);
-    border-left: 3px solid transparent;
-}
-
-.sidebar a:hover {
-    background: var(--color-sidebar-hover);
-    color: var(--color-sidebar-text-hover);
-    border-left-color: rgba(37, 99, 235, 0.3);
-}
-
-.sidebar a.active {
-    background: rgba(37, 99, 235, 0.12);
-    color: #ffffff;
-    border-left-color: var(--color-sidebar-active);
+    font-family: var(--font-heading);
+    font-size: 14px;
     font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s var(--ease);
+}
+
+.module-tab:hover {
+    color: var(--color-sidebar-text-hover);
+    background: var(--color-sidebar-hover);
+}
+
+.module-tab.active {
+    color: #ffffff;
+    border-bottom-color: var(--color-primary);
+    background: rgba(37, 99, 235, 0.1);
+}
+
+/* === Sub Navigation === */
+.sub-nav {
+    position: fixed;
+    top: 52px;
+    left: 0;
+    right: 0;
+    height: 42px;
+    background: var(--color-surface);
+    display: flex;
+    align-items: stretch;
+    padding: 0 28px;
+    gap: 2px;
+    border-bottom: 1px solid var(--color-border);
+    z-index: 99;
+    box-shadow: var(--shadow-xs);
+}
+
+.sub-nav a {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s var(--ease);
+}
+
+.sub-nav a:hover {
+    color: var(--color-text);
+    background: var(--color-surface-alt);
+}
+
+.sub-nav a.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: 600;
 }
 
 /* === Main Content === */
 .main-content {
-    margin-left: 230px;
+    margin-top: 94px; /* 52px top bar + 42px sub nav */
     padding: 24px 28px;
     flex: 1;
-    width: calc(100% - 230px);
-    min-height: 100vh;
+    width: 100%;
+    min-height: calc(100vh - 94px);
 }
 
 .container {
@@ -1188,7 +1225,7 @@ tr:hover {
     background: var(--color-text-muted);
 }
 
-.sidebar::-webkit-scrollbar-thumb {
+.top-bar::-webkit-scrollbar-thumb {
     background: var(--color-sidebar-border);
 }
 
@@ -1196,7 +1233,7 @@ tr:hover {
 .bulk-toolbar {
     position: fixed;
     bottom: 0;
-    left: 230px;
+    left: 0;
     right: 0;
     background: var(--color-sidebar);
     color: #fff;

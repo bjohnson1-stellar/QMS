@@ -11,47 +11,61 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-brand">
-            <h2>QMS</h2>
-            <small>Quality Management System</small>
-        </div>
+    {# Detect active module from the current route #}
+    {% set ns = namespace(module='projects') %}
+    {% if request.endpoint %}
+        {% if request.endpoint.startswith('welding.') %}
+            {% set ns.module = 'welding' %}
+        {% elif request.endpoint.startswith('pipeline.') %}
+            {% set ns.module = 'pipeline' %}
+        {% elif request.endpoint.startswith('automation.') %}
+            {% set ns.module = 'automation' %}
+        {% endif %}
+    {% endif %}
 
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Projects</div>
+    <nav class="top-bar">
+        <div class="top-bar-brand">
+            <span class="top-bar-logo">QMS</span>
+            <span class="top-bar-tagline">Quality Management System</span>
+        </div>
+        <div class="top-bar-modules">
             <a href="{{ url_for('projects.dashboard') }}"
-               class="{% if request.endpoint == 'projects.dashboard' %}active{% endif %}">Dashboard</a>
-            <a href="{{ url_for('projects.projects_page') }}"
-               class="{% if request.endpoint == 'projects.projects_page' %}active{% endif %}">Projects</a>
-            <a href="{{ url_for('projects.transactions_page') }}"
-               class="{% if request.endpoint == 'projects.transactions_page' %}active{% endif %}">Transactions</a>
-            <a href="{{ url_for('projects.business_units_page') }}"
-               class="{% if request.endpoint == 'projects.business_units_page' %}active{% endif %}">Business Units</a>
-            <a href="{{ url_for('projects.projections_page') }}"
-               class="{% if request.endpoint == 'projects.projections_page' %}active{% endif %}">Projections</a>
-            <a href="{{ url_for('projects.settings_page') }}"
-               class="{% if request.endpoint == 'projects.settings_page' %}active{% endif %}">Settings</a>
-        </div>
-
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Welding</div>
+               class="module-tab {{ 'active' if ns.module == 'projects' }}">Projects</a>
             <a href="{{ url_for('welding.dashboard') }}"
-               class="{% if request.endpoint and request.endpoint.startswith('welding.dashboard') %}active{% endif %}">Dashboard</a>
-            <a href="{{ url_for('welding.forms_list') }}"
-               class="{% if request.endpoint and request.endpoint.startswith('welding.forms_list') %}active{% endif %}">Forms</a>
-        </div>
-
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Pipeline</div>
+               class="module-tab {{ 'active' if ns.module == 'welding' }}">Welding</a>
             <a href="{{ url_for('pipeline.intake_dashboard') }}"
-               class="{% if request.endpoint == 'pipeline.intake_dashboard' %}active{% endif %}">Document Intake</a>
-        </div>
-
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Automation</div>
+               class="module-tab {{ 'active' if ns.module == 'pipeline' }}">Pipeline</a>
             <a href="{{ url_for('automation.preview') }}"
-               class="{% if request.endpoint == 'automation.preview' %}active{% endif %}">Card Preview</a>
+               class="module-tab {{ 'active' if ns.module == 'automation' }}">Automation</a>
         </div>
+    </nav>
+
+    <div class="sub-nav">
+        {% if ns.module == 'projects' %}
+        <a href="{{ url_for('projects.dashboard') }}"
+           class="{{ 'active' if request.endpoint == 'projects.dashboard' }}">Dashboard</a>
+        <a href="{{ url_for('projects.projects_page') }}"
+           class="{{ 'active' if request.endpoint == 'projects.projects_page' }}">Projects</a>
+        <a href="{{ url_for('projects.transactions_page') }}"
+           class="{{ 'active' if request.endpoint == 'projects.transactions_page' }}">Transactions</a>
+        <a href="{{ url_for('projects.business_units_page') }}"
+           class="{{ 'active' if request.endpoint == 'projects.business_units_page' }}">Business Units</a>
+        <a href="{{ url_for('projects.projections_page') }}"
+           class="{{ 'active' if request.endpoint == 'projects.projections_page' }}">Projections</a>
+        <a href="{{ url_for('projects.settings_page') }}"
+           class="{{ 'active' if request.endpoint == 'projects.settings_page' }}">Settings</a>
+        {% elif ns.module == 'welding' %}
+        <a href="{{ url_for('welding.dashboard') }}"
+           class="{{ 'active' if request.endpoint == 'welding.dashboard' }}">Dashboard</a>
+        <a href="{{ url_for('welding.forms_list') }}"
+           class="{{ 'active' if request.endpoint and request.endpoint.startswith('welding.') and request.endpoint != 'welding.dashboard' }}">Forms</a>
+        {% elif ns.module == 'pipeline' %}
+        <a href="{{ url_for('pipeline.intake_dashboard') }}"
+           class="{{ 'active' if request.endpoint == 'pipeline.intake_dashboard' }}">Document Intake</a>
+        {% elif ns.module == 'automation' %}
+        <a href="{{ url_for('automation.preview') }}"
+           class="{{ 'active' if request.endpoint == 'automation.preview' }}">Card Preview</a>
+        {% endif %}
     </div>
 
     <div class="main-content">
