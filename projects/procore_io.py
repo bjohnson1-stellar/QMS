@@ -263,6 +263,70 @@ def import_from_procore(
     return result
 
 
+def _upsert_facility_for_project(
+    conn: sqlite3.Connection,
+    project_id: int,
+    client_name: Optional[str],
+    street: str,
+    city: str,
+    state: str,
+    zip_code: str,
+) -> Optional[int]:
+    """Create or find a facility from address data and link to the project.
+
+    Uses the customer linked to the project (or creates one from client_name).
+    Returns facility_id or None.
+    """
+    # Resolve customer_id from project or create from client_name
+    row = conn.execute(
+        "SELECT customer_id FROM projects WHERE id = ?", (project_id,)
+    ).fetchone()
+    customer_id = row["customer_id"] if row else None
+
+    if not customer_id and client_name:
+        cust = conn.execute(
+            "SELECT id FROM customers WHERE name = ?", (client_name,)
+        ).fetchone()
+        if cust:
+            customer_id = cust["id"]
+        else:
+            cur = conn.execute(
+                "INSERT INTO customers (name) VALUES (?)", (client_name,)
+            )
+            customer_id = cur.lastrowid
+            conn.execute(
+                "UPDATE projects SET customer_id = ? WHERE id = ?",
+                (customer_id, project_id),
+            )
+
+    if not customer_id:
+        return None
+
+    facility_name = f"{city}, {state}" if state else city
+    existing = conn.execute(
+        "SELECT id FROM facilities WHERE customer_id = ? AND name = ?",
+        (customer_id, facility_name),
+    ).fetchone()
+
+    if existing:
+        fac_id = existing["id"]
+    else:
+        cur = conn.execute(
+            """INSERT INTO facilities (customer_id, name, street, city, state, zip)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (customer_id, facility_name, street, city, state, zip_code),
+        )
+        fac_id = cur.lastrowid
+        logger.debug("Created facility '%s' for project %d", facility_name, project_id)
+
+    # Link project to facility
+    conn.execute(
+        "UPDATE projects SET facility_id = ? WHERE id = ? AND facility_id IS NULL",
+        (fac_id, project_id),
+    )
+    return fac_id
+
+
 def _process_project_group(
     conn: sqlite3.Connection,
     base_number: str,
@@ -291,9 +355,9 @@ def _process_project_group(
     # -- Client name (from Name parsing — project_name IS the client) --
     client = proj_name
 
-    # -- Upsert project --
+    # -- Upsert project (PM is per-job, not per-project) --
     existing = conn.execute(
-        "SELECT id FROM projects WHERE number = ?", (base_number,)
+        "SELECT id, customer_id FROM projects WHERE number = ?", (base_number,)
     ).fetchone()
 
     if existing:
@@ -301,13 +365,11 @@ def _process_project_group(
         conn.execute(
             """
             UPDATE projects
-            SET street=?, city=?, state=?, zip=?, stage=?,
-                description=?, project_type=?,
+            SET stage=?, description=?, project_type=?,
                 updated_at=CURRENT_TIMESTAMP
             WHERE id=?
             """,
-            (street, city, state, zip_code, stage,
-             description, project_type, project_id),
+            (stage, description, project_type, project_id),
         )
         result["projects_updated"] += 1
         logger.debug("Updated project %s (id=%d)", base_number, project_id)
@@ -324,6 +386,10 @@ def _process_project_group(
         project_id = cursor.lastrowid
         result["projects_created"] += 1
         logger.debug("Created project %s (id=%d)", base_number, project_id)
+
+    # -- Upsert facility from address data --
+    if city and city.strip():
+        _upsert_facility_for_project(conn, project_id, client, street, city, state, zip_code)
 
     # -- Process jobs for rows with BU codes --
     for row in group_rows:

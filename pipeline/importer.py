@@ -156,32 +156,12 @@ def upsert_jobsite(
     import_date: date,
 ) -> None:
     """
-    Upsert a jobsite record. Updates PM/address on conflict.
+    Legacy jobsite upsert — the jobsites table has been dropped.
 
-    Args:
-        conn: Database connection.
-        jobsite: Jobsite dict from read_jobsites_sheet.
-        project_id: Associated project database ID.
-        import_date: Date for last_updated field.
+    Now a no-op. Job/PM data is handled by processor.py's upsert_job().
+    Kept for API compatibility with existing callers.
     """
-    conn.execute("""
-        INSERT INTO jobsites (job_number, project_id, project_name, pm,
-                              street, city, state, zip, last_updated)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(job_number) DO UPDATE SET
-            project_name = excluded.project_name,
-            pm = excluded.pm,
-            street = excluded.street,
-            city = excluded.city,
-            state = excluded.state,
-            zip = excluded.zip,
-            last_updated = excluded.last_updated,
-            updated_at = CURRENT_TIMESTAMP
-    """, (
-        jobsite['job_number'], project_id, jobsite['project_name'],
-        jobsite['pm'], jobsite['street'], jobsite['city'],
-        jobsite['state'], jobsite['zip'], import_date.isoformat()
-    ))
+    pass
 
 
 # ---------------------------------------------------------------------------
@@ -337,15 +317,8 @@ def import_single(
                 stats.setdefault('projects_skipped', set()).add(proj_num)
                 continue
 
-            cursor = conn.execute(
-                "SELECT id FROM jobsites WHERE job_number = ?", (js['job_number'],)
-            )
-            existing_js = cursor.fetchone()
-            if existing_js:
-                stats['jobsites_updated'] += 1
-            else:
-                stats['jobsites_created'] += 1
-
+            # Legacy: jobsites table was dropped; track stats for compat
+            stats['jobsites_updated'] += 1
             upsert_jobsite(conn, js, project_id, weld_date)
         conn.commit()
 

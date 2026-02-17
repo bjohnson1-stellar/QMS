@@ -188,7 +188,6 @@ def create_project_with_budget(
     *,
     name: str,
     code: str,
-    manager: Optional[str] = None,
     stage: str = "Proposal",
     total_budget: float = 0,
     weight_adjustment: float = 1.0,
@@ -203,19 +202,22 @@ def create_project_with_budget(
     description: Optional[str] = None,
     allocations: Optional[List[Dict[str, Any]]] = None,
 ) -> int:
-    """Create a project and its budget record. Returns project_id."""
+    """Create a project and its budget record. Returns project_id.
+
+    PM is per-job, not per-project — set via job/allocation creation.
+    """
     # Extract base number for projects.number (strip BU/subjob if present)
     parsed = parse_job_code(code)
     base_number = parsed[0] if parsed else code
 
     cursor = conn.execute(
         """
-        INSERT INTO projects (number, name, client, pm, stage, status,
+        INSERT INTO projects (number, name, client, stage, status,
                               start_date, end_date, notes, description,
                               street, city, state, zip)
-        VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (base_number, name, client, manager, stage,
+        (base_number, name, client, stage,
          start_date, end_date, notes, description,
          street, city, state, zip_code),
     )
@@ -248,7 +250,6 @@ def update_project_with_budget(
     *,
     name: str,
     code: str,
-    manager: Optional[str] = None,
     stage: str = "Proposal",
     total_budget: float = 0,
     weight_adjustment: float = 1.0,
@@ -263,20 +264,23 @@ def update_project_with_budget(
     description: Optional[str] = None,
     allocations: Optional[List[Dict[str, Any]]] = None,
 ) -> None:
-    """Update a project and its budget record."""
+    """Update a project and its budget record.
+
+    PM is per-job, not per-project — update via job/allocation.
+    """
     parsed = parse_job_code(code)
     base_number = parsed[0] if parsed else code
 
     conn.execute(
         """
         UPDATE projects
-        SET number=?, name=?, client=?, pm=?, stage=?,
+        SET number=?, name=?, client=?, stage=?,
             start_date=?, end_date=?, notes=?, description=?,
             street=?, city=?, state=?, zip=?,
             updated_at=CURRENT_TIMESTAMP
         WHERE id=?
         """,
-        (base_number, name, client, manager, stage,
+        (base_number, name, client, stage,
          start_date, end_date, notes, description,
          street, city, state, zip_code, project_id),
     )
@@ -1923,3 +1927,40 @@ def distribute_projection_hours(
         "max_hours_per_week": max_hrs_week,
         "warnings": warnings,
     }
+
+
+# ---------------------------------------------------------------------------
+# Project Status Derivation
+# ---------------------------------------------------------------------------
+
+
+def sync_project_status(
+    conn: sqlite3.Connection, project_id: Optional[int] = None
+) -> None:
+    """Derive projects.status from jobs — active if ANY job is active.
+
+    Call this after any job status change (SIS import, Procore import).
+    """
+    if project_id:
+        conn.execute(
+            """
+            UPDATE projects SET status = CASE
+                WHEN EXISTS (
+                    SELECT 1 FROM jobs j WHERE j.project_id = projects.id AND j.status = 'active'
+                ) THEN 'active'
+                ELSE 'inactive'
+            END
+            WHERE id = ?
+            """,
+            (project_id,),
+        )
+    else:
+        conn.execute("""
+            UPDATE projects SET status = CASE
+                WHEN EXISTS (
+                    SELECT 1 FROM jobs j WHERE j.project_id = projects.id AND j.status = 'active'
+                ) THEN 'active'
+                ELSE 'inactive'
+            END
+        """)
+    conn.commit()

@@ -20,6 +20,41 @@ CREATE TABLE IF NOT EXISTS customers (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Facilities (physical sites belonging to a customer)
+CREATE TABLE IF NOT EXISTS facilities (
+    id INTEGER PRIMARY KEY,
+    customer_id INTEGER NOT NULL REFERENCES customers(id),
+    name TEXT NOT NULL,
+    street TEXT,
+    city TEXT,
+    state TEXT,
+    zip TEXT,
+    status TEXT DEFAULT 'active',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(customer_id, name)
+);
+
+-- Project contacts (corporate, site, or project-level)
+CREATE TABLE IF NOT EXISTS project_contacts (
+    id INTEGER PRIMARY KEY,
+    customer_id INTEGER REFERENCES customers(id),
+    facility_id INTEGER REFERENCES facilities(id),
+    project_id INTEGER REFERENCES projects(id),
+    name TEXT NOT NULL,
+    role TEXT,
+    email TEXT,
+    phone TEXT,
+    is_primary INTEGER DEFAULT 0,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_pc_customer ON project_contacts(customer_id);
+CREATE INDEX IF NOT EXISTS idx_pc_facility ON project_contacts(facility_id);
+CREATE INDEX IF NOT EXISTS idx_pc_project ON project_contacts(project_id);
+
 -- Business Units (unified department/BU table)
 -- Replaces the former inline 'departments' table from pipeline/processor.py.
 -- Shared by projects (jobs FK), welding (welder registry FK), and pipeline.
@@ -60,6 +95,7 @@ CREATE TABLE IF NOT EXISTS projects (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     customer_id INTEGER REFERENCES customers(id),
+    facility_id INTEGER REFERENCES facilities(id),
     street TEXT,
     city TEXT,
     state TEXT,
@@ -111,6 +147,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     suffix TEXT NOT NULL,
     scope_name TEXT NOT NULL,
     pm TEXT,
+    is_gmp INTEGER NOT NULL DEFAULT 0,
     status TEXT DEFAULT 'active',
     last_updated DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

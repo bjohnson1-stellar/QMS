@@ -39,10 +39,6 @@
                     <textarea id="projectDescription" rows="2" placeholder="Full project scope description"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Project Manager</label>
-                    <input type="text" id="projectManager">
-                </div>
-                <div class="form-group">
                     <label>Stage *</label>
                     <select id="projectStage" required>
                         {% for stage in stages %}
@@ -394,7 +390,6 @@
         const projectData = {
             name: document.getElementById('projectName').value,
             code: base,
-            manager: document.getElementById('projectManager').value,
             stage: document.getElementById('projectStage').value,
             totalBudget: parseFloat(document.getElementById('totalBudget').value),
             weightAdjustment: parseFloat(document.getElementById('weightAdjustment').value) || 1.0,
@@ -468,7 +463,6 @@
         document.getElementById('projectName').value = project.name;
         document.getElementById('projectBase').value = project.number || '';
         document.getElementById('projectDescription').value = project.description || '';
-        document.getElementById('projectManager').value = project.pm || '';
         document.getElementById('projectStage').value = project.stage;
         document.getElementById('totalBudget').value = project.total_budget || 0;
         document.getElementById('weightAdjustment').value = project.weight_adjustment || 1.0;

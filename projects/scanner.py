@@ -666,7 +666,7 @@ def get_project_summary(project_number: str) -> Optional[Dict[str, Any]]:
         "client": project.get("client"),
         "path": project.get("path"),
         "status": project.get("status"),
-        "pm": project.get("pm"),
+        "pm": project.get("pm"),  # deprecated; PM is per-job now
         "total_sheets": total,
         "processed": processed,
         "open_flags": open_flags,

@@ -141,12 +141,14 @@ def _get_field_employees(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
 def _get_active_projects(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
     """Projects that have active field personnel assigned."""
     rows = conn.execute(
-        """SELECT p.number, p.name, p.client, p.pm, p.status,
+        """SELECT p.number, p.name, p.client, p.status,
+                  (SELECT j2.pm FROM jobs j2 WHERE j2.project_id = p.id
+                   AND j2.pm IS NOT NULL AND j2.pm != '' LIMIT 1) AS pm,
                   COUNT(e.id) AS employee_count
            FROM projects p
            JOIN jobs j ON j.project_id = p.id
            JOIN employees e ON e.job_id = j.id AND e.is_active = 1
-           GROUP BY p.number, p.name, p.client, p.pm, p.status
+           GROUP BY p.number, p.name, p.client, p.status
            ORDER BY p.number"""
     ).fetchall()
     return [

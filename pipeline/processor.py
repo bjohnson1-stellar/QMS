@@ -487,21 +487,24 @@ def upsert_project(
     pm: Optional[str] = None,
 ) -> Tuple[Optional[int], bool]:
     """
-    Look up an existing project by 5-digit number, optionally updating fields.
+    Look up an existing project by 5-digit number, optionally linking customer.
 
     Projects must be created via the Projects UI or Procore import first.
     The pipeline only links drawings/jobs to existing projects.
+
+    Address and PM data are NOT written to the projects table (PM is per-job,
+    address belongs on facilities). Only customer_id linkage is performed.
 
     Args:
         conn: Database connection.
         project_number: 5-digit project prefix.
         project_name: Human-readable project name (used for logging only).
         customer_name: Optional customer name for linkage.
-        street: Optional street address.
-        city: Optional city.
-        state: Optional state code.
-        zip_code: Optional zip code.
-        pm: Optional project manager name.
+        street: Kept for signature compat; not written to projects.
+        city: Kept for signature compat; not written to projects.
+        state: Kept for signature compat; not written to projects.
+        zip_code: Kept for signature compat; not written to projects.
+        pm: Kept for signature compat; not written to projects.
 
     Returns:
         (project_id, False) if found, or (None, False) if not found.
@@ -513,45 +516,21 @@ def upsert_project(
 
     if not row:
         logger.warning(
-            "Project %s (%s) not found — create it in the Projects page first",
+            "Project %s (%s) not found -- create it in the Projects page first",
             project_number, project_name,
         )
         return None, False
 
     project_id = row['id']
-    updates = []
-    params = []
 
-    customer_id = None
+    # Link customer if provided (the only project-level field we still update)
     if customer_name:
         customer_id = ensure_customer(conn, customer_name)
-        updates.append("customer_id = ?")
-        params.append(customer_id)
-
-    if street and street.strip():
-        updates.append("street = ?")
-        params.append(street.strip())
-    if city and city.strip():
-        updates.append("city = ?")
-        params.append(city.strip())
-    if state and state.strip():
-        updates.append("state = ?")
-        params.append(state.strip())
-    if zip_code and zip_code.strip():
-        updates.append("zip = ?")
-        params.append(zip_code.strip())
-    if pm and pm.strip():
-        updates.append("pm = ?")
-        params.append(pm.strip())
-
-    if updates:
-        params.append(project_id)
         conn.execute(
-            f"UPDATE projects SET {', '.join(updates)} WHERE id = ?",
-            params
+            "UPDATE projects SET customer_id = ? WHERE id = ? AND customer_id IS NULL",
+            (customer_id, project_id),
         )
         conn.commit()
-        logger.debug("Updated project %s with new fields", project_number)
 
     return project_id, False
 
@@ -792,30 +771,12 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
     """
     # customers, business_units, projects, jobs are now defined in
     # projects/schema.sql and created via migrate_all(). We only create
-    # supplementary tables here that are pipeline-specific.
+    # supplementary indexes here that are pipeline-specific.
     conn.executescript("""
         CREATE INDEX IF NOT EXISTS idx_customer_name ON customers(name);
         CREATE INDEX IF NOT EXISTS idx_jobs_project ON jobs(project_id);
         CREATE INDEX IF NOT EXISTS idx_jobs_department ON jobs(department_id);
         CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
-
-        CREATE TABLE IF NOT EXISTS jobsites (
-            id INTEGER PRIMARY KEY,
-            job_number TEXT UNIQUE NOT NULL,
-            project_id INTEGER REFERENCES projects(id),
-            project_name TEXT,
-            pm TEXT,
-            street TEXT,
-            city TEXT,
-            state TEXT,
-            zip TEXT,
-            status TEXT DEFAULT 'active',
-            last_updated DATE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE INDEX IF NOT EXISTS idx_jobsites_project ON jobsites(project_id);
-        CREATE INDEX IF NOT EXISTS idx_jobsites_status ON jobsites(status);
     """)
 
     # Load business units from config if table is empty
