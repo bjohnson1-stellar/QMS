@@ -425,15 +425,19 @@ def _get_dashboard_stats(conn):
 def _get_recent_qualifications(conn, limit=5):
     try:
         rows = conn.execute("""
-            SELECT id, wpq_number as number, 'wpq' as type,
-                   welder_name as name, welder_stamp as stamp,
-                   process_type, test_date, status
-            FROM weld_wpq
+            SELECT w.id, w.wpq_number as number, 'wpq' as type,
+                   COALESCE(w.welder_name, r.display_name) as name,
+                   w.welder_stamp as stamp,
+                   w.process_type, w.test_date, w.status
+            FROM weld_wpq w
+            LEFT JOIN weld_welder_registry r ON r.welder_stamp = w.welder_stamp
             UNION ALL
-            SELECT id, bpqr_number, 'bpqr',
-                   brazer_name, brazer_stamp,
-                   brazing_process, test_date, status
-            FROM weld_bpqr
+            SELECT b.id, b.bpqr_number, 'bpqr',
+                   COALESCE(b.brazer_name, r2.display_name),
+                   b.brazer_stamp,
+                   b.brazing_process, b.test_date, b.status
+            FROM weld_bpqr b
+            LEFT JOIN weld_welder_registry r2 ON r2.welder_stamp = b.brazer_stamp
             ORDER BY test_date DESC LIMIT ?
         """, (limit,)).fetchall()
         return [dict(r) for r in rows]
@@ -444,14 +448,16 @@ def _get_recent_qualifications(conn, limit=5):
 def _get_expiring_qualifications(conn, limit=10):
     try:
         rows = conn.execute("""
-            SELECT id, wpq_number as number, 'wpq' as type,
-                   welder_name as name, welder_stamp as stamp,
-                   process_type, current_expiration_date as expiration
-            FROM weld_wpq
-            WHERE status = 'active'
-            AND current_expiration_date IS NOT NULL
-            AND current_expiration_date >= date('now')
-            ORDER BY current_expiration_date ASC LIMIT ?
+            SELECT w.id, w.wpq_number as number, 'wpq' as type,
+                   COALESCE(w.welder_name, r.display_name) as name,
+                   w.welder_stamp as stamp,
+                   w.process_type, w.current_expiration_date as expiration
+            FROM weld_wpq w
+            LEFT JOIN weld_welder_registry r ON r.welder_stamp = w.welder_stamp
+            WHERE w.status = 'active'
+            AND w.current_expiration_date IS NOT NULL
+            AND w.current_expiration_date >= date('now')
+            ORDER BY w.current_expiration_date ASC LIMIT ?
         """, (limit,)).fetchall()
         return [dict(r) for r in rows]
     except Exception:
@@ -459,14 +465,22 @@ def _get_expiring_qualifications(conn, limit=10):
 
 
 def _get_welder_info(conn, stamp):
+    # Primary source: welder registry (canonical master)
     row = conn.execute(
-        "SELECT welder_name as name, welder_stamp as stamp FROM weld_wpq WHERE welder_stamp = ? LIMIT 1",
+        "SELECT display_name as name, welder_stamp as stamp FROM weld_welder_registry WHERE welder_stamp = ?",
+        (stamp,)
+    ).fetchone()
+    if row:
+        return dict(row)
+    # Fallback: check WPQ/BPQR records directly
+    row = conn.execute(
+        "SELECT welder_name as name, welder_stamp as stamp FROM weld_wpq WHERE welder_stamp = ? AND welder_name IS NOT NULL LIMIT 1",
         (stamp,)
     ).fetchone()
     if row:
         return dict(row)
     row = conn.execute(
-        "SELECT brazer_name as name, brazer_stamp as stamp FROM weld_bpqr WHERE brazer_stamp = ? LIMIT 1",
+        "SELECT brazer_name as name, brazer_stamp as stamp FROM weld_bpqr WHERE brazer_stamp = ? AND brazer_name IS NOT NULL LIMIT 1",
         (stamp,)
     ).fetchone()
     return dict(row) if row else {"name": "Unknown", "stamp": stamp}
