@@ -634,6 +634,18 @@ CREATE TABLE IF NOT EXISTS weld_bpqr (
     welder_employee_id TEXT REFERENCES employees(id)
 );
 
+CREATE TABLE IF NOT EXISTS weld_bpqr_tests (
+    id INTEGER PRIMARY KEY,
+    bpqr_id INTEGER NOT NULL REFERENCES weld_bpqr(id) ON DELETE CASCADE,
+    test_type TEXT,
+    specimen_number TEXT,
+    results TEXT,
+    acceptance_criteria TEXT,
+    result TEXT,
+    examiner_name TEXT,
+    examiner_date DATE
+);
+
 -- =========== CONTINUITY & PRODUCTION ===========
 
 CREATE TABLE IF NOT EXISTS weld_continuity_events (

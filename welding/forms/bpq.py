@@ -1,4 +1,4 @@
-"""BPQ (Brazing Performance Qualification) — ASME QB-483/484 form definition."""
+"""BPQ (Brazing Procedure Qualification Record) — ASME QB-483 form definition."""
 
 import re
 from typing import Any, Dict, List, Optional
@@ -14,7 +14,7 @@ class BPQFormDefinition(BaseFormDefinition):
 
     @property
     def asme_form(self) -> str:
-        return "QB-483/484"
+        return "QB-483"
 
     @property
     def parent_table(self) -> str:
@@ -38,16 +38,16 @@ class BPQFormDefinition(BaseFormDefinition):
         return name if name else None
 
     def get_extraction_prompt(self, raw_text: str, valid_values: Dict[str, List[str]]) -> str:
-        return f"""Extract all data from this ASME QB-483/484 Brazing Performance Qualification (BPQ) form.
+        return f"""Extract all data from this ASME QB-483 Brazing Procedure Qualification Record (BPQ) form.
 
-This form qualifies a brazer (person) similar to how WPQ qualifies a welder.
-It may also be a Brazing Procedure Qualification Record (BPQR) — extract both.
+This is the brazing equivalent of a PQR — it qualifies a brazing PROCEDURE
+(not a person). For brazer performance qualification, see BPQR (QB-484).
 
 Return a JSON object:
 
 {{
   "parent": {{
-    "bpq_number": "string — BPQ/BPQR identifier",
+    "bpq_number": "string — BPQ identifier",
     "revision": "string or '0'",
     "bps_number": "string — supporting BPS number",
     "test_date": "YYYY-MM-DD",
@@ -85,14 +85,11 @@ Return a JSON object:
   ]
 }}
 
-Also check if this is a BPQR (brazer performance record — similar to WPQ for welders).
-If BPQR fields are present (brazer_name, brazer_stamp, positions_qualified, expiration),
-add them to the parent object as additional fields.
-
 RULES:
 - Use null for missing values
 - Dates in YYYY-MM-DD format
 - Capture ALL test results
+- BPQ records ACTUAL values used in the procedure qualification coupon
 
 PDF TEXT:
 {raw_text}"""

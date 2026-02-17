@@ -22,9 +22,10 @@ def _ensure_loaded():
     from qms.welding.forms.wpq import WPQFormDefinition
     from qms.welding.forms.bps import BPSFormDefinition
     from qms.welding.forms.bpq import BPQFormDefinition
+    from qms.welding.forms.bpqr import BPQRFormDefinition
 
     for cls in [WPSFormDefinition, PQRFormDefinition, WPQFormDefinition,
-                BPSFormDefinition, BPQFormDefinition]:
+                BPSFormDefinition, BPQFormDefinition, BPQRFormDefinition]:
         instance = cls()
         _REGISTRY[instance.form_type] = instance
 
@@ -34,7 +35,7 @@ def get_form_definition(form_type: str) -> BaseFormDefinition:
     Get the form definition for a given type.
 
     Args:
-        form_type: One of 'wps', 'pqr', 'wpq', 'bps', 'bpq'.
+        form_type: One of 'wps', 'pqr', 'wpq', 'bps', 'bpq', 'bpqr'.
 
     Returns:
         BaseFormDefinition subclass instance.
