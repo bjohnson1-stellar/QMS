@@ -636,6 +636,34 @@ CREATE TABLE IF NOT EXISTS weld_bpqr (
 
 -- =========== CONTINUITY & PRODUCTION ===========
 
+CREATE TABLE IF NOT EXISTS weld_continuity_events (
+    id INTEGER PRIMARY KEY,
+    welder_id INTEGER NOT NULL REFERENCES weld_welder_registry(id),
+    welder_employee_id TEXT REFERENCES employees(id),
+    event_type TEXT NOT NULL,
+    event_date DATE NOT NULL,
+    week_ending DATE,
+    project_number TEXT,
+    created_by TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(welder_id, event_type, project_number, week_ending)
+);
+
+CREATE INDEX IF NOT EXISTS idx_continuity_events_welder ON weld_continuity_events(welder_id);
+CREATE INDEX IF NOT EXISTS idx_continuity_events_date ON weld_continuity_events(event_date);
+CREATE INDEX IF NOT EXISTS idx_continuity_events_week ON weld_continuity_events(week_ending);
+
+CREATE TABLE IF NOT EXISTS weld_continuity_event_processes (
+    id INTEGER PRIMARY KEY,
+    event_id INTEGER NOT NULL REFERENCES weld_continuity_events(id) ON DELETE CASCADE,
+    process_type TEXT NOT NULL,
+    wpq_id INTEGER REFERENCES weld_wpq(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(event_id, process_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_continuity_ep_event ON weld_continuity_event_processes(event_id);
+
 CREATE TABLE IF NOT EXISTS weld_continuity_log (
     id INTEGER PRIMARY KEY,
     welder_id INTEGER NOT NULL REFERENCES weld_welder_registry(id),
