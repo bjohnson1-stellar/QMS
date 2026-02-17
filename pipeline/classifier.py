@@ -370,31 +370,10 @@ def process_files(
 
     for r in results:
         if r.status == "matched" and r.destination:
-            # Run handler before moving (if applicable)
-            if not dry_run:
-                success, error = dispatch_handler(r)
-                if not success:
-                    # Handler failed → send to NEEDS-REVIEW
-                    dest = needs_review / r.filename
-                    needs_review.mkdir(parents=True, exist_ok=True)
-                    if r.source_path.exists():
-                        shutil.move(str(r.source_path), str(dest))
-                    actions.append(
-                        ProcessAction(
-                            filename=r.filename,
-                            action="needs_review",
-                            source=str(r.source_path),
-                            destination=str(dest),
-                            doc_type=r.doc_type,
-                            handler=r.handler,
-                            notes=f"Handler failed: {error}",
-                        )
-                    )
-                    continue
-
             dest = Path(r.destination) / r.filename
-            action_name = "would_route" if dry_run else "routed"
 
+            # Check for duplicate BEFORE running handler to avoid
+            # importing data for a file that won't be moved
             if not dry_run and dest.exists():
                 actions.append(
                     ProcessAction(
@@ -408,6 +387,30 @@ def process_files(
                     )
                 )
                 continue
+
+            # Run handler before moving (if applicable)
+            if not dry_run:
+                success, error = dispatch_handler(r)
+                if not success:
+                    # Handler failed → send to NEEDS-REVIEW
+                    nr_dest = needs_review / r.filename
+                    needs_review.mkdir(parents=True, exist_ok=True)
+                    if r.source_path.exists():
+                        shutil.move(str(r.source_path), str(nr_dest))
+                    actions.append(
+                        ProcessAction(
+                            filename=r.filename,
+                            action="needs_review",
+                            source=str(r.source_path),
+                            destination=str(nr_dest),
+                            doc_type=r.doc_type,
+                            handler=r.handler,
+                            notes=f"Handler failed: {error}",
+                        )
+                    )
+                    continue
+
+            action_name = "would_route" if dry_run else "routed"
 
             if not dry_run:
                 dest.parent.mkdir(parents=True, exist_ok=True)
