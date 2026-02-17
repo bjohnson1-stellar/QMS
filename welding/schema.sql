@@ -616,17 +616,45 @@ CREATE TABLE IF NOT EXISTS weld_bpqr (
     brazer_stamp TEXT,
     bps_number TEXT,
     brazing_process TEXT,
+    torch_type TEXT,                     -- Manual Torch, Mechanical
+    -- Coupon base metals (actual test coupon specs)
+    coupon_base_metal_1 TEXT,            -- e.g. "ASTM B280 (Copper Tubing, ACR Type L)"
+    coupon_base_metal_2 TEXT,            -- e.g. "ASME B16.22 (Wrought Copper Fitting)"
+    coupon_form TEXT,                    -- Plate, Pipe/Tube
+    coupon_diameter TEXT,                -- e.g. "2-1/8"
+    coupon_thickness REAL,              -- actual coupon thickness in inches
+    -- Actual values from test
+    p_number_actual TEXT,                -- e.g. "107 TO 107"
+    aws_bm_number_actual TEXT,           -- e.g. "300 TO 300"
+    joint_type TEXT,                     -- Socket (lap), Butt, Lap, Scarf
+    overlap_length REAL,                 -- actual overlap in inches
+    joint_clearance REAL,                -- actual clearance in inches
+    -- Range Qualified (qualification scope)
     p_number_base INTEGER,
+    aws_bm_number TEXT,                  -- qualified BM-number range
     f_number INTEGER,
+    filler_sfa_spec TEXT,                -- e.g. "AWS A5.8"
+    filler_aws_class TEXT,               -- e.g. "BCuP-5"
+    filler_product_form TEXT,            -- e.g. "0.050 x XX Rod"
     thickness_qualified_min REAL,
     thickness_qualified_max REAL,
+    diameter_qualified_min REAL,          -- min pipe/tube OD in inches
+    diameter_qualified_max REAL,          -- max pipe/tube OD in inches
+    joint_type_qualified TEXT,            -- qualified joint type
+    overlap_qualified TEXT,              -- e.g. "4X Mat. Thickness up to 2.5"
     positions_qualified TEXT,
     test_date DATE,
     initial_expiration_date DATE,
     current_expiration_date DATE,
     status TEXT DEFAULT 'active',
+    -- Certification / witness
     witness_name TEXT,
     witness_stamp TEXT,
+    lab_name TEXT,                        -- testing laboratory
+    lab_test_number TEXT,                 -- lab test/report number
+    organization TEXT,                   -- certifying organization
+    certified_by TEXT,                   -- certifier name + title
+    certified_date DATE,
     file_path TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -637,12 +665,12 @@ CREATE TABLE IF NOT EXISTS weld_bpqr (
 CREATE TABLE IF NOT EXISTS weld_bpqr_tests (
     id INTEGER PRIMARY KEY,
     bpqr_id INTEGER NOT NULL REFERENCES weld_bpqr(id) ON DELETE CASCADE,
-    test_type TEXT,
-    specimen_number TEXT,
-    results TEXT,
-    acceptance_criteria TEXT,
-    result TEXT,
+    test_type TEXT NOT NULL,              -- peel, section, tension, transverse_bend, longitudinal_bend
+    test_standard TEXT,                  -- QB-462.3, QB-462.1, etc.
+    position TEXT,                       -- Horizontal T1/T2, Vertical P1/P2, etc.
+    result TEXT,                         -- Accept, Reject
     examiner_name TEXT,
+    examiner_company TEXT,
     examiner_date DATE
 );
 
