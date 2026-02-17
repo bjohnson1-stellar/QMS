@@ -263,6 +263,48 @@ class ProcessAction:
     notes: Optional[str] = None
 
 
+def dispatch_handler(result: ClassificationResult) -> Tuple[bool, Optional[str]]:
+    """
+    Run the appropriate handler for a classified file before moving it.
+
+    Returns (success, error_message).
+    Only dispatches handlers that require DB import before filing.
+    """
+    if result.handler == "field-locations":
+        return _handle_field_locations(result)
+    # Other handler types just file (no pre-processing needed):
+    # sis-intake, sis-spec-intake, qm-intake, procore-import, weld-intake, etc.
+    return (True, None)
+
+
+def _handle_field_locations(result: ClassificationResult) -> Tuple[bool, Optional[str]]:
+    """Parse field location Excel and import employees/jobs to DB."""
+    from .common import extract_date_from_filename
+    from .processor import process_and_import
+
+    week_date = extract_date_from_filename(result.source_path)
+    if not week_date:
+        return (False, "Could not extract week-ending date from filename")
+
+    try:
+        stats = process_and_import(
+            result.source_path,
+            week_override=week_date,
+            output_path=None,
+            preview=False,
+        )
+        logger.info(
+            "Field locations import: %d jobsites, %d personnel, %d employees created",
+            stats.get("jobsites_processed", 0),
+            stats.get("personnel_processed", 0),
+            stats.get("employees_created", 0),
+        )
+        return (True, None)
+    except Exception as exc:
+        logger.error("Field locations import failed for %s: %s", result.filename, exc)
+        return (False, str(exc))
+
+
 def process_files(
     results: List[ClassificationResult],
     dry_run: bool = False,
@@ -270,7 +312,8 @@ def process_files(
     """
     Move classified files to their destinations.
 
-    - matched + destination resolved → move to destination
+    - matched + destination resolved → dispatch handler → move to destination
+    - Handler failure → move to NEEDS-REVIEW
     - incomplete/unrecognized → move to NEEDS-REVIEW
     - If destination file already exists → mark as duplicate, skip
     - dry_run=True → return planned actions without moving
@@ -280,6 +323,28 @@ def process_files(
 
     for r in results:
         if r.status == "matched" and r.destination:
+            # Run handler before moving (if applicable)
+            if not dry_run:
+                success, error = dispatch_handler(r)
+                if not success:
+                    # Handler failed → send to NEEDS-REVIEW
+                    dest = needs_review / r.filename
+                    needs_review.mkdir(parents=True, exist_ok=True)
+                    if r.source_path.exists():
+                        shutil.move(str(r.source_path), str(dest))
+                    actions.append(
+                        ProcessAction(
+                            filename=r.filename,
+                            action="needs_review",
+                            source=str(r.source_path),
+                            destination=str(dest),
+                            doc_type=r.doc_type,
+                            handler=r.handler,
+                            notes=f"Handler failed: {error}",
+                        )
+                    )
+                    continue
+
             dest = Path(r.destination) / r.filename
             action_name = "would_route" if dry_run else "routed"
 

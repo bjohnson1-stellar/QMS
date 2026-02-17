@@ -466,3 +466,18 @@ def intake(
     review = sum(1 for a in actions if a.action == "needs_review")
     dupes = sum(1 for a in actions if a.action == "duplicate")
     typer.echo(f"\nDone: {routed} routed, {review} to NEEDS-REVIEW, {dupes} duplicates")
+
+    # Show handler-specific import stats
+    handler_processed = sum(
+        1 for a in actions if a.action == "routed" and a.handler == "field-locations"
+    )
+    if handler_processed:
+        typer.echo(f"  (includes {handler_processed} field location files imported to DB)")
+
+    # Show handler failures
+    handler_failed = [a for a in actions if a.action == "needs_review" and a.notes and a.notes.startswith("Handler failed:")]
+    if handler_failed:
+        typer.echo(f"  ({len(handler_failed)} handler failures sent to NEEDS-REVIEW)")
+        if verbose:
+            for a in handler_failed:
+                typer.echo(f"    {a.filename}: {a.notes}")
