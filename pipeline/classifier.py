@@ -270,10 +270,24 @@ def dispatch_handler(result: ClassificationResult) -> Tuple[bool, Optional[str]]
     Returns (success, error_message).
     Only dispatches handlers that require DB import before filing.
     """
+    import time
+
+    handler = result.handler or "none"
+
     if result.handler == "field-locations":
-        return _handle_field_locations(result)
+        logger.info("[handler] %s → %s", result.filename, handler)
+        t0 = time.perf_counter()
+        success, error = _handle_field_locations(result)
+        elapsed = time.perf_counter() - t0
+        if success:
+            logger.info("[handler] %s completed in %.1fs", result.filename, elapsed)
+        else:
+            logger.error("[handler] %s failed in %.1fs: %s", result.filename, elapsed, error)
+        return success, error
+
     # Other handler types just file (no pre-processing needed):
     # sis-intake, sis-spec-intake, qm-intake, procore-import, weld-intake, etc.
+    logger.debug("[handler] %s → passthrough (handler=%s)", result.filename, handler)
     return (True, None)
 
 
@@ -368,6 +382,12 @@ def process_files(
     actions: List[ProcessAction] = []
     needs_review = QMS_PATHS.needs_review
 
+    if results:
+        logger.info(
+            "Processing %d files (first: %s, last: %s)",
+            len(results), results[0].filename, results[-1].filename,
+        )
+
     for r in results:
         if r.status == "matched" and r.destination:
             dest = Path(r.destination) / r.filename
@@ -375,6 +395,7 @@ def process_files(
             # Check for duplicate BEFORE running handler to avoid
             # importing data for a file that won't be moved
             if not dry_run and dest.exists():
+                logger.warning("[skip] %s — duplicate at %s", r.filename, dest)
                 actions.append(
                     ProcessAction(
                         filename=r.filename,
@@ -446,6 +467,14 @@ def process_files(
                     notes=r.notes,
                 )
             )
+
+    # Summary log
+    if actions:
+        counts = {}
+        for a in actions:
+            counts[a.action] = counts.get(a.action, 0) + 1
+        summary = ", ".join(f"{v} {k}" for k, v in sorted(counts.items()))
+        logger.info("Intake complete: %s", summary)
 
     # Log to database (skip in dry-run mode)
     if not dry_run and actions:
