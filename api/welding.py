@@ -33,6 +33,11 @@ def forms_list():
     return render_template("welding/form_list.html")
 
 
+@bp.route("/welders")
+def welders_list():
+    return render_template("welding/welders.html")
+
+
 @bp.route("/welder/<welder_stamp>")
 def welder_profile(welder_stamp):
     with get_db(readonly=True) as conn:
@@ -350,22 +355,27 @@ def api_derive_and_save(form_type, record_id):
 
 @bp.route("/api/welders", methods=["GET"])
 def api_list_welders():
+    status = request.args.get("status", "")
     with get_db(readonly=True) as conn:
         rows = conn.execute("""
-            SELECT DISTINCT
-                COALESCE(w.welder_stamp, w.brazer_stamp) as stamp,
-                COALESCE(w.welder_name, w.brazer_name) as name,
-                'wpq' as source
-            FROM (
-                SELECT welder_stamp, welder_name, NULL as brazer_stamp, NULL as brazer_name
-                FROM weld_wpq WHERE welder_stamp IS NOT NULL
-                UNION
-                SELECT NULL, NULL, brazer_stamp, brazer_name
-                FROM weld_bpqr WHERE brazer_stamp IS NOT NULL
-            ) w
-            ORDER BY stamp
+            SELECT r.id, r.welder_stamp as stamp, r.display_name as name,
+                   r.department, r.status,
+                   COUNT(DISTINCT w.id) as active_wpqs,
+                   COUNT(DISTINCT b.id) as active_bpqrs,
+                   MIN(CASE WHEN w.current_expiration_date >= date('now')
+                       THEN w.current_expiration_date END) as next_expiration
+            FROM weld_welder_registry r
+            LEFT JOIN weld_wpq w ON w.welder_stamp = r.welder_stamp
+                AND w.status = 'active'
+            LEFT JOIN weld_bpqr b ON b.brazer_stamp = r.welder_stamp
+                AND b.status = 'active'
+            GROUP BY r.id
+            ORDER BY r.display_name
         """).fetchall()
-    return jsonify([dict(r) for r in rows])
+        result = [dict(r) for r in rows]
+        if status:
+            result = [r for r in result if (r.get("status") or "") == status]
+    return jsonify(result)
 
 
 @bp.route("/api/welders/<welder_stamp>", methods=["GET"])
