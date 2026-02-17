@@ -331,6 +331,24 @@ def _strip_unused_sheets(filepath: Path) -> None:
         logger.warning("Could not strip sheets from %s: %s", filepath.name, exc)
 
 
+def _sort_by_date(results: List[ClassificationResult]) -> List[ClassificationResult]:
+    """Sort results by date extracted from filename, oldest first.
+
+    Files without an extractable date are placed at the end.
+    This ensures mutable DB state (project status, employee job)
+    reflects the most recent file after a batch import.
+    """
+    from datetime import date as date_type
+
+    from .common import extract_date_from_filename
+
+    def sort_key(r: ClassificationResult):
+        d = extract_date_from_filename(r.source_path)
+        return d if d else date_type.max
+
+    return sorted(results, key=sort_key)
+
+
 def process_files(
     results: List[ClassificationResult],
     dry_run: bool = False,
@@ -338,12 +356,15 @@ def process_files(
     """
     Move classified files to their destinations.
 
+    - Results are sorted chronologically (oldest first) so that
+      mutable DB state reflects the most recent file after processing
     - matched + destination resolved → dispatch handler → move to destination
     - Handler failure → move to NEEDS-REVIEW
     - incomplete/unrecognized → move to NEEDS-REVIEW
     - If destination file already exists → mark as duplicate, skip
     - dry_run=True → return planned actions without moving
     """
+    results = _sort_by_date(results)
     actions: List[ProcessAction] = []
     needs_review = QMS_PATHS.needs_review
 
