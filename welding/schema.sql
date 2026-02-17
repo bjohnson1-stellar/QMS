@@ -431,22 +431,56 @@ CREATE TABLE IF NOT EXISTS weld_wpq (
     wps_id INTEGER REFERENCES weld_wps(id),
     wps_number TEXT,
     process_type TEXT NOT NULL,
+    process_variation TEXT,              -- Manual, Semiautomatic, Machine, Automatic
+    -- Coupon / test description
+    coupon_base_metal TEXT,              -- e.g. "P1 to P1"
+    coupon_thickness REAL,              -- actual coupon thickness in inches
+    coupon_diameter TEXT,                -- actual pipe size e.g. '2" N.P.S (2.375" OD)'
+    -- Actual values (from test coupon)
+    p_number_actual TEXT,                -- e.g. "P-1 to P-1"
+    backing_actual TEXT,                 -- e.g. "N/A Single Sided weld open root"
+    filler_sfa_spec TEXT,                -- e.g. "SFA/A5.1"
+    filler_aws_class TEXT,               -- e.g. "E6010/E7018"
+    f_number_actual TEXT,                -- e.g. "F3/F4" (may be dual-process)
+    consumable_insert TEXT,              -- e.g. "N/A None"
+    filler_type TEXT,                    -- e.g. "Coated Solid Electrodes"
+    deposit_thickness_actual REAL,       -- actual deposit thickness in inches
+    test_position TEXT,                  -- e.g. "6G" (actual test position)
+    backing_gas TEXT,                    -- e.g. "N/A None"
+    transfer_mode TEXT,                  -- Spray, Globular, Pulse, Short Circuit, N/A
+    current_type TEXT,                   -- AC, DCEP, DCEN
+    -- Range Qualified (qualification scope)
     p_number_base INTEGER,
     p_number_filler INTEGER,
+    p_number_qualified TEXT,             -- e.g. "P1 thru P11 & P4X"
     f_number INTEGER,
+    f_number_qualified TEXT,             -- e.g. "F4,F3,F2 & F1"
     thickness_qualified_min REAL,
     thickness_qualified_max REAL,
     diameter_qualified_min REAL,
+    diameter_qualified_max REAL,
+    deposit_thickness_max REAL,          -- max qualified deposit thickness
     groove_positions_qualified TEXT,
     fillet_positions_qualified TEXT,
     progression TEXT,
-    backing_type TEXT,
+    backing_type TEXT,                   -- qualified backing: "Open Root or with Backing"
+    filler_type_qualified TEXT,          -- qualified filler type
+    -- Dates / status
     test_date DATE,
     initial_expiration_date DATE,
     current_expiration_date DATE,
     status TEXT DEFAULT 'active',
+    -- Personnel / certification
     witness_name TEXT,
     witness_stamp TEXT,
+    witness_company TEXT,
+    evaluator_name TEXT,                 -- Film or Specimens Evaluated By
+    evaluator_company TEXT,
+    lab_name TEXT,                        -- Mechanical Tests Conducted By
+    lab_test_number TEXT,                 -- Laboratory Test No
+    organization TEXT,                   -- certifying organization
+    certified_by TEXT,                   -- certifier name
+    certified_date DATE,
     file_path TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -457,13 +491,17 @@ CREATE TABLE IF NOT EXISTS weld_wpq (
 CREATE TABLE IF NOT EXISTS weld_wpq_tests (
     id INTEGER PRIMARY KEY,
     wpq_id INTEGER NOT NULL REFERENCES weld_wpq(id) ON DELETE CASCADE,
-    test_type TEXT NOT NULL,
+    test_type TEXT NOT NULL,             -- visual, guided_bend, radiographic, fillet_fracture, macro, other
     specimen_number TEXT,
-    bend_type TEXT,
+    bend_type TEXT,                      -- side, face, root, transverse
     results TEXT,
     acceptance_criteria TEXT,
-    result TEXT,
+    result TEXT,                         -- Acceptable, Rejected, N/A
+    defect_description TEXT,             -- length/percent of defects for fillet tests
+    fillet_size REAL,                    -- fillet weld size for macro exam
+    concavity_convexity REAL,            -- for macro exam
     examiner_name TEXT,
+    examiner_company TEXT,
     examiner_date DATE
 );
 
