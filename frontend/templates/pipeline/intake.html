@@ -15,15 +15,15 @@
         <div class="stat-label">Files in Inbox</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value" id="stat-matched" style="color:#155724">-</div>
+        <div class="stat-value" id="stat-matched" style="color:var(--color-success)">-</div>
         <div class="stat-label">Matched</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value" id="stat-incomplete" style="color:#856404">-</div>
+        <div class="stat-value" id="stat-incomplete" style="color:var(--color-warning)">-</div>
         <div class="stat-label">Incomplete</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value" id="stat-unrecognized" style="color:#721c24">-</div>
+        <div class="stat-value" id="stat-unrecognized" style="color:var(--color-danger)">-</div>
         <div class="stat-label">Unrecognized</div>
     </div>
 </div>
@@ -70,7 +70,7 @@
 <!-- Quick Classify -->
 <div class="card">
     <h2>Quick Classify</h2>
-    <p style="margin-bottom:15px;color:#7f8c8d">Upload a file to preview its classification without moving it.</p>
+    <p style="margin-bottom:15px;color:var(--color-text-muted)">Upload a file to preview its classification without moving it.</p>
     <div style="display:flex;gap:15px;align-items:center">
         <input type="file" id="classify-file" style="width:auto">
         <button onclick="classifyFile()">Classify</button>

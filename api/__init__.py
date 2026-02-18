@@ -17,6 +17,12 @@ def create_app() -> Flask:
     )
     app.config["SECRET_KEY"] = "qms-dev-key"
 
+    from qms.core.config import get_branding
+
+    @app.context_processor
+    def inject_theme():
+        return {"theme": get_branding()}
+
     from qms.api.projects import bp as projects_bp
     app.register_blueprint(projects_bp)
 

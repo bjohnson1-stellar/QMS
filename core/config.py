@@ -62,6 +62,47 @@ def get_config_value(*keys: str, default: Any = None) -> Any:
     return config
 
 
+_BRANDING_DEFAULTS = {
+    "app_name": "QMS",
+    "app_tagline": "Quality Management System",
+    "preset": "default",
+    "default_mode": "light",
+    "colors": {
+        "primary": "#2563eb",
+        "primary_hover": "#1d4fd7",
+        "primary_subtle": "#eef4ff",
+        "nav_bg": "#16202e",
+        "nav_hover": "#1e2d40",
+        "nav_active": "#2563eb",
+        "warning": "#d97706",
+        "dark_surface": "#0f172a",
+        "light_surface": "#f1f3f8",
+        "neutral": "#5a6478",
+    },
+    "fonts": {
+        "heading": "Outfit",
+        "heading_fallback": "Outfit",
+        "body": "DM Sans",
+        "body_fallback": "DM Sans",
+        "google_fonts_url": "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap",
+    },
+}
+
+
+def get_branding() -> Dict[str, Any]:
+    """Return merged branding config (config.yaml overrides defaults)."""
+    cfg = get_config().get("branding", {})
+    result = {}
+    for key, default in _BRANDING_DEFAULTS.items():
+        if isinstance(default, dict):
+            merged = dict(default)
+            merged.update(cfg.get(key, {}))
+            result[key] = merged
+        else:
+            result[key] = cfg.get(key, default)
+    return result
+
+
 class QMSPaths:
     """
     Centralized path access for QMS system.

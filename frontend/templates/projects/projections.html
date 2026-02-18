@@ -419,7 +419,7 @@
             html += `<div class="snapshot-card ${statusClass}">`;
             html += '<div class="snapshot-meta">';
             html += `<div class="snapshot-title">${s.name || 'Version ' + s.version} ${statusBadge}`;
-            if (s.is_active && s.status !== 'Superseded') html += ' <span class="status-badge" style="background:#eef4ff;color:#2563eb;font-size:10px;">Active</span>';
+            if (s.is_active && s.status !== 'Superseded') html += ' <span class="status-badge" style="background:var(--color-info-bg);color:var(--color-info);font-size:10px;">Active</span>';
             html += '</div>';
             html += `<div class="snapshot-detail">v${s.version} &middot; ${new Date(s.created_at).toLocaleDateString()}`;
             if (s.committed_at) html += ` &middot; Committed ${new Date(s.committed_at).toLocaleDateString()}`;

@@ -126,7 +126,7 @@
             html += '<tr>';
             html += `<td><span class="bu-code">${bu.code}</span></td>`;
             html += `<td><strong>${bu.name}</strong></td>`;
-            html += `<td>${bu.description || '<span style="color:#bdc3c7;">-</span>'}</td>`;
+            html += `<td>${bu.description || '<span style="color:var(--color-text-muted);">-</span>'}</td>`;
             html += `<td><div class="action-buttons">`;
             html += `<button class="action-btn secondary" onclick="editBU(${bu.id})">Edit</button>`;
             html += `<button class="action-btn danger" onclick="deleteBU(${bu.id})">Delete</button>`;

@@ -55,7 +55,7 @@
             </a>
         </div>
 
-        <h3 style="margin-top: 25px; margin-bottom: 15px; color: #2c3e50; font-size: 16px;">Recent Projects</h3>
+        <h3 style="margin-top: 25px; margin-bottom: 15px; color: var(--color-text); font-size: 16px;">Recent Projects</h3>
         <div id="recentProjects"><div class="loading">Loading...</div></div>
     </div>
 </div>
@@ -108,7 +108,7 @@
         let html = '<table><thead><tr><th>Project</th><th>Stage</th></tr></thead><tbody>';
         recent.forEach(p => {
             html += `<tr>
-                <td><strong>${p.name}</strong>${p.description ? '<div style="color:#7f8c8d;font-size:12px;">' + p.description + '</div>' : ''}<small style="color:#7f8c8d;">${p.number || p.code}</small></td>
+                <td><strong>${p.name}</strong>${p.description ? '<div style="color:var(--color-text-muted);font-size:12px;">' + p.description + '</div>' : ''}<small style="color:var(--color-text-muted);">${p.number || p.code}</small></td>
                 <td><span class="status-badge ${getStageClass(p.stage)}">${p.stage}</span></td>
             </tr>`;
         });
@@ -129,7 +129,7 @@
             const percentSpent = (project.total_budget || 0) > 0 ? ((project.budget_spent || 0) / project.total_budget) * 100 : 0;
             const barClass = percentSpent > 90 ? 'danger' : percentSpent > 70 ? 'warning' : '';
             html += '<tr>';
-            html += `<td><strong>${project.name}</strong>${project.description ? '<div style="color:#7f8c8d;font-size:12px;">' + project.description + '</div>' : ''}<small style="color:#7f8c8d;">${project.number || project.code}</small></td>`;
+            html += `<td><strong>${project.name}</strong>${project.description ? '<div style="color:var(--color-text-muted);font-size:12px;">' + project.description + '</div>' : ''}<small style="color:var(--color-text-muted);">${project.number || project.code}</small></td>`;
             html += `<td>${project.manager || '-'}</td>`;
             html += `<td class="currency">$${(project.total_budget || 0).toLocaleString()}</td>`;
             html += `<td>$${(project.budget_spent || 0).toLocaleString()}<div class="budget-bar"><div class="budget-fill ${barClass}" style="width:${percentSpent}%"></div></div></td>`;
@@ -185,12 +185,12 @@
             (snap.entries || []).forEach(entry => {
                 html += '<div class="allocation-item">';
                 html += `<div><span class="allocation-project">${entry.project_name || 'Unknown'}</span>`;
-                html += `<br><small style="color:#7f8c8d;">${entry.project_code || ''}</small></div>`;
+                html += `<br><small style="color:var(--color-text-muted);">${entry.project_code || ''}</small></div>`;
                 html += `<div class="allocation-hours">${entry.allocated_hours || 0} hrs</div>`;
                 html += '</div>';
             });
 
-            html += `<div style="margin-top:15px;padding-top:15px;border-top:2px solid #ecf0f1;text-align:right;">`;
+            html += `<div style="margin-top:15px;padding-top:15px;border-top:2px solid var(--color-border-light);text-align:right;">`;
             html += `<strong>Total: ${snap.total_hours || 0} hours</strong></div>`;
             container.innerHTML = html;
             document.getElementById('monthHours').textContent = snap.total_hours || 0;

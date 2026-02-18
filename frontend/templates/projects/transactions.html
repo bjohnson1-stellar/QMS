@@ -85,7 +85,7 @@
             </select>
         </div>
         <div id="transactionsTable"><div class="loading">Loading transactions...</div></div>
-        <div id="totalAmount" style="margin-top:15px;padding-top:15px;border-top:2px solid #ecf0f1;text-align:right;font-weight:bold;"></div>
+        <div id="totalAmount" style="margin-top:15px;padding-top:15px;border-top:2px solid var(--color-border-light);text-align:right;font-weight:bold;"></div>
     </div>
 </div>
 {% endblock %}
@@ -248,11 +248,11 @@
             const typeClass = 'type-' + t.transaction_type.toLowerCase();
             html += '<tr>';
             html += `<td>${t.transaction_date}</td>`;
-            html += `<td><strong>${t.project_name}</strong><br><small style="color:#7f8c8d;">${t.project_code}</small></td>`;
+            html += `<td><strong>${t.project_name}</strong><br><small style="color:var(--color-text-muted);">${t.project_code}</small></td>`;
             html += `<td><span class="type-badge ${typeClass}">${t.transaction_type}</span></td>`;
             html += `<td>${t.description}`;
             if (t.transaction_type === 'Time' && t.hours && t.rate) {
-                html += `<br><small style="color:#7f8c8d;">${t.hours} hrs @ $${t.rate}/hr</small>`;
+                html += `<br><small style="color:var(--color-text-muted);">${t.hours} hrs @ $${t.rate}/hr</small>`;
             }
             html += `</td>`;
             html += `<td class="currency">$${t.amount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>`;

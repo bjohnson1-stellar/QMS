@@ -1,0 +1,151 @@
+/* QMS Dark Mode — Blue Graphite surface family */
+
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    /* Surfaces */
+    --color-bg: #091625;
+    --color-surface: #0C2340;
+    --color-surface-alt: #0f2b4d;
+    --color-border: #1a3a5c;
+    --color-border-light: #153050;
+
+    /* Text */
+    --color-text: #DBE2E9;
+    --color-text-secondary: #9aacbe;
+    --color-text-muted: #6a829b;
+
+    /* Primary — inherits from brand override, only tweak subtle */
+    --color-primary-subtle: rgba(164, 31, 53, 0.15);
+
+    /* Semantic */
+    --color-success: #34d399;
+    --color-success-hover: #2bc48d;
+    --color-success-bg: rgba(16, 185, 129, 0.12);
+    --color-warning-bg: rgba(255, 164, 0, 0.12);
+    --color-danger: #f87171;
+    --color-danger-hover: #ef4444;
+    --color-danger-bg: rgba(239, 68, 68, 0.12);
+
+    /* Navigation — kept darker than surface */
+    --color-sidebar: #060e1a;
+    --color-sidebar-hover: #0a1929;
+    --color-sidebar-border: #0a1929;
+    --color-sidebar-text: #6a829b;
+    --color-sidebar-text-hover: #9aacbe;
+    --color-sidebar-heading: #3d5a77;
+
+    /* Shadows — more transparent in dark mode */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.5), 0 4px 8px -2px rgba(0, 0, 0, 0.3);
+    --shadow-xl: 0 24px 48px -8px rgba(0, 0, 0, 0.6), 0 8px 16px -4px rgba(0, 0, 0, 0.4);
+
+    /* Focus ring */
+    --color-focus-ring: rgba(164, 31, 53, 0.25);
+
+    /* Info */
+    --color-info: #60a5fa;
+    --color-info-bg: rgba(96, 165, 250, 0.12);
+
+    /* White override for text-on-primary */
+    --color-white: #DBE2E9;
+}
+
+/* Stage badges — dark variants */
+[data-theme="dark"] .stage-proposal { background: rgba(96, 165, 250, 0.15); color: #93c5fd; }
+[data-theme="dark"] .stage-bidding,
+[data-theme="dark"] .stage-constructionandbidding { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
+[data-theme="dark"] .stage-preconstruction { background: rgba(52, 211, 153, 0.15); color: #6ee7b7; }
+[data-theme="dark"] .stage-courseofconstruction { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+[data-theme="dark"] .stage-postconstruction { background: rgba(56, 189, 248, 0.15); color: #7dd3fc; }
+[data-theme="dark"] .stage-warranty { background: rgba(248, 113, 113, 0.15); color: #fca5a5; }
+[data-theme="dark"] .stage-lostproposal,
+[data-theme="dark"] .stage-archive { background: rgba(107, 114, 128, 0.15); color: #9ca3af; }
+
+/* Status badges */
+[data-theme="dark"] .status-draft { background: rgba(96, 165, 250, 0.15); color: #93c5fd; }
+[data-theme="dark"] .status-final { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+[data-theme="dark"] .status-superseded { background: rgba(248, 113, 113, 0.15); color: #fca5a5; }
+[data-theme="dark"] .status-active { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+[data-theme="dark"] .status-expired { background: rgba(248, 113, 113, 0.15); color: #fca5a5; }
+[data-theme="dark"] .status-pending { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
+[data-theme="dark"] .status-committed { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+
+/* Type badges */
+[data-theme="dark"] .type-time { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+[data-theme="dark"] .type-travel { background: rgba(56, 189, 248, 0.15); color: #7dd3fc; }
+[data-theme="dark"] .type-materials { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
+[data-theme="dark"] .type-other { background: rgba(107, 114, 128, 0.15); color: #9ca3af; }
+
+/* Intake badges */
+[data-theme="dark"] .intake-matched,
+[data-theme="dark"] .intake-routed { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+[data-theme="dark"] .intake-incomplete,
+[data-theme="dark"] .intake-needs_review { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
+[data-theme="dark"] .intake-unrecognized { background: rgba(248, 113, 113, 0.15); color: #fca5a5; }
+[data-theme="dark"] .intake-duplicate { background: rgba(107, 114, 128, 0.15); color: #9ca3af; }
+
+/* Messages */
+[data-theme="dark"] .success-message {
+    background: rgba(16, 185, 129, 0.12);
+    color: #6ee7b7;
+    border-color: rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .error-message {
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+[data-theme="dark"] .hours-warning {
+    background: rgba(255, 164, 0, 0.12);
+    color: #fcd34d;
+    border-color: rgba(255, 164, 0, 0.25);
+}
+
+[data-theme="dark"] .hours-warning a { color: #fcd34d; }
+
+/* Modal overlay */
+[data-theme="dark"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.65);
+}
+
+/* GMP badge */
+[data-theme="dark"] .gmp-badge {
+    background: var(--color-danger);
+    color: #0C2340;
+}
+
+/* Project hover states */
+[data-theme="dark"] .project-header:hover { background: #122e52; }
+[data-theme="dark"] .job-row:hover { background: #0f2b4d; }
+
+/* Scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #1a3a5c; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #2a5080; }
+
+/* Toggle switch dark overrides */
+[data-theme="dark"] .toggle-switch .layer { background-color: #1a2a3e; }
+[data-theme="dark"] .toggle-switch .knobs:before { background-color: #6a829b; }
+[data-theme="dark"] .toggle-switch input:checked + .knobs:before { background-color: var(--color-primary); }
+[data-theme="dark"] .toggle-switch input:checked ~ .layer { background-color: rgba(164, 31, 53, 0.2); }
+
+/* Active tab highlight in dark */
+[data-theme="dark"] .module-tab.active {
+    background: rgba(164, 31, 53, 0.15);
+}
+
+/* Input color-scheme for native dark controls */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    color-scheme: dark;
+}
+
+/* Bulk toolbar */
+[data-theme="dark"] .bulk-toolbar {
+    background: #060e1a;
+}

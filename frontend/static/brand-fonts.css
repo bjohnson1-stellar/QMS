@@ -1,0 +1,44 @@
+/* QMS Brand Fonts — local() detection for commercial typefaces
+   If the user has the commercial fonts installed locally,
+   they take priority over the Google Fonts fallbacks.
+   font-display: swap renders the fallback immediately. */
+
+@font-face {
+    font-family: 'Alternate Gothic ATF';
+    src: local('Alternate Gothic ATF'), local('AlternateGothicATF-Regular');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Alternate Gothic ATF';
+    src: local('Alternate Gothic ATF Bold'), local('AlternateGothicATF-Bold');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Franklin Gothic URW';
+    src: local('Franklin Gothic URW'), local('FranklinGothicURW-Regular');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Franklin Gothic URW';
+    src: local('Franklin Gothic URW Medium'), local('FranklinGothicURW-Medium');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Franklin Gothic URW';
+    src: local('Franklin Gothic URW Bold'), local('FranklinGothicURW-Bold');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}

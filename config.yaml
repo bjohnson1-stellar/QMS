@@ -425,3 +425,30 @@ welding:
     generation:
       output_dir: "data/quality-documents/Welding"
       default_format: "excel"
+
+# =============================================================================
+# BRANDING & THEMING
+# =============================================================================
+
+branding:
+  app_name: "QMS"
+  app_tagline: "Quality Management System"
+  preset: "stellar"
+  default_mode: "light"
+  colors:
+    primary: "#A41F35"
+    primary_hover: "#8a1a2c"
+    primary_subtle: "#f9eaec"
+    nav_bg: "#064975"
+    nav_hover: "#053d62"
+    nav_active: "#A41F35"
+    warning: "#FFA400"
+    dark_surface: "#0C2340"
+    light_surface: "#DBE2E9"
+    neutral: "#77777A"
+  fonts:
+    heading: "Alternate Gothic ATF"
+    heading_fallback: "Barlow Condensed"
+    body: "Franklin Gothic URW"
+    body_fallback: "Source Sans 3"
+    google_fonts_url: "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"

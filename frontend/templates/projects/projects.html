@@ -3,85 +3,6 @@
 {% block title %}Projects - QMS{% endblock %}
 
 {% block content %}
-<style>
-/* Toggle Switch — adapted from Uiverse.io by JaydipPrajapati1910 */
-.toggle-switch {
-    position: relative;
-    width: 50px;
-    height: 26px;
-    overflow: hidden;
-    border-radius: 100px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-.toggle-switch input {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    margin: 0;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 3;
-}
-
-.toggle-switch .knobs,
-.toggle-switch .layer {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-}
-
-.toggle-switch .knobs { z-index: 2; }
-
-.toggle-switch .layer {
-    width: 100%;
-    background-color: #fcebeb;
-    transition: 0.3s ease all;
-    z-index: 1;
-    border-radius: 100px;
-}
-
-.toggle-switch .knobs:before {
-    content: "NO";
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 14px;
-    height: 6px;
-    color: #fff;
-    font-size: 8px;
-    font-weight: bold;
-    text-align: center;
-    line-height: 1;
-    padding: 7px 3px;
-    background-color: #f44336;
-    border-radius: 50%;
-    transition: 0.3s ease all, left 0.3s cubic-bezier(0.18, 0.89, 0.35, 1.15);
-}
-
-.toggle-switch input:active + .knobs:before {
-    width: 30px;
-    border-radius: 100px;
-}
-
-.toggle-switch input:checked:active + .knobs:before {
-    margin-left: -16px;
-}
-
-.toggle-switch input:checked + .knobs:before {
-    content: "YES";
-    left: 27px;
-    background-color: #03a9f4;
-}
-
-.toggle-switch input:checked ~ .layer {
-    background-color: #ebf7fc;
-}
-</style>
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
     <div>
         <h1>Projects</h1>
@@ -145,7 +66,7 @@
                 </div>
             </div>
 
-            <h3 style="margin-top:20px;padding-top:15px;border-top:1px solid #ecf0f1;">Owner Information</h3>
+            <h3 style="margin-top:20px;padding-top:15px;border-top:1px solid var(--color-border-light);">Owner Information</h3>
             <div class="modal-form-grid">
                 <div class="form-group">
                     <label>Owner Name</label>
@@ -201,9 +122,9 @@
             </div>
 
             <!-- Allocation management (visible when editing) -->
-            <div id="allocationSection" style="display:none;margin-top:20px;padding-top:15px;border-top:2px solid #3498db;">
+            <div id="allocationSection" style="display:none;margin-top:20px;padding-top:15px;border-top:2px solid var(--color-primary);">
                 <h3>BU Allocations</h3>
-                <p style="color:#7f8c8d;font-size:13px;margin-bottom:10px;">Break down the project budget by business unit</p>
+                <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:10px;">Break down the project budget by business unit</p>
                 <div id="allocationList"></div>
                 <div style="display:grid;grid-template-columns:1fr 80px 120px 80px auto;gap:8px;align-items:end;margin-top:10px;">
                     <div>
@@ -228,7 +149,7 @@
                 </div>
             </div>
 
-            <div style="margin-top:20px;padding-top:15px;border-top:1px solid #ecf0f1;display:flex;gap:10px;">
+            <div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--color-border-light);display:flex;gap:10px;">
                 <button type="submit" id="submitBtn">Add Project</button>
                 <button type="button" class="secondary" onclick="closeProjectModal()">Cancel</button>
             </div>
@@ -303,7 +224,7 @@
 
 <div class="card" id="importSection" style="display:none;">
     <h2>Bulk Import</h2>
-    <p style="color:#7f8c8d;margin-bottom:10px;font-size:13px;">Import multiple projects from an Excel file or Procore CSV export</p>
+    <p style="color:var(--color-text-muted);margin-bottom:10px;font-size:13px;">Import multiple projects from an Excel file or Procore CSV export</p>
     <div class="import-buttons">
         <button onclick="downloadTemplate()">Download Template</button>
         <input type="file" id="importFile" accept=".xlsx" style="display:none;" onchange="importProjects(this.files[0])">
@@ -431,10 +352,7 @@
     function toggleProjectionFilter() {
         projectionFilter = !projectionFilter;
         const btn = document.getElementById('projectionFilterBtn');
-        btn.classList.toggle('active', projectionFilter);
-        btn.style.background = projectionFilter ? '#2980b9' : '';
-        btn.style.color = projectionFilter ? '#fff' : '';
-        btn.style.borderColor = projectionFilter ? '#2980b9' : '';
+        btn.classList.toggle('filter-btn-active', projectionFilter);
         renderProjects();
     }
 
