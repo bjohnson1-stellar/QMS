@@ -22,6 +22,7 @@ dependencies = [
 [project.optional-dependencies]
 web = [
     "flask>=3.0",
+    "msal>=1.28.0",
 ]
 pipeline = [
     # Vector DB & Embeddings

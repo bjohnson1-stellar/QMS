@@ -430,6 +430,26 @@ welding:
 # BRANDING & THEMING
 # =============================================================================
 
+# =============================================================================
+# AUTHENTICATION (Microsoft Entra ID / Azure AD)
+# =============================================================================
+
+auth:
+  provider: "entra_id"
+  dev_bypass: true                    # Set false in production
+  secret_key: null                    # Set via QMS_SECRET_KEY env var or here
+  session_lifetime_minutes: 480       # 8 hours
+  default_role: "user"                # Role assigned on first login
+  entra:
+    tenant_id: "YOUR_TENANT_ID"
+    client_id: "YOUR_CLIENT_ID"
+    client_secret: "YOUR_CLIENT_SECRET"
+    # redirect_uri is auto-built from request URL: /auth/callback
+
+# =============================================================================
+# BRANDING & THEMING
+# =============================================================================
+
 branding:
   app_name: "QMS"
   app_tagline: "Quality Management System"

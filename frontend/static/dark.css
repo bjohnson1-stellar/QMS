@@ -145,6 +145,32 @@
     color-scheme: dark;
 }
 
+/* User dropdown */
+[data-theme="dark"] .user-dropdown {
+    background: #0f2b4d;
+    border-color: #1a3a5c;
+}
+
+[data-theme="dark"] .user-dropdown-item:hover {
+    background: #153050;
+}
+
+[data-theme="dark"] .role-admin { background: rgba(164, 31, 53, 0.2); color: #f87171; }
+[data-theme="dark"] .role-user { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+[data-theme="dark"] .role-viewer { background: rgba(107, 114, 128, 0.15); color: #9ca3af; }
+
+/* Login page */
+[data-theme="dark"] .login-btn-microsoft {
+    background: #0f2b4d;
+    border-color: #1a3a5c;
+    color: var(--color-text);
+}
+
+[data-theme="dark"] .login-btn-microsoft:hover {
+    background: #153050;
+    border-color: #2a5080;
+}
+
 /* Bulk toolbar */
 [data-theme="dark"] .bulk-toolbar {
     background: #060e1a;

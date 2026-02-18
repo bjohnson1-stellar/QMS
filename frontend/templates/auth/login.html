@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — {{ theme.app_name }}</title>
+
+    <script>
+        (function(){
+            var mode = localStorage.getItem('qms-theme-mode');
+            if (mode === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="{{ theme.fonts.google_fonts_url }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='brand-fonts.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dark.css') }}">
+
+    <style>
+        :root {
+            --color-primary: {{ theme.colors.primary }};
+            --color-primary-hover: {{ theme.colors.primary_hover }};
+            --color-primary-subtle: {{ theme.colors.primary_subtle }};
+            --color-sidebar: {{ theme.colors.nav_bg }};
+            --font-heading: '{{ theme.fonts.heading }}', '{{ theme.fonts.heading_fallback }}', -apple-system, sans-serif;
+            --font-body: '{{ theme.fonts.body }}', '{{ theme.fonts.body_fallback }}', -apple-system, sans-serif;
+        }
+    </style>
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <span class="login-logo">{{ theme.app_name }}</span>
+                <span class="login-tagline">{{ theme.app_tagline }}</span>
+            </div>
+
+            <p class="login-message">Sign in with your organization account to continue.</p>
+
+            <a href="{{ url_for('auth.login') }}" class="login-btn-microsoft">
+                <svg width="20" height="20" viewBox="0 0 21 21" fill="none">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                </svg>
+                Sign in with Microsoft
+            </a>
+
+            {% if error %}
+            <div class="login-error">{{ error }}</div>
+            {% endif %}
+        </div>
+
+        <div class="login-footer">
+            <button class="theme-toggle-login" onclick="toggleTheme()" title="Toggle dark mode">
+                <svg class="theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                <svg class="theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            var current = document.documentElement.getAttribute('data-theme');
+            var next = current === 'dark' ? 'light' : 'dark';
+            if (next === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            localStorage.setItem('qms-theme-mode', next);
+        }
+    </script>
+</body>
+</html>

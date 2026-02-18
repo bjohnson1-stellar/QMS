@@ -67,6 +67,7 @@ def execute_query(query: str, params: tuple = (), readonly: bool = True) -> list
 
 # Schema dependency order — foreign keys flow downhill through this list.
 SCHEMA_ORDER = [
+    "auth",
     "core",
     "workforce",
     "projects",

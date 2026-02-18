@@ -1973,6 +1973,237 @@ tr.clickable:hover {
 [data-theme="dark"] .theme-icon-dark { display: block; }
 [data-theme="dark"] .theme-icon-light { display: none; }
 
+/* === User Menu (Top Bar) === */
+.user-menu {
+    position: relative;
+}
+
+.user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.15s var(--ease);
+}
+
+.user-avatar:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: none;
+    box-shadow: none;
+}
+
+.user-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 240px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: all 0.15s var(--ease);
+    z-index: 200;
+}
+
+.user-dropdown.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.user-dropdown-header {
+    padding: 14px 16px;
+}
+
+.user-dropdown-name {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--color-text);
+    margin-bottom: 2px;
+}
+
+.user-dropdown-email {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    word-break: break-all;
+}
+
+.user-dropdown-role {
+    margin-top: 8px;
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 50px;
+    font-family: var(--font-heading);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.role-admin { background: var(--color-primary-subtle); color: var(--color-primary); }
+.role-user { background: #ecfdf5; color: #047857; }
+.role-viewer { background: #f3f4f6; color: #6b7280; }
+
+.user-dropdown-divider {
+    height: 1px;
+    background: var(--color-border-light);
+    margin: 0;
+}
+
+.user-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.1s var(--ease);
+}
+
+.user-dropdown-item:hover {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+}
+
+/* === Login Page === */
+.login-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: var(--color-bg);
+}
+
+.login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+
+.login-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 40px 44px;
+    width: 400px;
+    max-width: calc(100vw - 40px);
+    text-align: center;
+}
+
+.login-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 28px;
+}
+
+.login-logo {
+    font-family: var(--font-heading);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: -0.02em;
+}
+
+.login-tagline {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+}
+
+.login-message {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.login-btn-microsoft {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 20px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+}
+
+.login-btn-microsoft:hover {
+    background: var(--color-surface-alt);
+    border-color: var(--color-text-muted);
+    box-shadow: var(--shadow-sm);
+}
+
+.login-error {
+    margin-top: 16px;
+    padding: 10px 14px;
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.login-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.theme-toggle-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+}
+
+.theme-toggle-login:hover {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+    transform: none;
+    box-shadow: none;
+}
+
 /* === Filter button active state === */
 .filter-btn-active {
     background: var(--color-primary) !important;
