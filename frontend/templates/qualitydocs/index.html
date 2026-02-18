@@ -1,0 +1,716 @@
+{% extends "base.html" %}
+
+{% block title %}Quality Manual - {{ theme.app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* === Quality Manual Layout === */
+.qm-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* === Search === */
+.qm-search-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.qm-search-bar input {
+    flex: 1;
+}
+.qm-search-bar button {
+    flex-shrink: 0;
+}
+
+/* === TOC Sidebar === */
+.qm-toc {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 110px;
+    max-height: calc(100vh - 130px);
+    overflow-y: auto;
+}
+
+.qm-toc-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--color-border-light);
+    font-family: var(--font-heading);
+    font-weight: 650;
+    font-size: 15px;
+    color: var(--color-text);
+}
+
+.qm-toc-module {
+    padding: 10px 18px 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+}
+
+.qm-toc-section {
+    display: block;
+    padding: 7px 18px 7px 28px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background 0.12s var(--ease), color 0.12s var(--ease);
+    border-left: 3px solid transparent;
+    text-decoration: none;
+}
+
+.qm-toc-section:hover {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+}
+
+.qm-toc-section.active {
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+    border-left-color: var(--color-primary);
+    font-weight: 550;
+}
+
+/* === Content Area === */
+.qm-content {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    padding: 28px 32px;
+    min-height: 400px;
+}
+
+.qm-content-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--color-primary);
+}
+
+.qm-content-header h2 {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.qm-content-header .qm-section-number {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+}
+
+/* === Subsection === */
+.qm-subsection {
+    margin-bottom: 28px;
+}
+
+.qm-subsection-title {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 650;
+    color: var(--color-text);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.qm-subsection-ref {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    font-weight: 400;
+    margin-left: 8px;
+}
+
+.qm-subsection-type {
+    display: inline-block;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+    font-weight: 550;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* === Content Blocks === */
+.qm-block { margin-bottom: 10px; line-height: 1.65; }
+
+.qm-block-heading {
+    font-family: var(--font-heading);
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 6px;
+    margin-top: 16px;
+}
+
+.qm-block-subheading {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: 4px;
+    margin-top: 12px;
+}
+
+.qm-block p {
+    font-size: 13.5px;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+}
+
+.qm-block ul, .qm-block ol {
+    padding-left: 22px;
+    margin-bottom: 8px;
+}
+
+.qm-block li {
+    font-size: 13.5px;
+    color: var(--color-text-secondary);
+    margin-bottom: 3px;
+}
+
+.qm-block-note {
+    background: var(--color-warning-bg);
+    border-left: 3px solid var(--color-warning);
+    padding: 10px 14px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin: 10px 0;
+}
+
+.qm-block-note strong {
+    color: var(--color-warning);
+}
+
+.qm-block-responsibility {
+    background: var(--color-info-bg);
+    border-left: 3px solid var(--color-info);
+    padding: 10px 14px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 13px;
+    margin: 10px 0;
+}
+
+.qm-block-responsibility .qm-role {
+    font-weight: 600;
+    color: var(--color-info);
+    margin-bottom: 4px;
+}
+
+.qm-block table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 10px 0;
+}
+
+.qm-block table th,
+.qm-block table td {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border-light);
+    text-align: left;
+}
+
+.qm-block table th {
+    background: var(--color-surface-alt);
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.qm-block table td {
+    color: var(--color-text-secondary);
+}
+
+/* === Section cross-ref links === */
+.qm-xref {
+    color: var(--color-primary);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+}
+.qm-xref:hover {
+    text-decoration-style: solid;
+}
+
+/* === Search Results === */
+.qm-search-results {
+    list-style: none;
+    padding: 0;
+}
+
+.qm-search-result {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--color-border-light);
+    cursor: pointer;
+    transition: background 0.12s var(--ease);
+}
+
+.qm-search-result:hover {
+    background: var(--color-surface-alt);
+    margin: 0 -12px;
+    padding-left: 12px;
+    padding-right: 12px;
+    border-radius: var(--radius-sm);
+}
+
+.qm-search-result-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.qm-search-result-section {
+    font-weight: 600;
+    color: var(--color-primary);
+    font-size: 13px;
+}
+
+.qm-search-result-type {
+    font-size: 10.5px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+}
+
+.qm-search-result-content {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* === Welcome state === */
+.qm-welcome {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--color-text-muted);
+}
+
+.qm-welcome svg {
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+
+.qm-welcome h3 {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+}
+
+.qm-welcome p {
+    font-size: 13.5px;
+}
+
+/* === Loading state === */
+.qm-loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--color-text-muted);
+    font-size: 13.5px;
+}
+
+/* === Responsive === */
+@media (max-width: 900px) {
+    .qm-layout {
+        grid-template-columns: 1fr;
+    }
+    .qm-toc {
+        position: static;
+        max-height: none;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Quality Manual</h1>
+    <p class="subtitle">Browse and search the quality management system documentation</p>
+</div>
+
+<div class="stats-grid" id="qmStats">
+    <div class="stat-card">
+        <div class="stat-value" id="statModules">--</div>
+        <div class="stat-label">Modules</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statSections">--</div>
+        <div class="stat-label">Sections</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statContent">--</div>
+        <div class="stat-label">Content Blocks</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statXrefs">--</div>
+        <div class="stat-label">Cross-References</div>
+    </div>
+</div>
+
+<div class="qm-search-bar">
+    <input type="text" id="qmSearchInput" placeholder="Search quality manual content..." autocomplete="off">
+    <button onclick="doSearch()">Search</button>
+    <button class="secondary" onclick="clearSearch()" style="display:none" id="qmClearBtn">Clear</button>
+</div>
+
+<div class="qm-layout">
+    <div class="qm-toc" id="qmToc">
+        <div class="qm-toc-header">Table of Contents</div>
+        <div id="qmTocBody" class="qm-loading">Loading...</div>
+    </div>
+
+    <div class="qm-content" id="qmContent">
+        <div class="qm-welcome">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                <line x1="8" y1="7" x2="16" y2="7"/>
+                <line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+            <h3>Select a section to begin reading</h3>
+            <p>Choose a section from the table of contents, or search for specific content.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    /* ── State ─────────────────────────────────────────────────── */
+    var moduleData = {};  // keyed by module_number
+    var activeSection = null;
+
+    /* ── Init ──────────────────────────────────────────────────── */
+    init();
+
+    function init() {
+        fetch('{{ url_for("qualitydocs.api_summary") }}')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                renderStats(data);
+                // Load each module's sections for the TOC
+                var promises = data.modules.map(function(m) {
+                    return fetch('{{ url_for("qualitydocs.api_module", module_number=0) }}'.replace('0', m.module_number))
+                        .then(function(r) { return r.json(); })
+                        .then(function(detail) {
+                            moduleData[m.module_number] = detail;
+                        });
+                });
+                return Promise.all(promises);
+            })
+            .then(function() { renderToc(); })
+            .catch(function(err) {
+                document.getElementById('qmTocBody').textContent = 'Failed to load.';
+                console.error('QM init error:', err);
+            });
+
+        // Enter key in search
+        document.getElementById('qmSearchInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') doSearch();
+        });
+    }
+
+    /* ── Stats ─────────────────────────────────────────────────── */
+    function renderStats(data) {
+        var totalSections = 0;
+        data.modules.forEach(function(m) { totalSections += m.section_count; });
+        document.getElementById('statModules').textContent = data.total_modules;
+        document.getElementById('statSections').textContent = totalSections;
+        document.getElementById('statContent').textContent = data.total_content_blocks.toLocaleString();
+        document.getElementById('statXrefs').textContent = data.total_cross_references;
+    }
+
+    /* ── TOC ───────────────────────────────────────────────────── */
+    function renderToc() {
+        var body = document.getElementById('qmTocBody');
+        body.innerHTML = '';
+        body.className = '';
+
+        var moduleNums = Object.keys(moduleData).sort(function(a, b) { return a - b; });
+        moduleNums.forEach(function(num) {
+            var mod = moduleData[num];
+            var header = document.createElement('div');
+            header.className = 'qm-toc-module';
+            header.textContent = 'Module ' + num + ' \u2014 ' + (mod.title || '');
+            body.appendChild(header);
+
+            (mod.sections || []).forEach(function(sec) {
+                var a = document.createElement('a');
+                a.className = 'qm-toc-section';
+                a.textContent = sec.section_number + ' ' + (sec.title || '');
+                a.dataset.section = sec.section_number;
+                a.href = '#section-' + sec.section_number;
+                a.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    loadSection(sec.section_number);
+                });
+                body.appendChild(a);
+            });
+        });
+    }
+
+    /* ── Load Section ──────────────────────────────────────────── */
+    window.loadSection = function(sectionNumber) {
+        activeSection = sectionNumber;
+
+        // Update TOC active state
+        document.querySelectorAll('.qm-toc-section').forEach(function(el) {
+            el.classList.toggle('active', el.dataset.section === sectionNumber);
+        });
+
+        var content = document.getElementById('qmContent');
+        content.innerHTML = '<div class="qm-loading">Loading section ' + sectionNumber + '...</div>';
+
+        // Clear search state
+        document.getElementById('qmClearBtn').style.display = 'none';
+        document.getElementById('qmSearchInput').value = '';
+
+        fetch('{{ url_for("qualitydocs.api_section", section_number="__PLACEHOLDER__") }}'.replace('__PLACEHOLDER__', sectionNumber))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    content.innerHTML = '<div class="qm-welcome"><h3>Section not found</h3></div>';
+                    return;
+                }
+                renderSection(data);
+            })
+            .catch(function(err) {
+                content.innerHTML = '<div class="qm-welcome"><h3>Error loading section</h3></div>';
+                console.error('Section load error:', err);
+            });
+    };
+
+    /* ── Render Section Content ────────────────────────────────── */
+    function renderSection(data) {
+        var content = document.getElementById('qmContent');
+        var html = '<div class="qm-content-header">' +
+            '<h2>' + escHtml(data.title || '') + '</h2>' +
+            '<div class="qm-section-number">Section ' + escHtml(data.section_number) +
+            ' &mdash; Module ' + data.module_number + '</div>' +
+            '</div>';
+
+        (data.subsections || []).forEach(function(sub) {
+            html += '<div class="qm-subsection">';
+            html += '<div class="qm-subsection-title">' +
+                escHtml(sub.title || '') +
+                '<span class="qm-subsection-ref">' + escHtml(sub.full_ref || '') + '</span>';
+            if (sub.subsection_type) {
+                html += '<span class="qm-subsection-type">' + escHtml(sub.subsection_type) + '</span>';
+            }
+            html += '</div>';
+
+            (sub.content_blocks || []).forEach(function(block) {
+                html += renderBlock(block);
+            });
+
+            (sub.responsibilities || []).forEach(function(resp) {
+                html += '<div class="qm-block qm-block-responsibility">' +
+                    '<div class="qm-role">' + escHtml(resp.role) + '</div>' +
+                    '<div>' + escHtml(resp.responsibility || '') + '</div>' +
+                    '</div>';
+            });
+
+            html += '</div>';
+        });
+
+        content.innerHTML = html;
+        linkifyRefs(content);
+    }
+
+    /* ── Render Block ──────────────────────────────────────────── */
+    function renderBlock(block) {
+        var c = block.content || '';
+        switch (block.block_type) {
+            case 'HeadingParagraph':
+                return '<div class="qm-block qm-block-heading">' + escHtml(c) + '</div>';
+            case 'SubHeading':
+                return '<div class="qm-block qm-block-subheading">' + escHtml(c) + '</div>';
+            case 'Paragraph':
+                return '<div class="qm-block"><p>' + escHtml(c) + '</p></div>';
+            case 'BulletList':
+                return '<div class="qm-block"><ul>' +
+                    c.split('\n').filter(Boolean).map(function(li) {
+                        return '<li>' + escHtml(li.replace(/^[\u2022\-\*]\s*/, '')) + '</li>';
+                    }).join('') +
+                    '</ul></div>';
+            case 'NumberedList':
+                return '<div class="qm-block"><ol>' +
+                    c.split('\n').filter(Boolean).map(function(li) {
+                        return '<li>' + escHtml(li.replace(/^\d+[\.\)]\s*/, '')) + '</li>';
+                    }).join('') +
+                    '</ol></div>';
+            case 'Table':
+                return '<div class="qm-block">' + renderTable(c) + '</div>';
+            case 'Note':
+                return '<div class="qm-block qm-block-note"><strong>NOTE:</strong> ' + escHtml(c) + '</div>';
+            case 'ResponsibilityBlock':
+                return '<div class="qm-block qm-block-responsibility">' + escHtml(c) + '</div>';
+            default:
+                return '<div class="qm-block"><p>' + escHtml(c) + '</p></div>';
+        }
+    }
+
+    /* ── Render Pipe-Delimited Table ──────────────────────────── */
+    function renderTable(text) {
+        var lines = text.split('\n').filter(function(l) { return l.trim(); });
+        if (!lines.length) return '<p>' + escHtml(text) + '</p>';
+
+        var html = '<table>';
+        lines.forEach(function(line, i) {
+            var cells = line.split('|').map(function(c) { return c.trim(); }).filter(Boolean);
+            var tag = (i === 0) ? 'th' : 'td';
+            html += '<tr>' + cells.map(function(c) {
+                return '<' + tag + '>' + escHtml(c) + '</' + tag + '>';
+            }).join('') + '</tr>';
+        });
+        html += '</table>';
+        return html;
+    }
+
+    /* ── Linkify Section References ────────────────────────────── */
+    function linkifyRefs(container) {
+        var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+        var textNodes = [];
+        while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+        var pattern = /Section\s+(\d+\.\d+)/gi;
+        textNodes.forEach(function(node) {
+            if (!pattern.test(node.textContent)) return;
+            pattern.lastIndex = 0;
+            var frag = document.createDocumentFragment();
+            var text = node.textContent;
+            var lastIdx = 0;
+            var match;
+            while ((match = pattern.exec(text)) !== null) {
+                if (match.index > lastIdx) {
+                    frag.appendChild(document.createTextNode(text.slice(lastIdx, match.index)));
+                }
+                var link = document.createElement('span');
+                link.className = 'qm-xref';
+                link.textContent = match[0];
+                link.dataset.section = match[1];
+                link.addEventListener('click', function() {
+                    loadSection(this.dataset.section);
+                });
+                frag.appendChild(link);
+                lastIdx = pattern.lastIndex;
+            }
+            if (lastIdx < text.length) {
+                frag.appendChild(document.createTextNode(text.slice(lastIdx)));
+            }
+            node.parentNode.replaceChild(frag, node);
+        });
+    }
+
+    /* ── Search ────────────────────────────────────────────────── */
+    window.doSearch = function() {
+        var q = document.getElementById('qmSearchInput').value.trim();
+        if (!q) return;
+
+        var content = document.getElementById('qmContent');
+        content.innerHTML = '<div class="qm-loading">Searching...</div>';
+        document.getElementById('qmClearBtn').style.display = '';
+
+        // Deactivate TOC
+        document.querySelectorAll('.qm-toc-section.active').forEach(function(el) {
+            el.classList.remove('active');
+        });
+        activeSection = null;
+
+        fetch('{{ url_for("qualitydocs.api_search") }}?q=' + encodeURIComponent(q))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                renderSearchResults(data.results, data.query);
+            })
+            .catch(function(err) {
+                content.innerHTML = '<div class="qm-welcome"><h3>Search failed</h3></div>';
+                console.error('Search error:', err);
+            });
+    };
+
+    window.clearSearch = function() {
+        document.getElementById('qmSearchInput').value = '';
+        document.getElementById('qmClearBtn').style.display = 'none';
+        var content = document.getElementById('qmContent');
+        content.innerHTML = '<div class="qm-welcome">' +
+            '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>' +
+            '<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' +
+            '<line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/>' +
+            '</svg>' +
+            '<h3>Select a section to begin reading</h3>' +
+            '<p>Choose a section from the table of contents, or search for specific content.</p>' +
+            '</div>';
+    };
+
+    function renderSearchResults(results, query) {
+        var content = document.getElementById('qmContent');
+        if (!results.length) {
+            content.innerHTML = '<div class="qm-welcome"><h3>No results found</h3>' +
+                '<p>No content matched &ldquo;' + escHtml(query) + '&rdquo;. Try different terms.</p></div>';
+            return;
+        }
+
+        var html = '<div class="qm-content-header">' +
+            '<h2>Search Results</h2>' +
+            '<div class="qm-section-number">' + results.length + ' results for &ldquo;' + escHtml(query) + '&rdquo;</div>' +
+            '</div>';
+
+        html += '<ul class="qm-search-results">';
+        results.forEach(function(r) {
+            var snippet = (r.content || '').substring(0, 200);
+            html += '<li class="qm-search-result" data-section="' + escAttr(r.section_number) + '">' +
+                '<div class="qm-search-result-header">' +
+                '<span class="qm-search-result-section">Section ' + escHtml(r.section_number) + '</span>' +
+                '<span class="qm-search-result-type">' + escHtml(r.block_type) + '</span>' +
+                (r.subsection_ref ? '<span class="qm-search-result-type">' + escHtml(r.subsection_ref) + '</span>' : '') +
+                '</div>' +
+                '<div class="qm-search-result-content">' + escHtml(snippet) + '</div>' +
+                '</li>';
+        });
+        html += '</ul>';
+
+        content.innerHTML = html;
+
+        // Click to navigate
+        content.querySelectorAll('.qm-search-result').forEach(function(el) {
+            el.addEventListener('click', function() {
+                loadSection(this.dataset.section);
+            });
+        });
+    }
+
+    /* ── Helpers ────────────────────────────────────────────────── */
+    function escHtml(s) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(s));
+        return div.innerHTML;
+    }
+
+    function escAttr(s) {
+        return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    }
+})();
+</script>
+{% endblock %}

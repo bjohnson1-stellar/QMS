@@ -193,6 +193,9 @@ def create_app() -> Flask:
     from qms.api.settings import bp as settings_bp
     app.register_blueprint(settings_bp)
 
+    from qms.api.qualitydocs import bp as qualitydocs_bp
+    app.register_blueprint(qualitydocs_bp)
+
     # Root redirect — send user to their first accessible module
     _MODULE_DEFAULTS = {
         mod: info["default_endpoint"] for mod, info in _modules_cfg.items()

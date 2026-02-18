@@ -848,6 +848,68 @@ def get_module_detail(module_number: int) -> Optional[Dict[str, Any]]:
     return result
 
 
+def get_section_content(section_number: str) -> Optional[Dict[str, Any]]:
+    """
+    Get a section's subsections with their content blocks and responsibilities.
+
+    Args:
+        section_number: The section number (e.g. "1.1", "2.3").
+
+    Returns:
+        Dict with section info and nested subsections containing content blocks
+        and responsibility assignments, or None if not found.
+    """
+    with get_db(readonly=True) as conn:
+        section = conn.execute(
+            "SELECT s.id, s.section_number, s.title, s.related_sections,"
+            "       s.related_modules, m.module_number, m.title AS module_title"
+            " FROM qm_sections s"
+            " JOIN qm_modules m ON s.module_id = m.id"
+            " WHERE s.section_number = ?",
+            (section_number,),
+        ).fetchone()
+
+        if not section:
+            return None
+
+        section_id = section["id"]
+        result = dict(section)
+
+        subsections = conn.execute(
+            "SELECT id, letter, title, subsection_type, full_ref, display_order"
+            " FROM qm_subsections WHERE section_id = ?"
+            " ORDER BY display_order",
+            (section_id,),
+        ).fetchall()
+
+        subs = []
+        for sub in subsections:
+            sub_dict = dict(sub)
+            sub_id = sub["id"]
+
+            blocks = conn.execute(
+                "SELECT block_type, content, level, display_order"
+                " FROM qm_content_blocks WHERE subsection_id = ?"
+                " ORDER BY display_order",
+                (sub_id,),
+            ).fetchall()
+            sub_dict["content_blocks"] = [dict(b) for b in blocks]
+
+            responsibilities = conn.execute(
+                "SELECT role, responsibility, display_order"
+                " FROM qm_responsibility_assignments WHERE subsection_id = ?"
+                " ORDER BY display_order",
+                (sub_id,),
+            ).fetchall()
+            sub_dict["responsibilities"] = [dict(r) for r in responsibilities]
+
+            subs.append(sub_dict)
+
+        result["subsections"] = subs
+
+    return result
+
+
 def find_xml_files(directory: str = ".") -> List[str]:
     """
     Find all quality manual module XML files in a directory tree.

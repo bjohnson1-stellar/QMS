@@ -447,6 +447,9 @@ web_modules:
   automation:
     label: "Automation"
     default_endpoint: "automation.preview"
+  qualitydocs:
+    label: "Quality Manual"
+    default_endpoint: "qualitydocs.manual"
 
 # =============================================================================
 # AUTHENTICATION (Local email + password)

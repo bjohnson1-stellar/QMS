@@ -131,6 +131,9 @@
         {% elif ns.module == 'automation' %}
         <a href="{{ url_for('automation.preview') }}"
            class="{{ 'active' if request.endpoint == 'automation.preview' }}">Card Preview</a>
+        {% elif ns.module == 'qualitydocs' %}
+        <a href="{{ url_for('qualitydocs.manual') }}"
+           class="{{ 'active' if request.endpoint == 'qualitydocs.manual' }}">Quality Manual</a>
         {% endif %}
     </div>
 
