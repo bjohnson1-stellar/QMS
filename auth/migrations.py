@@ -20,6 +20,7 @@ def run_auth_migrations(conn: sqlite3.Connection) -> None:
     _drop_module_check_constraint(conn)
     _drop_entra_oid(conn)
     _create_business_unit_access_table(conn)
+    _fix_module_access_fk(conn)
 
 
 def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
@@ -186,4 +187,48 @@ def _drop_entra_oid(conn: sqlite3.Connection) -> None:
     """)
     conn.execute("DROP TABLE _users_old")
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+    conn.commit()
+
+
+def _fix_module_access_fk(conn: sqlite3.Connection) -> None:
+    """
+    Rebuild user_module_access if its FK points to a stale table name.
+
+    The _drop_entra_oid migration renamed `users` → `_users_old`, which
+    caused SQLite to rewrite the FK in user_module_access from users(id)
+    to _users_old(id).  This migration detects the stale reference and
+    rebuilds the table with the correct FK.
+    """
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='user_module_access'"
+    ).fetchone()
+
+    if not row or not row["sql"]:
+        return
+
+    # Only rebuild if the FK is pointing at the wrong table
+    if "_users_old" not in row["sql"]:
+        return
+
+    logger.info("Fixing user_module_access FK (was pointing to _users_old)")
+
+    conn.execute("ALTER TABLE user_module_access RENAME TO _uma_fix")
+    conn.execute("""
+        CREATE TABLE user_module_access (
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            module   TEXT NOT NULL,
+            role     TEXT NOT NULL DEFAULT 'viewer'
+                     CHECK (role IN ('admin', 'editor', 'viewer')),
+            UNIQUE(user_id, module)
+        )
+    """)
+    conn.execute("""
+        INSERT INTO user_module_access (id, user_id, module, role)
+        SELECT id, user_id, module, role FROM _uma_fix
+    """)
+    conn.execute("DROP TABLE _uma_fix")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_uma_user ON user_module_access(user_id)"
+    )
     conn.commit()
