@@ -45,17 +45,39 @@ def migrate():
 @app.command()
 def serve(
     port: int = typer.Option(5000, "--port", "-p", help="Port number"),
-    host: str = typer.Option("127.0.0.1", "--host", "-h", help="Host address"),
-    debug: bool = typer.Option(True, "--debug/--no-debug", help="Enable auto-reload on file changes"),
+    host: str = typer.Option(None, "--host", "-h", help="Host address (default: 0.0.0.0 prod, 127.0.0.1 debug)"),
+    debug: bool = typer.Option(False, "--debug", help="Use Flask dev server with auto-reload (localhost only)"),
+    threads: int = typer.Option(8, "--threads", "-t", help="Waitress worker threads (production only)"),
 ):
-    """Launch the QMS web interface."""
+    """Launch the QMS web interface.
+
+    Default: Waitress production server on 0.0.0.0 (LAN accessible).
+    With --debug: Flask dev server on 127.0.0.1 with auto-reload.
+    """
     from qms.api import create_app
 
     web = create_app()
-    typer.echo(f"Starting QMS web server at http://{host}:{port}")
+
     if debug:
+        _host = host or "127.0.0.1"
+        typer.echo(f"Starting Flask dev server at http://{_host}:{port}")
         typer.echo("Debug mode ON — auto-reloads on file changes")
-    web.run(host=host, port=port, debug=debug)
+        web.run(host=_host, port=port, debug=True)
+    else:
+        _host = host or "0.0.0.0"
+        try:
+            from waitress import serve as waitress_serve
+        except ImportError:
+            typer.echo("waitress not installed — falling back to Flask dev server")
+            typer.echo("Install with: pip install waitress")
+            web.run(host=_host, port=port, debug=False)
+            return
+        typer.echo(f"Starting Waitress production server on {_host}:{port} ({threads} threads)")
+        if _host == "0.0.0.0":
+            import socket
+            hostname = socket.gethostname()
+            typer.echo(f"LAN access: http://{hostname}:{port}")
+        waitress_serve(web, host=_host, port=port, threads=threads)
 
 
 def _register_modules():
