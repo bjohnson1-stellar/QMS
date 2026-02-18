@@ -38,17 +38,17 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    {# Detect active module from the current route #}
+    {# Detect active module from the current route (config-driven) #}
     {% set ns = namespace(module='projects') %}
     {% if request.endpoint %}
-        {% if request.endpoint.startswith('welding.') %}
-            {% set ns.module = 'welding' %}
-        {% elif request.endpoint.startswith('pipeline.') %}
-            {% set ns.module = 'pipeline' %}
-        {% elif request.endpoint.startswith('automation.') %}
-            {% set ns.module = 'automation' %}
-        {% elif request.endpoint.startswith('settings.') %}
+        {% if request.endpoint.startswith('settings.') %}
             {% set ns.module = 'settings' %}
+        {% else %}
+            {% for mod_key in web_modules %}
+                {% if request.endpoint.startswith(mod_key + '.') %}
+                    {% set ns.module = mod_key %}
+                {% endif %}
+            {% endfor %}
         {% endif %}
     {% endif %}
 
@@ -58,22 +58,12 @@
             <span class="top-bar-tagline">{{ theme.app_tagline }}</span>
         </div>
         <div class="top-bar-modules">
-            {% if 'projects' in accessible_modules %}
-            <a href="{{ url_for('projects.dashboard') }}"
-               class="module-tab {{ 'active' if ns.module == 'projects' }}">Projects</a>
+            {% for mod_key, mod_info in web_modules.items() %}
+            {% if mod_key in accessible_modules %}
+            <a href="{{ url_for(mod_info.default_endpoint) }}"
+               class="module-tab {{ 'active' if ns.module == mod_key }}">{{ mod_info.label }}</a>
             {% endif %}
-            {% if 'welding' in accessible_modules %}
-            <a href="{{ url_for('welding.dashboard') }}"
-               class="module-tab {{ 'active' if ns.module == 'welding' }}">Welding</a>
-            {% endif %}
-            {% if 'pipeline' in accessible_modules %}
-            <a href="{{ url_for('pipeline.intake_dashboard') }}"
-               class="module-tab {{ 'active' if ns.module == 'pipeline' }}">Pipeline</a>
-            {% endif %}
-            {% if 'automation' in accessible_modules %}
-            <a href="{{ url_for('automation.preview') }}"
-               class="module-tab {{ 'active' if ns.module == 'automation' }}">Automation</a>
-            {% endif %}
+            {% endfor %}
         </div>
         <div class="top-bar-actions">
             <a href="{{ url_for('settings.settings_page') }}"

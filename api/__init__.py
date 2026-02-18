@@ -31,35 +31,35 @@ def create_app() -> Flask:
     session_minutes = auth_cfg.get("session_lifetime_minutes", 480)
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=session_minutes)
 
-    # ── Branding context processor ───────────────────────────────────────
-    from qms.core.config import get_branding
+    # ── Branding + module registry context processors ────────────────────
+    from qms.core.config import get_branding, get_web_modules
 
     @app.context_processor
     def inject_theme():
         return {"theme": get_branding()}
 
-    # ── Current user context processor ───────────────────────────────────
     @app.context_processor
     def inject_current_user():
         user = session.get("user")
+        modules_cfg = get_web_modules()
         # Build set of accessible module names for nav rendering
         if user and user.get("role") == "admin":
-            accessible = {"projects", "welding", "pipeline", "automation", "settings"}
+            accessible = set(modules_cfg.keys()) | {"settings"}
         elif user:
             accessible = set(user.get("modules", {}).keys())
         else:
             accessible = set()
-        return {"current_user": user, "accessible_modules": accessible}
+        return {
+            "current_user": user,
+            "accessible_modules": accessible,
+            "web_modules": modules_cfg,
+        }
 
     # ── Auth gate (before_request) ───────────────────────────────────────
 
-    # Map blueprint prefix → module name for access checks
-    _BLUEPRINT_MODULE = {
-        "projects": "projects",
-        "welding": "welding",
-        "pipeline": "pipeline",
-        "automation": "automation",
-    }
+    # Map blueprint prefix → module name for access checks (from config)
+    _modules_cfg = get_web_modules()
+    _BLUEPRINT_MODULE = {mod: mod for mod in _modules_cfg}
 
     @app.before_request
     def require_auth():
@@ -113,17 +113,17 @@ def create_app() -> Flask:
 
     # Root redirect — send user to their first accessible module
     _MODULE_DEFAULTS = {
-        "projects": "projects.dashboard",
-        "welding": "welding.dashboard",
-        "pipeline": "pipeline.intake_dashboard",
-        "automation": "automation.preview",
+        mod: info["default_endpoint"] for mod, info in _modules_cfg.items()
     }
+
+    # Determine the fallback endpoint (first module in config)
+    _first_endpoint = next(iter(_MODULE_DEFAULTS.values()), "projects.dashboard")
 
     @app.route("/")
     def index():
         user = session.get("user")
         if user and user.get("role") == "admin":
-            return redirect(url_for("projects.dashboard"))
+            return redirect(url_for(_first_endpoint))
 
         # Non-admin: redirect to first accessible module
         if user:
@@ -132,6 +132,6 @@ def create_app() -> Flask:
                 if mod in modules:
                     return redirect(url_for(endpoint))
 
-        return redirect(url_for("projects.dashboard"))
+        return redirect(url_for(_first_endpoint))
 
     return app

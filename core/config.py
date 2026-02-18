@@ -151,6 +151,19 @@ def get_branding() -> Dict[str, Any]:
     return result
 
 
+_WEB_MODULES_DEFAULTS = {
+    "projects": {"label": "Projects", "default_endpoint": "projects.dashboard"},
+    "welding": {"label": "Welding", "default_endpoint": "welding.dashboard"},
+    "pipeline": {"label": "Pipeline", "default_endpoint": "pipeline.intake_dashboard"},
+    "automation": {"label": "Automation", "default_endpoint": "automation.preview"},
+}
+
+
+def get_web_modules() -> Dict[str, Dict[str, str]]:
+    """Return the web_modules registry from config.yaml (or defaults)."""
+    return get_config().get("web_modules", _WEB_MODULES_DEFAULTS)
+
+
 class QMSPaths:
     """
     Centralized path access for QMS system.

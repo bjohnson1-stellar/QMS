@@ -431,6 +431,24 @@ welding:
 # =============================================================================
 
 # =============================================================================
+# WEB MODULES (single source of truth for nav, access control, routing)
+# =============================================================================
+
+web_modules:
+  projects:
+    label: "Projects"
+    default_endpoint: "projects.dashboard"
+  welding:
+    label: "Welding"
+    default_endpoint: "welding.dashboard"
+  pipeline:
+    label: "Pipeline"
+    default_endpoint: "pipeline.intake_dashboard"
+  automation:
+    label: "Automation"
+    default_endpoint: "automation.preview"
+
+# =============================================================================
 # AUTHENTICATION (Microsoft Entra ID / Azure AD)
 # =============================================================================
 

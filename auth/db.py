@@ -163,8 +163,13 @@ def set_active(conn: sqlite3.Connection, user_id: int, is_active: bool) -> bool:
 
 # ── Module Access ────────────────────────────────────────────────────────────
 
-VALID_MODULES = ("projects", "welding", "pipeline", "automation")
 VALID_MODULE_ROLES = ("admin", "editor", "viewer")
+
+
+def _valid_modules() -> tuple[str, ...]:
+    """Return valid module names from config.yaml (lazy import to avoid circular deps)."""
+    from qms.core.config import get_web_modules
+    return tuple(get_web_modules().keys())
 
 
 def get_user_modules(conn: sqlite3.Connection, user_id: int) -> dict[str, str]:
@@ -188,8 +193,9 @@ def grant_module_access(
 
     Returns True on success.
     """
-    if module not in VALID_MODULES:
-        raise ValueError(f"Invalid module: {module}. Must be one of {VALID_MODULES}")
+    valid = _valid_modules()
+    if module not in valid:
+        raise ValueError(f"Invalid module: {module}. Must be one of {valid}")
     if role not in VALID_MODULE_ROLES:
         raise ValueError(f"Invalid module role: {role}. Must be one of {VALID_MODULE_ROLES}")
 

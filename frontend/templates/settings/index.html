@@ -54,6 +54,12 @@
                 </span>
                 Integrations
             </div>
+            <div class="settings-nav-item" data-tab="users">
+                <span class="settings-nav-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </span>
+                Users & Access
+            </div>
         </nav>
 
         <!-- Right content panel -->
@@ -432,6 +438,102 @@
                 </div>
             </div>
 
+            <!-- ═══════════════ USERS & ACCESS ═══════════════ -->
+            <div class="settings-section" id="tab-users">
+                <h3>Users & Access</h3>
+                <p class="section-desc">Manage user accounts and module permissions</p>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <div style="font-size:13px; color:var(--color-text-muted);" id="users-count"></div>
+                    <button onclick="openCreateUserModal()">+ Create User</button>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table class="user-mgmt-table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Modules</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersBody">
+                            <tr><td colspan="6" class="loading">Loading users...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal-overlay" id="createUserModal" style="display:none;" onclick="if(event.target===this)closeCreateUserModal()">
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h2>Create User</h2>
+            <button class="modal-close" onclick="closeCreateUserModal()">&times;</button>
+        </div>
+        <div class="modal-form-grid">
+            <div class="form-group">
+                <label for="cu-email">Email</label>
+                <input type="email" id="cu-email" placeholder="user@company.com">
+            </div>
+            <div class="form-group">
+                <label for="cu-displayName">Display Name</label>
+                <input type="text" id="cu-displayName" placeholder="First Last">
+            </div>
+            <div class="form-group">
+                <label for="cu-password">Password</label>
+                <input type="password" id="cu-password" placeholder="Min 8 characters">
+            </div>
+            <div class="form-group">
+                <label for="cu-role">Global Role</label>
+                <select id="cu-role">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                    <option value="viewer">Viewer</option>
+                </select>
+            </div>
+        </div>
+        <div id="cu-error" style="display:none; margin-top:12px; padding:10px 14px; background:var(--color-danger-bg); color:var(--color-danger); border-radius:var(--radius-sm); font-size:13px;"></div>
+        <div class="settings-save-row" style="border-top:none; padding-top:12px;">
+            <button onclick="createUser()">Create</button>
+            <button class="secondary" onclick="closeCreateUserModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Module Access Modal -->
+<div class="modal-overlay" id="moduleAccessModal" style="display:none;" onclick="if(event.target===this)closeModuleModal()">
+    <div class="modal-content" style="max-width:480px;">
+        <div class="modal-header">
+            <h2>Module Access — <span id="ma-userName"></span></h2>
+            <button class="modal-close" onclick="closeModuleModal()">&times;</button>
+        </div>
+        <div id="ma-userId" style="display:none;"></div>
+        <div id="ma-moduleList"></div>
+        <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--color-border-light);">
+            <div style="font-size:13px; font-weight:600; color:var(--color-text-secondary); margin-bottom:10px;">Grant Access</div>
+            <div style="display:flex; gap:8px; align-items:end;">
+                <div class="form-group" style="margin-bottom:0; flex:1;">
+                    <label for="ma-newModule">Module</label>
+                    <select id="ma-newModule"></select>
+                </div>
+                <div class="form-group" style="margin-bottom:0; flex:1;">
+                    <label for="ma-newRole">Role</label>
+                    <select id="ma-newRole">
+                        <option value="viewer">Viewer</option>
+                        <option value="editor">Editor</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button onclick="grantModuleAccess()" style="height:38px;">Grant</button>
+            </div>
         </div>
     </div>
 </div>
@@ -762,6 +864,240 @@ async function saveConfigSection(section, data, msgId) {
     } catch(e) { showMsg(msgId, 'Error: ' + e.message, 'error'); }
 }
 
+// ════════════════════════════════════════════
+// USERS & ACCESS
+// ════════════════════════════════════════════
+
+const WEB_MODULES = {{ web_modules | tojson }};
+
+let _usersCache = [];
+
+async function loadUsers() {
+    try {
+        const users = await fetchJSON('/auth/users');
+        _usersCache = users;
+        const body = document.getElementById('usersBody');
+        document.getElementById('users-count').textContent = users.length + ' user' + (users.length !== 1 ? 's' : '');
+
+        if (!users.length) {
+            body.innerHTML = '<tr><td colspan="6" class="empty-state">No users found</td></tr>';
+            return;
+        }
+
+        body.innerHTML = users.map(u => {
+            const roleOpts = ['admin', 'user', 'viewer'].map(r =>
+                `<option value="${r}" ${u.role === r ? 'selected' : ''}>${r}</option>`
+            ).join('');
+
+            const activeLabel = u.is_active ? 'Active' : 'Inactive';
+            const activeClass = u.is_active ? 'status-active' : 'status-expired';
+
+            return `<tr class="${u.is_active ? '' : 'um-inactive-row'}">
+                <td style="font-weight:500;">${esc(u.display_name)}</td>
+                <td style="font-size:12.5px; color:var(--color-text-secondary);">${esc(u.email)}</td>
+                <td>
+                    <select class="um-role-select" onchange="updateRole(${u.id}, this.value)">${roleOpts}</select>
+                </td>
+                <td>
+                    <span class="um-modules-cell" id="um-mods-${u.id}">
+                        ${u.role === 'admin' ? '<span class="module-pill pill-all">all modules</span>' : '<span class="module-pill pill-loading">...</span>'}
+                    </span>
+                    ${u.role !== 'admin' ? `<button class="um-action-btn" onclick="openModuleModal(${u.id}, '${esc(u.display_name)}')" title="Edit modules">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>` : ''}
+                </td>
+                <td>
+                    <button class="status-badge ${activeClass} um-status-btn" onclick="toggleActive(${u.id}, ${u.is_active ? 'false' : 'true'})">${activeLabel}</button>
+                </td>
+                <td>
+                    <button class="um-action-btn" onclick="resetPassword(${u.id})" title="Reset password">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+
+        // Load module access for non-admin users
+        users.filter(u => u.role !== 'admin').forEach(u => loadUserModules(u.id));
+    } catch(e) {
+        document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" class="empty-state">Error loading users</td></tr>';
+    }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+async function loadUserModules(userId) {
+    try {
+        const mods = await fetchJSON(`/auth/users/${userId}/modules`);
+        const el = document.getElementById('um-mods-' + userId);
+        if (!el) return;
+        const entries = Object.entries(mods);
+        if (!entries.length) {
+            el.innerHTML = '<span class="module-pill pill-none">none</span>';
+            return;
+        }
+        el.innerHTML = entries.map(([mod, role]) =>
+            `<span class="module-pill pill-${role}">${mod}:${role}</span>`
+        ).join(' ');
+    } catch(e) {}
+}
+
+async function updateRole(userId, role) {
+    try {
+        const r = await fetch(`/auth/users/${userId}/role`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({role})
+        });
+        if (r.ok) loadUsers();
+    } catch(e) {}
+}
+
+async function toggleActive(userId, isActive) {
+    try {
+        await fetch(`/auth/users/${userId}/active`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({is_active: isActive})
+        });
+        loadUsers();
+    } catch(e) {}
+}
+
+async function resetPassword(userId) {
+    const pw = prompt('Enter new password (min 8 characters):');
+    if (!pw) return;
+    if (pw.length < 8) { alert('Password must be at least 8 characters'); return; }
+    try {
+        const r = await fetch(`/auth/users/${userId}/reset-password`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({password: pw})
+        });
+        if (r.ok) alert('Password reset. User will be prompted to change on next login.');
+        else alert('Error resetting password');
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ── Create User Modal ──
+function openCreateUserModal() {
+    document.getElementById('createUserModal').style.display = 'flex';
+    document.getElementById('cu-email').value = '';
+    document.getElementById('cu-displayName').value = '';
+    document.getElementById('cu-password').value = '';
+    document.getElementById('cu-role').value = 'user';
+    document.getElementById('cu-error').style.display = 'none';
+    document.getElementById('cu-email').focus();
+}
+
+function closeCreateUserModal() {
+    document.getElementById('createUserModal').style.display = 'none';
+}
+
+async function createUser() {
+    const email = val('cu-email').trim().toLowerCase();
+    const display_name = val('cu-displayName').trim();
+    const password = val('cu-password');
+    const role = val('cu-role');
+    const errEl = document.getElementById('cu-error');
+
+    if (!email || !display_name || !password) {
+        errEl.textContent = 'All fields are required';
+        errEl.style.display = 'block';
+        return;
+    }
+    if (password.length < 8) {
+        errEl.textContent = 'Password must be at least 8 characters';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    try {
+        const r = await fetch('/auth/users/create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email, display_name, password, role})
+        });
+        if (r.ok) {
+            closeCreateUserModal();
+            loadUsers();
+        } else {
+            const data = await r.json();
+            errEl.textContent = data.description || data.message || 'Error creating user';
+            errEl.style.display = 'block';
+        }
+    } catch(e) {
+        errEl.textContent = 'Error: ' + e.message;
+        errEl.style.display = 'block';
+    }
+}
+
+// ── Module Access Modal ──
+let _maUserId = null;
+
+function openModuleModal(userId, displayName) {
+    _maUserId = userId;
+    document.getElementById('ma-userName').textContent = displayName;
+    document.getElementById('moduleAccessModal').style.display = 'flex';
+    // Populate module dropdown from config
+    const sel = document.getElementById('ma-newModule');
+    sel.innerHTML = Object.entries(WEB_MODULES).map(([k, v]) =>
+        `<option value="${k}">${v.label}</option>`
+    ).join('');
+    loadModuleAccessModal(userId);
+}
+
+function closeModuleModal() {
+    document.getElementById('moduleAccessModal').style.display = 'none';
+    _maUserId = null;
+}
+
+async function loadModuleAccessModal(userId) {
+    const el = document.getElementById('ma-moduleList');
+    try {
+        const mods = await fetchJSON(`/auth/users/${userId}/modules`);
+        const entries = Object.entries(mods);
+        if (!entries.length) {
+            el.innerHTML = '<div style="padding:12px 0; color:var(--color-text-muted); font-size:13px;">No module access granted</div>';
+            return;
+        }
+        el.innerHTML = entries.map(([mod, role]) => `
+            <div class="um-module-row">
+                <span class="module-pill pill-${role}">${mod}</span>
+                <span style="font-size:12px; color:var(--color-text-muted);">${role}</span>
+                <button class="um-action-btn danger" onclick="revokeModuleAccess(${userId}, '${mod}')" title="Revoke">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        `).join('');
+    } catch(e) {
+        el.innerHTML = '<div style="color:var(--color-danger);">Error loading modules</div>';
+    }
+}
+
+async function grantModuleAccess() {
+    if (!_maUserId) return;
+    const module = val('ma-newModule');
+    const role = val('ma-newRole');
+    try {
+        await fetch(`/auth/users/${_maUserId}/modules`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({module, role})
+        });
+        loadModuleAccessModal(_maUserId);
+        loadUserModules(_maUserId);
+    } catch(e) {}
+}
+
+async function revokeModuleAccess(userId, module) {
+    try {
+        await fetch(`/auth/users/${userId}/modules/${module}`, {method: 'DELETE'});
+        loadModuleAccessModal(userId);
+        loadUserModules(userId);
+    } catch(e) {}
+}
+
 // ═══ Load all on page init ═══
 loadGeneral();
 loadProjects();
@@ -770,5 +1106,6 @@ loadPipeline();
 loadExtraction();
 loadBranding();
 loadIntegrations();
+loadUsers();
 </script>
 {% endblock %}

@@ -289,9 +289,10 @@ def set_user_module_access(user_id: int):
     module = data.get("module", "")
     role = data.get("role", "viewer")
 
-    from qms.auth.db import VALID_MODULES, VALID_MODULE_ROLES
-    if module not in VALID_MODULES:
-        abort(400, f"Invalid module. Must be one of: {', '.join(VALID_MODULES)}")
+    from qms.auth.db import _valid_modules, VALID_MODULE_ROLES
+    valid = _valid_modules()
+    if module not in valid:
+        abort(400, f"Invalid module. Must be one of: {', '.join(valid)}")
     if role not in VALID_MODULE_ROLES:
         abort(400, f"Invalid role. Must be one of: {', '.join(VALID_MODULE_ROLES)}")
 

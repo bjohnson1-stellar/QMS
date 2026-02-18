@@ -18,6 +18,7 @@ def run_auth_migrations(conn: sqlite3.Connection) -> None:
     _make_entra_oid_nullable(conn)
     _ensure_unique_email(conn)
     _create_module_access_table(conn)
+    _drop_module_check_constraint(conn)
 
 
 def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
@@ -64,8 +65,7 @@ def _create_module_access_table(conn: sqlite3.Connection) -> None:
             CREATE TABLE user_module_access (
                 id       INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                module   TEXT NOT NULL
-                         CHECK (module IN ('projects', 'welding', 'pipeline', 'automation')),
+                module   TEXT NOT NULL,
                 role     TEXT NOT NULL DEFAULT 'viewer'
                          CHECK (role IN ('admin', 'editor', 'viewer')),
                 UNIQUE(user_id, module)
@@ -95,3 +95,51 @@ def _ensure_unique_email(conn: sqlite3.Connection) -> None:
         conn.execute("DROP INDEX IF EXISTS idx_users_email")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email)")
         conn.commit()
+
+
+def _drop_module_check_constraint(conn: sqlite3.Connection) -> None:
+    """
+    Recreate user_module_access without the CHECK constraint on module.
+
+    Module validation is now handled in Python via get_web_modules(),
+    so the CHECK constraint is no longer needed (and blocks adding new modules).
+    """
+    # Check if the table has a CHECK constraint on module
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='user_module_access'"
+    ).fetchone()
+
+    if not row or not row["sql"]:
+        return
+
+    # If there's no CHECK on module, nothing to do
+    if "CHECK" not in row["sql"] or "module" not in row["sql"]:
+        return
+
+    # Only proceed if the CHECK actually constrains the module column
+    ddl = row["sql"]
+    if "CHECK (module IN" not in ddl and "CHECK(module IN" not in ddl:
+        return
+
+    logger.info("Recreating user_module_access without module CHECK constraint")
+
+    conn.execute("ALTER TABLE user_module_access RENAME TO _uma_old")
+    conn.execute("""
+        CREATE TABLE user_module_access (
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            module   TEXT NOT NULL,
+            role     TEXT NOT NULL DEFAULT 'viewer'
+                     CHECK (role IN ('admin', 'editor', 'viewer')),
+            UNIQUE(user_id, module)
+        )
+    """)
+    conn.execute("""
+        INSERT INTO user_module_access (id, user_id, module, role)
+        SELECT id, user_id, module, role FROM _uma_old
+    """)
+    conn.execute("DROP TABLE _uma_old")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_uma_user ON user_module_access(user_id)"
+    )
+    conn.commit()
