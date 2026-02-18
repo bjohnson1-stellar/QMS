@@ -381,6 +381,11 @@ def delete_allocation(conn: sqlite3.Connection, allocation_id: int) -> None:
     if not row:
         return
     project_id = row["project_id"]
+    # Remove child rows that lack ON DELETE CASCADE
+    conn.execute(
+        "DELETE FROM projection_entry_details WHERE allocation_id = ?",
+        (allocation_id,),
+    )
     conn.execute("DELETE FROM project_allocations WHERE id = ?", (allocation_id,))
     sync_budget_rollup(conn, project_id)
     conn.commit()
@@ -600,6 +605,11 @@ def bulk_update_allocations(
             f"SELECT DISTINCT project_id FROM project_allocations WHERE id IN ({placeholders})",
             list(allocation_ids),
         ).fetchall()
+        # Remove child rows that lack ON DELETE CASCADE
+        conn.execute(
+            f"DELETE FROM projection_entry_details WHERE allocation_id IN ({placeholders})",
+            list(allocation_ids),
+        )
         cursor = conn.execute(
             f"DELETE FROM project_allocations WHERE id IN ({placeholders})",
             list(allocation_ids),

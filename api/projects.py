@@ -4,6 +4,8 @@ Projects Blueprint — Flask routes for budget tracking UI.
 Thin delivery layer: all business logic lives in projects.budget.
 """
 
+import sqlite3
+
 from flask import Blueprint, jsonify, request, render_template, send_file
 
 from qms.core import get_db
@@ -188,10 +190,13 @@ def api_upsert_allocation(pid):
 
 @bp.route("/api/projects/<int:pid>/allocations/<int:aid>", methods=["DELETE"])
 def api_delete_allocation(pid, aid):
-    with get_db() as conn:
-        budget.delete_allocation(conn, aid)
-        allocs = budget.get_project_allocations(conn, pid)
-    return jsonify(allocs)
+    try:
+        with get_db() as conn:
+            budget.delete_allocation(conn, aid)
+            allocs = budget.get_project_allocations(conn, pid)
+        return jsonify(allocs)
+    except sqlite3.IntegrityError as e:
+        return jsonify({"error": f"Cannot delete: referenced by other records ({e})"}), 409
 
 
 # ---------------------------------------------------------------------------

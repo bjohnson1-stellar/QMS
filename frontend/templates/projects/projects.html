@@ -568,6 +568,8 @@
             if (response.ok) {
                 renderAllocations(result, projectId);
                 loadProjects();
+            } else {
+                showError(result.error || 'Failed to delete allocation');
             }
         } catch (error) {
             showError('Failed to delete allocation');

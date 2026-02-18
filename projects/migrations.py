@@ -567,6 +567,48 @@ def migrate_drop_deprecated_columns(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def migrate_fix_entry_details_cascade(conn: sqlite3.Connection) -> None:
+    """Add ON DELETE CASCADE to projection_entry_details.allocation_id FK.
+
+    Without this, deleting an allocation fails with IntegrityError when
+    it has projection entry detail rows.
+    """
+    if not _table_exists(conn, "projection_entry_details"):
+        return
+
+    # Check if allocation_id FK already has CASCADE by inspecting the CREATE SQL
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='projection_entry_details'"
+    ).fetchone()
+    if row and "project_allocations(id) ON DELETE CASCADE" in (row["sql"] or "").lower():
+        return  # Already fixed
+
+    logger.info("Rebuilding projection_entry_details with ON DELETE CASCADE on allocation_id")
+
+    conn.execute("ALTER TABLE projection_entry_details RENAME TO _ped_old")
+    conn.execute("""
+        CREATE TABLE projection_entry_details (
+            id INTEGER PRIMARY KEY,
+            entry_id INTEGER NOT NULL REFERENCES projection_entries(id) ON DELETE CASCADE,
+            allocation_id INTEGER NOT NULL REFERENCES project_allocations(id) ON DELETE CASCADE,
+            job_code TEXT NOT NULL,
+            allocated_hours REAL NOT NULL DEFAULT 0,
+            projected_cost REAL NOT NULL DEFAULT 0,
+            weight_used REAL,
+            is_manual_override INTEGER NOT NULL DEFAULT 0,
+            notes TEXT,
+            UNIQUE(entry_id, allocation_id)
+        )
+    """)
+    conn.execute("""
+        INSERT INTO projection_entry_details
+        SELECT * FROM _ped_old
+    """)
+    conn.execute("DROP TABLE _ped_old")
+    conn.commit()
+    logger.info("projection_entry_details rebuilt with ON DELETE CASCADE")
+
+
 def run_all_migrations() -> None:
     """Run all incremental migrations against the active database."""
     with get_db() as conn:
@@ -582,3 +624,4 @@ def run_all_migrations() -> None:
         migrate_add_max_hours_per_week(conn)
         migrate_schema_refactor(conn)
         migrate_drop_deprecated_columns(conn)
+        migrate_fix_entry_details_cascade(conn)
