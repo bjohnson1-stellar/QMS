@@ -43,11 +43,6 @@ def transactions_page():
     return render_template("projects/transactions.html")
 
 
-@bp.route("/settings")
-def settings_page():
-    return render_template("projects/settings.html")
-
-
 @bp.route("/projections")
 def projections_page():
     return render_template("projects/projections.html")
@@ -430,31 +425,6 @@ def api_delete_transaction(txn_id):
     with get_db() as conn:
         budget.delete_transaction(conn, txn_id)
     return jsonify({"message": "Transaction deleted"})
-
-
-# ---------------------------------------------------------------------------
-# Settings API
-# ---------------------------------------------------------------------------
-
-
-@bp.route("/api/settings", methods=["GET"])
-def api_get_settings():
-    return jsonify(budget.get_settings())
-
-
-@bp.route("/api/settings", methods=["PUT"])
-def api_update_settings():
-    data = request.json
-    with get_db() as conn:
-        budget.update_settings(
-            conn,
-            company_name=data.get("companyName", "My Company"),
-            default_hourly_rate=float(data.get("defaultHourlyRate", 150)),
-            working_hours_per_month=int(data.get("workingHoursPerMonth", 176)),
-            fiscal_year_start_month=int(data.get("fiscalYearStartMonth", 1)),
-            gmp_weight_multiplier=float(data.get("gmpWeightMultiplier", 1.5)),
-        )
-    return jsonify({"message": "Settings updated"})
 
 
 # ---------------------------------------------------------------------------

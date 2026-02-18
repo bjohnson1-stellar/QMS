@@ -89,6 +89,54 @@ _BRANDING_DEFAULTS = {
 }
 
 
+def update_config_section(section_path: str, data: dict) -> None:
+    """
+    Update a section of config.yaml and write back to disk.
+
+    Args:
+        section_path: Dot-notation path (e.g., "welding.cert_requests")
+        data: Dictionary of values to merge into the section
+
+    Raises:
+        KeyError: If the section path doesn't exist in config
+    """
+    global _config_cache
+
+    # Always reload from disk to avoid overwriting concurrent changes
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f) or {}
+
+    # Navigate to the target section
+    keys = section_path.split(".")
+    target = config
+    for key in keys[:-1]:
+        if key not in target or not isinstance(target[key], dict):
+            raise KeyError(f"Config section not found: {section_path}")
+        target = target[key]
+
+    last_key = keys[-1]
+    if last_key not in target:
+        raise KeyError(f"Config section not found: {section_path}")
+
+    # Merge data into the section (shallow merge for flat sections,
+    # deep merge for nested dicts like colors/fonts)
+    if isinstance(target[last_key], dict):
+        for k, v in data.items():
+            if isinstance(target[last_key].get(k), dict) and isinstance(v, dict):
+                target[last_key][k].update(v)
+            else:
+                target[last_key][k] = v
+    else:
+        target[last_key] = data
+
+    # Write back to disk
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        yaml.safe_dump(config, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+
+    # Invalidate cache so next get_config() reloads from disk
+    _config_cache = None
+
+
 def get_branding() -> Dict[str, Any]:
     """Return merged branding config (config.yaml overrides defaults)."""
     cfg = get_config().get("branding", {})

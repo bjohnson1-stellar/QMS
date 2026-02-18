@@ -35,6 +35,9 @@ def create_app() -> Flask:
     from qms.api.welding import bp as welding_bp
     app.register_blueprint(welding_bp)
 
+    from qms.api.settings import bp as settings_bp
+    app.register_blueprint(settings_bp)
+
     # Root redirect to projects dashboard
     @app.route("/")
     def index():

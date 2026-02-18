@@ -1,0 +1,774 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - {{ theme.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Settings</h1>
+    <p class="subtitle">Centralized configuration for all QMS modules</p>
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <div class="settings-layout">
+        <!-- Left sidebar tabs -->
+        <nav class="settings-nav">
+            <div class="settings-nav-item active" data-tab="general">
+                <span class="settings-nav-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </span>
+                General
+            </div>
+            <div class="settings-nav-item" data-tab="projects">
+                <span class="settings-nav-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                </span>
+                Projects
+            </div>
+            <div class="settings-nav-item" data-tab="welding">
+                <span class="settings-nav-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                </span>
+                Welding
+            </div>
+            <div class="settings-nav-item" data-tab="pipeline">
+                <span class="settings-nav-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                </span>
+                Pipeline
+            </div>
+            <div class="settings-nav-item" data-tab="extraction">
+                <span class="settings-nav-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                </span>
+                Extraction
+            </div>
+            <div class="settings-nav-item" data-tab="branding">
+                <span class="settings-nav-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><path d="M17.08 9.23a2.5 2.5 0 0 1 0 5.54"/><path d="M9.92 9.23a2.5 2.5 0 0 0 0 5.54"/><circle cx="13.5" cy="17.5" r="2.5"/></svg>
+                </span>
+                Branding
+            </div>
+            <div class="settings-nav-item" data-tab="integrations">
+                <span class="settings-nav-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                </span>
+                Integrations
+            </div>
+        </nav>
+
+        <!-- Right content panel -->
+        <div class="settings-content">
+
+            <!-- ═══════════════ GENERAL ═══════════════ -->
+            <div class="settings-section active" id="tab-general">
+                <h3>General</h3>
+                <p class="section-desc">Company identity and application naming</p>
+                <div class="settings-form-grid">
+                    <div class="form-group full-width">
+                        <label for="gen-companyName">Company Name</label>
+                        <input type="text" id="gen-companyName">
+                        <div class="help-text">Stored in database, used across reports and exports</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="gen-appName">Application Name</label>
+                        <input type="text" id="gen-appName">
+                    </div>
+                    <div class="form-group">
+                        <label for="gen-appTagline">Tagline</label>
+                        <input type="text" id="gen-appTagline">
+                    </div>
+                </div>
+                <div class="settings-save-row">
+                    <button onclick="saveGeneral()">Save General</button>
+                    <span class="settings-save-msg" id="msg-general"></span>
+                </div>
+            </div>
+
+            <!-- ═══════════════ PROJECTS ═══════════════ -->
+            <div class="settings-section" id="tab-projects">
+                <h3>Projects & Budget</h3>
+                <p class="section-desc">Default values for budget calculations and projections</p>
+                <div class="settings-form-grid">
+                    <div class="form-group">
+                        <label for="proj-hourlyRate">Default Hourly Rate</label>
+                        <div class="input-prefix">
+                            <input type="number" id="proj-hourlyRate" step="0.01" min="0.01">
+                        </div>
+                        <div class="help-text">Used for projected costs</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="proj-hoursPerMonth">Working Hours / Month</label>
+                        <input type="number" id="proj-hoursPerMonth" min="1" max="300">
+                        <div class="help-text">Typical full-time: 176 (22 days x 8h)</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="proj-fiscalMonth">Fiscal Year Start</label>
+                        <select id="proj-fiscalMonth">
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="proj-gmpMultiplier">GMP Weight Multiplier</label>
+                        <input type="number" id="proj-gmpMultiplier" step="0.1" min="1.0" max="5.0">
+                        <div class="help-text">Applied to GMP projects (default: 1.5x)</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="proj-maxHoursWeek">Max Hours / Week</label>
+                        <input type="number" id="proj-maxHoursWeek" step="0.5" min="1" max="80">
+                        <div class="help-text">Distribution warning threshold</div>
+                    </div>
+                </div>
+                <div class="settings-save-row">
+                    <button onclick="saveProjects()">Save Projects</button>
+                    <span class="settings-save-msg" id="msg-projects"></span>
+                </div>
+            </div>
+
+            <!-- ═══════════════ WELDING ═══════════════ -->
+            <div class="settings-section" id="tab-welding">
+                <h3>Welding</h3>
+                <p class="section-desc">Certification request defaults and qualification settings</p>
+                <div class="settings-form-grid">
+                    <div class="form-group">
+                        <label for="weld-wcrPrefix">WCR Prefix</label>
+                        <input type="text" id="weld-wcrPrefix">
+                        <div class="help-text">Prefix for certification request IDs</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="weld-maxCoupons">Max Coupons / Request</label>
+                        <input type="number" id="weld-maxCoupons" min="1" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="weld-wpqExpiry">WPQ Expiration (months)</label>
+                        <input type="number" id="weld-wpqExpiry" min="1" max="60">
+                        <div class="help-text">Default qualification expiry period</div>
+                    </div>
+                </div>
+                <div class="settings-save-row">
+                    <button onclick="saveConfigSection('welding.cert_requests', getWeldingData(), 'welding')">Save Welding</button>
+                    <span class="settings-save-msg" id="msg-welding"></span>
+                </div>
+            </div>
+
+            <!-- ═══════════════ PIPELINE ═══════════════ -->
+            <div class="settings-section" id="tab-pipeline">
+                <h3>Pipeline & Intake</h3>
+                <p class="section-desc">Document intake behavior and processing batch settings</p>
+
+                <h3 style="margin-top:20px; font-size:14px;">Intake</h3>
+                <div class="settings-form-grid">
+                    <div class="form-group">
+                        <label for="intake-onAmbiguous">On Ambiguous Match</label>
+                        <select id="intake-onAmbiguous">
+                            <option value="move_to_needs_review">Move to NEEDS-REVIEW</option>
+                            <option value="skip">Skip</option>
+                            <option value="route_best_guess">Route Best Guess</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="intake-onNoMatch">On No Match</label>
+                        <select id="intake-onNoMatch">
+                            <option value="move_to_needs_review">Move to NEEDS-REVIEW</option>
+                            <option value="skip">Skip</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top:12px; max-width:500px;">
+                    <div class="settings-toggle-row">
+                        <div>
+                            <div class="settings-toggle-label">Auto Extract</div>
+                            <div class="settings-toggle-desc">Automatically extract data from routed documents</div>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="intake-autoExtract">
+                            <div class="knobs"></div>
+                            <div class="layer"></div>
+                        </div>
+                    </div>
+                    <div class="settings-toggle-row">
+                        <div>
+                            <div class="settings-toggle-label">Auto Embed</div>
+                            <div class="settings-toggle-desc">Automatically generate vector embeddings</div>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="intake-autoEmbed">
+                            <div class="knobs"></div>
+                            <div class="layer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:24px; font-size:14px;">Processing</h3>
+                <div class="settings-form-grid">
+                    <div class="form-group">
+                        <label for="proc-batchSize">Batch Size</label>
+                        <input type="number" id="proc-batchSize" min="1" max="100">
+                    </div>
+                </div>
+                <div style="margin-top:12px; max-width:500px;">
+                    <div class="settings-toggle-row">
+                        <div>
+                            <div class="settings-toggle-label">Supersede Old Revisions</div>
+                            <div class="settings-toggle-desc">Automatically supersede when newer revision arrives</div>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="proc-supersede">
+                            <div class="knobs"></div>
+                            <div class="layer"></div>
+                        </div>
+                    </div>
+                    <div class="settings-toggle-row">
+                        <div>
+                            <div class="settings-toggle-label">Archive Superseded</div>
+                            <div class="settings-toggle-desc">Move superseded files to archive folder</div>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="proc-archive">
+                            <div class="knobs"></div>
+                            <div class="layer"></div>
+                        </div>
+                    </div>
+                    <div class="settings-toggle-row">
+                        <div>
+                            <div class="settings-toggle-label">Queue Related Recheck</div>
+                            <div class="settings-toggle-desc">Re-check related drawings on new revision</div>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="proc-recheck">
+                            <div class="knobs"></div>
+                            <div class="layer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-save-row">
+                    <button onclick="savePipeline()">Save Pipeline</button>
+                    <span class="settings-save-msg" id="msg-pipeline"></span>
+                </div>
+            </div>
+
+            <!-- ═══════════════ EXTRACTION ═══════════════ -->
+            <div class="settings-section" id="tab-extraction">
+                <h3>Extraction & QA</h3>
+                <p class="section-desc">Confidence thresholds and conflict detection toggles</p>
+
+                <h3 style="margin-top:4px; font-size:14px;">Confidence Thresholds</h3>
+                <div class="settings-form-grid">
+                    <div class="form-group">
+                        <label for="ext-minConf">Minimum Confidence</label>
+                        <input type="number" id="ext-minConf" step="0.05" min="0" max="1">
+                        <div class="help-text">Below this, extraction is rejected (0-1)</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ext-highConf">High Confidence</label>
+                        <input type="number" id="ext-highConf" step="0.05" min="0" max="1">
+                        <div class="help-text">Above this, auto-approved (0-1)</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ext-shadowRate">Shadow Review Rate</label>
+                        <input type="number" id="ext-shadowRate" step="0.01" min="0" max="1">
+                        <div class="help-text">Fraction of extractions reviewed by Opus</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:24px; font-size:14px;">Conflict Detection Checks</h3>
+                <div style="max-width:500px;">
+                    <div class="settings-toggle-row">
+                        <div><div class="settings-toggle-label">Material Mismatch</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="chk-material"><div class="knobs"></div><div class="layer"></div></div>
+                    </div>
+                    <div class="settings-toggle-row">
+                        <div><div class="settings-toggle-label">Size Mismatch</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="chk-size"><div class="knobs"></div><div class="layer"></div></div>
+                    </div>
+                    <div class="settings-toggle-row">
+                        <div><div class="settings-toggle-label">Tag Duplicate</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="chk-tag"><div class="knobs"></div><div class="layer"></div></div>
+                    </div>
+                    <div class="settings-toggle-row">
+                        <div><div class="settings-toggle-label">Missing Instrument</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="chk-instrument"><div class="knobs"></div><div class="layer"></div></div>
+                    </div>
+                    <div class="settings-toggle-row">
+                        <div><div class="settings-toggle-label">Weld Inconsistency</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="chk-weld"><div class="knobs"></div><div class="layer"></div></div>
+                    </div>
+                    <div class="settings-toggle-row">
+                        <div><div class="settings-toggle-label">Cross-Discipline</div></div>
+                        <div class="toggle-switch"><input type="checkbox" id="chk-cross"><div class="knobs"></div><div class="layer"></div></div>
+                    </div>
+                </div>
+
+                <div class="settings-save-row">
+                    <button onclick="saveExtraction()">Save Extraction</button>
+                    <span class="settings-save-msg" id="msg-extraction"></span>
+                </div>
+            </div>
+
+            <!-- ═══════════════ BRANDING ═══════════════ -->
+            <div class="settings-section" id="tab-branding">
+                <h3>Branding & Theming</h3>
+                <p class="section-desc">Customize colors, fonts, and default theme mode</p>
+
+                <h3 style="margin-top:4px; font-size:14px;">Colors</h3>
+                <div class="color-picker-grid" id="colorPickerGrid">
+                    <!-- Populated by JS -->
+                </div>
+
+                <h3 style="margin-top:24px; font-size:14px;">Fonts</h3>
+                <div class="settings-form-grid">
+                    <div class="form-group">
+                        <label for="brand-headingFont">Heading Font</label>
+                        <input type="text" id="brand-headingFont">
+                    </div>
+                    <div class="form-group">
+                        <label for="brand-headingFallback">Heading Fallback</label>
+                        <input type="text" id="brand-headingFallback">
+                    </div>
+                    <div class="form-group">
+                        <label for="brand-bodyFont">Body Font</label>
+                        <input type="text" id="brand-bodyFont">
+                    </div>
+                    <div class="form-group">
+                        <label for="brand-bodyFallback">Body Fallback</label>
+                        <input type="text" id="brand-bodyFallback">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="brand-googleUrl">Google Fonts URL</label>
+                        <input type="text" id="brand-googleUrl">
+                        <div class="help-text">Full URL for Google Fonts CSS import</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:24px; font-size:14px;">Default Mode</h3>
+                <div class="settings-form-grid">
+                    <div class="form-group">
+                        <label for="brand-defaultMode">Default Theme Mode</label>
+                        <select id="brand-defaultMode">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-save-row">
+                    <button onclick="saveBranding()">Save Branding</button>
+                    <span class="settings-save-msg" id="msg-branding"></span>
+                </div>
+            </div>
+
+            <!-- ═══════════════ INTEGRATIONS ═══════════════ -->
+            <div class="settings-section" id="tab-integrations">
+                <h3>Integrations</h3>
+                <p class="section-desc">External service connections and sync configuration</p>
+
+                <h3 style="margin-top:4px; font-size:14px;">OneDrive Sync</h3>
+                <div class="settings-form-grid">
+                    <div class="form-group full-width">
+                        <label for="od-sourceRoot">Source Root Path</label>
+                        <input type="text" id="od-sourceRoot">
+                        <div class="help-text">Local OneDrive folder for Power Automate intake</div>
+                    </div>
+                </div>
+                <div style="margin-top:12px; max-width:500px;">
+                    <div class="settings-toggle-row">
+                        <div>
+                            <div class="settings-toggle-label">OneDrive Sync Enabled</div>
+                            <div class="settings-toggle-desc">Pull files from OneDrive on intake</div>
+                        </div>
+                        <div class="toggle-switch"><input type="checkbox" id="od-enabled"><div class="knobs"></div><div class="layer"></div></div>
+                    </div>
+                    <div class="settings-toggle-row">
+                        <div>
+                            <div class="settings-toggle-label">Delete After Sync</div>
+                            <div class="settings-toggle-desc">Remove source files after successful sync</div>
+                        </div>
+                        <div class="toggle-switch"><input type="checkbox" id="od-deleteAfter"><div class="knobs"></div><div class="layer"></div></div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:24px; font-size:14px;">Embeddings</h3>
+                <div class="settings-form-grid">
+                    <div class="form-group">
+                        <label for="emb-provider">Provider</label>
+                        <select id="emb-provider">
+                            <option value="auto">Auto</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="local">Local</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="emb-model">Model</label>
+                        <input type="text" id="emb-model">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="emb-baseUrl">Base URL</label>
+                        <input type="text" id="emb-baseUrl">
+                    </div>
+                    <div class="form-group">
+                        <label for="emb-dimensions">Dimensions</label>
+                        <input type="number" id="emb-dimensions" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="emb-batchSize">Batch Size</label>
+                        <input type="number" id="emb-batchSize" min="1" max="1000">
+                    </div>
+                </div>
+
+                <div class="settings-save-row">
+                    <button onclick="saveIntegrations()">Save Integrations</button>
+                    <span class="settings-save-msg" id="msg-integrations"></span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API = '/settings/api';
+
+// ── Tab switching ──
+document.querySelectorAll('.settings-nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+        item.classList.add('active');
+        document.getElementById('tab-' + item.dataset.tab).classList.add('active');
+    });
+});
+
+// ── Feedback ──
+function showMsg(id, text, type) {
+    const el = document.getElementById('msg-' + id);
+    el.textContent = text;
+    el.className = 'settings-save-msg visible ' + type;
+    setTimeout(() => { el.classList.remove('visible'); }, 3000);
+}
+
+// ── Helpers ──
+function val(id) { return document.getElementById(id).value; }
+function numVal(id) { return parseFloat(document.getElementById(id).value); }
+function intVal(id) { return parseInt(document.getElementById(id).value, 10); }
+function checked(id) { return document.getElementById(id).checked; }
+function setVal(id, v) { document.getElementById(id).value = v; }
+function setChecked(id, v) { document.getElementById(id).checked = !!v; }
+
+async function fetchJSON(url) {
+    const r = await fetch(url);
+    return r.json();
+}
+
+async function putJSON(url, data) {
+    const r = await fetch(url, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    return { ok: r.ok, data: await r.json() };
+}
+
+// ════════════════════════════════════════════
+// GENERAL (mixed: DB company name + config branding app_name/tagline)
+// ════════════════════════════════════════════
+
+async function loadGeneral() {
+    const [budget, branding] = await Promise.all([
+        fetchJSON(`${API}/budget`),
+        fetchJSON(`${API}/config/branding`)
+    ]);
+    setVal('gen-companyName', budget.company_name || '');
+    setVal('gen-appName', branding.app_name || '');
+    setVal('gen-appTagline', branding.app_tagline || '');
+}
+
+async function saveGeneral() {
+    try {
+        // Save company name to DB
+        const budgetData = await fetchJSON(`${API}/budget`);
+        const r1 = await putJSON(`${API}/budget`, {
+            companyName: val('gen-companyName'),
+            defaultHourlyRate: budgetData.default_hourly_rate,
+            workingHoursPerMonth: budgetData.working_hours_per_month,
+            fiscalYearStartMonth: budgetData.fiscal_year_start_month,
+            gmpWeightMultiplier: budgetData.gmp_weight_multiplier,
+            maxHoursPerWeek: budgetData.max_hours_per_week,
+        });
+        // Save app name/tagline to config
+        const r2 = await putJSON(`${API}/config/branding`, {
+            app_name: val('gen-appName'),
+            app_tagline: val('gen-appTagline'),
+        });
+        if (r1.ok && r2.ok) showMsg('general', 'Saved', 'success');
+        else showMsg('general', 'Error saving', 'error');
+    } catch(e) { showMsg('general', 'Error: ' + e.message, 'error'); }
+}
+
+// ════════════════════════════════════════════
+// PROJECTS (DB-backed)
+// ════════════════════════════════════════════
+
+async function loadProjects() {
+    const s = await fetchJSON(`${API}/budget`);
+    setVal('proj-hourlyRate', s.default_hourly_rate || 150);
+    setVal('proj-hoursPerMonth', s.working_hours_per_month || 176);
+    setVal('proj-fiscalMonth', s.fiscal_year_start_month || 1);
+    setVal('proj-gmpMultiplier', s.gmp_weight_multiplier || 1.5);
+    setVal('proj-maxHoursWeek', s.max_hours_per_week || 40);
+}
+
+async function saveProjects() {
+    try {
+        const budget = await fetchJSON(`${API}/budget`);
+        const r = await putJSON(`${API}/budget`, {
+            companyName: budget.company_name,
+            defaultHourlyRate: numVal('proj-hourlyRate'),
+            workingHoursPerMonth: intVal('proj-hoursPerMonth'),
+            fiscalYearStartMonth: intVal('proj-fiscalMonth'),
+            gmpWeightMultiplier: numVal('proj-gmpMultiplier'),
+            maxHoursPerWeek: numVal('proj-maxHoursWeek'),
+        });
+        showMsg('projects', r.ok ? 'Saved' : 'Error', r.ok ? 'success' : 'error');
+    } catch(e) { showMsg('projects', 'Error: ' + e.message, 'error'); }
+}
+
+// ════════════════════════════════════════════
+// WELDING (config-backed)
+// ════════════════════════════════════════════
+
+async function loadWelding() {
+    const d = await fetchJSON(`${API}/config/welding.cert_requests`);
+    setVal('weld-wcrPrefix', d.wcr_prefix || 'WCR');
+    setVal('weld-maxCoupons', d.max_coupons_per_request || 4);
+    setVal('weld-wpqExpiry', d.default_wpq_expiration_months || 6);
+}
+
+function getWeldingData() {
+    return {
+        wcr_prefix: val('weld-wcrPrefix'),
+        max_coupons_per_request: intVal('weld-maxCoupons'),
+        default_wpq_expiration_months: intVal('weld-wpqExpiry'),
+    };
+}
+
+// ════════════════════════════════════════════
+// PIPELINE (config-backed: intake + processing)
+// ════════════════════════════════════════════
+
+async function loadPipeline() {
+    const [intake, processing] = await Promise.all([
+        fetchJSON(`${API}/config/intake`),
+        fetchJSON(`${API}/config/processing`)
+    ]);
+    setVal('intake-onAmbiguous', intake.on_ambiguous || 'move_to_needs_review');
+    setVal('intake-onNoMatch', intake.on_no_match || 'move_to_needs_review');
+    setChecked('intake-autoExtract', intake.auto_extract);
+    setChecked('intake-autoEmbed', intake.auto_embed);
+    setVal('proc-batchSize', processing.batch_size || 10);
+    setChecked('proc-supersede', processing.auto && processing.auto.supersede_old_revisions);
+    setChecked('proc-archive', processing.auto && processing.auto.archive_superseded);
+    setChecked('proc-recheck', processing.auto && processing.auto.queue_related_recheck);
+}
+
+async function savePipeline() {
+    try {
+        const r1 = await putJSON(`${API}/config/intake`, {
+            auto_extract: checked('intake-autoExtract'),
+            auto_embed: checked('intake-autoEmbed'),
+            on_ambiguous: val('intake-onAmbiguous'),
+            on_no_match: val('intake-onNoMatch'),
+        });
+        const r2 = await putJSON(`${API}/config/processing`, {
+            batch_size: intVal('proc-batchSize'),
+            auto: {
+                supersede_old_revisions: checked('proc-supersede'),
+                archive_superseded: checked('proc-archive'),
+                queue_related_recheck: checked('proc-recheck'),
+            }
+        });
+        showMsg('pipeline', (r1.ok && r2.ok) ? 'Saved' : 'Error', (r1.ok && r2.ok) ? 'success' : 'error');
+    } catch(e) { showMsg('pipeline', 'Error: ' + e.message, 'error'); }
+}
+
+// ════════════════════════════════════════════
+// EXTRACTION (config-backed: thresholds + conflicts)
+// ════════════════════════════════════════════
+
+async function loadExtraction() {
+    const [thresholds, checks] = await Promise.all([
+        fetchJSON(`${API}/config/extraction.thresholds`),
+        fetchJSON(`${API}/config/conflicts.checks`)
+    ]);
+    setVal('ext-minConf', thresholds.minimum_confidence || 0.6);
+    setVal('ext-highConf', thresholds.high_confidence || 0.9);
+    setVal('ext-shadowRate', thresholds.shadow_review_rate || 0.1);
+    setChecked('chk-material', checks.material_mismatch);
+    setChecked('chk-size', checks.size_mismatch);
+    setChecked('chk-tag', checks.tag_duplicate);
+    setChecked('chk-instrument', checks.missing_instrument);
+    setChecked('chk-weld', checks.weld_inconsistency);
+    setChecked('chk-cross', checks.cross_discipline);
+}
+
+async function saveExtraction() {
+    try {
+        const r1 = await putJSON(`${API}/config/extraction.thresholds`, {
+            minimum_confidence: numVal('ext-minConf'),
+            high_confidence: numVal('ext-highConf'),
+            shadow_review_rate: numVal('ext-shadowRate'),
+        });
+        const r2 = await putJSON(`${API}/config/conflicts.checks`, {
+            material_mismatch: checked('chk-material'),
+            size_mismatch: checked('chk-size'),
+            tag_duplicate: checked('chk-tag'),
+            missing_instrument: checked('chk-instrument'),
+            weld_inconsistency: checked('chk-weld'),
+            cross_discipline: checked('chk-cross'),
+        });
+        showMsg('extraction', (r1.ok && r2.ok) ? 'Saved' : 'Error', (r1.ok && r2.ok) ? 'success' : 'error');
+    } catch(e) { showMsg('extraction', 'Error: ' + e.message, 'error'); }
+}
+
+// ════════════════════════════════════════════
+// BRANDING (config-backed)
+// ════════════════════════════════════════════
+
+const COLOR_LABELS = {
+    primary: 'Primary',
+    primary_hover: 'Primary Hover',
+    primary_subtle: 'Primary Subtle',
+    nav_bg: 'Nav Background',
+    nav_hover: 'Nav Hover',
+    nav_active: 'Nav Active',
+    warning: 'Warning',
+    dark_surface: 'Dark Surface',
+    light_surface: 'Light Surface',
+    neutral: 'Neutral',
+};
+
+async function loadBranding() {
+    const d = await fetchJSON(`${API}/config/branding`);
+    // Colors
+    const grid = document.getElementById('colorPickerGrid');
+    grid.innerHTML = '';
+    const colors = d.colors || {};
+    for (const [key, label] of Object.entries(COLOR_LABELS)) {
+        const hex = colors[key] || '#000000';
+        grid.innerHTML += `
+            <div class="color-picker-item">
+                <input type="color" id="color-${key}" value="${hex}">
+                <div>
+                    <div class="color-label">${label}</div>
+                    <div class="color-hex" id="hex-${key}">${hex}</div>
+                </div>
+            </div>`;
+    }
+    // Update hex display on change
+    grid.querySelectorAll('input[type="color"]').forEach(inp => {
+        inp.addEventListener('input', () => {
+            const k = inp.id.replace('color-', '');
+            document.getElementById('hex-' + k).textContent = inp.value;
+        });
+    });
+    // Fonts
+    const fonts = d.fonts || {};
+    setVal('brand-headingFont', fonts.heading || '');
+    setVal('brand-headingFallback', fonts.heading_fallback || '');
+    setVal('brand-bodyFont', fonts.body || '');
+    setVal('brand-bodyFallback', fonts.body_fallback || '');
+    setVal('brand-googleUrl', fonts.google_fonts_url || '');
+    setVal('brand-defaultMode', d.default_mode || 'light');
+}
+
+async function saveBranding() {
+    try {
+        const colors = {};
+        for (const key of Object.keys(COLOR_LABELS)) {
+            colors[key] = document.getElementById('color-' + key).value;
+        }
+        const r = await putJSON(`${API}/config/branding`, {
+            colors: colors,
+            fonts: {
+                heading: val('brand-headingFont'),
+                heading_fallback: val('brand-headingFallback'),
+                body: val('brand-bodyFont'),
+                body_fallback: val('brand-bodyFallback'),
+                google_fonts_url: val('brand-googleUrl'),
+            },
+            default_mode: val('brand-defaultMode'),
+        });
+        showMsg('branding', r.ok ? 'Saved (reload to see changes)' : 'Error', r.ok ? 'success' : 'error');
+    } catch(e) { showMsg('branding', 'Error: ' + e.message, 'error'); }
+}
+
+// ════════════════════════════════════════════
+// INTEGRATIONS (config-backed: onedrive_sync + embeddings)
+// ════════════════════════════════════════════
+
+async function loadIntegrations() {
+    const [od, emb] = await Promise.all([
+        fetchJSON(`${API}/config/onedrive_sync`),
+        fetchJSON(`${API}/config/embeddings`)
+    ]);
+    setChecked('od-enabled', od.enabled);
+    setVal('od-sourceRoot', od.source_root || '');
+    setChecked('od-deleteAfter', od.delete_after_sync);
+    setVal('emb-provider', emb.provider || 'auto');
+    setVal('emb-model', emb.model || '');
+    setVal('emb-baseUrl', emb.base_url || '');
+    setVal('emb-dimensions', emb.dimensions || 768);
+    setVal('emb-batchSize', emb.batch_size || 32);
+}
+
+async function saveIntegrations() {
+    try {
+        const r1 = await putJSON(`${API}/config/onedrive_sync`, {
+            enabled: checked('od-enabled'),
+            source_root: val('od-sourceRoot'),
+            delete_after_sync: checked('od-deleteAfter'),
+        });
+        const r2 = await putJSON(`${API}/config/embeddings`, {
+            provider: val('emb-provider'),
+            model: val('emb-model'),
+            base_url: val('emb-baseUrl'),
+            dimensions: intVal('emb-dimensions'),
+            batch_size: intVal('emb-batchSize'),
+        });
+        showMsg('integrations', (r1.ok && r2.ok) ? 'Saved' : 'Error', (r1.ok && r2.ok) ? 'success' : 'error');
+    } catch(e) { showMsg('integrations', 'Error: ' + e.message, 'error'); }
+}
+
+// ════════════════════════════════════════════
+// Generic config section save
+// ════════════════════════════════════════════
+
+async function saveConfigSection(section, data, msgId) {
+    try {
+        const r = await putJSON(`${API}/config/${section}`, data);
+        showMsg(msgId, r.ok ? 'Saved' : (r.data.error || 'Error'), r.ok ? 'success' : 'error');
+    } catch(e) { showMsg(msgId, 'Error: ' + e.message, 'error'); }
+}
+
+// ═══ Load all on page init ═══
+loadGeneral();
+loadProjects();
+loadWelding();
+loadPipeline();
+loadExtraction();
+loadBranding();
+loadIntegrations();
+</script>
+{% endblock %}
