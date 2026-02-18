@@ -801,7 +801,7 @@
         let allJobs = [];
         projects.forEach(p => {
             (p.jobs || []).forEach(j => {
-                allJobs.push({ ...j, project_name: p.name, project_number: p.number, project_id: p.id, project_city: p.city, project_state: p.state, is_gmp: p.is_gmp });
+                allJobs.push({ ...j, project_name: p.name, project_number: p.number, project_id: p.id, project_city: p.city, project_state: p.state });
             });
         });
 
