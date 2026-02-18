@@ -14,7 +14,7 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if "user" not in session:
-            return redirect(url_for("auth.login"))
+            return redirect(url_for("auth.login_page"))
         return f(*args, **kwargs)
     return decorated
 
@@ -31,7 +31,7 @@ def role_required(*roles):
         @wraps(f)
         def decorated(*args, **kwargs):
             if "user" not in session:
-                return redirect(url_for("auth.login"))
+                return redirect(url_for("auth.login_page"))
             user_role = session["user"].get("role", "viewer")
             if user_role not in roles:
                 from flask import abort

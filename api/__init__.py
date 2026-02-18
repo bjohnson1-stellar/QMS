@@ -54,8 +54,7 @@ def create_app() -> Flask:
             return None
 
         if "user" not in session:
-            # In dev_bypass mode, auto-redirect to login which sets session
-            return redirect(url_for("auth.login"))
+            return redirect(url_for("auth.login_page"))
 
         # Make session permanent so it respects PERMANENT_SESSION_LIFETIME
         session.permanent = True

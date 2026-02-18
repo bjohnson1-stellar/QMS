@@ -36,11 +36,11 @@ def _is_dev_bypass():
     return _get_auth_config().get("dev_bypass", False)
 
 
-# ── Login ────────────────────────────────────────────────────────────────────
+# ── Login Page ───────────────────────────────────────────────────────────────
 
 @bp.route("/login")
-def login():
-    """Initiate login — dev bypass or Entra ID redirect."""
+def login_page():
+    """Show login page, or auto-login in dev bypass mode."""
     auth_cfg = _get_auth_config()
 
     if auth_cfg.get("dev_bypass"):
@@ -55,7 +55,20 @@ def login():
         }
         return redirect(url_for("index"))
 
-    # Real Entra ID flow
+    from flask import render_template
+    return render_template("auth/login.html", error=request.args.get("error"))
+
+
+# ── Login Start ──────────────────────────────────────────────────────────────
+
+@bp.route("/login/start")
+def login():
+    """Initiate the real Entra ID OAuth2 flow."""
+    auth_cfg = _get_auth_config()
+
+    if auth_cfg.get("dev_bypass"):
+        return redirect(url_for("auth.login_page"))
+
     from qms.auth.entra import build_auth_url
 
     entra_cfg = auth_cfg.get("entra", {})
@@ -78,7 +91,7 @@ def callback():
 
     auth_flow = session.pop("auth_flow", None)
     if not auth_flow:
-        return redirect(url_for("auth.login"))
+        return redirect(url_for("auth.login_page"))
 
     from qms.auth.entra import complete_auth_flow, extract_claims
 
@@ -129,12 +142,12 @@ def logout():
     session.clear()
 
     if auth_cfg.get("dev_bypass"):
-        return redirect(url_for("auth.login"))
+        return redirect(url_for("auth.login_page"))
 
     from qms.auth.entra import build_logout_url
 
     entra_cfg = auth_cfg.get("entra", {})
-    post_logout_uri = url_for("auth.login", _external=True)
+    post_logout_uri = url_for("auth.login_page", _external=True)
     logout_url = build_logout_url(entra_cfg["tenant_id"], post_logout_uri)
     return redirect(logout_url)
 

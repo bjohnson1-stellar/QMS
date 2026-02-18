@@ -436,14 +436,14 @@ welding:
 
 auth:
   provider: "entra_id"
-  dev_bypass: true                    # Set false in production
+  dev_bypass: false                   # Set false in production
   secret_key: null                    # Set via QMS_SECRET_KEY env var or here
   session_lifetime_minutes: 480       # 8 hours
-  default_role: "user"                # Role assigned on first login
+  default_role: "admin"              # Role assigned on first login
   entra:
-    tenant_id: "YOUR_TENANT_ID"
-    client_id: "YOUR_CLIENT_ID"
-    client_secret: "YOUR_CLIENT_SECRET"
+    tenant_id: "431932ba-702e-4eaf-8ff4-966b8fb29b22"
+    client_id: "1fc90085-23f8-47e4-b4bc-b193e046ba0b"
+    client_secret: "BhI8Q~HKDvU55YQ_Nji-U~TB.dDB0BBL_Bxdchy"
     # redirect_uri is auto-built from request URL: /auth/callback
 
 # =============================================================================
@@ -451,7 +451,7 @@ auth:
 # =============================================================================
 
 branding:
-  app_name: "QMS"
+  app_name: "SIS QMS"
   app_tagline: "Quality Management System"
   preset: "stellar"
   default_mode: "light"
