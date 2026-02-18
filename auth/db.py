@@ -4,9 +4,28 @@ User CRUD operations for QMS auth — local email + password.
 Pure business logic — no Flask imports.
 """
 
+import json
 import sqlite3
 
 from werkzeug.security import check_password_hash, generate_password_hash
+
+
+# ── Audit Logging ─────────────────────────────────────────────────────────────
+
+def log_auth_event(
+    conn: sqlite3.Connection,
+    action: str,
+    entity_id: str | int,
+    changed_by: str = "anonymous",
+    detail: dict | None = None,
+) -> None:
+    """Insert an auth event into the shared audit_log table."""
+    conn.execute(
+        """INSERT INTO audit_log (entity_type, entity_id, action, changed_by, new_values)
+           VALUES ('user', ?, ?, ?, ?)""",
+        (str(entity_id), action, changed_by, json.dumps(detail) if detail else None),
+    )
+    conn.commit()
 
 
 def create_user(

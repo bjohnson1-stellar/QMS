@@ -40,6 +40,12 @@ def _is_dev_bypass():
     return _get_auth_config().get("dev_bypass", False)
 
 
+def _current_email() -> str:
+    """Return current session user's email, or 'anonymous'."""
+    user = session.get("user")
+    return user["email"] if user else "anonymous"
+
+
 # ── Login ────────────────────────────────────────────────────────────────────
 
 @bp.route("/login", methods=["GET", "POST"])
@@ -69,14 +75,30 @@ def login_page():
     if not email or not password:
         return render_template("auth/login.html", error="Email and password are required.")
 
+    # Rate limiting — check before hitting the database
+    from qms.auth.rate_limit import limiter
+
+    client_ip = request.remote_addr or "unknown"
+    wait = limiter.check(client_ip, email)
+    if wait:
+        return render_template(
+            "auth/login.html",
+            error=f"Too many failed attempts. Try again in {wait} seconds.",
+        )
+
     from qms.core.db import get_db
-    from qms.auth.db import authenticate, get_user_modules
+    from qms.auth.db import authenticate, get_user_modules, log_auth_event
 
     with get_db() as conn:
         user = authenticate(conn, email, password)
         if not user:
+            limiter.record_failure(client_ip, email)
+            log_auth_event(conn, "login_failure", email, "anonymous", {"ip": client_ip})
             return render_template("auth/login.html", error="Invalid email or password.")
         modules = get_user_modules(conn, user["id"])
+        log_auth_event(conn, "login_success", user["id"], user["email"], {"ip": client_ip})
+
+    limiter.reset(client_ip, email)
 
     # Store session (include module access map)
     session["user"] = {
@@ -149,11 +171,13 @@ def change_password():
         )
 
     from qms.core.db import get_db
-    from qms.auth.db import change_password as do_change
+    from qms.auth.db import change_password as do_change, log_auth_event
 
     user_id = session["user"]["id"]
     with get_db() as conn:
         ok, msg = do_change(conn, user_id, current_password, new_password)
+        if ok:
+            log_auth_event(conn, "password_change", user_id, _current_email())
 
     if not ok:
         return render_template("auth/change_password.html", error=msg, success=None)
@@ -202,9 +226,15 @@ def create_user():
     from qms.auth.db import create_user as do_create
     import sqlite3
 
+    from qms.auth.db import log_auth_event
+
     try:
         with get_db() as conn:
             user = do_create(conn, email, display_name, password, role)
+            log_auth_event(
+                conn, "user_create", user["id"], _current_email(),
+                {"email": email, "role": role},
+            )
     except sqlite3.IntegrityError:
         abort(409, "A user with that email already exists")
 
@@ -221,11 +251,12 @@ def update_user_role(user_id: int):
         abort(400, "Invalid role")
 
     from qms.core.db import get_db
-    from qms.auth.db import update_role
+    from qms.auth.db import update_role, log_auth_event
 
     with get_db() as conn:
         if not update_role(conn, user_id, role):
             abort(404, "User not found")
+        log_auth_event(conn, "role_change", user_id, _current_email(), {"role": role})
 
     return jsonify({"ok": True, "role": role})
 
@@ -238,11 +269,15 @@ def toggle_user_active(user_id: int):
     is_active = data.get("is_active", True)
 
     from qms.core.db import get_db
-    from qms.auth.db import set_active
+    from qms.auth.db import set_active, log_auth_event
 
     with get_db() as conn:
         if not set_active(conn, user_id, bool(is_active)):
             abort(404, "User not found")
+        log_auth_event(
+            conn, "active_toggle", user_id, _current_email(),
+            {"is_active": bool(is_active)},
+        )
 
     return jsonify({"ok": True, "is_active": is_active})
 
@@ -258,11 +293,12 @@ def reset_user_password(user_id: int):
         abort(400, "Password must be at least 8 characters")
 
     from qms.core.db import get_db
-    from qms.auth.db import set_password
+    from qms.auth.db import set_password, log_auth_event
 
     with get_db() as conn:
         if not set_password(conn, user_id, new_password, must_change=True):
             abort(404, "User not found")
+        log_auth_event(conn, "password_reset", user_id, _current_email())
 
     return jsonify({"ok": True, "must_change_password": True})
 
@@ -297,10 +333,14 @@ def set_user_module_access(user_id: int):
         abort(400, f"Invalid role. Must be one of: {', '.join(VALID_MODULE_ROLES)}")
 
     from qms.core.db import get_db
-    from qms.auth.db import grant_module_access
+    from qms.auth.db import grant_module_access, log_auth_event
 
     with get_db() as conn:
         grant_module_access(conn, user_id, module, role)
+        log_auth_event(
+            conn, "module_grant", user_id, _current_email(),
+            {"module": module, "role": role},
+        )
 
     return jsonify({"ok": True, "module": module, "role": role})
 
@@ -310,10 +350,14 @@ def set_user_module_access(user_id: int):
 def delete_user_module_access(user_id: int, module: str):
     """Revoke a user's access to a module."""
     from qms.core.db import get_db
-    from qms.auth.db import revoke_module_access
+    from qms.auth.db import revoke_module_access, log_auth_event
 
     with get_db() as conn:
         if not revoke_module_access(conn, user_id, module):
             abort(404, "Module access not found")
+        log_auth_event(
+            conn, "module_revoke", user_id, _current_email(),
+            {"module": module},
+        )
 
     return jsonify({"ok": True})

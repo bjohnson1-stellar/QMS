@@ -10,12 +10,10 @@ CREATE TABLE IF NOT EXISTS users (
     is_active            INTEGER NOT NULL DEFAULT 1,
     must_change_password INTEGER NOT NULL DEFAULT 1,
     first_login          TEXT NOT NULL DEFAULT (datetime('now')),
-    last_login           TEXT NOT NULL DEFAULT (datetime('now')),
-    entra_oid            TEXT                               -- Legacy: nullable, kept for migration
+    last_login           TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_users_entra_oid ON users(entra_oid);
 
 -- Module-level access: controls which modules a non-admin user can reach
 -- Module validation is handled in Python via get_web_modules() — no CHECK constraint

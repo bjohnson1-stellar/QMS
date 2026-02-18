@@ -15,10 +15,10 @@ logger = get_logger("qms.auth.migrations")
 def run_auth_migrations(conn: sqlite3.Connection) -> None:
     """Run all auth schema migrations (idempotent)."""
     _add_password_columns(conn)
-    _make_entra_oid_nullable(conn)
     _ensure_unique_email(conn)
     _create_module_access_table(conn)
     _drop_module_check_constraint(conn)
+    _drop_entra_oid(conn)
 
 
 def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
@@ -39,19 +39,6 @@ def _add_password_columns(conn: sqlite3.Connection) -> None:
         )
 
     conn.commit()
-
-
-def _make_entra_oid_nullable(conn: sqlite3.Connection) -> None:
-    """
-    Make entra_oid nullable by dropping the NOT NULL / UNIQUE constraints.
-
-    SQLite doesn't support ALTER COLUMN, but the original schema already has
-    entra_oid as TEXT (nullable) with a UNIQUE index. If the column exists and
-    has data, we leave it. New rows will simply have NULL for entra_oid.
-    """
-    # Nothing to do — entra_oid was already TEXT (nullable) in the original DDL.
-    # The UNIQUE index allows multiple NULLs in SQLite by default.
-    pass
 
 
 def _create_module_access_table(conn: sqlite3.Connection) -> None:
@@ -142,4 +129,39 @@ def _drop_module_check_constraint(conn: sqlite3.Connection) -> None:
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_uma_user ON user_module_access(user_id)"
     )
+    conn.commit()
+
+
+def _drop_entra_oid(conn: sqlite3.Connection) -> None:
+    """Drop the legacy entra_oid column from users (table rebuild)."""
+    if not _column_exists(conn, "users", "entra_oid"):
+        return
+
+    logger.info("Dropping legacy entra_oid column from users")
+
+    conn.execute("DROP INDEX IF EXISTS idx_users_entra_oid")
+    conn.execute("ALTER TABLE users RENAME TO _users_old")
+    conn.execute("""
+        CREATE TABLE users (
+            id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            email                TEXT NOT NULL,
+            display_name         TEXT NOT NULL,
+            password_hash        TEXT,
+            role                 TEXT NOT NULL DEFAULT 'user'
+                                 CHECK (role IN ('admin', 'user', 'viewer')),
+            is_active            INTEGER NOT NULL DEFAULT 1,
+            must_change_password INTEGER NOT NULL DEFAULT 1,
+            first_login          TEXT NOT NULL DEFAULT (datetime('now')),
+            last_login           TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+    conn.execute("""
+        INSERT INTO users (id, email, display_name, password_hash, role,
+                           is_active, must_change_password, first_login, last_login)
+        SELECT id, email, display_name, password_hash, role,
+               is_active, must_change_password, first_login, last_login
+        FROM _users_old
+    """)
+    conn.execute("DROP TABLE _users_old")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email)")
     conn.commit()

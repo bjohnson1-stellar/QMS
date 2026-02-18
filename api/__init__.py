@@ -5,10 +5,46 @@ Centralized Flask app that registers module blueprints.
 Mirrors how cli/main.py assembles module CLIs.
 """
 
+import hashlib
+import hmac
 import os
 from datetime import timedelta
+from pathlib import Path
 
-from flask import Flask, redirect, request, session, url_for
+from flask import Flask, abort, redirect, request, session, url_for
+
+
+def _get_or_create_secret() -> str:
+    """Resolve SECRET_KEY with priority: env var > config > file > generate.
+
+    On first run with no key configured, generates a random key and persists
+    it to data/.secret_key so sessions survive server restarts.
+    """
+    from qms.core.config import get_config, QMS_PATHS
+
+    # 1. Environment variable
+    env_key = os.environ.get("QMS_SECRET_KEY")
+    if env_key:
+        return env_key
+
+    # 2. config.yaml auth.secret_key
+    config = get_config()
+    cfg_key = config.get("auth", {}).get("secret_key")
+    if cfg_key:
+        return cfg_key
+
+    # 3. Persistent file in data directory
+    key_file = Path(QMS_PATHS.data_dir) / ".secret_key"
+    if key_file.exists():
+        stored = key_file.read_text().strip()
+        if stored:
+            return stored
+
+    # 4. Generate, persist, and return
+    new_key = os.urandom(32).hex()
+    key_file.parent.mkdir(parents=True, exist_ok=True)
+    key_file.write_text(new_key)
+    return new_key
 
 
 def create_app() -> Flask:
@@ -25,11 +61,22 @@ def create_app() -> Flask:
     config = get_config()
     auth_cfg = config.get("auth", {})
 
-    secret = os.environ.get("QMS_SECRET_KEY") or auth_cfg.get("secret_key")
-    app.config["SECRET_KEY"] = secret or os.urandom(32).hex()
+    app.config["SECRET_KEY"] = _get_or_create_secret()
 
     session_minutes = auth_cfg.get("session_lifetime_minutes", 480)
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=session_minutes)
+
+    # ── Session cookie hardening ─────────────────────────────────────────
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_NAME"] = "qms_session"
+
+    # ── Security headers ─────────────────────────────────────────────────
+    @app.after_request
+    def set_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        return response
 
     # ── Branding + module registry context processors ────────────────────
     from qms.core.config import get_branding, get_web_modules
@@ -54,6 +101,41 @@ def create_app() -> Flask:
             "accessible_modules": accessible,
             "web_modules": modules_cfg,
         }
+
+    # ── CSRF protection ──────────────────────────────────────────────────
+
+    def _generate_csrf_token() -> str:
+        """Generate a CSRF token tied to the session."""
+        if "_csrf_nonce" not in session:
+            session["_csrf_nonce"] = os.urandom(16).hex()
+        return hmac.new(
+            app.config["SECRET_KEY"].encode(),
+            session["_csrf_nonce"].encode(),
+            hashlib.sha256,
+        ).hexdigest()
+
+    @app.context_processor
+    def inject_csrf():
+        return {"csrf_token": _generate_csrf_token}
+
+    @app.before_request
+    def check_csrf():
+        """Validate CSRF token on POST requests from HTML forms."""
+        if request.method != "POST":
+            return None
+        # Skip CSRF for JSON API requests (protected by SameSite cookies)
+        content_type = request.content_type or ""
+        if "application/json" in content_type:
+            return None
+        # Auth login needs CSRF but may not have a session yet — skip if
+        # there's no nonce (first visit). The token won't validate anyway
+        # because there's nothing to compare against.
+        if "_csrf_nonce" not in session:
+            return None
+        token = request.form.get("csrf_token", "")
+        expected = _generate_csrf_token()
+        if not hmac.compare_digest(token, expected):
+            abort(400, "CSRF validation failed.")
 
     # ── Auth gate (before_request) ───────────────────────────────────────
 
