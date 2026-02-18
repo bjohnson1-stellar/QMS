@@ -226,6 +226,106 @@ def _log_extraction(conn, result: PipelineResult):
     )
 
 
+def _resolve_wps_number(conn, wps_number: str) -> str:
+    """
+    Try to match an extracted WPS number against the database.
+
+    Handles cases like ``DM-01-P8-GTAW`` → ``DM-01-P8_P1-GTAW``
+    where the form doesn't include the full canonical name.
+    """
+    if not wps_number:
+        return wps_number
+
+    # Exact match
+    row = conn.execute(
+        "SELECT wps_number FROM weld_wps WHERE wps_number = ?", (wps_number,)
+    ).fetchone()
+    if row:
+        return row["wps_number"]
+
+    # Case-insensitive match
+    row = conn.execute(
+        "SELECT wps_number FROM weld_wps WHERE UPPER(wps_number) = ?",
+        (wps_number.upper(),)
+    ).fetchone()
+    if row:
+        return row["wps_number"]
+
+    # Prefix match (e.g., DM-01-P8-GTAW matches DM-01-P8_P1-GTAW)
+    row = conn.execute(
+        "SELECT wps_number FROM weld_wps WHERE wps_number LIKE ? "
+        "ORDER BY LENGTH(wps_number) LIMIT 1",
+        (f"{wps_number[:6]}%{wps_number[-4:]}%",)
+    ).fetchone()
+    if row:
+        logger.info("WPS resolved: '%s' -> '%s'", wps_number, row["wps_number"])
+        return row["wps_number"]
+
+    return wps_number
+
+
+def _run_form_field_pipeline(pdf_path: Path, form_data: Dict[str, Any],
+                             dry_run: bool, start_time: float,
+                             result: PipelineResult) -> PipelineResult:
+    """
+    Fast path for fillable WPQ PDFs — skip AI, use form widget data directly.
+
+    Form-field extraction produces confidence 1.0 (the data comes straight
+    from the PDF form widgets, no interpretation needed).
+    """
+    from qms.welding.extraction.loader import load_to_database
+    from qms.welding.forms import get_form_definition
+
+    result.form_type = "wpq"
+    result.data = form_data
+    result.confidence = 1.0
+
+    # Resolve WPS number against the database for canonical naming
+    parent = form_data.get("parent", {})
+    try:
+        with get_db(readonly=True) as conn:
+            raw_wps = parent.get("wps_number", "")
+            resolved_wps = _resolve_wps_number(conn, raw_wps)
+            if resolved_wps != raw_wps:
+                parent["wps_number"] = resolved_wps
+                # Regenerate WPQ number with resolved WPS
+                stamp = parent.get("welder_stamp", "")
+                if stamp and resolved_wps:
+                    parent["wpq_number"] = f"{stamp}-{resolved_wps}"
+    except Exception as e:
+        logger.warning("WPS resolution skipped: %s", e)
+
+    result.identifier = parent.get("wpq_number")
+
+    form_def = get_form_definition("wpq")
+
+    try:
+        if not dry_run:
+            with get_db() as conn:
+                load_result = load_to_database(form_data, conn, form_def)
+                result.parent_record_id = load_result.get("parent_id")
+                result.child_record_counts = load_result.get("child_counts", {})
+                _log_extraction(conn, result)
+                conn.commit()
+            result.status = "success"
+        else:
+            result.status = "success"
+            logger.info("[DRY RUN] Form fields extracted: %s = %s",
+                        "wpq_number", result.identifier)
+    except Exception as e:
+        result.status = "failed"
+        result.errors.append(str(e))
+        logger.error("Form-field load error for %s: %s", pdf_path.name, e)
+
+    result.processing_time_ms = int((time.time() - start_time) * 1000)
+    logger.info(
+        "Pipeline %s (form-fields): %s (%s) confidence=%.2f time=%dms",
+        result.status, result.source_file, result.identifier or "?",
+        result.confidence, result.processing_time_ms,
+    )
+    return result
+
+
 def run_pipeline(pdf_path: str | Path, form_type: Optional[str] = None,
                  dry_run: bool = False) -> PipelineResult:
     """
@@ -243,6 +343,7 @@ def run_pipeline(pdf_path: str | Path, form_type: Optional[str] = None,
         extract_pdf_text, build_extraction_prompt,
         parse_extraction_response, detect_form_type,
     )
+    from qms.welding.extraction.form_fields import extract_wpq_form_fields
     from qms.welding.extraction.loader import load_to_database
     from qms.welding.validation import validate_form_data
     from qms.welding.seed_lookups import get_valid_values
@@ -256,6 +357,14 @@ def run_pipeline(pdf_path: str | Path, form_type: Optional[str] = None,
     )
 
     try:
+        # Fast path: fillable WPQ forms with embedded form fields
+        if form_type in (None, "wpq"):
+            form_data = extract_wpq_form_fields(pdf_path)
+            if form_data is not None:
+                return _run_form_field_pipeline(
+                    pdf_path, form_data, dry_run, start_time, result,
+                )
+
         # Step 1: Extract text
         raw_text = extract_pdf_text(pdf_path)
         if not raw_text.strip():
