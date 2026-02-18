@@ -1,59 +1,34 @@
 # Quality Management System - Modular Restructure Planning Prompt
 
-## Implementation Progress (updated 2026-02-09)
+## Implementation Progress (updated 2026-02-18)
 
-### Phase 0: Foundation — COMPLETE
-- Package: `D:\qms\` installed editable (`pip install -e .`)
-- CLI: `qms version`, `qms migrate`, 8 module sub-commands registered
-- 224 tables (including FTS virtual tables) across 8 schema files
-- Core services: db.py, config.py, logging.py, paths.py, output.py
-- Git: `https://github.com/bjohnson1-stellar/QMS.git` branch `main`
+### ALL PHASES COMPLETE
 
-### Phase 1: Port Business Logic — COMPLETE
-**Batch 1** (4 modules, ported from QC-DR/ scripts):
-| Module | Source → Target | Lines | CLI Commands |
-|--------|----------------|-------|-------------|
-| welding | 4 files → intake.py, importer.py, weekly.py, notifications.py | 2,404 | dashboard, continuity, import-wps, import-weekly, check-notifications |
-| qualitydocs | load_quality_manual.py → loader.py | 878 | load-module, summary, search, detail |
-| references | extract_reference.py → extractor.py | 541 | extract, list, search, clauses |
-| projects | scan_projects.py → scanner.py | 674 | scan, list, summary |
+The restructure is fully implemented. Current state:
 
-**Batch 2** (3 modules):
-| Module | Source → Target | Lines | CLI Commands |
-|--------|----------------|-------|-------------|
-| pipeline | 4 SIS files → common.py, importer.py, processor.py | 2,399 | status, queue, import-drawing, import-batch, process |
-| workforce | employee_management.py + sis_employee_import.py → merged employees.py + sis_import.py | 797 | list, import-csv, import-from-sis, bulk-update |
-| vectordb | 3 vector/embed files → embedder.py, indexer.py, search.py | 1,619 | index, search, status, rebuild |
+- **Package**: `D:\qms\` installed editable (`pip install -e .`)
+- **CLI**: 14 module groups, 65 total commands
+- **Database**: 256 tables (including FTS virtual tables) across 10 schema files
+- **Web UI**: Flask app with 7 blueprints, Waitress production server, local auth
+- **Tests**: 353 tests passing
+- **Git**: `https://github.com/bjohnson1-stellar/QMS.git` branch `main`
 
-**Package totals**: 56 files, 15,167 lines
+| Module | Status | CLI Commands |
+|--------|--------|-------------|
+| core | Complete | (shared services) |
+| engineering | Complete | 8 commands (refrig_calc vendored, 20 modules) |
+| welding | Complete | 18 commands (forms pipeline, extraction, generation, qualification engine) |
+| qualitydocs | Complete | 4 commands |
+| references | Complete | 4 commands |
+| projects | Complete | 6 commands (incl. Procore import, timecard export) |
+| pipeline | Complete | 6 commands |
+| workforce | Complete | 4 commands |
+| vectordb | Complete | 4 commands |
+| automation | Complete | 2 commands |
+| auth | Complete | 5 commands (local email+password, role-based access) |
+| reporting | Complete | 1 command (`system`) |
 
-### Phase 2: Remaining Work
-| Module | Work Type | Source | Status |
-|--------|-----------|--------|--------|
-| engineering | **Integration** — move `D:\Eng\` (11,777 lines, 30 files) into `qms/engineering/` | `D:\Eng\` refrig_calc library | Not started |
-| reporting | **New code** — cross-module dashboards and reports | No source exists | Not started |
-| repo cleanup | Move pyproject.toml to repo root, delete QC-DR/, Eng/ | - | Not started |
-
-### Source Script Mapping (QC-DR/ → qms/)
-| Source (D:\QC-DR\) | Target (D:\qms\) | Status |
-|---------------------|-------------------|--------|
-| weld_intake.py | welding/intake.py | Ported |
-| weld_excel_import.py | welding/importer.py | Ported |
-| weld_weekly_import.py | welding/weekly.py | Ported |
-| weld_notifications.py | welding/notifications.py | Ported |
-| scripts/load_quality_manual.py | qualitydocs/loader.py | Ported |
-| extract_reference.py | references/extractor.py | Ported |
-| scripts/scan_projects.py | projects/scanner.py | Ported |
-| sis_common.py | pipeline/common.py | Ported |
-| sis_import.py | pipeline/importer.py | Ported |
-| sis_bulk_import.py | pipeline/importer.py | Ported |
-| sis_process_and_import.py | pipeline/processor.py | Ported |
-| employee_management.py | workforce/employees.py | Ported |
-| sis_employee_import.py | workforce/sis_import.py | Ported |
-| embed_queue.py | vectordb/embedder.py | Ported |
-| index_vectordb.py | vectordb/indexer.py | Ported |
-| vector_db.py | vectordb/search.py | Ported |
-| D:\Eng\* (30 files) | engineering/* | **Not started** |
+All source scripts from `D:\QC-DR\` and `D:\Eng\` have been ported. Repo cleanup is done.
 
 ---
 

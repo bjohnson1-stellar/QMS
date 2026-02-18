@@ -449,7 +449,7 @@ web_modules:
     default_endpoint: "automation.preview"
 
 # =============================================================================
-# AUTHENTICATION (Microsoft Entra ID / Azure AD)
+# AUTHENTICATION (Local email + password)
 # =============================================================================
 
 auth:

@@ -1,5 +1,14 @@
 # Project-Specific Quality Manual Generator
 
+> **NOTE (2026-02-18):** This feature has NOT been implemented yet. Path references
+> below use old conventions — update before implementing:
+> - `D:\Quality Documents\References\` → `D:\qms\data\quality-documents\References\`
+> - `D:\Projects\{project}\` → `D:\qms\data\projects\{project}\`
+> - `D:\VectorDB` → `D:\qms\data\vectordb\`
+> - `/cq <command>` → `qms cq <command>` (Typer CLI)
+> - `/sis-refs extract` → `qms refs extract`
+> - "150+ table database" → 256 tables
+
 ## Feature Overview
 
 A compliance engine that intakes customer quality documents, compares them against

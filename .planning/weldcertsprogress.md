@@ -1,7 +1,14 @@
 # Welding Certification Module - Progress Summary
 
+> **ARCHIVE NOTICE (2026-02-18):** This document is historical context from Phase 1.
+> The welding module has since grown to 28 files, 18 CLI commands, a forms pipeline
+> (extraction + generation), qualification engine (ASME IX + AWS D1.1), cert request
+> workflow, and a full web UI at `/welding/`. All file paths below reference the old
+> `D:\QC-DR\` structure — code now lives in `D:\qms\welding\`. CLI commands are now
+> `qms welding <command>` instead of `python D:\QC-DR\<script>.py`.
+
 **Last Updated:** 2026-02-06
-**Status:** Phase 1 Complete - Core System Operational
+**Status:** Phase 1 Complete (archived) — see `D:\qms\welding\` for current state
 
 ---
 

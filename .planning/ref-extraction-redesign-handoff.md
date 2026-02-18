@@ -1,5 +1,12 @@
 # Reference Standard Extraction Redesign - Context Handoff
 
+> **ARCHIVE NOTICE (2026-02-18):** File paths below reference the old `D:\QC-DR\`
+> structure. The extraction code now lives in `D:\qms\references\extractor.py`.
+> CLI command is `qms refs extract` (not `/sis-refs extract`). Database is at
+> `D:\qms\data\quality.db` (not `D:\quality.db`). Reference docs are at
+> `D:\qms\data\quality-documents\References\` (not `D:\Quality Documents\References\`).
+> The parallelized agent redesign described here has NOT been implemented yet.
+
 Created: 2026-02-04
 Purpose: Preserve context for planning parallelized reference extraction system
 

@@ -79,16 +79,32 @@ D:\qms\                          # Repo root = package root
 │   ├── logging.py               # get_logger()
 │   └── paths.py, output.py
 │
+├── auth/                        # Local email+password auth + roles
+│   ├── schema.sql, db.py, decorators.py, migrations.py, cli.py
+│
 ├── api/                         # Flask web backend
 │   ├── __init__.py              # App factory (create_app)
-│   └── projects.py              # Blueprint: /projects/* routes
+│   ├── auth.py                  # Blueprint: /auth/* routes
+│   ├── projects.py              # Blueprint: /projects/* routes
+│   ├── welding.py               # Blueprint: /welding/* routes
+│   ├── pipeline.py              # Blueprint: /pipeline/* routes
+│   ├── automation.py            # Blueprint: /automation/* routes
+│   └── settings.py              # Blueprint: /settings/* routes
 │
 ├── frontend/                    # Web UI assets
 │   ├── templates/
 │   │   ├── base.html            # Shared layout (sidebar nav)
-│   │   └── projects/            # 6 project pages (Jinja2)
+│   │   ├── auth/                # Login, profile templates
+│   │   ├── projects/            # 5 project pages (Jinja2)
+│   │   ├── welding/             # 8 welding templates
+│   │   ├── settings/            # Settings UI templates
+│   │   ├── automation/          # Automation templates
+│   │   └── pipeline/            # Pipeline templates
 │   └── static/
-│       └── style.css            # Shared CSS
+│       ├── style.css            # Shared CSS
+│       ├── dark.css             # Dark mode styles
+│       ├── brand-fonts.css      # Brand font definitions
+│       └── favicon.ico          # Multi-size ICO favicon
 │
 ├── engineering/                 # Calculation library + design verification
 │   ├── refrig_calc/             # Vendored refrig_calc (20 modules, zero deps)
@@ -100,18 +116,20 @@ D:\qms\                          # Repo root = package root
 │   └── cli.py                   # 8 commands
 │
 ├── automation/                  # JSON request dispatcher (Power Automate intake)
-├── welding/                     # WPS/WPQ/continuity tracking + cert requests
+├── welding/                     # WPS/WPQ/continuity tracking + forms pipeline
+│   ├── forms/, extraction/, generation/  # Form pipeline (28 files)
+│   └── cli.py                   # 18 commands
 ├── qualitydocs/                 # Quality manual loader
 ├── references/                  # Reference standard extraction
 ├── projects/                    # Project scanner + budget tracking
 │   ├── budget.py                # Per-BU allocations, budget queries, rollup sync
-│   ├── excel_io.py              # Excel import/export
+│   ├── excel_io.py, procore_io.py  # Import/export (Excel, Procore)
 │   ├── migrations.py            # Incremental schema migrations
 │   └── migrate_timetracker.py   # One-time TT data migration
 ├── pipeline/                    # Drawing intake pipeline
 ├── workforce/                   # Employee management
 ├── vectordb/                    # Semantic search
-├── reporting/                   # Reports (stub)
+├── reporting/                   # Reports
 └── cli/main.py                  # Typer CLI entrypoint
 ```
 
@@ -130,20 +148,22 @@ D:\qms\                          # Repo root = package root
 
 All paths in `config.yaml` are **relative** to the package root. The `QMS_PATHS` singleton resolves them automatically.
 
-## CLI Commands (44 total)
+## CLI Commands (65 total)
 
 | Module | Commands |
 |--------|----------|
 | `qms` (top-level) | `version`, `migrate`, `serve` |
 | `qms eng` | `history`, `line-sizing`, `relief-valve`, `pump`, `ventilation`, `charge`, `validate-pipes`, `validate-relief` |
-| `qms welding` | `dashboard`, `continuity`, `import-wps`, `import-weekly`, `check-notifications`, `register`, `export-lookups`, `cert-requests`, `cert-results`, `approve-wcr`, `assign-wpq`, `schedule-retest`, `process-requests` |
+| `qms welding` | `dashboard`, `continuity`, `import-wps`, `import-weekly`, `check-notifications`, `register`, `export-lookups`, `cert-requests`, `cert-results`, `approve-wcr`, `assign-wpq`, `schedule-retest`, `process-requests`, `seed-lookups`, `extract`, `generate`, `register-template`, `derive-ranges` |
 | `qms automation` | `process`, `status` |
 | `qms docs` | `load-module`, `summary`, `search`, `detail` |
 | `qms refs` | `extract`, `list`, `search`, `clauses` |
-| `qms projects` | `scan`, `list`, `summary`, `migrate-timetracker` |
-| `qms pipeline` | `status`, `queue`, `import-drawing`, `import-batch`, `process` |
+| `qms projects` | `scan`, `list`, `summary`, `import-procore`, `export-timecard`, `migrate-timetracker` |
+| `qms pipeline` | `status`, `queue`, `import-drawing`, `import-batch`, `process`, `intake` |
 | `qms workforce` | `list`, `import-csv`, `import-from-sis`, `bulk-update` |
-| `qms vectordb` | `index`, `search`, `status`, `rebuild` |
+| `qms vectordb` | `index`, `search`, `status`, `queue` |
+| `qms auth` | `create-user`, `reset-password`, `grant-access`, `revoke-access`, `list-users` |
+| `qms report` | `system` |
 
 ## Unified Inbox
 
@@ -187,7 +207,7 @@ from qms.engineering.refrig_calc import NH3Properties, LineSizing
 
 ### Database
 
-Single SQLite database at `QMS_PATHS.database` with 224 tables across 8 schema files. FK dependency chain controlled by `SCHEMA_ORDER` in `core/db.py`. The `business_units` table is shared by projects, welding, and pipeline modules.
+Single SQLite database at `QMS_PATHS.database` with 256 tables across 10 schema files. FK dependency chain controlled by `SCHEMA_ORDER` in `core/db.py`. The `business_units` table is shared by projects, welding, and pipeline modules.
 
 **Budget model** (three-tier): `projects` (5-digit base) → `project_allocations` (per-BU breakdown) → `project_budgets` (rollup total). The `sync_budget_rollup()` function in `budget.py` keeps `project_budgets.total_budget = SUM(project_allocations.allocated_budget)`.
 
@@ -203,10 +223,15 @@ with get_db() as conn:
 
 ```
 api/__init__.py     → create_app(), registers blueprints
+api/auth.py         → Blueprint /auth/*, login/logout/users
 api/projects.py     → Blueprint /projects/*, calls budget.py
+api/welding.py      → Blueprint /welding/*, dashboard/forms
+api/pipeline.py     → Blueprint /pipeline/*, intake dashboard
+api/automation.py   → Blueprint /automation/*, request preview
+api/settings.py     → Blueprint /settings/*, 8-tab settings UI
 projects/budget.py  → Pure business logic (allocation, queries)
 frontend/templates/ → Jinja2 templates extending base.html
-frontend/static/    → Shared CSS/JS
+frontend/static/    → Shared CSS/JS (style.css, dark.css, brand-fonts.css, favicon.ico)
 ```
 
 Optional dependency: `pip install -e ".[web]"` for Flask.
