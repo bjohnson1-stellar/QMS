@@ -3,6 +3,85 @@
 {% block title %}Projects - QMS{% endblock %}
 
 {% block content %}
+<style>
+/* Toggle Switch — adapted from Uiverse.io by JaydipPrajapati1910 */
+.toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 26px;
+    overflow: hidden;
+    border-radius: 100px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.toggle-switch input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 3;
+}
+
+.toggle-switch .knobs,
+.toggle-switch .layer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.toggle-switch .knobs { z-index: 2; }
+
+.toggle-switch .layer {
+    width: 100%;
+    background-color: #fcebeb;
+    transition: 0.3s ease all;
+    z-index: 1;
+    border-radius: 100px;
+}
+
+.toggle-switch .knobs:before {
+    content: "NO";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 6px;
+    color: #fff;
+    font-size: 8px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1;
+    padding: 7px 3px;
+    background-color: #f44336;
+    border-radius: 50%;
+    transition: 0.3s ease all, left 0.3s cubic-bezier(0.18, 0.89, 0.35, 1.15);
+}
+
+.toggle-switch input:active + .knobs:before {
+    width: 30px;
+    border-radius: 100px;
+}
+
+.toggle-switch input:checked:active + .knobs:before {
+    margin-left: -16px;
+}
+
+.toggle-switch input:checked + .knobs:before {
+    content: "YES";
+    left: 27px;
+    background-color: #03a9f4;
+}
+
+.toggle-switch input:checked ~ .layer {
+    background-color: #ebf7fc;
+}
+</style>
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
     <div>
         <h1>Projects</h1>
@@ -775,11 +854,13 @@
                     html += `<span class="weight-value">${(j.weight_adjustment || 1.0).toFixed(2)}x</span>`;
                     html += `</div></td>`;
                     // Projection toggle
-                    html += `<td><input type="checkbox" class="projection-toggle" ${j.projection_enabled ? 'checked' : ''} `;
-                    html += `onchange="updateJobProjection(${j.id},this.checked)" onclick="event.stopPropagation()" title="Include in projections"></td>`;
+                    html += `<td><div class="toggle-switch"><input type="checkbox" ${j.projection_enabled ? 'checked' : ''} `;
+                    html += `onchange="updateJobProjection(${j.id},this.checked)" onclick="event.stopPropagation()" title="Include in projections">`;
+                    html += `<div class="knobs"></div><div class="layer"></div></div></td>`;
                     // GMP toggle
-                    html += `<td><input type="checkbox" class="projection-toggle" ${j.is_gmp ? 'checked' : ''} `;
-                    html += `onchange="updateJobGmp(${j.id},this.checked)" onclick="event.stopPropagation()" title="GMP contract"></td>`;
+                    html += `<td><div class="toggle-switch"><input type="checkbox" ${j.is_gmp ? 'checked' : ''} `;
+                    html += `onchange="updateJobGmp(${j.id},this.checked)" onclick="event.stopPropagation()" title="GMP contract">`;
+                    html += `<div class="knobs"></div><div class="layer"></div></div></td>`;
                     // Actions
                     html += `<td></td>`;
                     html += `</tr>`;
@@ -928,11 +1009,13 @@
                     html += `<span class="weight-value">${(j.weight_adjustment || 1.0).toFixed(2)}x</span>`;
                     html += `</div></td>`;
                     // Projection toggle
-                    html += `<td><input type="checkbox" class="projection-toggle" ${j.projection_enabled ? 'checked' : ''} `;
-                    html += `onchange="updateJobProjection(${j.id},this.checked)" onclick="event.stopPropagation()" title="Include in projections"></td>`;
+                    html += `<td><div class="toggle-switch"><input type="checkbox" ${j.projection_enabled ? 'checked' : ''} `;
+                    html += `onchange="updateJobProjection(${j.id},this.checked)" onclick="event.stopPropagation()" title="Include in projections">`;
+                    html += `<div class="knobs"></div><div class="layer"></div></div></td>`;
                     // GMP toggle
-                    html += `<td><input type="checkbox" class="projection-toggle" ${j.is_gmp ? 'checked' : ''} `;
-                    html += `onchange="updateJobGmp(${j.id},this.checked)" onclick="event.stopPropagation()" title="GMP contract"></td>`;
+                    html += `<td><div class="toggle-switch"><input type="checkbox" ${j.is_gmp ? 'checked' : ''} `;
+                    html += `onchange="updateJobGmp(${j.id},this.checked)" onclick="event.stopPropagation()" title="GMP contract">`;
+                    html += `<div class="knobs"></div><div class="layer"></div></div></td>`;
                     // Actions
                     html += `<td></td>`;
                     html += `</tr>`;
