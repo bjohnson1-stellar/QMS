@@ -113,6 +113,10 @@ def _delete_module_data(conn: sqlite3.Connection, module_number: int) -> None:
     module_id = row["id"]
 
     # Delete in reverse FK dependency order
+    conn.execute("DELETE FROM build_log WHERE module_id = ?", (module_id,))
+    conn.execute(
+        "DELETE FROM qm_forms WHERE associated_module_id = ?", (module_id,)
+    )
     conn.execute(
         "DELETE FROM qm_cross_references WHERE source_module_id = ?",
         (module_id,),

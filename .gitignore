@@ -45,3 +45,6 @@ NUL
 install-service.bat
 uninstall-service.bat
 run_service.py
+
+# LAN shortcut (machine-specific IP)
+SIS QMS (LAN).url
