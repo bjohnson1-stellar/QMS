@@ -5,9 +5,10 @@ Thin delivery layer: business logic lives in welding.qualification_rules
 and welding.forms. CRUD operations go through the database directly.
 """
 
-from flask import Blueprint, jsonify, request, render_template
+from flask import Blueprint, jsonify, request, render_template, session
 
 from qms.core import get_db
+from qms.auth.decorators import role_required
 
 bp = Blueprint("welding", __name__, url_prefix="/welding")
 
@@ -399,6 +400,28 @@ def api_welder_detail(welder_stamp):
     })
 
 
+@bp.route("/api/welders/<welder_stamp>/status", methods=["PATCH"])
+@role_required("admin")
+def api_welder_update_status(welder_stamp):
+    data = request.get_json(force=True)
+    new_status = data.get("status", "").lower()
+    if new_status not in ("active", "inactive", "terminated", "archived"):
+        return jsonify({"error": "Invalid status"}), 400
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id FROM weld_welder_registry WHERE welder_stamp = ?",
+            (welder_stamp,),
+        ).fetchone()
+        if not row:
+            return jsonify({"error": "Welder not found"}), 404
+        conn.execute(
+            "UPDATE weld_welder_registry SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE welder_stamp = ?",
+            (new_status, welder_stamp),
+        )
+        conn.commit()
+    return jsonify({"ok": True, "status": new_status})
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -477,7 +500,7 @@ def _get_expiring_qualifications(conn, limit=10):
 def _get_welder_info(conn, stamp):
     # Primary source: welder registry (canonical master)
     row = conn.execute(
-        "SELECT display_name as name, welder_stamp as stamp FROM weld_welder_registry WHERE welder_stamp = ?",
+        "SELECT display_name as name, welder_stamp as stamp, status FROM weld_welder_registry WHERE welder_stamp = ?",
         (stamp,)
     ).fetchone()
     if row:
