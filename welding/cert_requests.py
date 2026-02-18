@@ -566,7 +566,25 @@ def assign_wpq_from_coupon(
             test_dt = date.today()
         expiration_dt = test_dt + timedelta(days=expiration_months * 30)
 
-        wpq_number = f"{stamp}-{wcr_number}-C{coupon_number}-{process}"
+        coupon_wps = coupon["wps_number"]
+        if coupon_wps:
+            wpq_number = f"{stamp}-{coupon_wps}"
+            # Append sequence suffix if this WPQ already exists (re-qualification)
+            existing_dup = conn.execute(
+                "SELECT id FROM weld_wpq WHERE wpq_number = ?", (wpq_number,)
+            ).fetchone()
+            if existing_dup:
+                seq = 2
+                while True:
+                    candidate = f"{wpq_number}-{seq}"
+                    if not conn.execute(
+                        "SELECT id FROM weld_wpq WHERE wpq_number = ?", (candidate,)
+                    ).fetchone():
+                        wpq_number = candidate
+                        break
+                    seq += 1
+        else:
+            wpq_number = f"{stamp}-{wcr_number}-C{coupon_number}-{process}"
 
         # Check uniqueness
         existing = conn.execute(

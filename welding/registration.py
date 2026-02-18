@@ -21,9 +21,14 @@ from qms.core import get_db, get_logger, QMS_PATHS
 
 logger = get_logger("qms.welding.registration")
 
-# Stamp pattern: Z-01, Z-02, ..., Z-99, then ZA-01, etc.
-STAMP_PREFIX = "Z"
-STAMP_PATTERN = re.compile(r"^Z([A-Z]?)-(\d+)$")
+# Stamp patterns:
+#   New format: {LastInitial}{NN} — e.g. B01, B15, J03  (no dash, zero-padded)
+#   Legacy format: {Letter}-{Num} — e.g. B-15, J-3      (dash, optional zero-pad)
+#   Old auto format: Z-NN / ZA-NN                        (Z prefix)
+# All three formats are recognized when scanning existing stamps.
+STAMP_PATTERN_NEW = re.compile(r"^([A-Z])(\d{2,})$")
+STAMP_PATTERN_LEGACY = re.compile(r"^([A-Z])-(\d+)$")
+STAMP_PATTERN_Z = re.compile(r"^Z([A-Z]?)-(\d+)$")
 
 # Valid welding processes
 VALID_PROCESSES = {"SMAW", "GTAW", "GMAW", "FCAW", "SAW", "GTAW/SMAW"}
@@ -33,47 +38,68 @@ VALID_PROCESSES = {"SMAW", "GTAW", "GMAW", "FCAW", "SAW", "GTAW/SMAW"}
 # Stamp assignment
 # ---------------------------------------------------------------------------
 
-def get_next_stamp(conn: sqlite3.Connection) -> str:
+def get_next_stamp(
+    conn: sqlite3.Connection,
+    last_name: Optional[str] = None,
+) -> str:
     """
     Determine the next available welder stamp number.
 
-    Scans existing stamps matching Z-XX pattern and returns the next
-    sequential number. Falls back to Z-01 if no stamps exist.
+    When *last_name* is provided, the stamp prefix is the first letter
+    of the last name (e.g. ``last_name="Baker"`` → prefix ``B``).
+    Otherwise falls back to ``Z`` for backward compatibility.
+
+    Format: ``{Letter}{NN}`` — e.g. ``B01``, ``B15``, ``J03``.
+    No dash, zero-padded to 2 digits.  Stamps are never recycled.
+
+    Recognises three legacy formats when scanning existing stamps:
+    - ``B-15``  (legacy dash format)
+    - ``B15``   (new format)
+    - ``Z-01``  (old auto-assign format)
+
+    Args:
+        conn: Database connection
+        last_name: Welder's last name (used for prefix letter)
 
     Returns:
-        Next stamp string (e.g. "Z-57")
+        Next stamp string (e.g. ``B16``)
     """
+    if last_name and last_name.strip():
+        prefix = last_name.strip()[0].upper()
+    else:
+        prefix = "Z"
+
     rows = conn.execute(
         "SELECT welder_stamp FROM weld_welder_registry WHERE welder_stamp IS NOT NULL"
     ).fetchall()
 
     max_num = 0
-    max_prefix = ""
-
     for row in rows:
         stamp = row["welder_stamp"]
         if not stamp:
             continue
-        m = STAMP_PATTERN.match(stamp.strip().upper())
-        if m:
-            prefix_letter = m.group(1)  # "" or "A", "B", etc.
-            num = int(m.group(2))
-            # Compare: no letter < "A" < "B" etc., then by number
-            if (prefix_letter, num) > (max_prefix, max_num):
-                max_prefix = prefix_letter
-                max_num = num
+        stamp = stamp.strip().upper()
+
+        # Try new format first: B01, B15
+        m = STAMP_PATTERN_NEW.match(stamp)
+        if m and m.group(1) == prefix:
+            max_num = max(max_num, int(m.group(2)))
+            continue
+
+        # Try legacy dash format: B-15, B-3
+        m = STAMP_PATTERN_LEGACY.match(stamp)
+        if m and m.group(1) == prefix:
+            max_num = max(max_num, int(m.group(2)))
+            continue
+
+        # Try old Z-prefix format (only when prefix is Z)
+        if prefix == "Z":
+            m = STAMP_PATTERN_Z.match(stamp)
+            if m and not m.group(1):  # Plain Z-NN (no suffix letter)
+                max_num = max(max_num, int(m.group(2)))
 
     next_num = max_num + 1
-    if next_num > 99:
-        # Roll over to next prefix letter
-        if not max_prefix:
-            next_prefix = "A"
-        else:
-            next_prefix = chr(ord(max_prefix) + 1)
-        return f"{STAMP_PREFIX}{next_prefix}-{1:02d}"
-
-    prefix = f"{STAMP_PREFIX}{max_prefix}" if max_prefix else STAMP_PREFIX
-    return f"{prefix}-{next_num:02d}"
+    return f"{prefix}{next_num:02d}"
 
 
 # ---------------------------------------------------------------------------
@@ -176,7 +202,7 @@ def register_new_welder(
 
     # Auto-assign stamp if needed
     if not stamp and auto_stamp:
-        stamp = get_next_stamp(conn)
+        stamp = get_next_stamp(conn, last_name=last_name)
         result["stamp"] = stamp
 
     display_name = f"{last_name}, {first_name}"
@@ -260,9 +286,10 @@ def add_initial_wpq(
     test_dt = test_date or date.today()
     expiration_dt = test_dt + timedelta(days=expiration_months * 30)
 
-    wpq_number = f"{welder_stamp}-{process_type}"
     if wps_number:
-        wpq_number = f"{welder_stamp}-{wps_number}-{process_type}"
+        wpq_number = f"{welder_stamp}-{wps_number}"
+    else:
+        wpq_number = f"{welder_stamp}-{process_type}"
 
     # Check if WPQ already exists
     existing = conn.execute(

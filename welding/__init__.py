@@ -47,6 +47,10 @@ from qms.welding.cert_requests import (
     schedule_retest,
     approve_cert_request,
 )
+from qms.welding.migrations import (
+    run_welding_migrations,
+    _normalize_wpq_number,
+)
 from qms.welding.seed_lookups import seed_all_lookups, get_valid_values
 from qms.welding.validation import validate_form_data
 
@@ -86,6 +90,9 @@ __all__ = [
     "assign_wpq_from_coupon",
     "schedule_retest",
     "approve_cert_request",
+    # migrations
+    "run_welding_migrations",
+    "_normalize_wpq_number",
     # seed & validation
     "seed_all_lookups",
     "get_valid_values",

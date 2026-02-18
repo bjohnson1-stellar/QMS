@@ -618,6 +618,110 @@ def process_requests_cmd(
                 typer.echo(f"         Error: {r['error']}")
 
 
+@app.command("fix-wps")
+def fix_wps_cmd(
+    wps_number: str = typer.Argument(..., help="Current WPS number to fix (e.g. SS-02-P8-)"),
+    new_name: str = typer.Option(None, "--name", help="Corrected WPS number"),
+    variant: str = typer.Option(None, "--variant", help="Variant note (e.g. 'Solar Flux', 'Fusion')"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview changes without writing"),
+):
+    """Fix an ambiguous or truncated WPS number."""
+    from qms.core import get_db
+    from qms.welding.migrations import _WPS_CASCADE_TABLES
+
+    if not new_name:
+        typer.echo("Error: --name is required (the corrected WPS number)")
+        raise typer.Exit(code=1)
+
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, wps_number, notes FROM weld_wps WHERE wps_number = ?",
+            (wps_number,),
+        ).fetchone()
+        if not row:
+            typer.echo(f"WPS '{wps_number}' not found in database")
+            raise typer.Exit(code=1)
+
+        # Check target doesn't already exist
+        existing = conn.execute(
+            "SELECT id FROM weld_wps WHERE wps_number = ?", (new_name,)
+        ).fetchone()
+        if existing:
+            typer.echo(f"Error: WPS '{new_name}' already exists (ID {existing['id']})")
+            raise typer.Exit(code=1)
+
+        typer.echo(f"\nWPS Fix Preview")
+        typer.echo(f"  Current:  {wps_number} (ID {row['id']})")
+        typer.echo(f"  New name: {new_name}")
+        if variant:
+            typer.echo(f"  Variant:  {variant}")
+
+        if dry_run:
+            typer.echo("\n  [DRY RUN] No changes made.")
+            return
+
+        # Update WPS
+        notes_update = ""
+        if variant:
+            notes_update = f"Variant: {variant}"
+        conn.execute(
+            "UPDATE weld_wps SET wps_number = ?, notes = CASE "
+            "WHEN notes IS NULL OR notes = '' THEN ? "
+            "ELSE notes || '; ' || ? END "
+            "WHERE id = ?",
+            (new_name, notes_update, notes_update, row["id"]),
+        )
+        typer.echo(f"\n  Updated weld_wps: '{wps_number}' → '{new_name}'")
+
+        # Cascade to downstream tables
+        for table in _WPS_CASCADE_TABLES:
+            cursor = conn.execute(
+                f"UPDATE {table} SET wps_number = ? WHERE wps_number = ?",
+                (new_name, wps_number),
+            )
+            if cursor.rowcount > 0:
+                typer.echo(f"  Cascaded to {table}: {cursor.rowcount} row(s)")
+
+        conn.commit()
+        typer.echo(f"\n  Done. WPS '{new_name}' saved.")
+
+
+@app.command("list-pqrs")
+def list_pqrs_cmd():
+    """Show PQR records with linked WPS count."""
+    from qms.core import get_db
+
+    with get_db(readonly=True) as conn:
+        rows = conn.execute("""
+            SELECT p.id, p.pqr_number, p.wps_number, p.test_date, p.status, p.notes,
+                   COUNT(l.id) AS wps_link_count
+            FROM weld_pqr p
+            LEFT JOIN weld_wps_pqr_links l ON l.pqr_id = p.id
+            GROUP BY p.id
+            ORDER BY p.pqr_number
+        """).fetchall()
+
+    if not rows:
+        typer.echo("No PQR records found.")
+        return
+
+    typer.echo(f"\nPQR Records ({len(rows)} total)")
+    typer.echo("=" * 80)
+    typer.echo(f"  {'PQR Number':<35} {'WPS':<25} {'Links':>5}  {'Status'}")
+    typer.echo(f"  {'-' * 35} {'-' * 25} {'-' * 5}  {'-' * 8}")
+
+    for row in rows:
+        wps = row["wps_number"] or ""
+        test = row["test_date"] or ""
+        status = row["status"] or "active"
+        links = row["wps_link_count"]
+        typer.echo(f"  {row['pqr_number']:<35} {wps:<25} {links:>5}  {status}")
+
+    # Summary
+    linked = sum(1 for r in rows if r["wps_link_count"] > 0)
+    typer.echo(f"\n  {linked}/{len(rows)} PQRs linked to WPS records")
+
+
 # =========================================================================
 # FORM PIPELINE COMMANDS
 # =========================================================================

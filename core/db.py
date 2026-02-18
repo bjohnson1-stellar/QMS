@@ -120,3 +120,11 @@ def migrate_all():
         logger.info("Auth migrations applied")
     except Exception as exc:
         logger.warning("Auth migration step failed (non-fatal): %s", exc)
+
+    try:
+        from qms.welding.migrations import run_welding_migrations
+        with get_db() as weld_conn:
+            run_welding_migrations(weld_conn)
+        logger.info("Welding migrations applied")
+    except Exception as exc:
+        logger.warning("Welding migration step failed (non-fatal): %s", exc)

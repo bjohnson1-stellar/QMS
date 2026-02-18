@@ -334,40 +334,70 @@ def _infer_fk_column(child_table: str, form_type: str) -> Optional[str]:
 
 def normalize_identifiers(conn: sqlite3.Connection) -> Dict[str, int]:
     """
-    One-time cleanup of malformed identifier values across all welding tables.
+    Cleanup of malformed identifier values across all welding tables.
 
-    Normalizations applied:
-    - Strip leading/trailing whitespace
-    - Standardize separators (underscores → hyphens)
-    - Remove duplicate hyphens
-    - Uppercase process/material prefixes
+    Uses the canonical normalization from ``welding.migrations._normalize_wpq_number``
+    for WPQ numbers, and applies lighter cleanup (trim, uppercase, collapse hyphens)
+    to other identifier columns.
 
     Returns:
-        Dict mapping table to count of records updated.
+        Dict mapping table.column to count of records updated.
     """
+    from qms.welding.migrations import _normalize_wpq_number
+
     updates: Dict[str, int] = {}
 
-    tables_and_columns = [
+    # WPQ numbers get the full normalization treatment
+    rows = conn.execute(
+        "SELECT id, wpq_number FROM weld_wpq WHERE wpq_number IS NOT NULL"
+    ).fetchall()
+    wpq_count = 0
+    for row in rows:
+        old = row["wpq_number"]
+        new = _normalize_wpq_number(old)
+        if new != old:
+            # Check for collision before updating
+            exists = conn.execute(
+                "SELECT id FROM weld_wpq WHERE wpq_number = ? AND id != ?",
+                (new, row["id"]),
+            ).fetchone()
+            if exists:
+                logger.warning(
+                    "normalize_identifiers: WPQ '%s' → '%s' collides with ID %d, skipped",
+                    old, new, exists["id"],
+                )
+                continue
+            conn.execute(
+                "UPDATE weld_wpq SET wpq_number = ? WHERE id = ?",
+                (new, row["id"]),
+            )
+            wpq_count += 1
+    if wpq_count:
+        updates["weld_wpq.wpq_number"] = wpq_count
+
+    # Other identifier columns: trim + uppercase + collapse hyphens
+    other_columns = [
         ("weld_wps", "wps_number"),
         ("weld_pqr", "pqr_number"),
-        ("weld_wpq", "wpq_number"),
         ("weld_wpq", "wps_number"),
         ("weld_bps", "bps_number"),
         ("weld_bpq", "bpq_number"),
     ]
 
-    for table, column in tables_and_columns:
+    for table, column in other_columns:
+        count = 0
+
         # Trim whitespace
         cursor = conn.execute(
             f"UPDATE {table} SET {column} = TRIM({column}) "
             f"WHERE {column} != TRIM({column})"
         )
-        count = cursor.rowcount
+        count += cursor.rowcount
 
-        # Replace underscores with hyphens
+        # Uppercase
         cursor = conn.execute(
-            f"UPDATE {table} SET {column} = REPLACE({column}, '_', '-') "
-            f"WHERE {column} LIKE '%\\_%' ESCAPE '\\'"
+            f"UPDATE {table} SET {column} = UPPER({column}) "
+            f"WHERE {column} != UPPER({column})"
         )
         count += cursor.rowcount
 

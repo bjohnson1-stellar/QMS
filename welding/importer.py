@@ -420,7 +420,11 @@ def upsert_wpq(
     ).fetchone()
     stamp = row["welder_stamp"] if row else "UNK"
 
-    wpq_number = f"{stamp}-{wpq_code[:20]}"
+    wps = parsed.get("wps_number")
+    if wps:
+        wpq_number = f"{stamp}-{wps}"
+    else:
+        wpq_number = f"{stamp}-{wpq_code}"
 
     existing = conn.execute(
         "SELECT id FROM weld_wpq WHERE wpq_number = ?", (wpq_number,)
