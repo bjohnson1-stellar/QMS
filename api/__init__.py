@@ -34,7 +34,7 @@ def _get_or_create_secret() -> str:
         return cfg_key
 
     # 3. Persistent file in data directory
-    key_file = Path(QMS_PATHS.data_dir) / ".secret_key"
+    key_file = Path(QMS_PATHS.database).parent / ".secret_key"
     if key_file.exists():
         stored = key_file.read_text().strip()
         if stored:
