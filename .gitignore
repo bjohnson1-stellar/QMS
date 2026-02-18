@@ -38,3 +38,7 @@ directus/
 
 # Windows artifacts
 NUL
+
+# Service scripts (machine-specific paths)
+install-service.bat
+uninstall-service.bat
