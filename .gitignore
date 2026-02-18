@@ -29,9 +29,11 @@ venv/
 # Claude Code / MCP (machine-specific)
 .claude/
 .mcp.json
+.playwright-mcp/
 
 # Large binary files
 *.pdf
+*.png
 
 # Directus (separate CMS installation)
 directus/
@@ -42,3 +44,4 @@ NUL
 # Service scripts (machine-specific paths)
 install-service.bat
 uninstall-service.bat
+run_service.py
