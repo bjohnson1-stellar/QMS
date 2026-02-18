@@ -1704,6 +1704,9 @@ tr:hover {
 .status-active { background: #ecfdf5; color: #047857; }
 .status-expired { background: #fef2f2; color: #b91c1c; }
 .status-pending { background: #fef9ec; color: #b45309; }
+.status-inactive { background: #f1f5f9; color: #64748b; }
+.status-terminated { background: #fef2f2; color: #b91c1c; }
+.status-archived { background: #f5f3ff; color: #7c3aed; }
 
 /* Qualification comparison table */
 .qual-table {

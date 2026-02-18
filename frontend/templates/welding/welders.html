@@ -35,6 +35,7 @@
             <option value="active" selected>Active</option>
             <option value="inactive">Inactive</option>
             <option value="terminated">Terminated</option>
+            <option value="archived">Archived</option>
         </select>
     </div>
 
@@ -69,7 +70,8 @@ function updateStats() {
         return d >= now && d <= in30;
     });
 
-    document.getElementById('statTotal').textContent = allData.length;
+    const nonArchived = allData.filter(r => r.status !== 'archived');
+    document.getElementById('statTotal').textContent = nonArchived.length;
     document.getElementById('statActive').textContent = active.length;
     document.getElementById('statQualified').textContent = withWpqs.length;
     document.getElementById('statExpiring').textContent = expiring.length;
