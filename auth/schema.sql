@@ -27,3 +27,14 @@ CREATE TABLE IF NOT EXISTS user_module_access (
 );
 
 CREATE INDEX IF NOT EXISTS idx_uma_user ON user_module_access(user_id);
+
+-- Business unit access: controls which BUs a non-admin user can see in projects
+-- No entries = unrestricted (sees all BUs). Admins always bypass.
+CREATE TABLE IF NOT EXISTS user_business_units (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    business_unit_id  INTEGER NOT NULL REFERENCES business_units(id) ON DELETE CASCADE,
+    UNIQUE(user_id, business_unit_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ubu_user ON user_business_units(user_id);

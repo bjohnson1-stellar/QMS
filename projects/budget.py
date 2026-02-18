@@ -95,20 +95,66 @@ def calculate_working_days(year: int, month: int) -> int:
 # ---------------------------------------------------------------------------
 
 
-def get_dashboard_stats(conn: Optional[sqlite3.Connection] = None) -> Dict[str, Any]:
-    """Get aggregate stats for the dashboard page."""
+def _bu_filter_clause(
+    bu_ids: Optional[List[int]], alias: str = "pa"
+) -> Tuple[str, List[int]]:
+    """Build a SQL WHERE clause fragment for BU filtering.
+
+    Returns (sql_fragment, params).  When bu_ids is None, returns empty
+    strings and no params (no filtering).
+    """
+    if not bu_ids:
+        return "", []
+    placeholders = ",".join("?" for _ in bu_ids)
+    return (
+        f" AND {alias}.business_unit_id IN ({placeholders})",
+        list(bu_ids),
+    )
+
+
+def _accessible_project_ids_sql(bu_ids: Optional[List[int]]) -> Tuple[str, List[int]]:
+    """Return a subquery + params that limits to projects with allocations in bu_ids.
+
+    When bu_ids is None, returns a no-op (always true) condition.
+    """
+    if not bu_ids:
+        return "", []
+    placeholders = ",".join("?" for _ in bu_ids)
+    return (
+        f" AND p.id IN (SELECT project_id FROM project_allocations WHERE business_unit_id IN ({placeholders}))",
+        list(bu_ids),
+    )
+
+
+def get_dashboard_stats(
+    conn: Optional[sqlite3.Connection] = None,
+    *,
+    bu_ids: Optional[List[int]] = None,
+) -> Dict[str, Any]:
+    """Get aggregate stats for the dashboard page.
+
+    When bu_ids is provided, only counts projects that have allocations
+    in the given business units.
+    """
     def _query(c: sqlite3.Connection) -> Dict[str, Any]:
+        proj_filter, proj_params = _accessible_project_ids_sql(bu_ids)
+
         active = c.execute(
-            "SELECT COUNT(*) AS n FROM projects WHERE stage = 'Course of Construction'"
+            f"SELECT COUNT(*) AS n FROM projects p WHERE stage = 'Course of Construction'{proj_filter}",
+            proj_params,
         ).fetchone()["n"]
 
         budget_row = c.execute(
-            "SELECT COALESCE(SUM(total_budget), 0) AS total FROM project_budgets"
+            f"SELECT COALESCE(SUM(b.total_budget), 0) AS total FROM project_budgets b "
+            f"JOIN projects p ON p.id = b.project_id WHERE 1=1{proj_filter}",
+            proj_params,
         ).fetchone()
         total_budget = budget_row["total"]
 
         spent_row = c.execute(
-            "SELECT COALESCE(SUM(amount), 0) AS spent FROM project_transactions"
+            f"SELECT COALESCE(SUM(t.amount), 0) AS spent FROM project_transactions t "
+            f"JOIN projects p ON p.id = t.project_id WHERE 1=1{proj_filter}",
+            proj_params,
         ).fetchone()
         total_spent = spent_row["spent"]
 
@@ -132,9 +178,16 @@ def get_dashboard_stats(conn: Optional[sqlite3.Connection] = None) -> Dict[str, 
 
 def list_projects_with_budgets(
     conn: Optional[sqlite3.Connection] = None,
+    *,
+    bu_ids: Optional[List[int]] = None,
 ) -> List[Dict[str, Any]]:
-    """List all projects with budget, spent totals, and allocation count."""
-    sql = """
+    """List all projects with budget, spent totals, and allocation count.
+
+    When bu_ids is provided, only returns projects that have allocations
+    in the given business units.
+    """
+    proj_filter, proj_params = _accessible_project_ids_sql(bu_ids)
+    sql = f"""
         SELECT p.*,
                b.total_budget,
                b.weight_adjustment,
@@ -150,11 +203,12 @@ def list_projects_with_budgets(
             SELECT project_id, COUNT(*) AS count
             FROM project_allocations GROUP BY project_id
         ) alloc ON alloc.project_id = p.id
+        WHERE 1=1{proj_filter}
         ORDER BY p.created_at DESC
     """
 
     def _run(c: sqlite3.Connection):
-        return [dict(r) for r in c.execute(sql).fetchall()]
+        return [dict(r) for r in c.execute(sql, proj_params).fetchall()]
 
     if conn:
         return _run(conn)
@@ -447,9 +501,18 @@ def _insert_allocation(
 
 def list_projects_hierarchical(
     conn: Optional[sqlite3.Connection] = None,
+    *,
+    bu_ids: Optional[List[int]] = None,
 ) -> List[Dict[str, Any]]:
-    """List projects with nested job (allocation) arrays for the hierarchical view."""
-    proj_sql = """
+    """List projects with nested job (allocation) arrays for the hierarchical view.
+
+    When bu_ids is provided, only returns projects that have allocations
+    in the given business units, and only includes those allocations.
+    """
+    proj_filter, proj_params = _accessible_project_ids_sql(bu_ids)
+    bu_filter, bu_params = _bu_filter_clause(bu_ids)
+
+    proj_sql = f"""
         SELECT p.*,
                COALESCE(b.total_budget, 0) AS total_budget,
                COALESCE(b.weight_adjustment, 1.0) AS weight_adjustment,
@@ -460,21 +523,23 @@ def list_projects_hierarchical(
             SELECT project_id, SUM(amount) AS total
             FROM project_transactions GROUP BY project_id
         ) spent ON spent.project_id = p.id
+        WHERE 1=1{proj_filter}
         ORDER BY p.created_at DESC
     """
-    alloc_sql = """
+    alloc_sql = f"""
         SELECT pa.*, bu.code AS bu_code, bu.name AS bu_name,
                COALESCE(j.scope_name, pa.scope_name) AS scope_name,
                COALESCE(j.pm, pa.pm) AS pm
         FROM project_allocations pa
         JOIN business_units bu ON bu.id = pa.business_unit_id
         LEFT JOIN jobs j ON j.id = pa.job_id
+        WHERE 1=1{bu_filter}
         ORDER BY bu.code, pa.subjob
     """
 
     def _run(c: sqlite3.Connection):
-        projects = [dict(r) for r in c.execute(proj_sql).fetchall()]
-        allocs = [dict(r) for r in c.execute(alloc_sql).fetchall()]
+        projects = [dict(r) for r in c.execute(proj_sql, proj_params).fetchall()]
+        allocs = [dict(r) for r in c.execute(alloc_sql, bu_params).fetchall()]
 
         # Group allocations by project_id
         alloc_map: Dict[int, List[Dict[str, Any]]] = {}
@@ -656,9 +721,20 @@ def sync_budget_rollup(conn: sqlite3.Connection, project_id: int) -> None:
 
 def list_business_units(
     conn: Optional[sqlite3.Connection] = None,
+    *,
+    bu_ids: Optional[List[int]] = None,
 ) -> List[Dict[str, Any]]:
-    """List all business units ordered by code."""
+    """List business units ordered by code.
+
+    When bu_ids is provided, only returns those specific business units.
+    """
     def _run(c: sqlite3.Connection):
+        if bu_ids:
+            placeholders = ",".join("?" for _ in bu_ids)
+            return [dict(r) for r in c.execute(
+                f"SELECT * FROM business_units WHERE id IN ({placeholders}) ORDER BY code",
+                bu_ids,
+            ).fetchall()]
         return [dict(r) for r in c.execute(
             "SELECT * FROM business_units ORDER BY code"
         ).fetchall()]
@@ -714,8 +790,13 @@ def list_transactions(
     *,
     project_id: Optional[int] = None,
     transaction_type: Optional[str] = None,
+    bu_ids: Optional[List[int]] = None,
 ) -> List[Dict[str, Any]]:
-    """List transactions with optional filters."""
+    """List transactions with optional filters.
+
+    When bu_ids is provided, only returns transactions for projects that
+    have allocations in the given business units.
+    """
     sql = """
         SELECT t.*, p.name AS project_name, p.number AS project_code
         FROM project_transactions t
@@ -729,6 +810,12 @@ def list_transactions(
     if transaction_type:
         conditions.append("t.transaction_type = ?")
         params.append(transaction_type)
+    if bu_ids:
+        placeholders = ",".join("?" for _ in bu_ids)
+        conditions.append(
+            f"p.id IN (SELECT project_id FROM project_allocations WHERE business_unit_id IN ({placeholders}))"
+        )
+        params.extend(bu_ids)
     if conditions:
         sql += " WHERE " + " AND ".join(conditions)
     sql += " ORDER BY t.transaction_date DESC, t.created_at DESC"

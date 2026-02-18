@@ -6,7 +6,7 @@ Thin delivery layer: all business logic lives in projects.budget.
 
 import sqlite3
 
-from flask import Blueprint, jsonify, request, render_template, send_file
+from flask import Blueprint, jsonify, request, render_template, send_file, session
 
 from qms.core import get_db
 from qms.projects import budget
@@ -14,6 +14,18 @@ from qms.projects.budget import VALID_STAGES
 from qms.projects import timecard
 
 bp = Blueprint("projects", __name__, url_prefix="/projects")
+
+
+def _user_bu_ids():
+    """Extract the current user's BU filter list from the session.
+
+    Returns None (unrestricted) for admins or users with no BU assignments.
+    Returns a list of BU IDs when the user is restricted to specific BUs.
+    """
+    user = session.get("user", {})
+    if user.get("role") == "admin":
+        return None
+    return user.get("business_units")  # None = unrestricted, list = restricted
 
 
 # ---------------------------------------------------------------------------
@@ -24,7 +36,7 @@ bp = Blueprint("projects", __name__, url_prefix="/projects")
 @bp.route("/")
 def dashboard():
     with get_db(readonly=True) as conn:
-        stats = budget.get_dashboard_stats(conn)
+        stats = budget.get_dashboard_stats(conn, bu_ids=_user_bu_ids())
     return render_template("projects/dashboard.html", stats=stats, stages=VALID_STAGES)
 
 
@@ -55,7 +67,7 @@ def projections_page():
 
 @bp.route("/api/projects", methods=["GET"])
 def api_list_projects():
-    return jsonify(budget.list_projects_with_budgets())
+    return jsonify(budget.list_projects_with_budgets(bu_ids=_user_bu_ids()))
 
 
 @bp.route("/api/projects", methods=["POST"])
@@ -201,7 +213,7 @@ def api_delete_allocation(pid, aid):
 
 @bp.route("/api/projects/hierarchical", methods=["GET"])
 def api_list_projects_hierarchical():
-    return jsonify(budget.list_projects_hierarchical())
+    return jsonify(budget.list_projects_hierarchical(bu_ids=_user_bu_ids()))
 
 
 @bp.route("/api/allocations/<int:aid>/weight", methods=["PATCH"])
@@ -293,7 +305,7 @@ def api_bulk_update_allocations():
 
 @bp.route("/api/business-units", methods=["GET"])
 def api_list_bus():
-    return jsonify(budget.list_business_units())
+    return jsonify(budget.list_business_units(bu_ids=_user_bu_ids()))
 
 
 @bp.route("/api/business-units", methods=["POST"])
@@ -357,7 +369,7 @@ def api_delete_bu(bu_id):
 def api_list_transactions():
     pid = request.args.get("project_id", type=int)
     ttype = request.args.get("type")
-    return jsonify(budget.list_transactions(project_id=pid, transaction_type=ttype))
+    return jsonify(budget.list_transactions(project_id=pid, transaction_type=ttype, bu_ids=_user_bu_ids()))
 
 
 @bp.route("/api/transactions/<int:txn_id>", methods=["GET"])

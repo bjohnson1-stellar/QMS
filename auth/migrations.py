@@ -19,6 +19,7 @@ def run_auth_migrations(conn: sqlite3.Connection) -> None:
     _create_module_access_table(conn)
     _drop_module_check_constraint(conn)
     _drop_entra_oid(conn)
+    _create_business_unit_access_table(conn)
 
 
 def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
@@ -130,6 +131,27 @@ def _drop_module_check_constraint(conn: sqlite3.Connection) -> None:
         "CREATE INDEX IF NOT EXISTS idx_uma_user ON user_module_access(user_id)"
     )
     conn.commit()
+
+
+def _create_business_unit_access_table(conn: sqlite3.Connection) -> None:
+    """Create user_business_units table if it doesn't exist."""
+    existing = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='user_business_units'"
+    ).fetchone()
+    if not existing:
+        logger.info("Creating user_business_units table")
+        conn.execute("""
+            CREATE TABLE user_business_units (
+                id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                business_unit_id  INTEGER NOT NULL REFERENCES business_units(id) ON DELETE CASCADE,
+                UNIQUE(user_id, business_unit_id)
+            )
+        """)
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_ubu_user ON user_business_units(user_id)"
+        )
+        conn.commit()
 
 
 def _drop_entra_oid(conn: sqlite3.Connection) -> None:

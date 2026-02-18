@@ -62,6 +62,7 @@ def login_page():
             "role": "admin",
             "is_active": True,
             "must_change_password": False,
+            "business_units": None,  # admin = unrestricted
         }
         return redirect(url_for("index"))
 
@@ -87,7 +88,7 @@ def login_page():
         )
 
     from qms.core.db import get_db
-    from qms.auth.db import authenticate, get_user_modules, log_auth_event
+    from qms.auth.db import authenticate, get_user_modules, get_user_business_units, log_auth_event
 
     with get_db() as conn:
         user = authenticate(conn, email, password)
@@ -96,11 +97,12 @@ def login_page():
             log_auth_event(conn, "login_failure", email, "anonymous", {"ip": client_ip})
             return render_template("auth/login.html", error="Invalid email or password.")
         modules = get_user_modules(conn, user["id"])
+        bu_ids = get_user_business_units(conn, user["id"])
         log_auth_event(conn, "login_success", user["id"], user["email"], {"ip": client_ip})
 
     limiter.reset(client_ip, email)
 
-    # Store session (include module access map)
+    # Store session (include module access map + BU restrictions)
     session["user"] = {
         "id": user["id"],
         "email": user["email"],
@@ -109,6 +111,7 @@ def login_page():
         "is_active": bool(user["is_active"]),
         "must_change_password": bool(user.get("must_change_password", False)),
         "modules": modules,
+        "business_units": bu_ids or None,  # None = unrestricted, list = restricted
     }
 
     # Force password change if required
@@ -361,3 +364,40 @@ def delete_user_module_access(user_id: int, module: str):
         )
 
     return jsonify({"ok": True})
+
+
+# ── Business Unit Access (admin only) ────────────────────────────────────────
+
+@bp.route("/users/<int:user_id>/business-units")
+@role_required("admin")
+def get_user_bu_access(user_id: int):
+    """Get a user's business unit access list."""
+    from qms.core.db import get_db
+    from qms.auth.db import get_user_business_units
+
+    with get_db(readonly=True) as conn:
+        bu_ids = get_user_business_units(conn, user_id)
+    return jsonify(bu_ids)
+
+
+@bp.route("/users/<int:user_id>/business-units", methods=["POST"])
+@role_required("admin")
+def set_user_bu_access(user_id: int):
+    """Set a user's business unit access (replace all)."""
+    data = request.get_json(silent=True) or {}
+    bu_ids = data.get("business_unit_ids", [])
+
+    if not isinstance(bu_ids, list):
+        abort(400, "business_unit_ids must be a list")
+
+    from qms.core.db import get_db
+    from qms.auth.db import set_user_business_units_bulk, log_auth_event
+
+    with get_db() as conn:
+        set_user_business_units_bulk(conn, user_id, bu_ids)
+        log_auth_event(
+            conn, "bu_access_update", user_id, _current_email(),
+            {"business_unit_ids": bu_ids},
+        )
+
+    return jsonify({"ok": True, "business_unit_ids": bu_ids})

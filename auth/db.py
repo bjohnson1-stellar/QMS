@@ -260,3 +260,60 @@ def has_module_access(
         return False
 
     return role_rank.get(row["role"], 0) >= required
+
+
+# ── Business Unit Access ─────────────────────────────────────────────────────
+
+
+def get_user_business_units(conn: sqlite3.Connection, user_id: int) -> list[int]:
+    """
+    Get a user's allowed business unit IDs.
+
+    Returns empty list if no BU restrictions are set (user sees all BUs).
+    """
+    rows = conn.execute(
+        "SELECT business_unit_id FROM user_business_units WHERE user_id = ?",
+        (user_id,),
+    ).fetchall()
+    return [r["business_unit_id"] for r in rows]
+
+
+def grant_bu_access(
+    conn: sqlite3.Connection, user_id: int, business_unit_id: int
+) -> bool:
+    """Grant a user access to a business unit. Returns True on success."""
+    conn.execute(
+        """INSERT INTO user_business_units (user_id, business_unit_id)
+           VALUES (?, ?)
+           ON CONFLICT(user_id, business_unit_id) DO NOTHING""",
+        (user_id, business_unit_id),
+    )
+    conn.commit()
+    return True
+
+
+def revoke_bu_access(
+    conn: sqlite3.Connection, user_id: int, business_unit_id: int
+) -> bool:
+    """Revoke a user's access to a business unit. Returns True if a row was deleted."""
+    cursor = conn.execute(
+        "DELETE FROM user_business_units WHERE user_id = ? AND business_unit_id = ?",
+        (user_id, business_unit_id),
+    )
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def set_user_business_units_bulk(
+    conn: sqlite3.Connection, user_id: int, bu_ids: list[int]
+) -> None:
+    """Replace a user's BU access with the given list of BU IDs."""
+    conn.execute(
+        "DELETE FROM user_business_units WHERE user_id = ?", (user_id,)
+    )
+    for bu_id in bu_ids:
+        conn.execute(
+            "INSERT INTO user_business_units (user_id, business_unit_id) VALUES (?, ?)",
+            (user_id, bu_id),
+        )
+    conn.commit()
