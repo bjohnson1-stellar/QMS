@@ -1,61 +1,77 @@
 """
-User CRUD operations for QMS auth.
+User CRUD operations for QMS auth — local email + password.
 
 Pure business logic — no Flask imports.
 """
 
 import sqlite3
 
+from werkzeug.security import check_password_hash, generate_password_hash
 
-def upsert_user(
+
+def create_user(
     conn: sqlite3.Connection,
-    entra_oid: str,
     email: str,
     display_name: str,
-    default_role: str = "user",
+    password: str,
+    role: str = "user",
+    must_change_password: bool = True,
 ) -> dict:
     """
-    Insert or update a user from Entra ID claims.
+    Create a new local user with a hashed password.
 
-    On first login: creates user with default_role.
-    On subsequent logins: updates email/display_name and last_login,
-    but preserves the locally-assigned role.
+    Returns the created user dict.
+    Raises sqlite3.IntegrityError if email already exists.
     """
-    existing = conn.execute(
-        "SELECT id, role, is_active FROM users WHERE entra_oid = ?",
-        (entra_oid,),
-    ).fetchone()
+    if role not in ("admin", "user", "viewer"):
+        raise ValueError(f"Invalid role: {role}")
 
-    if existing:
-        conn.execute(
-            """UPDATE users
-               SET email = ?, display_name = ?, last_login = datetime('now')
-               WHERE entra_oid = ?""",
-            (email, display_name, entra_oid),
-        )
-        conn.commit()
-        user_id = existing["id"]
-        role = existing["role"]
-        is_active = existing["is_active"]
-    else:
-        cursor = conn.execute(
-            """INSERT INTO users (entra_oid, email, display_name, role)
-               VALUES (?, ?, ?, ?)""",
-            (entra_oid, email, display_name, default_role),
-        )
-        conn.commit()
-        user_id = cursor.lastrowid
-        role = default_role
-        is_active = 1
+    password_hash = generate_password_hash(password)
+    cursor = conn.execute(
+        """INSERT INTO users (email, display_name, password_hash, role, must_change_password)
+           VALUES (?, ?, ?, ?, ?)""",
+        (email, display_name, password_hash, role, int(must_change_password)),
+    )
+    conn.commit()
 
     return {
-        "id": user_id,
-        "entra_oid": entra_oid,
+        "id": cursor.lastrowid,
         "email": email,
         "display_name": display_name,
         "role": role,
-        "is_active": bool(is_active),
+        "is_active": True,
+        "must_change_password": must_change_password,
     }
+
+
+def authenticate(conn: sqlite3.Connection, email: str, password: str) -> dict | None:
+    """
+    Validate email + password. Returns user dict on success, None on failure.
+
+    Also updates last_login timestamp on success.
+    """
+    row = conn.execute(
+        "SELECT * FROM users WHERE email = ? AND is_active = 1",
+        (email,),
+    ).fetchone()
+
+    if not row:
+        return None
+
+    if not row["password_hash"]:
+        return None
+
+    if not check_password_hash(row["password_hash"], password):
+        return None
+
+    # Update last_login
+    conn.execute(
+        "UPDATE users SET last_login = datetime('now') WHERE id = ?",
+        (row["id"],),
+    )
+    conn.commit()
+
+    return dict(row)
 
 
 def get_user(conn: sqlite3.Connection, user_id: int) -> dict | None:
@@ -64,20 +80,65 @@ def get_user(conn: sqlite3.Connection, user_id: int) -> dict | None:
     return dict(row) if row else None
 
 
-def get_user_by_oid(conn: sqlite3.Connection, entra_oid: str) -> dict | None:
-    """Fetch a user by Entra Object ID."""
-    row = conn.execute(
-        "SELECT * FROM users WHERE entra_oid = ?", (entra_oid,)
-    ).fetchone()
+def get_user_by_email(conn: sqlite3.Connection, email: str) -> dict | None:
+    """Fetch a user by email address."""
+    row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
     return dict(row) if row else None
 
 
 def list_users(conn: sqlite3.Connection) -> list[dict]:
     """List all users, ordered by display name."""
     rows = conn.execute(
-        "SELECT * FROM users ORDER BY display_name"
+        "SELECT id, email, display_name, role, is_active, must_change_password, "
+        "first_login, last_login FROM users ORDER BY display_name"
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+def set_password(
+    conn: sqlite3.Connection,
+    user_id: int,
+    new_password: str,
+    must_change: bool = False,
+) -> bool:
+    """Set a user's password (admin reset). Returns True if user was found."""
+    password_hash = generate_password_hash(new_password)
+    cursor = conn.execute(
+        "UPDATE users SET password_hash = ?, must_change_password = ? WHERE id = ?",
+        (password_hash, int(must_change), user_id),
+    )
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def change_password(
+    conn: sqlite3.Connection,
+    user_id: int,
+    current_password: str,
+    new_password: str,
+) -> tuple[bool, str]:
+    """
+    Change a user's own password (requires current password).
+
+    Returns (success, message).
+    """
+    row = conn.execute(
+        "SELECT password_hash FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+
+    if not row:
+        return False, "User not found"
+
+    if not row["password_hash"] or not check_password_hash(row["password_hash"], current_password):
+        return False, "Current password is incorrect"
+
+    password_hash = generate_password_hash(new_password)
+    conn.execute(
+        "UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?",
+        (password_hash, user_id),
+    )
+    conn.commit()
+    return True, "Password changed successfully"
 
 
 def update_role(conn: sqlite3.Connection, user_id: int, role: str) -> bool:

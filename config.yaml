@@ -435,16 +435,11 @@ welding:
 # =============================================================================
 
 auth:
-  provider: "entra_id"
-  dev_bypass: false                   # Set false in production
+  provider: "local"
+  dev_bypass: false                   # Set true for auto-admin without login
   secret_key: null                    # Set via QMS_SECRET_KEY env var or here
   session_lifetime_minutes: 480       # 8 hours
-  default_role: "admin"              # Role assigned on first login
-  entra:
-    tenant_id: "431932ba-702e-4eaf-8ff4-966b8fb29b22"
-    client_id: "1fc90085-23f8-47e4-b4bc-b193e046ba0b"
-    client_secret: "BhI8Q~HKDvU55YQ_Nji-U~TB.dDB0BBL_Bxdchy"
-    # redirect_uri is auto-built from request URL: /auth/callback
+  default_role: "admin"              # Role assigned to new users
 
 # =============================================================================
 # BRANDING & THEMING

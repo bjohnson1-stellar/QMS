@@ -1,5 +1,5 @@
 """
-QMS Authentication Module — Microsoft Entra ID SSO with local role management.
+QMS Authentication Module — local email + password with session-based authorization.
 """
 
 from qms.auth.decorators import login_required, role_required

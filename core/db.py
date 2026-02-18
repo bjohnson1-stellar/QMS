@@ -109,6 +109,14 @@ def migrate_all():
     try:
         from qms.projects.migrations import run_all_migrations
         run_all_migrations()
-        logger.info("Incremental migrations applied")
+        logger.info("Project migrations applied")
     except Exception as exc:
-        logger.warning("Migration step failed (non-fatal): %s", exc)
+        logger.warning("Project migration step failed (non-fatal): %s", exc)
+
+    try:
+        from qms.auth.migrations import run_auth_migrations
+        with get_db() as auth_conn:
+            run_auth_migrations(auth_conn)
+        logger.info("Auth migrations applied")
+    except Exception as exc:
+        logger.warning("Auth migration step failed (non-fatal): %s", exc)

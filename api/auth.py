@@ -1,14 +1,17 @@
 """
-Auth Blueprint — login/callback/logout + user management API.
+Auth Blueprint — local email + password authentication + user management.
 
 Routes:
-    GET  /auth/login     → Redirect to Entra ID (or dev bypass)
-    GET  /auth/callback  → Handle Entra ID redirect
-    GET  /auth/logout    → Clear session, redirect to Entra logout
-    GET  /auth/me        → JSON: current user info
-    GET  /auth/users     → JSON: all users (admin only)
+    GET  /auth/login            → Show login form (or dev bypass)
+    POST /auth/login            → Validate email + password, create session
+    GET  /auth/logout           → Clear session, redirect to login
+    GET  /auth/me               → JSON: current user info
+    GET+POST /auth/change-password → Change own password
+    GET  /auth/users            → JSON: all users (admin only)
+    POST /auth/users/create     → Create user account (admin only)
     POST /auth/users/<id>/role  → Update user role (admin only)
     POST /auth/users/<id>/active → Toggle user active status (admin only)
+    POST /auth/users/<id>/reset-password → Reset user password (admin only)
 """
 
 from flask import (
@@ -16,6 +19,7 @@ from flask import (
     abort,
     jsonify,
     redirect,
+    render_template,
     request,
     session,
     url_for,
@@ -36,99 +40,57 @@ def _is_dev_bypass():
     return _get_auth_config().get("dev_bypass", False)
 
 
-# ── Login Page ───────────────────────────────────────────────────────────────
+# ── Login ────────────────────────────────────────────────────────────────────
 
-@bp.route("/login")
+@bp.route("/login", methods=["GET", "POST"])
 def login_page():
-    """Show login page, or auto-login in dev bypass mode."""
+    """GET: show login form. POST: validate credentials."""
     auth_cfg = _get_auth_config()
 
+    # Dev bypass — auto-create admin session
     if auth_cfg.get("dev_bypass"):
-        # Auto-create a dev admin session
         session["user"] = {
             "id": 0,
-            "entra_oid": "dev-bypass",
             "email": "dev@localhost",
             "display_name": "Dev User",
             "role": "admin",
             "is_active": True,
+            "must_change_password": False,
         }
         return redirect(url_for("index"))
 
-    from flask import render_template
-    return render_template("auth/login.html", error=request.args.get("error"))
+    if request.method == "GET":
+        return render_template("auth/login.html", error=None)
 
+    # POST — validate email + password
+    email = (request.form.get("email") or "").strip().lower()
+    password = request.form.get("password") or ""
 
-# ── Login Start ──────────────────────────────────────────────────────────────
+    if not email or not password:
+        return render_template("auth/login.html", error="Email and password are required.")
 
-@bp.route("/login/start")
-def login():
-    """Initiate the real Entra ID OAuth2 flow."""
-    auth_cfg = _get_auth_config()
-
-    if auth_cfg.get("dev_bypass"):
-        return redirect(url_for("auth.login_page"))
-
-    from qms.auth.entra import build_auth_url
-
-    entra_cfg = auth_cfg.get("entra", {})
-    redirect_uri = url_for("auth.callback", _external=True)
-    flow = build_auth_url(entra_cfg, redirect_uri)
-
-    # Cache the flow in session for the callback
-    session["auth_flow"] = flow
-
-    return redirect(flow["auth_uri"])
-
-
-# ── Callback ─────────────────────────────────────────────────────────────────
-
-@bp.route("/callback")
-def callback():
-    """Handle Entra ID redirect after user authenticates."""
-    auth_cfg = _get_auth_config()
-    entra_cfg = auth_cfg.get("entra", {})
-
-    auth_flow = session.pop("auth_flow", None)
-    if not auth_flow:
-        return redirect(url_for("auth.login_page"))
-
-    from qms.auth.entra import complete_auth_flow, extract_claims
-
-    result = complete_auth_flow(entra_cfg, auth_flow, request.args)
-    if not result:
-        abort(401, "Authentication failed")
-
-    claims = extract_claims(result)
-    if not claims["oid"]:
-        abort(401, "Missing user identifier from Entra ID")
-
-    # Upsert user in local DB
     from qms.core.db import get_db
-    from qms.auth.db import upsert_user
+    from qms.auth.db import authenticate
 
-    default_role = auth_cfg.get("default_role", "user")
     with get_db() as conn:
-        user = upsert_user(
-            conn,
-            entra_oid=claims["oid"],
-            email=claims["email"],
-            display_name=claims["display_name"],
-            default_role=default_role,
-        )
+        user = authenticate(conn, email, password)
 
-    if not user["is_active"]:
-        abort(403, "Account deactivated. Contact an administrator.")
+    if not user:
+        return render_template("auth/login.html", error="Invalid email or password.")
 
-    # Store minimal user info in session
+    # Store session
     session["user"] = {
         "id": user["id"],
-        "entra_oid": user["entra_oid"],
         "email": user["email"],
         "display_name": user["display_name"],
         "role": user["role"],
-        "is_active": user["is_active"],
+        "is_active": bool(user["is_active"]),
+        "must_change_password": bool(user.get("must_change_password", False)),
     }
+
+    # Force password change if required
+    if user.get("must_change_password"):
+        return redirect(url_for("auth.change_password"))
 
     return redirect(url_for("index"))
 
@@ -137,19 +99,9 @@ def callback():
 
 @bp.route("/logout")
 def logout():
-    """Clear session and redirect to Entra logout (or home if dev bypass)."""
-    auth_cfg = _get_auth_config()
+    """Clear session and redirect to login."""
     session.clear()
-
-    if auth_cfg.get("dev_bypass"):
-        return redirect(url_for("auth.login_page"))
-
-    from qms.auth.entra import build_logout_url
-
-    entra_cfg = auth_cfg.get("entra", {})
-    post_logout_uri = url_for("auth.login_page", _external=True)
-    logout_url = build_logout_url(entra_cfg["tenant_id"], post_logout_uri)
-    return redirect(logout_url)
+    return redirect(url_for("auth.login_page"))
 
 
 # ── Current User Info ────────────────────────────────────────────────────────
@@ -159,6 +111,59 @@ def logout():
 def me():
     """Return current user info as JSON."""
     return jsonify(session["user"])
+
+
+# ── Change Password ──────────────────────────────────────────────────────────
+
+@bp.route("/change-password", methods=["GET", "POST"])
+@login_required
+def change_password():
+    """Change the current user's password."""
+    if request.method == "GET":
+        return render_template("auth/change_password.html", error=None, success=None)
+
+    current_password = request.form.get("current_password") or ""
+    new_password = request.form.get("new_password") or ""
+    confirm_password = request.form.get("confirm_password") or ""
+
+    if not current_password or not new_password:
+        return render_template(
+            "auth/change_password.html",
+            error="All fields are required.",
+            success=None,
+        )
+
+    if len(new_password) < 8:
+        return render_template(
+            "auth/change_password.html",
+            error="New password must be at least 8 characters.",
+            success=None,
+        )
+
+    if new_password != confirm_password:
+        return render_template(
+            "auth/change_password.html",
+            error="New passwords do not match.",
+            success=None,
+        )
+
+    from qms.core.db import get_db
+    from qms.auth.db import change_password as do_change
+
+    user_id = session["user"]["id"]
+    with get_db() as conn:
+        ok, msg = do_change(conn, user_id, current_password, new_password)
+
+    if not ok:
+        return render_template("auth/change_password.html", error=msg, success=None)
+
+    # Clear the must_change flag in session
+    session["user"]["must_change_password"] = False
+    return render_template(
+        "auth/change_password.html",
+        error=None,
+        success="Password changed successfully.",
+    )
 
 
 # ── User Management (admin only) ────────────────────────────────────────────
@@ -173,6 +178,36 @@ def users_list():
     with get_db(readonly=True) as conn:
         users = list_users(conn)
     return jsonify(users)
+
+
+@bp.route("/users/create", methods=["POST"])
+@role_required("admin")
+def create_user():
+    """Create a new user account."""
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    display_name = (data.get("display_name") or "").strip()
+    password = data.get("password") or ""
+    role = data.get("role", "user")
+
+    if not email or not display_name or not password:
+        abort(400, "email, display_name, and password are required")
+    if role not in ("admin", "user", "viewer"):
+        abort(400, "Invalid role")
+    if len(password) < 8:
+        abort(400, "Password must be at least 8 characters")
+
+    from qms.core.db import get_db
+    from qms.auth.db import create_user as do_create
+    import sqlite3
+
+    try:
+        with get_db() as conn:
+            user = do_create(conn, email, display_name, password, role)
+    except sqlite3.IntegrityError:
+        abort(409, "A user with that email already exists")
+
+    return jsonify(user), 201
 
 
 @bp.route("/users/<int:user_id>/role", methods=["POST"])
@@ -209,3 +244,23 @@ def toggle_user_active(user_id: int):
             abort(404, "User not found")
 
     return jsonify({"ok": True, "is_active": is_active})
+
+
+@bp.route("/users/<int:user_id>/reset-password", methods=["POST"])
+@role_required("admin")
+def reset_user_password(user_id: int):
+    """Reset a user's password (admin action)."""
+    data = request.get_json(silent=True) or {}
+    new_password = data.get("password") or ""
+
+    if not new_password or len(new_password) < 8:
+        abort(400, "Password must be at least 8 characters")
+
+    from qms.core.db import get_db
+    from qms.auth.db import set_password
+
+    with get_db() as conn:
+        if not set_password(conn, user_id, new_password, must_change=True):
+            abort(404, "User not found")
+
+    return jsonify({"ok": True, "must_change_password": True})
