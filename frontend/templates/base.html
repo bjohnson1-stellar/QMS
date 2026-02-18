@@ -58,14 +58,22 @@
             <span class="top-bar-tagline">{{ theme.app_tagline }}</span>
         </div>
         <div class="top-bar-modules">
+            {% if 'projects' in accessible_modules %}
             <a href="{{ url_for('projects.dashboard') }}"
                class="module-tab {{ 'active' if ns.module == 'projects' }}">Projects</a>
+            {% endif %}
+            {% if 'welding' in accessible_modules %}
             <a href="{{ url_for('welding.dashboard') }}"
                class="module-tab {{ 'active' if ns.module == 'welding' }}">Welding</a>
+            {% endif %}
+            {% if 'pipeline' in accessible_modules %}
             <a href="{{ url_for('pipeline.intake_dashboard') }}"
                class="module-tab {{ 'active' if ns.module == 'pipeline' }}">Pipeline</a>
+            {% endif %}
+            {% if 'automation' in accessible_modules %}
             <a href="{{ url_for('automation.preview') }}"
                class="module-tab {{ 'active' if ns.module == 'automation' }}">Automation</a>
+            {% endif %}
         </div>
         <div class="top-bar-actions">
             <a href="{{ url_for('settings.settings_page') }}"

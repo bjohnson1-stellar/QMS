@@ -159,3 +159,79 @@ def set_active(conn: sqlite3.Connection, user_id: int, is_active: bool) -> bool:
     )
     conn.commit()
     return cursor.rowcount > 0
+
+
+# ── Module Access ────────────────────────────────────────────────────────────
+
+VALID_MODULES = ("projects", "welding", "pipeline", "automation")
+VALID_MODULE_ROLES = ("admin", "editor", "viewer")
+
+
+def get_user_modules(conn: sqlite3.Connection, user_id: int) -> dict[str, str]:
+    """
+    Get a user's module access as {module: role}.
+
+    Returns empty dict if no module access is granted.
+    """
+    rows = conn.execute(
+        "SELECT module, role FROM user_module_access WHERE user_id = ?",
+        (user_id,),
+    ).fetchall()
+    return {r["module"]: r["role"] for r in rows}
+
+
+def grant_module_access(
+    conn: sqlite3.Connection, user_id: int, module: str, role: str = "viewer"
+) -> bool:
+    """
+    Grant or update a user's access to a module.
+
+    Returns True on success.
+    """
+    if module not in VALID_MODULES:
+        raise ValueError(f"Invalid module: {module}. Must be one of {VALID_MODULES}")
+    if role not in VALID_MODULE_ROLES:
+        raise ValueError(f"Invalid module role: {role}. Must be one of {VALID_MODULE_ROLES}")
+
+    conn.execute(
+        """INSERT INTO user_module_access (user_id, module, role)
+           VALUES (?, ?, ?)
+           ON CONFLICT(user_id, module) DO UPDATE SET role = excluded.role""",
+        (user_id, module, role),
+    )
+    conn.commit()
+    return True
+
+
+def revoke_module_access(
+    conn: sqlite3.Connection, user_id: int, module: str
+) -> bool:
+    """Revoke a user's access to a module. Returns True if a row was deleted."""
+    cursor = conn.execute(
+        "DELETE FROM user_module_access WHERE user_id = ? AND module = ?",
+        (user_id, module),
+    )
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def has_module_access(
+    conn: sqlite3.Connection, user_id: int, module: str, min_role: str = "viewer"
+) -> bool:
+    """
+    Check if a user has at least min_role access to a module.
+
+    Role hierarchy: admin > editor > viewer
+    """
+    role_rank = {"admin": 3, "editor": 2, "viewer": 1}
+    required = role_rank.get(min_role, 1)
+
+    row = conn.execute(
+        "SELECT role FROM user_module_access WHERE user_id = ? AND module = ?",
+        (user_id, module),
+    ).fetchone()
+
+    if not row:
+        return False
+
+    return role_rank.get(row["role"], 0) >= required

@@ -2,9 +2,9 @@
 Auth CLI — user management commands for bootstrapping and administration.
 
 Usage:
-    qms auth create-user    → Create a new user interactively
-    qms auth reset-password  → Reset a user's password
-    qms auth list-users      → List all user accounts
+    qms auth create-user    -> Create a new user interactively
+    qms auth reset-password  -> Reset a user's password
+    qms auth list-users      -> List all user accounts
 """
 
 import typer
@@ -73,24 +73,83 @@ def reset_password(
     typer.echo(f"Password reset for {user['display_name']}. User will be prompted to change on next login.")
 
 
+@app.command("grant-access")
+def grant_access(
+    email: str = typer.Option(..., prompt=True, help="User email address"),
+    module: str = typer.Option(..., prompt=True, help="Module: projects, welding, pipeline, automation"),
+    role: str = typer.Option("admin", help="Module role: admin, editor, or viewer"),
+):
+    """Grant a user access to a module."""
+    from qms.auth.db import VALID_MODULES, VALID_MODULE_ROLES
+
+    if module not in VALID_MODULES:
+        typer.echo(f"Invalid module: {module}. Must be one of: {', '.join(VALID_MODULES)}", err=True)
+        raise typer.Exit(1)
+    if role not in VALID_MODULE_ROLES:
+        typer.echo(f"Invalid role: {role}. Must be one of: {', '.join(VALID_MODULE_ROLES)}", err=True)
+        raise typer.Exit(1)
+
+    from qms.core.db import get_db
+    from qms.auth.db import get_user_by_email, grant_module_access
+
+    with get_db() as conn:
+        user = get_user_by_email(conn, email.strip().lower())
+        if not user:
+            typer.echo(f"No user found with email: {email}", err=True)
+            raise typer.Exit(1)
+        grant_module_access(conn, user["id"], module, role)
+
+    typer.echo(f"Granted {user['display_name']} -> {module} [{role}]")
+
+
+@app.command("revoke-access")
+def revoke_access(
+    email: str = typer.Option(..., prompt=True, help="User email address"),
+    module: str = typer.Option(..., prompt=True, help="Module to revoke"),
+):
+    """Revoke a user's access to a module."""
+    from qms.core.db import get_db
+    from qms.auth.db import get_user_by_email, revoke_module_access
+
+    with get_db() as conn:
+        user = get_user_by_email(conn, email.strip().lower())
+        if not user:
+            typer.echo(f"No user found with email: {email}", err=True)
+            raise typer.Exit(1)
+        if not revoke_module_access(conn, user["id"], module):
+            typer.echo(f"{user['display_name']} has no access to {module}.", err=True)
+            raise typer.Exit(1)
+
+    typer.echo(f"Revoked {user['display_name']} -> {module}")
+
+
 @app.command("list-users")
 def list_users_cmd():
-    """List all user accounts."""
+    """List all user accounts with module access."""
     from qms.core.db import get_db
-    from qms.auth.db import list_users
+    from qms.auth.db import list_users, get_user_modules
 
     with get_db(readonly=True) as conn:
         users = list_users(conn)
+        # Attach module access to each user
+        for u in users:
+            u["modules"] = get_user_modules(conn, u["id"])
 
     if not users:
         typer.echo("No users found. Run 'qms auth create-user' to create the first admin.")
         return
 
-    typer.echo(f"{'ID':>4}  {'Email':<30}  {'Name':<25}  {'Role':<8}  {'Active':<7}  {'Last Login'}")
-    typer.echo("-" * 100)
+    typer.echo(f"{'ID':>4}  {'Email':<30}  {'Name':<20}  {'Role':<8}  {'Active':<7}  {'Modules'}")
+    typer.echo("-" * 110)
     for u in users:
         active = "Yes" if u.get("is_active") else "No"
+        if u["role"] == "admin":
+            mod_str = "(all - global admin)"
+        elif u["modules"]:
+            mod_str = ", ".join(f"{m}:{r}" for m, r in sorted(u["modules"].items()))
+        else:
+            mod_str = "(none)"
         typer.echo(
-            f"{u['id']:>4}  {u['email']:<30}  {u['display_name']:<25}  "
-            f"{u['role']:<8}  {active:<7}  {u.get('last_login', 'never')}"
+            f"{u['id']:>4}  {u['email']:<30}  {u['display_name']:<20}  "
+            f"{u['role']:<8}  {active:<7}  {mod_str}"
         )

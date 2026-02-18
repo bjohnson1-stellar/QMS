@@ -70,15 +70,15 @@ def login_page():
         return render_template("auth/login.html", error="Email and password are required.")
 
     from qms.core.db import get_db
-    from qms.auth.db import authenticate
+    from qms.auth.db import authenticate, get_user_modules
 
     with get_db() as conn:
         user = authenticate(conn, email, password)
+        if not user:
+            return render_template("auth/login.html", error="Invalid email or password.")
+        modules = get_user_modules(conn, user["id"])
 
-    if not user:
-        return render_template("auth/login.html", error="Invalid email or password.")
-
-    # Store session
+    # Store session (include module access map)
     session["user"] = {
         "id": user["id"],
         "email": user["email"],
@@ -86,6 +86,7 @@ def login_page():
         "role": user["role"],
         "is_active": bool(user["is_active"]),
         "must_change_password": bool(user.get("must_change_password", False)),
+        "modules": modules,
     }
 
     # Force password change if required
@@ -264,3 +265,54 @@ def reset_user_password(user_id: int):
             abort(404, "User not found")
 
     return jsonify({"ok": True, "must_change_password": True})
+
+
+# ── Module Access (admin only) ──────────────────────────────────────────────
+
+@bp.route("/users/<int:user_id>/modules")
+@role_required("admin")
+def get_user_module_access(user_id: int):
+    """Get a user's module access map."""
+    from qms.core.db import get_db
+    from qms.auth.db import get_user_modules
+
+    with get_db(readonly=True) as conn:
+        modules = get_user_modules(conn, user_id)
+    return jsonify(modules)
+
+
+@bp.route("/users/<int:user_id>/modules", methods=["POST"])
+@role_required("admin")
+def set_user_module_access(user_id: int):
+    """Grant or update a user's access to a module."""
+    data = request.get_json(silent=True) or {}
+    module = data.get("module", "")
+    role = data.get("role", "viewer")
+
+    from qms.auth.db import VALID_MODULES, VALID_MODULE_ROLES
+    if module not in VALID_MODULES:
+        abort(400, f"Invalid module. Must be one of: {', '.join(VALID_MODULES)}")
+    if role not in VALID_MODULE_ROLES:
+        abort(400, f"Invalid role. Must be one of: {', '.join(VALID_MODULE_ROLES)}")
+
+    from qms.core.db import get_db
+    from qms.auth.db import grant_module_access
+
+    with get_db() as conn:
+        grant_module_access(conn, user_id, module, role)
+
+    return jsonify({"ok": True, "module": module, "role": role})
+
+
+@bp.route("/users/<int:user_id>/modules/<module>", methods=["DELETE"])
+@role_required("admin")
+def delete_user_module_access(user_id: int, module: str):
+    """Revoke a user's access to a module."""
+    from qms.core.db import get_db
+    from qms.auth.db import revoke_module_access
+
+    with get_db() as conn:
+        if not revoke_module_access(conn, user_id, module):
+            abort(404, "Module access not found")
+
+    return jsonify({"ok": True})

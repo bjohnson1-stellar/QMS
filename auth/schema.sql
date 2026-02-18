@@ -16,3 +16,16 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_entra_oid ON users(entra_oid);
+
+-- Module-level access: controls which modules a non-admin user can reach
+CREATE TABLE IF NOT EXISTS user_module_access (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    module   TEXT NOT NULL
+             CHECK (module IN ('projects', 'welding', 'pipeline', 'automation')),
+    role     TEXT NOT NULL DEFAULT 'viewer'
+             CHECK (role IN ('admin', 'editor', 'viewer')),
+    UNIQUE(user_id, module)
+);
+
+CREATE INDEX IF NOT EXISTS idx_uma_user ON user_module_access(user_id);

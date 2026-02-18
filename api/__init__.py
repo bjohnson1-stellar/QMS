@@ -41,9 +41,26 @@ def create_app() -> Flask:
     # ── Current user context processor ───────────────────────────────────
     @app.context_processor
     def inject_current_user():
-        return {"current_user": session.get("user")}
+        user = session.get("user")
+        # Build set of accessible module names for nav rendering
+        if user and user.get("role") == "admin":
+            accessible = {"projects", "welding", "pipeline", "automation", "settings"}
+        elif user:
+            accessible = set(user.get("modules", {}).keys())
+        else:
+            accessible = set()
+        return {"current_user": user, "accessible_modules": accessible}
 
     # ── Auth gate (before_request) ───────────────────────────────────────
+
+    # Map blueprint prefix → module name for access checks
+    _BLUEPRINT_MODULE = {
+        "projects": "projects",
+        "welding": "welding",
+        "pipeline": "pipeline",
+        "automation": "automation",
+    }
+
     @app.before_request
     def require_auth():
         # Allow static files, auth endpoints, and health checks
@@ -58,6 +75,22 @@ def create_app() -> Flask:
 
         # Make session permanent so it respects PERMANENT_SESSION_LIFETIME
         session.permanent = True
+
+        user = session["user"]
+
+        # Global admins bypass module checks
+        if user.get("role") == "admin":
+            return None
+
+        # Determine which module this request belongs to
+        bp_name = request.blueprints[0] if request.blueprints else None
+        module = _BLUEPRINT_MODULE.get(bp_name)
+
+        if module:
+            modules = user.get("modules", {})
+            if module not in modules:
+                from flask import abort
+                abort(403)
 
     # ── Register blueprints ──────────────────────────────────────────────
     from qms.api.auth import bp as auth_bp
@@ -78,9 +111,27 @@ def create_app() -> Flask:
     from qms.api.settings import bp as settings_bp
     app.register_blueprint(settings_bp)
 
-    # Root redirect to projects dashboard
+    # Root redirect — send user to their first accessible module
+    _MODULE_DEFAULTS = {
+        "projects": "projects.dashboard",
+        "welding": "welding.dashboard",
+        "pipeline": "pipeline.intake_dashboard",
+        "automation": "automation.preview",
+    }
+
     @app.route("/")
     def index():
+        user = session.get("user")
+        if user and user.get("role") == "admin":
+            return redirect(url_for("projects.dashboard"))
+
+        # Non-admin: redirect to first accessible module
+        if user:
+            modules = user.get("modules", {})
+            for mod, endpoint in _MODULE_DEFAULTS.items():
+                if mod in modules:
+                    return redirect(url_for(endpoint))
+
         return redirect(url_for("projects.dashboard"))
 
     return app
