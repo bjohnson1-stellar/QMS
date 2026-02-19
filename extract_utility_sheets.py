@@ -204,9 +204,9 @@ def main():
     """Extract equipment from the three specified sheets."""
 
     sheets_to_process = [
-        (689, "U1161-PARTIAL-FIRST-FLOOR-UTILITIES-PLAN---AREA-6-Rev.1.pdf"),
-        (690, "U1301-UTILITY-OVERALL-INTERSTITIAL-FLOOR-PLAN-Rev.2.pdf"),
-        (691, "U1401-UTILITY-OVERALL-ROOF-PLAN-Rev.2.pdf"),
+        (701, "U4144-ENLARGED-FIRST-FLOOR-UTILITIES-PLAN-–-AREA-4,-SECTOR-4-Rev.3.pdf"),
+        (702, "U4161-ENLARGED-FIRST-FLOOR-UTILITIES-PLAN-–-AREA-6,-SECTOR-1-Rev.1.pdf"),
+        (703, "U4321-ENLARGED-INTERSTITIAL-SPACE-UTILITIES-PLAN-–-AREA-2,-SECTOR-1-Rev.2.pdf"),
     ]
 
     base_path = Path(r"D:\qms\data\projects\07609-Freshpet\Utility")
