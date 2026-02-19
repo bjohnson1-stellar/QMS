@@ -1,0 +1,311 @@
+================================================================================
+FRESHPET REFRIGERATION DETAIL DRAWINGS - EXTRACTION REPORT
+Project: 07609-Freshpet
+Date: 2026-02-19
+Database: D:\qms\data\quality.db
+================================================================================
+
+SUMMARY
+--------
+Sheets Processed: 3
+Total Details Extracted: 32
+Drawing Notes: 3
+Extraction Notes: 5
+Insulation Specifications: 1
+Average Quality Score: 0.88
+Model Used: Sonnet (appropriate for detail drawings)
+
+================================================================================
+SHEET 613: R5011.1-REFRIGERATION-DETAILS-GENERAL Rev 1
+================================================================================
+
+Classification:
+  Drawing Type: Detail
+  Category: Detail
+  Complexity: High
+  Quality Score: 0.85
+
+Details Extracted (14):
+  1. R5011-1: ROOFTOP PIPE WALL PENETRATION DETAIL 6
+     - Flashing, sealant, mineral fiber insulation
+     - Confidence: 0.87
+
+  2. R5011-2: ROOFTOP PIPE WALL PENETRATION DETAIL 5
+     - Alternate rooftop wall penetration
+     - Confidence: 0.85
+
+  3. R5011-3: WALL PENETRATION DETAIL
+     - General wall penetration for piping
+     - NH3-compatible materials, FRP or non-reactive
+     - Confidence: 0.90
+
+  4. R5011-4: FIRE RATED WALL PIPE PENETRATION
+     - 3M fire stop product or approved equal
+     - UL/ULC accredited assembly
+     - Confidence: 0.88
+
+  5. R5011-6: INSULATION SADDLE DETAIL
+     - One-piece galvanized saddle
+     - Confidence: 0.85
+
+  6. R5011-7: TYPICAL VERTICAL VAPOR STOP SECTION
+     - Vapor retarder sealing requirements
+     - Caulk at annular joint seals
+     - Confidence: 0.87
+
+  7. R5011-8: TYPICAL SINGLE LAYER JOINT SECTION DETAIL
+     - Standard joint section for single layer
+     - Confidence: 0.85
+
+  8. R5011-9: VAPOR RETARDER TAPE DETAIL
+     - Field applied vapor retarder taping
+     - Confidence: 0.80
+
+  9. R5011-10: TYPICAL DOUBLE LAYER CONTRACTION DETAIL
+     - Melt-sealed or taped joints, tapered layers
+     - Confidence: 0.87
+
+  10. R5011-11: TYPICAL HORIZONTAL VAPOR STOP SECTION
+      - Fire retardant mastic sealing
+      - Confidence: 0.88
+
+  11. R5011-11A: CEILING PENETRATION DETAIL
+      - Cut out 1" larger than insulation
+      - Two-layer vapor retardant
+      - Confidence: 0.88
+
+  12. R5011-12: TYPICAL DOUBLE LAYER JOINT SECTION DETAIL
+      - Tapered or bullnosed end
+      - Confidence: 0.85
+
+  13. R5011-13: TYPICAL SINGLE LAYER CONTRACTION DETAIL
+      - Single layer configuration
+      - Confidence: 0.82
+
+  14. R5011-14: HIGH DENSITY PIPE INSERT INSULATION DETAIL
+      - High-density polyiso insert
+      - Stainless bolts/nuts, ASJ silicone sealant
+      - V-grooves minimize line contact
+      - Confidence: 0.92
+
+Drawing Notes:
+  - Install globe valves in vertical pipe orientation when possible
+  - All joints shall be melt-sealed or taped for vapor barrier integrity
+  - Wall, roof, and ceiling penetrations require fire-rated assemblies
+
+Key Features:
+  - Focus on wall/ceiling/roof penetrations
+  - Comprehensive vapor barrier details
+  - Fire-rated penetration requirements
+  - High-density insulation insert specifications
+
+Issues Encountered:
+  - None
+
+================================================================================
+SHEET 614: R5012.1-REFRIGERATION-DETAILS-GENERAL Rev 1
+================================================================================
+
+Classification:
+  Drawing Type: Detail
+  Category: Detail
+  Complexity: Medium
+  Quality Score: 0.90
+
+Details Extracted (6):
+  1. R5012-1: INSULATED GLOBE VALVE DETAIL
+     - Typical for all globe valves
+     - Includes insulation box
+     - Confidence: 0.92
+
+  2. R5012-2: VALVE INSULATION - EXTERIOR INSTALLATION
+     - Do not disturb manufacturer indicators
+     - Indicators visible through cut-out
+     - Confidence: 0.90
+
+  3. R5012-3: OIL TOOL CONTROL GROUP INSULATION DETAIL
+     - Control group insulation
+     - Confidence: 0.85
+
+  4. R5012-4: DOMED VESSEL HEAD INSULATION DETAIL
+     - 2 layers of 2" foam insulation
+     - Maintain dome shape
+     - Confidence: 0.92
+
+  5. R5012-5: FLAT VESSEL HEAD INSULATION DETAIL
+     - Multiple layers prevent condensation
+     - 4" = 2 layers of 2", 6" = 3 layers of 2"
+     - Confidence: 0.93
+
+  6. R5012-6: PIPE SADDLE TABLE
+     - Sizing table for pipes 1/2" to 30"
+     - Insulated diameter and saddle length data
+     - Confidence: 0.95
+
+Insulation Specifications:
+  Vessel Head Insulation
+    - Location: Domed and Flat Vessel Heads
+    - Material: Foam or Fiberglass
+    - Criteria: Multiple layers to prevent condensation, maintain shape
+    - Confidence: 0.92
+
+Key Features:
+  - Valve and vessel insulation details
+  - Comprehensive pipe saddle sizing table
+  - Domed and flat vessel head insulation specifications
+
+Issues Encountered:
+  - None
+
+================================================================================
+SHEET 615: R5100.1-REFRIGERATION-DETAILS-PIPE-AND-EQUIPMENT Rev 1
+================================================================================
+
+Classification:
+  Drawing Type: Detail
+  Category: Detail
+  Complexity: Medium
+  Quality Score: 0.88
+
+Details Extracted (12):
+  1. R5100-1: CONDENSER DRAIN PIPING
+     - Hot gas line from condenser coil
+     - 3/4" air pocket, 1/8" drip pocket
+     - 1% minimum slope (1/8" per foot)
+     - Confidence: 0.90
+
+  2. R5100-2: EMERGENCY PRESSURE CONTROL SYSTEM DETAIL
+     - Solenoid valves and pressure switches
+     - Relief at 225 PSIG
+     - Confidence: 0.92
+
+  3. R5100-3: LIQUID DRAINER - HEADERS ONLY
+     - Hand valve, 1-1/2" liquid header
+     - Confidence: 0.85
+
+  4. R5100-4: REHEAT CONDENSATE DRAINER
+     - Pressure regulator, strainer, hand valves
+     - Confidence: 0.85
+
+  5. R5100-5: THERMAL EXPANSION BULB DETAIL
+     - Bulb placement on return pipe
+     - Confidence: 0.80
+
+  6. R5100-6: SIDE PORT PIPING
+     - Flow transmitter connection
+     - Supply, return, bypass configurations
+     - Confidence: 0.85
+
+  7. R5100-7: DRIP THRU GRATING DETAIL
+     - Steel grating, coil drainer opening
+     - Confidence: 0.88
+
+  8. R5100-9: ELECTRONIC OX DETAIL
+     - Electronic expansion valve installation
+     - Confidence: 0.75
+
+  9. R5100-10: DX DETAIL
+     - Direct expansion configuration
+     - Confidence: 0.75
+
+  10. R5100-11: TYPICAL FLOAT PIPING
+      - Float valve piping
+      - Confidence: 0.80
+
+  11. R5100-12: CO2 CHARGING STATION DETAIL
+      - CO2 fill station
+      - Confidence: 0.75
+
+  12. R5100-14: AMMONIA CHARGING STATION DETAIL
+      - Fill station valve, headers, gauges
+      - Emergency shut-off, safety procedures
+      - Confidence: 0.90
+
+Key Features:
+  - Piping and equipment connection details
+  - Emergency pressure control system
+  - Charging station details (NH3 and CO2)
+  - Condenser drain piping with slope requirements
+
+Issues Encountered:
+  - Some details (electronic OX, DX, CO2 charging) had lower confidence (0.75)
+    due to smaller detail drawings with less visible text
+
+================================================================================
+EXTRACTION METHODOLOGY
+================================================================================
+
+Model Selection:
+  - Sonnet used for all three sheets
+  - Appropriate for detail drawings (standard/moderate complexity)
+  - Detail sheets don't contain P&ID or isometric data requiring Opus
+
+Extraction Approach:
+  1. Classify drawing type (Detail)
+  2. Identify all detail callouts
+  3. Extract detail titles, numbers, and scales
+  4. Capture descriptive text and notes
+  5. Extract specification tables (pipe saddle table)
+  6. Record installation requirements and notes
+  7. Document insulation specifications
+
+Confidence Scoring Factors:
+  - Clear text, readable callouts: +0.2
+  - Standard detail format: +0.1
+  - Complete notes visible: +0.1
+  - Small text, unclear: -0.2
+  - Missing information: -0.1
+
+Data Quality:
+  - Base confidence: 0.7
+  - Average achieved: 0.87
+  - Range: 0.75 - 0.95
+
+================================================================================
+DATABASE STORAGE
+================================================================================
+
+Tables Populated:
+  1. sheets - Updated metadata (drawing_type, complexity, quality_score, etc.)
+  2. detail_drawings - 32 detail records
+  3. drawing_notes - 3 installation/general notes
+  4. extraction_notes - 5 notes about extraction quality/content
+  5. insulation_specs - 1 vessel head insulation specification
+
+Foreign Key Relationships:
+  - All detail_drawings reference sheets.id
+  - All notes reference sheets.id
+  - Processing queue updated (if existed)
+
+Uniqueness Constraints:
+  - detail_drawings: UNIQUE(sheet_id, detail_number)
+  - Used INSERT OR REPLACE to handle any duplicates
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+
+1. Review Low-Confidence Details:
+   - R5100-9 (Electronic OX) - 0.75
+   - R5100-10 (DX Detail) - 0.75
+   - R5100-12 (CO2 Charging) - 0.75
+   - R5011-9 (Vapor Retarder Tape) - 0.80
+
+2. Follow-Up Actions:
+   - Verify emergency pressure control system relief pressure (225 PSIG)
+   - Confirm pipe saddle table dimensions against specification
+   - Review high-density insert detail notes for fabrication requirements
+
+3. Cross-Reference Opportunities:
+   - Verify charging station details against safety procedures
+   - Check insulation specifications against project spec sections
+   - Validate fire-rated penetration assemblies against code requirements
+
+4. Next Steps:
+   - Extract remaining Freshpet refrigeration sheets
+   - Build equipment master list from all sheet extractions
+   - Create specification compliance matrix
+
+================================================================================
+END OF REPORT
+================================================================================
