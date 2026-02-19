@@ -60,6 +60,9 @@
                 </span>
                 Users & Access
             </div>
+            {% if current_user and current_user.role == 'admin' %}
+            <a href="/admin/system-map" style="display:block;margin-top:auto;padding:12px 16px;font-size:10px;color:var(--color-text-muted,#888);text-decoration:none;opacity:0.4;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='0.4'">sys v0.1.0</a>
+            {% endif %}
         </nav>
 
         <!-- Right content panel -->
