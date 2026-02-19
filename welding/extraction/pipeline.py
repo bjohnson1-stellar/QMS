@@ -305,9 +305,9 @@ def _run_form_field_pipeline(pdf_path: Path, form_data: Dict[str, Any],
                 load_result = load_to_database(form_data, conn, form_def)
                 result.parent_record_id = load_result.get("parent_id")
                 result.child_record_counts = load_result.get("child_counts", {})
+                result.status = "success"
                 _log_extraction(conn, result)
                 conn.commit()
-            result.status = "success"
         else:
             result.status = "success"
             logger.info("[DRY RUN] Form fields extracted: %s = %s",

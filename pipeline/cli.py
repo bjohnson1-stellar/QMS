@@ -481,3 +481,82 @@ def intake(
         if verbose:
             for a in handler_failed:
                 typer.echo(f"    {a.filename}: {a.notes}")
+
+
+@app.command("extract-electrical")
+def extract_electrical(
+    sheet_ids: Optional[str] = typer.Option(None, "--sheets", "-s", help="Comma-separated sheet IDs"),
+    project: Optional[str] = typer.Option(None, "--project", "-p", help="Project number to extract"),
+    model: str = typer.Option("sonnet", "--model", "-m", help="AI model (sonnet, opus)"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview without saving to database"),
+):
+    """Extract data from electrical drawings using AI vision."""
+    from qms.pipeline.electrical_extractor import extract_batch
+    from qms.core import get_db
+
+    # Determine which sheets to process
+    ids = []
+    if sheet_ids:
+        ids = [int(x.strip()) for x in sheet_ids.split(",")]
+    elif project:
+        with get_db(readonly=True) as conn:
+            rows = conn.execute(
+                """SELECT id FROM sheets
+                   WHERE project_id = (SELECT id FROM projects WHERE project_number = ?)
+                   AND discipline = 'Electrical'
+                   AND extracted_at IS NULL
+                   ORDER BY drawing_number""",
+                (project,)
+            ).fetchall()
+            ids = [r["id"] for r in rows]
+    else:
+        typer.echo("ERROR: Must specify --sheets or --project")
+        raise typer.Exit(1)
+
+    if not ids:
+        typer.echo("No sheets found to extract.")
+        return
+
+    typer.echo(f"Extracting {len(ids)} electrical drawing(s) using {model}...")
+    if dry_run:
+        typer.echo("[DRY RUN MODE - no database writes]")
+    typer.echo()
+
+    # Run extraction
+    results = extract_batch(ids, model=model, dry_run=dry_run)
+
+    # Print summary
+    typer.echo()
+    typer.echo("=" * 80)
+    typer.echo("Extraction Summary")
+    typer.echo("=" * 80)
+
+    for r in results:
+        status_icon = {
+            "success": "[+]",
+            "partial": "[~]",
+            "failed": "[X]",
+        }.get(r.status, "[ ]")
+
+        typer.echo(f"{status_icon} {r.drawing_number} ({r.status}) - conf={r.confidence:.2f}")
+        typer.echo(f"    Panels: {len(r.panels)}, Circuits: {len(r.circuits)}, Equipment: {len(r.equipment)}")
+        typer.echo(f"    Receptacles: {len(r.receptacles)}, Fixtures: {len(r.lighting_fixtures)}")
+        typer.echo(f"    Time: {r.processing_time_ms / 1000:.1f}s")
+
+        if r.notes:
+            for note in r.notes[:3]:
+                typer.echo(f"    Note: {note}")
+        if r.errors:
+            for err in r.errors:
+                typer.echo(f"    ERROR: {err}")
+        typer.echo()
+
+    # Final stats
+    success = sum(1 for r in results if r.status == "success")
+    partial = sum(1 for r in results if r.status == "partial")
+    failed = sum(1 for r in results if r.status == "failed")
+    total_time = sum(r.processing_time_ms for r in results) / 1000
+
+    typer.echo("-" * 80)
+    typer.echo(f"Results: {success} success, {partial} partial, {failed} failed")
+    typer.echo(f"Total time: {total_time:.1f}s ({total_time/len(results):.1f}s avg)")
