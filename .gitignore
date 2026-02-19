@@ -48,3 +48,21 @@ run_service.py
 
 # LAN shortcut (machine-specific IP)
 SIS QMS (LAN).url
+
+# Extraction scripts (temporary/one-off)
+extract_*.py
+*_extraction*.py
+*_extractor.py
+extraction_*.txt
+extraction_*.md
+extracted_*.txt
+extracted_*.json
+*_extracted.json
+FRESHPET_*.md
+EXTRACTION_REPORT_*.md
+EXTRACTION_*.md
+sheet_*_text.txt
+show_extraction_summary.py
+store_*_extraction.py
+test_extraction.py
+insert_freshpet_*.py
