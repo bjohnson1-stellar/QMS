@@ -232,8 +232,17 @@ def create_app() -> Flask:
         if not user or user.get("role") != "admin":
             abort(404)  # hide from non-admins entirely
 
+        import json
         from qms.core import get_db
         from qms.core.config import QMS_PATHS
+
+        # Load roadmap from .planning/roadmap.json
+        roadmap_path = Path(__file__).resolve().parent.parent / ".planning" / "roadmap.json"
+        roadmap = []
+        try:
+            roadmap = json.loads(roadmap_path.read_text(encoding="utf-8")).get("categories", [])
+        except Exception:
+            pass
 
         stats = {}
         try:
@@ -268,6 +277,7 @@ def create_app() -> Flask:
         return render_template(
             "admin/system-map.html",
             stats=stats,
+            roadmap=roadmap,
             current_user=user,
             updated_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
         )

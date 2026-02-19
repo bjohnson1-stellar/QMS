@@ -1,0 +1,102 @@
+{
+  "categories": [
+    {
+      "name": "In Progress",
+      "color": "#d29922",
+      "icon": "&#9881;",
+      "items": [
+        {
+          "title": "Procore Drawing Zip Import",
+          "desc": "Extract PDFs from Procore zip exports and route to project discipline folders. Handle revision superseding.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["intake", "procore", "drawings"]
+        }
+      ]
+    },
+    {
+      "name": "Planned",
+      "color": "#a371f7",
+      "icon": "&#9998;",
+      "items": [
+        {
+          "title": "Batch WPQ/WPS Extraction",
+          "desc": "Extract ~500 welding PDFs from D:\\RAW_DATA\\ using dual Sonnet + Opus shadow review pipeline.",
+          "module": "welding",
+          "priority": "high",
+          "tags": ["extraction", "welding", "batch"]
+        },
+        {
+          "title": "Windows Service (nssm)",
+          "desc": "Run Waitress as auto-start Windows service instead of manual qms serve.",
+          "module": "core",
+          "priority": "medium",
+          "tags": ["devops", "deployment"]
+        },
+        {
+          "title": "Scheduled OneDrive Sync",
+          "desc": "Auto-run qms pipeline intake --sync on a schedule via Task Scheduler or service.",
+          "module": "pipeline",
+          "priority": "medium",
+          "tags": ["automation", "onedrive"]
+        },
+        {
+          "title": "P-Number Prefix Disambiguation",
+          "desc": "P- prefix maps to Mechanical but should be Plumbing for some projects. Need project-level override or smarter resolution.",
+          "module": "pipeline",
+          "priority": "low",
+          "tags": ["intake", "classifier"]
+        }
+      ]
+    },
+    {
+      "name": "Recently Completed",
+      "color": "#3fb950",
+      "icon": "&#10003;",
+      "items": [
+        {
+          "title": "Admin System Architecture Map",
+          "desc": "Secret /admin/system-map page with live DB stats, full system visual, roadmap tracker.",
+          "module": "admin",
+          "completed": "2026-02-19",
+          "tags": ["admin", "ui"]
+        },
+        {
+          "title": "Workforce Employee Sheet UI",
+          "desc": "Web UI for viewing employee data from SIS imports.",
+          "module": "workforce",
+          "completed": "2026-02-18",
+          "tags": ["ui", "workforce"]
+        },
+        {
+          "title": "Fillable WPQ PDF Extraction",
+          "desc": "Form-field extraction for fillable WPQ PDFs using extraction pipeline.",
+          "module": "welding",
+          "completed": "2026-02-18",
+          "tags": ["extraction", "welding"]
+        },
+        {
+          "title": "SIS Import Employee Number Fix",
+          "desc": "Preserve real employee numbers during SIS field location imports.",
+          "module": "pipeline",
+          "completed": "2026-02-19",
+          "tags": ["bugfix", "pipeline"]
+        },
+        {
+          "title": "Welder Profile Archive/Restore",
+          "desc": "Admin-only archive and restore button on welder profile pages.",
+          "module": "welding",
+          "completed": "2026-02-17",
+          "tags": ["ui", "welding"]
+        },
+        {
+          "title": "Module 3 Welding Program Planning",
+          "desc": "Quality manual Module 3 document for welding program planning.",
+          "module": "qualitydocs",
+          "completed": "2026-02-17",
+          "tags": ["docs", "welding"]
+        }
+      ]
+    }
+  ]
+}

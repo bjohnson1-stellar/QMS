@@ -575,6 +575,117 @@
     font-size: 10px;
   }
 
+  /* ---- Roadmap / Feature Tracker ---- */
+  .roadmap-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px 40px;
+  }
+  .roadmap-section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #f0f3f6;
+    margin-bottom: 16px;
+    padding-top: 24px;
+    border-top: 1px solid #21262d;
+  }
+  .roadmap-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+  .roadmap-col {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .roadmap-col-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #21262d;
+  }
+  .roadmap-col-header .col-icon {
+    font-size: 16px;
+  }
+  .roadmap-col-header h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .roadmap-col-header .count {
+    margin-left: auto;
+    background: #272c33;
+    color: #7d8590;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .roadmap-item {
+    background: #1c2128;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    transition: border-color 0.2s;
+  }
+  .roadmap-item:last-child { margin-bottom: 0; }
+  .roadmap-item:hover { border-color: #58a6ff; }
+  .roadmap-item .item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f0f3f6;
+    margin-bottom: 4px;
+  }
+  .roadmap-item .item-desc {
+    font-size: 11px;
+    color: #7d8590;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .roadmap-item .item-meta {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .roadmap-tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: #272c33;
+    color: #7d8590;
+    border: 1px solid #30363d;
+  }
+  .roadmap-tag.module {
+    color: #a371f7;
+    border-color: #a371f7;
+    background: rgba(163, 113, 247, 0.1);
+  }
+  .roadmap-tag.priority-high {
+    color: #f78166;
+    border-color: #f78166;
+    background: rgba(247, 129, 102, 0.1);
+  }
+  .roadmap-tag.priority-medium {
+    color: #d29922;
+    border-color: #d29922;
+    background: rgba(210, 153, 34, 0.1);
+  }
+  .roadmap-tag.priority-low {
+    color: #7d8590;
+  }
+  .roadmap-tag.completed-date {
+    color: #3fb950;
+    border-color: #3fb950;
+    background: rgba(63, 185, 80, 0.1);
+  }
+
   @media (max-width: 1200px) {
     .map {
       grid-template-columns: 1fr;
@@ -1054,6 +1165,42 @@
     </div>
   </div>
 </div>
+
+<!-- ═══════════ ROADMAP / FEATURE TRACKER ═══════════ -->
+{% if roadmap %}
+<div class="roadmap-section">
+  <h2>&#x1f5fa; Roadmap &amp; Feature Tracker</h2>
+  <div class="roadmap-columns">
+    {% for category in roadmap %}
+    <div class="roadmap-col" style="border-top: 3px solid {{ category.color }};">
+      <div class="roadmap-col-header">
+        <span class="col-icon">{{ category.icon | safe }}</span>
+        <h3 style="color: {{ category.color }};">{{ category.name }}</h3>
+        <span class="count">{{ category['items'] | length }}</span>
+      </div>
+      {% for item in category['items'] %}
+      <div class="roadmap-item">
+        <div class="item-title">{{ item.title }}</div>
+        <div class="item-desc">{{ item.desc }}</div>
+        <div class="item-meta">
+          <span class="roadmap-tag module">{{ item.module }}</span>
+          {% if item.priority %}
+          <span class="roadmap-tag priority-{{ item.priority }}">{{ item.priority }}</span>
+          {% endif %}
+          {% if item.completed %}
+          <span class="roadmap-tag completed-date">&#10003; {{ item.completed }}</span>
+          {% endif %}
+          {% for tag in item.tags %}
+          <span class="roadmap-tag">{{ tag }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 </body>
 </html>
