@@ -227,12 +227,13 @@ def create_app() -> Flask:
     def system_map():
         from flask import render_template, abort, session
         from datetime import datetime
+        import json
+        import os as _os
 
         user = session.get("user")
         if not user or user.get("role") != "admin":
             abort(404)  # hide from non-admins entirely
 
-        import json
         from qms.core import get_db
         from qms.core.config import QMS_PATHS
 
@@ -245,8 +246,13 @@ def create_app() -> Flask:
             pass
 
         stats = {}
+        activity = []
+        coverage = []
+        users_list = []
+
         try:
             with get_db() as conn:
+                # ── Core stats ────────────────────────────────────
                 stats["projects"] = conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
                 stats["sheets"] = conn.execute("SELECT COUNT(*) FROM sheets").fetchone()[0]
                 stats["extracted"] = conn.execute(
@@ -261,23 +267,94 @@ def create_app() -> Flask:
                 stats["tables"] = conn.execute(
                     "SELECT COUNT(*) FROM sqlite_master WHERE type='table'"
                 ).fetchone()[0]
+
+                # ── Recent activity feed ──────────────────────────
+                activity = conn.execute("""
+                    SELECT source, action, detail, created_at FROM (
+                        SELECT 'intake' as source, action,
+                               file_name as detail, created_at
+                        FROM document_intake_log
+                        UNION ALL
+                        SELECT 'extraction' as source,
+                               status as action,
+                               form_type || ': ' || COALESCE(identifier, source_file) as detail,
+                               created_at
+                        FROM weld_extraction_log
+                        UNION ALL
+                        SELECT 'weld-intake' as source, action,
+                               file_name as detail, created_at
+                        FROM weld_intake_log
+                        UNION ALL
+                        SELECT 'qm-intake' as source, action,
+                               file_name as detail, created_at
+                        FROM qm_intake_log
+                        UNION ALL
+                        SELECT 'auth' as source, action,
+                               COALESCE(changed_by, entity_id) as detail,
+                               changed_at as created_at
+                        FROM audit_log
+                    ) combined
+                    ORDER BY created_at DESC
+                    LIMIT 15
+                """).fetchall()
+
+                # ── Extraction coverage by project ────────────────
+                coverage = conn.execute("""
+                    SELECT p.number, p.name,
+                           COUNT(s.id) as total_sheets,
+                           COUNT(CASE WHEN s.extracted_at IS NOT NULL THEN 1 END) as extracted,
+                           ROUND(100.0 * COUNT(CASE WHEN s.extracted_at IS NOT NULL THEN 1 END)
+                                 / MAX(COUNT(s.id), 1), 1) as pct
+                    FROM projects p
+                    LEFT JOIN sheets s ON s.project_id = p.id
+                    GROUP BY p.id
+                    HAVING total_sheets > 0
+                    ORDER BY total_sheets DESC
+                """).fetchall()
+
+                # ── Users & last login ────────────────────────────
+                users_list = conn.execute("""
+                    SELECT display_name, email, role, last_login, is_active
+                    FROM users ORDER BY last_login DESC
+                """).fetchall()
+
         except Exception:
             stats = {k: "?" for k in [
                 "projects", "sheets", "extracted", "employees",
                 "welders", "wps_count", "wpq_count", "tables",
             ]}
 
-        # Count inbox files
-        inbox = QMS_PATHS.inbox
+        # ── Disk health ───────────────────────────────────────────
+        disk = {}
         try:
-            stats["inbox_files"] = sum(1 for f in inbox.iterdir() if f.is_file())
+            db_path = Path(QMS_PATHS.database)
+            disk["db_size"] = round(_os.path.getsize(db_path) / 1024 / 1024, 1)
         except Exception:
+            disk["db_size"] = "?"
+        try:
+            inbox_path = Path(QMS_PATHS.inbox)
+            inbox_files = [f for f in inbox_path.iterdir() if f.is_file()]
+            disk["inbox_size"] = round(sum(f.stat().st_size for f in inbox_files) / 1024 / 1024, 1)
+            disk["inbox_count"] = len(inbox_files)
+            stats["inbox_files"] = len(inbox_files)
+        except Exception:
+            disk["inbox_size"] = "?"
+            disk["inbox_count"] = "?"
             stats["inbox_files"] = "?"
+        try:
+            proj_path = Path(QMS_PATHS.projects)
+            disk["project_pdfs"] = sum(1 for _ in proj_path.rglob("*.pdf"))
+        except Exception:
+            disk["project_pdfs"] = "?"
 
         return render_template(
             "admin/system-map.html",
             stats=stats,
             roadmap=roadmap,
+            activity=activity,
+            coverage=coverage,
+            users_list=users_list,
+            disk=disk,
             current_user=user,
             updated_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
         )

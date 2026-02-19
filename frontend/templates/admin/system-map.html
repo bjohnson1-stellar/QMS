@@ -575,6 +575,233 @@
     font-size: 10px;
   }
 
+  /* ---- Operations Dashboard ---- */
+  .ops-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px 20px;
+  }
+  .ops-section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #f0f3f6;
+    margin-bottom: 16px;
+    padding-top: 24px;
+    border-top: 1px solid #21262d;
+  }
+  .ops-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .ops-panel {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .ops-panel h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #7d8590;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ops-panel h3 .panel-icon { font-size: 15px; }
+  .ops-panel.full-width {
+    grid-column: 1 / -1;
+  }
+
+  /* Activity feed */
+  .activity-list {
+    list-style: none;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .activity-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid #21262d;
+    font-size: 12px;
+  }
+  .activity-list li:last-child { border-bottom: none; }
+  .activity-time {
+    color: #7d8590;
+    font-size: 10px;
+    white-space: nowrap;
+    min-width: 110px;
+    padding-top: 1px;
+  }
+  .activity-source {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .activity-source.intake { background: rgba(63,185,80,0.15); color: #3fb950; }
+  .activity-source.extraction { background: rgba(163,113,247,0.15); color: #a371f7; }
+  .activity-source.auth { background: rgba(88,166,255,0.15); color: #58a6ff; }
+  .activity-source.weld-intake { background: rgba(210,153,34,0.15); color: #d29922; }
+  .activity-source.qm-intake { background: rgba(247,129,102,0.15); color: #f78166; }
+  .activity-detail {
+    color: #e1e4e8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .activity-action {
+    color: #7d8590;
+    font-weight: 600;
+    font-size: 11px;
+  }
+
+  /* Coverage bars */
+  .coverage-list { list-style: none; }
+  .coverage-item {
+    margin-bottom: 10px;
+  }
+  .coverage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .coverage-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #e1e4e8;
+  }
+  .coverage-name .proj-num {
+    color: #7d8590;
+    font-weight: 400;
+    margin-right: 4px;
+  }
+  .coverage-stats {
+    font-size: 11px;
+    color: #7d8590;
+  }
+  .coverage-stats .pct {
+    font-weight: 700;
+    color: #e1e4e8;
+  }
+  .coverage-bar {
+    height: 8px;
+    background: #21262d;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .coverage-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+  .coverage-fill.high { background: #3fb950; }
+  .coverage-fill.mid { background: #d29922; }
+  .coverage-fill.low { background: #f78166; }
+  .coverage-fill.zero { background: #30363d; }
+
+  /* Users table */
+  .users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .users-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    color: #7d8590;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #30363d;
+  }
+  .users-table td {
+    padding: 8px;
+    border-bottom: 1px solid #21262d;
+    color: #e1e4e8;
+  }
+  .users-table tr:last-child td { border-bottom: none; }
+  .role-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .role-badge.admin { background: rgba(247,129,102,0.15); color: #f78166; }
+  .role-badge.user { background: rgba(88,166,255,0.15); color: #58a6ff; }
+  .role-badge.viewer { background: rgba(125,133,144,0.15); color: #7d8590; }
+
+  /* Disk health */
+  .disk-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .disk-card {
+    background: #1c2128;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+  .disk-card .disk-val {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f0f3f6;
+  }
+  .disk-card .disk-unit {
+    font-size: 12px;
+    color: #7d8590;
+    font-weight: 400;
+  }
+  .disk-card .disk-label {
+    font-size: 11px;
+    color: #7d8590;
+    margin-top: 2px;
+  }
+
+  /* Quick actions */
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: #1c2128;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px 8px;
+    color: #e1e4e8;
+    text-decoration: none;
+    font-size: 11px;
+    transition: all 0.2s;
+    cursor: default;
+  }
+  .action-btn:hover {
+    border-color: #58a6ff;
+    background: #1c2640;
+  }
+  .action-btn .action-icon { font-size: 18px; }
+  .action-btn .action-label { font-weight: 600; }
+  .action-btn .action-cmd {
+    font-size: 9px;
+    color: #7d8590;
+    font-family: monospace;
+  }
+
   /* ---- Roadmap / Feature Tracker ---- */
   .roadmap-section {
     max-width: 1400px;
@@ -1163,6 +1390,135 @@
         <code>report system</code>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════ OPERATIONS DASHBOARD ═══════════ -->
+<div class="ops-section">
+  <h2>&#x1f4ca; Operations Dashboard</h2>
+  <div class="ops-grid">
+
+    <!-- Recent Activity Feed -->
+    <div class="ops-panel">
+      <h3><span class="panel-icon">&#x26a1;</span> Recent Activity</h3>
+      {% if activity %}
+      <ul class="activity-list">
+        {% for row in activity %}
+        <li>
+          <span class="activity-time">{{ row.created_at[:16] if row.created_at else '?' }}</span>
+          <span class="activity-source {{ row.source }}">{{ row.source }}</span>
+          <span class="activity-action">{{ row.action }}</span>
+          <span class="activity-detail" title="{{ row.detail }}">{{ row.detail[:60] }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div style="color:#7d8590;font-size:12px;">No activity recorded yet.</div>
+      {% endif %}
+    </div>
+
+    <!-- Extraction Coverage -->
+    <div class="ops-panel">
+      <h3><span class="panel-icon">&#x1f4c8;</span> Extraction Coverage</h3>
+      {% if coverage %}
+      <ul class="coverage-list">
+        {% for proj in coverage %}
+        <li class="coverage-item">
+          <div class="coverage-header">
+            <span class="coverage-name"><span class="proj-num">{{ proj.number }}</span>{{ proj.name }}</span>
+            <span class="coverage-stats">{{ proj.extracted }}/{{ proj.total_sheets }} <span class="pct">{{ proj.pct }}%</span></span>
+          </div>
+          <div class="coverage-bar">
+            <div class="coverage-fill {% if proj.pct >= 60 %}high{% elif proj.pct >= 25 %}mid{% elif proj.pct > 0 %}low{% else %}zero{% endif %}"
+                 style="width: {{ [proj.pct, 2] | max }}%;"></div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div style="color:#7d8590;font-size:12px;">No projects with sheets.</div>
+      {% endif %}
+    </div>
+
+    <!-- Users & Last Login -->
+    <div class="ops-panel">
+      <h3><span class="panel-icon">&#x1f465;</span> Users &amp; Access</h3>
+      {% if users_list %}
+      <table class="users-table">
+        <thead>
+          <tr><th>Name</th><th>Role</th><th>Last Login</th></tr>
+        </thead>
+        <tbody>
+          {% for u in users_list %}
+          <tr>
+            <td>{{ u.display_name }}{% if not u.is_active %} <span style="color:#f78166;font-size:10px;">(inactive)</span>{% endif %}</td>
+            <td><span class="role-badge {{ u.role }}">{{ u.role }}</span></td>
+            <td style="font-size:11px;color:#7d8590;">{{ u.last_login[:16] if u.last_login else 'Never' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="color:#7d8590;font-size:12px;">No users found.</div>
+      {% endif %}
+    </div>
+
+    <!-- Disk & Database Health -->
+    <div class="ops-panel">
+      <h3><span class="panel-icon">&#x1f4be;</span> Storage Health</h3>
+      <div class="disk-grid">
+        <div class="disk-card">
+          <div class="disk-val">{{ disk.db_size }}<span class="disk-unit"> MB</span></div>
+          <div class="disk-label">Database</div>
+        </div>
+        <div class="disk-card">
+          <div class="disk-val">{{ disk.inbox_size }}<span class="disk-unit"> MB</span></div>
+          <div class="disk-label">Inbox ({{ disk.inbox_count }} files)</div>
+        </div>
+        <div class="disk-card">
+          <div class="disk-val">{{ disk.project_pdfs }}</div>
+          <div class="disk-label">Project PDFs</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="ops-panel full-width">
+      <h3><span class="panel-icon">&#x1f680;</span> Quick Actions (CLI)</h3>
+      <div class="actions-grid">
+        <div class="action-btn">
+          <span class="action-icon">&#x1f4e5;</span>
+          <span class="action-label">Run Intake</span>
+          <span class="action-cmd">qms pipeline intake</span>
+        </div>
+        <div class="action-btn">
+          <span class="action-icon">&#x1f50d;</span>
+          <span class="action-label">Scan Projects</span>
+          <span class="action-cmd">qms projects scan</span>
+        </div>
+        <div class="action-btn">
+          <span class="action-icon">&#x1f9e0;</span>
+          <span class="action-label">Index Vectors</span>
+          <span class="action-cmd">qms vectordb index</span>
+        </div>
+        <div class="action-btn">
+          <span class="action-icon">&#x1f4cb;</span>
+          <span class="action-label">Welding Dashboard</span>
+          <span class="action-cmd">qms welding dashboard</span>
+        </div>
+        <div class="action-btn">
+          <span class="action-icon">&#x1f4e4;</span>
+          <span class="action-label">Export Lookups</span>
+          <span class="action-cmd">qms welding export-lookups</span>
+        </div>
+        <div class="action-btn">
+          <span class="action-icon">&#x1f4ca;</span>
+          <span class="action-label">System Report</span>
+          <span class="action-cmd">qms report system</span>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
