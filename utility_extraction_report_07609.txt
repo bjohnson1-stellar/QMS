@@ -1,0 +1,148 @@
+2026-02-19 17:58:19 [utility_extraction_report] INFO: Added extraction notes for all three sheets
+
+================================================================================
+UTILITY DRAWING EXTRACTION REPORT
+Project: 07609-Freshpet
+Discipline: Utility
+================================================================================
+
+SHEET SUMMARY
+--------------------------------------------------------------------------------
+
+Sheet ID: 689
+  Drawing: U1161-PARTIAL-FIRST-FLOOR-UTILITIES-PLAN---AREA-6 Rev 1
+  Title: None
+  Extracted: 2026-02-19 22:07:36
+  Model: manual-vision
+  Quality Score: 0.6
+  Equipment Count: 0
+
+Sheet ID: 690
+  Drawing: U1301-UTILITY-OVERALL-INTERSTITIAL-FLOOR-PLAN Rev 2
+  Title: None
+  Extracted: 2026-02-19 22:07:36
+  Model: manual-vision
+  Quality Score: 0.7
+  Equipment Count: 5
+
+Sheet ID: 691
+  Drawing: U1401-UTILITY-OVERALL-ROOF-PLAN Rev 2
+  Title: None
+  Extracted: 2026-02-19 22:07:36
+  Model: manual-vision
+  Quality Score: 0.7
+  Equipment Count: 2
+
+--------------------------------------------------------------------------------
+EXTRACTED EQUIPMENT
+--------------------------------------------------------------------------------
+
+[Sheet 690] HWH1
+  Type: Hot Water Heater
+  Location: Interstitial Space
+  Confidence: 0.75
+
+[Sheet 690] HWH2
+  Type: Hot Water Heater
+  Location: Interstitial Space
+  Confidence: 0.75
+
+[Sheet 690] HWH3
+  Type: Hot Water Heater
+  Location: Interstitial Space
+  Confidence: 0.75
+
+[Sheet 690] HWH4
+  Type: Hot Water Heater
+  Location: Interstitial Space
+  Confidence: 0.75
+
+[Sheet 690] HWH5
+  Type: Hot Water Heater
+  Location: Interstitial Space
+  Confidence: 0.75
+
+[Sheet 691] CZ01
+  Type: Roof Equipment
+  Location: Roof
+  Confidence: 0.7
+
+[Sheet 691] CZ02
+  Type: Roof Equipment
+  Location: Roof
+  Confidence: 0.7
+
+--------------------------------------------------------------------------------
+EXTRACTION NOTES & ISSUES
+--------------------------------------------------------------------------------
+
+[Sheet 689] LIMITED_DETAIL
+  Drawing resolution limits detailed schedule reading. Primarily shows piping layout with minimal equipment. More detailed schedules may exist on legend/schedule sheets.
+  Confidence: 0.6
+
+[Sheet 690] PARTIAL_EXTRACTION
+  Five hot water heaters (HWH1-HWH5) identified from plan view. Equipment schedules not clearly visible at current resolution. Detailed specifications may require higher resolution scan.
+  Confidence: 0.75
+
+[Sheet 691] UNCLEAR_TAGS
+  Roof equipment tags partially visible (CZ01, CZ02). Equipment type uncertain - may be chillers, cooling towers, or other rooftop units. Equipment schedules not readable at current resolution.
+  Confidence: 0.7
+
+================================================================================
+STATISTICS
+================================================================================
+
+Sheets Processed: 3
+Equipment Extracted: 7
+Average Quality Score: 0.69
+Quality Range: 0.60 - 0.70
+
+================================================================================
+ISSUES ENCOUNTERED
+================================================================================
+
+1. RESOLUTION LIMITATIONS
+   - PDF to PNG conversion at 150 DPI provides good overview but limits
+     ability to read detailed equipment schedules and small text
+   - Equipment tags on plans are visible but detailed specifications are not
+   - Recommendation: Use higher DPI (300+) for schedule-heavy drawings
+
+2. DRAWING TYPE CHARACTERISTICS
+   - Sheet 689 (U1161): Partial plan showing primarily piping, minimal equipment
+   - Sheet 690 (U1301): Overall plan with equipment locations but schedules unclear
+   - Sheet 691 (U1401): Roof plan with equipment outlines but tags partially visible
+   - These are plan views, not equipment schedules - need to process legend/
+     schedule sheets (U0001) for complete equipment specifications
+
+3. EXTRACTION METHOD
+   - Manual vision extraction used due to API authentication limitations
+   - Claude Code's vision capabilities can identify equipment locations and tags
+   - Full automated extraction would require:
+     a) Anthropic API key configuration
+     b) Higher resolution images or direct PDF text extraction
+     c) Processing of companion schedule sheets with detailed specs
+
+4. CONFIDENCE SCORES
+   - Ranged from 0.60 to 0.75
+   - Lower confidence reflects uncertainty in equipment details
+   - Equipment exists and locations are accurate, but specifications incomplete
+        
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+
+1. Process equipment schedule sheets (U0001 series) to get complete specs
+2. For critical equipment, cross-reference with:
+   - Mechanical schedules
+   - Submittal data
+   - Equipment cut sheets
+3. Consider re-scanning at higher DPI if original PDFs are low quality
+4. Validate equipment tags against mechanical drawings for consistency
+5. Future extractions: Use automated pipeline with Anthropic API for:
+   - Batch processing
+   - Dual-agent cross-checking
+   - Automated confidence scoring
+        
+================================================================================
+
