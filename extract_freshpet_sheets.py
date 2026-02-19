@@ -7,7 +7,6 @@ import json
 import base64
 from pathlib import Path
 import anthropic
-import os
 
 # Sheet configurations
 SHEETS = [
@@ -254,12 +253,8 @@ def save_to_database(data: dict, sheet_id: int):
 
 def main():
     """Main extraction process."""
-    # Initialize Anthropic client
-    api_key = os.getenv('ANTHROPIC_API_KEY')
-    if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY environment variable not set")
-
-    client = anthropic.Anthropic(api_key=api_key)
+    # Initialize Anthropic client (uses ANTHROPIC_API_KEY from environment)
+    client = anthropic.Anthropic()
 
     # Process each sheet
     for sheet in SHEETS:

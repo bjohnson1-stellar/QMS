@@ -1,0 +1,304 @@
+{
+  "extraction_date": "2026-02-19T17:06:26.304790",
+  "project_id": 5,
+  "project_name": "07609-Freshpet",
+  "sheets": [
+    {
+      "sheet_id": 479,
+      "drawing_number": "A7002-DOOR-DETAILS",
+      "details_count": 7,
+      "notes_count": 29,
+      "data": {
+        "details": [
+          {
+            "detail_number": "D-17",
+            "detail_title": "HEAD AND JAMB DETAIL",
+            "detail_scale": null,
+            "description": "Architectural detail from A7002-DOOR-DETAILS",
+            "material_specifications": "INSULATED METAL PANEL, PANEL GAUGE AND COLOR., PANEL TRIM",
+            "dimensions": null,
+            "notes": null
+          },
+          {
+            "detail_number": "D-2",
+            "detail_title": "Detail",
+            "detail_scale": null,
+            "description": "Architectural detail from A7002-DOOR-DETAILS",
+            "material_specifications": "1. APPLY CAULK BETWEEN WALL AND FRAME AND SEALANT IN SEAMS., FREEZER DOOR, SEE",
+            "dimensions": null,
+            "notes": null
+          },
+          {
+            "detail_number": "D-3",
+            "detail_title": "Detail",
+            "detail_scale": null,
+            "description": "Architectural detail from A7002-DOOR-DETAILS",
+            "material_specifications": "1. APPLY CAULK BETWEEN WALL AND FRAME AND SEALANT IN SEAMS.",
+            "dimensions": null,
+            "notes": null
+          },
+          {
+            "detail_number": "D-4",
+            "detail_title": "HEAD AND JAMB DETAIL",
+            "detail_scale": null,
+            "description": "Architectural detail from A7002-DOOR-DETAILS",
+            "material_specifications": "INSULATED METAL PANEL, 14 GAUGE PANEL CAP,",
+            "dimensions": null,
+            "notes": null
+          },
+          {
+            "detail_number": "D-4-PS",
+            "detail_title": "HEAD AND JAMB DETAIL",
+            "detail_scale": null,
+            "description": "Architectural detail from A7002-DOOR-DETAILS",
+            "material_specifications": null,
+            "dimensions": null,
+            "notes": null
+          },
+          {
+            "detail_number": "D-6",
+            "detail_title": "HEAD AND JAMB DETAIL",
+            "detail_scale": null,
+            "description": "Architectural detail from A7002-DOOR-DETAILS",
+            "material_specifications": "FRAME 12\" ON CENTER, PANEL WALL",
+            "dimensions": null,
+            "notes": null
+          },
+          {
+            "detail_number": "D-7.1",
+            "detail_title": "HEAD DETAIL",
+            "detail_scale": null,
+            "description": "Architectural detail from A7002-DOOR-DETAILS",
+            "material_specifications": "DOOR SYSTEM,, FRAME *PROVIDE, STAINLESS STEEL FRAME",
+            "dimensions": null,
+            "notes": null
+          }
+        ],
+        "notes": [
+          {
+            "note_type": "general",
+            "note_text": "NOTE B"
+          },
+          {
+            "note_type": "general",
+            "note_text": "NOTE B"
+          },
+          {
+            "note_type": "coordination",
+            "note_text": "CONDUIT TO \nBE NO GREATER THAN \n12\" FROM THE SLAB \nJOINT. COORDINATE \nWITH MECHANICAL \nAND ELECTRICAL."
+          },
+          {
+            "note_type": "coordination",
+            "note_text": "COORDINATE \nDEPTH OF CONDUIT \nWITH STRUCTURAL"
+          },
+          {
+            "note_type": "coordination",
+            "note_text": "CONDUIT TO BE NO GREATER THAN 12\" \nFROM THE SLAB JOINT. COORDINATE WITH \nMECHANICAL AND ELECTRICAL."
+          },
+          {
+            "note_type": "coordination",
+            "note_text": "COORDINATE DEPTH OF CONDUIT WITH \nSTRUCTURAL\nV-CAM WITH SELF\nTAPPENING FASTENERS\nBY DOOR MANUFACTURER\nEPOXY STAINLESS STEEL \nTHREADED ROD (NO \nSLEEVE ANCHORS)"
+          },
+          {
+            "note_type": "coordination",
+            "note_text": "DOOR SYSTEM, \nSEE SCHEDULE\nCOLD/WARM\nD-7.1\nHEAD DETAIL\nSILL DETAIL\nGALVANIZED J-CHANNEL \nFRAME *PROVIDE \nSTAINLESS STEEL FRAME \nAT WASH DOWN AREA\nSELF SUPPORTING GALVANIZED\nFRAME (BY MANUFACTURER)\nTHROUGH BOLT FASTENER\nINSULATED METAL \nPANEL WALL\nSEALANT\nJAMB DETAIL\nINSULATED METAL \nPANEL WALL\nSEALANT\nGALVANIZED J-CHANNEL \nFRAME *PROVIDE \nSTAINLESS STEEL FRAME \nAT WASH DOWN AREA\nDOOR SYSTEM, \nSEE SCHEDULE\nTHROUGH BOLT FASTENER\nCOLUMN SUPPORT,\nSUPPLIED BY DOOR \nMANUFACTURER\nARMOR JOINT ON \nWARM S"
+          },
+          {
+            "note_type": "general",
+            "note_text": "NOTE B"
+          },
+          {
+            "note_type": "coordination",
+            "note_text": "CONDUIT TO BE NO \nGREATER THAN 12\" FROM THE \nSALB JOINT. COORDINATE WITH \nMECHANICAL AND ELECTRICAL."
+          },
+          {
+            "note_type": "coordination",
+            "note_text": "COORDINATE DEPTH \nOF CONDUIT WITH \nSTRUCTURAL\nEXTERIOR\nINTERIOR\nSLOPE\nALUMINUM FULL-VIEW \nSECTIONAL DOOR\nEXPANSION JOINT\nCONCRETE DRIVE,\nSEE CIVIL\nSILL SEAL\n1/2\"\nDR-S.13\nEXTERIOR BUILDING EDGE\nSEALANT ALL AROUND\nFOAM FILLED \nSTAINLESS STEEL \nFRAME\nSCHEDULED STAINLESS \nSTEEL DOOR\n3 ANCHORS AT JAMB ONLY\nPLASTIC WOOD BLOCKING\nFASTEN TO PANEL FACE AT \n24\" ON CENTER, SEE NOTE 1\nHEAD AND JAMB TYPE 2\nHEAD AND JAMB TYPE 1\nRATED INSULATED \nMETAL PANEL\n- 2HR - 2HR - 2HR -\n- 2HR - 2HR - 2HR -\nCOLD/WARM\nD-4"
+          },
+          {
+            "note_type": "material",
+            "note_text": "1. APPLY CAULK BETWEEN WALL AND FRAME AND SEALANT IN SEAMS. \n2. LAP VAPOR BARRIER JOINTS 6\" AND SEAL WITH SEALANT.\n3. APPLY (2) BEADS OF SEALANT INSIDE BASE CHANNEL, SET BASE CHANNEL ON \nTOP OF (2) BEADS OF SEALANT.\nINFITTING COOLER/ \nFREEZER DOOR, SEE \nDOOR SCHEDULE\nHEAD DETAIL\nSILL DETAIL\nPOLYETHYLENE VAPOR BARRIER, \nSEE NOTE 2\n12\" WIDE EPDM (ETHYLENE \nPROPYLENE DIENE MONOMER) \nVAPOR BARRIER UNDER BASE \nCHANNEL, SEE NOTE 2\n6\" MIN\nCONTINUOUS SLIP SHEET WITH \nTAPED JOINTS\nCAULK, SEE NOTE 1\nSEALA"
+          },
+          {
+            "note_type": "installation",
+            "note_text": "1. APPLY CAULK BETWEEN WALL AND FRAME AND SEALANT IN SEAMS. \nCONTINUOUS SLIP SHEET WITH \nTAPED JOINTS\nFREEZER FLOOR INSULATION\nINFITTING COOLER/ FREEZER \nDOOR, SEE DOOR SCHEDULE\nCOUNTERSUNK THRU BOLT\nCAULK, SEE NOTE 1\nSEALANT, SEE NOTE 1\nPLASTIC LUMBER\nMETAL CASING OVER \nPLASTIC LUMBER\nINSULATED METAL PANEL\nFREEZER\nFLOOR SLAB, SEE STRUCTURAL\nSWEEP GASKET\nMETAL CASING BEYOND\nCHANNEL CAP\nINFITTING COOLER/ FREEZER \nDOOR, SEE DOOR SCHEDULE\nINTERIOR\nFLOOR INSULATION\nSUB SLAB, SEE STRUCTURAL\n1/2\" RIGI"
+          },
+          {
+            "note_type": "material",
+            "note_text": "1. APPLY CAULK BETWEEN WALL AND FRAME AND SEALANT IN SEAMS. \n2. LAP VAPOR BARRIER JOINTS 6\" AND SEAL WITH SEALANT.\n3. APPLY (2) BEADS OF SEALANT INSIDE BASE CHANNEL, SET BASE CHANNEL ON \nTOP OF (2) BEADS OF SEALANT.\n4. COMPLETELY INFILL UNDERSIDE OF THRESHOLD WITH MASTIC\nCONTINUOUS SLIP SHEET WITH \nTAPED JOINTS\nCAULK, SEE NOTE 1\nSEALANT, SEE NOTE 1\nPLASTIC LUMBER\nMETAL FRAME OVER \nPLASTIC LUMBER \nINSULATED METAL PANEL\nFLOOR INSULATION\nFOAM FILL VOIDS\nFIELD CUT THERMAL BREAK WITH \nCONTINUOUS BEAD"
+          },
+          {
+            "note_type": "installation",
+            "note_text": "1. CORNER TRIM IS SUPPLIED IN THE SAME \nGAUGE AND COLOR AT INSULATED METAL \nPANEL SKIN. FASTEN  PER MANUFACTURER \nSPECIFICATION.\nCORNER TRIM SEE"
+          },
+          {
+            "note_type": "material",
+            "note_text": "HEAD/JAMB DETAIL\nDR-M.5\nBLOCKING AS REQUIRED\nMETAL FRAMING\nGYPSUM WALL BOARD\n14 GAUGE PANEL CAP,\n3 ANCHORS AT JAMB ONLY\nSCHEDULED FRAME \nSCHEDULED DOOR\nINSULATION WHERE INDICATED\n1\"\n4\"\n1\" FOAM FILLED GAP\nINSULATED METAL PANEL\nD-17\nHEAD/JAMB DETAIL"
+          },
+          {
+            "note_type": "material",
+            "note_text": "1. 22 GAUGE METAL WRAP TO MATCH \nADJACENT INSULATED METAL \nPANEL GAUGE AND COLOR.\nINSULATED METAL \nPANEL TRIM\nSEALANT\nMETAL TRIM TO \nMATCH INSULATED \nMETAL PANEL FINISH\nINSULATION \nWHERE \nINDICATED\nBLOCKING AS \nREQUIRED\nMETAL FRAMING\nGYPSUM \nWALL BOARD\nHSS COLUMN,\nSEE STRUCTURE\nCONCEALED \nFASTNER TO HSS \nCOLUMN\nSEALANT\nDOOR SYSTEM, \nSEE SCHEDULE\nSTEEL ANCHOR\nFOAM FILL VOID\nSHIM AS REQUIRED\nSILL DETAIL\nSLOPE AWAY \nFROM BUILDING\nSET THRESHOLD \nIN MASTIC BED\nALUMINUM THRESHOLD\nDOOR FRAME:\nSEE SCHED"
+          },
+          {
+            "note_type": "coordination",
+            "note_text": "CONDUIT TO \nBE NO GREATER THAN \n12\" FROM THE SLAB \nJOINT. COORDINATE \nWITH MECHANICAL \nAND ELECTRICAL."
+          },
+          {
+            "note_type": "coordination",
+            "note_text": "COORDINATE \nDEPTH OF CONDUIT \nWITH STRUCTURAL\nCOLD/WARM\nSILL \nFLOOR FINISH, \nSEE SCHEDULE\nSURFACE GRIND FOR \nSMOOTH TRANSISTION \nTO ARMORED JOINT\nSURFACE GRIND FOR \nSMOOTH TRANSISTION TO \nARMORED JOINT\nFF 0'-00\"\n3/4\" CONDUIT FOR ELECTRIC \nHEAT ON WARM SIDE OF \nDOOR. COORDINATE WITH \nELECTRICAL & DOORS \nSPECIFIED IN SCHEDULES."
+          },
+          {
+            "note_type": "material",
+            "note_text": "NOTE B\nHEAD AND JAMB\nEXISTING INSULATED \nMETAL PANEL WALL\nFOAM FILLED FIBER \nREINFORCED \nPOLYMER FRAME\nFIBER REINFORCED \nPOLYMER DOOR\nSEALANT\nSTEEL ANCHOR\nSHIM AS REQUIRED\nEXISTING CONCRETE CURB\nWOOD BLOCKING AS \nREQUIRED\n2\nA\nB\nD\n2\n1\nPROJECT INFORMATION\nSHEET ID\nSHEET TITLE\nREVISIONS\nDATE ISSUED:\nREVIEWED BY:\nA/EOR:\nDESIGNED BY:\nPROJECT NUMBER:\n1\n3\n3\n4\n4\n5\n5\nC\nOWNER\nSEAL\nProfessional certification. I hereby certify that these documents \nwere prepared or approved by me, and that I am a duly licen"
+          },
+          {
+            "note_type": "installation",
+            "note_text": "OPTIONAL FASTENING AROUND"
+          },
+          {
+            "note_type": "general",
+            "note_text": "APPLY CAULK BETWEEN WALL AND FRAME AND SEALANT IN SEAMS."
+          },
+          {
+            "note_type": "general",
+            "note_text": "LAP VAPOR BARRIER JOINTS 6\" AND SEAL WITH SEALANT."
+          },
+          {
+            "note_type": "general",
+            "note_text": "APPLY (2) BEADS OF SEALANT INSIDE BASE CHANNEL, SET BASE CHANNEL ON"
+          },
+          {
+            "note_type": "general",
+            "note_text": "APPLY CAULK BETWEEN WALL AND FRAME AND SEALANT IN SEAMS."
+          },
+          {
+            "note_type": "general",
+            "note_text": "APPLY CAULK BETWEEN WALL AND FRAME AND SEALANT IN SEAMS."
+          },
+          {
+            "note_type": "general",
+            "note_text": "LAP VAPOR BARRIER JOINTS 6\" AND SEAL WITH SEALANT."
+          },
+          {
+            "note_type": "general",
+            "note_text": "APPLY (2) BEADS OF SEALANT INSIDE BASE CHANNEL, SET BASE CHANNEL ON"
+          },
+          {
+            "note_type": "general",
+            "note_text": "CORNER TRIM IS SUPPLIED IN THE SAME"
+          },
+          {
+            "note_type": "material",
+            "note_text": "22 GAUGE METAL WRAP TO MATCH"
+          }
+        ]
+      }
+    },
+    {
+      "sheet_id": 480,
+      "drawing_number": "A7003-DOOR-DETAILS",
+      "details_count": 3,
+      "notes_count": 11,
+      "data": {
+        "details": [
+          {
+            "detail_number": "D-12.1",
+            "detail_title": "Detail",
+            "detail_scale": null,
+            "description": "Architectural detail from A7003-DOOR-DETAILS",
+            "material_specifications": "PANEL SKIN. FASTEN  PER MANUFACTURER, SAME COLOR AS INSULATED METAL PANEL",
+            "dimensions": null,
+            "notes": null
+          },
+          {
+            "detail_number": "D-13.1",
+            "detail_title": "JAMB DETAIL",
+            "detail_scale": null,
+            "description": "Architectural detail from A7003-DOOR-DETAILS",
+            "material_specifications": "DOOR TRACK, DOOR, DOOR JAMB",
+            "dimensions": null,
+            "notes": null
+          },
+          {
+            "detail_number": "D-20",
+            "detail_title": "Detail",
+            "detail_scale": null,
+            "description": "Architectural detail from A7003-DOOR-DETAILS",
+            "material_specifications": "PANEL SKIN. FASTEN  PER MANUFACTURER",
+            "dimensions": null,
+            "notes": null
+          }
+        ],
+        "notes": [
+          {
+            "note_type": "material",
+            "note_text": "1. CORNER TRIM TO MATCH ADJACENT INSULATED METAL PANEL GAUGE AND COLOR.\n2. 22 GAUGE METAL WRAP TO MATCH ADJACENT INSULATED METAL PANEL GAUGE AND COLOR.\nINSULATED METAL \nPANEL WALL\nSEALANT\nSTEEL CHANNEL, \nSEE STRUCTURAL\nFOAM FILL VOID\nWEATHER STRIP\nDOOR SYSTEM, \nSEE SCHEDULE\nMETAL WRAP,\nSEE NOTE 2\nOUTER CORNER TRIM, \nSEE NOTE 1\nINSULATED METAL PANEL\nRAIN DRIP TO MATCH \nINSULATED METAL \nPANEL FINISH\nSEALANT\nOUTER CORNER \nTRIM, SEE NOTE 1\nSEALANT\nSTEEL CHANNEL, \nSEE STRUCTURAL\nFOAM FILL VOID\nWEATHE"
+          },
+          {
+            "note_type": "installation",
+            "note_text": "1. CORNER TRIM IS SUPPLIED IN THE SAME \nGAUGE AND COLOR AT INSULATED METAL \nPANEL SKIN. FASTEN  PER MANUFACTURER \nSPECIFICATION.\n2. 22 GAUGE METAL WRAP IS SUPPLIED IN THE \nSAME COLOR AS INSULATED METAL PANEL \nSKIN. FASTEN WITH #10 x 3/4\" TEK SCREWS \nAT 12\" ON CENTER\nINSULATED METAL \nPANEL WALL\nSEALANT, TYPICAL\nOUTSIDE CORNER \nTRIM SEE NOTE 1\nINSULATED METAL \nPANEL WALL\nSEALANT, TYPICAL\nINSULATED SECTIONAL \nOVERHEAD DOOR:\nSEE DOOR SCHEDULE\nDOOR TRACK\nWEATHERSTRIP\nWEATHERSTRIP\nJAMB\nHEAD\nMETAL WRAP"
+          },
+          {
+            "note_type": "installation",
+            "note_text": "1. CORNER TRIM IS SUPPLIED IN THE \nSAME GAUGE ANAD COLOR AT IMP \nSKIN.  FASTEN WITH #10x3/4\" TEK \nSCREWS AT 12\" O.C.\n2. 22 GAUGE METAL WRAP IS \nSUPPLIED IN THE SAME COLOR AS \nIMP SKIN.  FASTEN WITH #10x3/4\" \nTEK SCREWS AT 12\" O.C. FILL VOIDS \nWITH INSUATION AND FOAM FILL.\nDOCK EQUIPMENT:\nSEE DOCK DETAILS\nSTEEL CHANNEL:\nSEE DOCK DETAILS\nDOOR TRACK\nSECTIONAL \nDOOR\nARMOUR JOINT:\nSEE STRUCTURAL FOR DETAIL\nDOOR JAMB BEYOND\nSILL AT DOCK\nSLAB AT INTERIOR DOORS\nINTERIOR\nD-20-1\nEXISTING INSULATED \nMETAL "
+          },
+          {
+            "note_type": "installation",
+            "note_text": "1. CORNER TRIM IS SUPPLIED IN THE SAME GAUGE AND COLOR AT INSULATED METAL PANEL SKIN. FASTEN WITH #10X3/4\" TEK SCREWS AT 12\" ON CENTER\n2. METAL WRAP IS SUPPLIED IN THE SAME GAUGE AND COLOR AS INSULATED METAL PANEL SKIN. FASTEN WITH #10X3/4\" TEK SCREWS AT 12\" ON CENTER FILL VOIDS WITH INSULATION & FOAM FILL.\n3. APPLY CAULK BETWEEN WALL AND FRAME AND SEALANT IN SEAMS\n2HR\n2HR\n2HR\n2HR\n2HR\nRATED INSULATED METAL \nPANEL WALL\nSTEEL CHANNEL FRAMING\nSEE STRUCT.\n2HR\n8\"\n1'-6 1/2\"\nEXISTING\nMETAL WRAP,\nSEE NO"
+          },
+          {
+            "note_type": "material",
+            "note_text": "CORNER TRIM TO MATCH ADJACENT INSULATED METAL PANEL GAUGE AND COLOR."
+          },
+          {
+            "note_type": "material",
+            "note_text": "22 GAUGE METAL WRAP TO MATCH ADJACENT INSULATED METAL PANEL GAUGE AND COLOR."
+          },
+          {
+            "note_type": "general",
+            "note_text": "CORNER TRIM IS SUPPLIED IN THE SAME"
+          },
+          {
+            "note_type": "general",
+            "note_text": "CORNER TRIM IS SUPPLIED IN THE"
+          },
+          {
+            "note_type": "installation",
+            "note_text": "CORNER TRIM IS SUPPLIED IN THE SAME GAUGE AND COLOR AT INSULATED METAL PANEL SKIN. FASTEN WITH #10X3/4\" TEK SCREWS AT 12\" ON CENTER"
+          },
+          {
+            "note_type": "installation",
+            "note_text": "METAL WRAP IS SUPPLIED IN THE SAME GAUGE AND COLOR AS INSULATED METAL PANEL SKIN. FASTEN WITH #10X3/4\" TEK SCREWS AT 12\" ON CENTER FILL VOIDS WITH INSULATION & FOAM FILL."
+          },
+          {
+            "note_type": "general",
+            "note_text": "APPLY CAULK BETWEEN WALL AND FRAME AND SEALANT IN SEAMS"
+          }
+        ]
+      }
+    },
+    {
+      "sheet_id": 481,
+      "drawing_number": "A7011-WINDOW-DETAILS",
+      "details_count": 0,
+      "notes_count": 3,
+      "data": {
+        "details": [],
+        "notes": [
+          {
+            "note_type": "installation",
+            "note_text": "SEALANT EDGE OF \nTRIM, UP AND ACROSS \nPANEL JOINT\nCONT. SEALANT- DO NOT \nBLOCK WEEP HOLES\nCONTINUOUS BACKER \nROD AND SEALANT\nHSS COLUMN,\nSEE STRUCTURE\nCONTINUOUS BACKER \nROD AND SEALANT\nFASTENERS AS \nRECOMMENDED BY \nWINDOW MFR.\nSLOPE\nSILL FLASHING:\nSEE NOTE 2\n3 5/8\" METAL \nFRAMING, 5/8\" \nGYPSUM BOARD \nAND FRP ON 2 \n1/2\" METAL STUD \nFURRING\nSONOLASTIC 150 \nBEHIND FLASHING\nVAPOR BARRIER\nSONOLASTIC 150 \nBEHIND FLASHING\nVAPOR BARRIER"
+          },
+          {
+            "note_type": "installation",
+            "note_text": "1. APPLY SONOLASTIC 150 UP EXTERIOR FACE OF PANEL JOINT 3\", ACROSS WIDTH OF PANEL JOINT \nAND UP THE INTERIOR FACE OF PANEL JOINT TO FIELD VERIFIED TRIM HEIGHT. LET CURE PRIOR \nTO INSTALLATION OF TRIM DETAIL.\n2. PANEL FLASHING IS SUPPLIED IN THE SAME GAUGE AND COLOR AS INSULATED METAL PANEL \nSKIN. FASTEN WITH #10-16x3/4\" TEK 3 SCREWS AT 12\" ON CENTER \n3. ATTACH FLASHING TO STUD WITH LOW PROFILE OR WAFER HEAD SCREWS.\n4. SILL SLOPE AT A MINIMUM OF 1/4\" PER FOOT.\n5. WINDOW SYSTEM PROVIDED, FASTENED "
+          },
+          {
+            "note_type": "general",
+            "note_text": "APPLY SONOLASTIC 150 UP EXTERIOR FACE OF PANEL JOINT 3\", ACROSS WIDTH OF PANEL JOINT"
+          }
+        ]
+      }
+    }
+  ]
+}
