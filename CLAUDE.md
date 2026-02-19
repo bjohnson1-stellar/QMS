@@ -35,6 +35,12 @@ git push origin main
 - `.mcp.json` — local MCP config
 - `*.egg-info/` — build artifacts
 
+### Roadmap Maintenance
+**ALWAYS update `.planning/roadmap.json` when completing or adding features.**
+- When a feature is **completed**: move it to "Recently Completed" with a `"completed": "YYYY-MM-DD"` date
+- When a **new feature** is started or planned: add it to "In Progress" or "Planned" with module, priority, tags
+- This feeds the admin system map at `/admin/system-map`
+
 ## Quick Start
 
 ```bash
