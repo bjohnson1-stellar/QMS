@@ -193,6 +193,9 @@ def create_app() -> Flask:
     from qms.api.settings import bp as settings_bp
     app.register_blueprint(settings_bp)
 
+    from qms.api.workforce import bp as workforce_bp
+    app.register_blueprint(workforce_bp)
+
     from qms.api.qualitydocs import bp as qualitydocs_bp
     app.register_blueprint(qualitydocs_bp)
 

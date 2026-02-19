@@ -459,3 +459,132 @@ def get_employee_permissions(
         (employee_id,),
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# Listing / Stats (web UI support)
+# ---------------------------------------------------------------------------
+
+def list_employees(
+    conn: sqlite3.Connection,
+    *,
+    status: Optional[str] = None,
+    role_id: Optional[int] = None,
+    department_id: Optional[int] = None,
+    job_id: Optional[int] = None,
+    search: Optional[str] = None,
+    include_inactive: bool = False,
+) -> List[Dict[str, Any]]:
+    """List employees with joined role/department/job/supervisor names.
+
+    Returns a flat list of dicts suitable for the web employee table.
+    By default only active employees are returned unless *include_inactive*
+    is True or *status* is explicitly set.
+    """
+    sql = """
+        SELECT
+            e.id, e.employee_number, e.subcontractor_number,
+            e.last_name, e.first_name, e.preferred_name, e.position,
+            e.email, e.phone, e.status, e.is_employee, e.is_subcontractor,
+            e.current_hire_date, e.separation_date, e.notes,
+            e.role_id, e.department_id, e.job_id, e.supervisor_id,
+            r.role_name,
+            d.name AS department_name,
+            j.job_number, p.name AS project_name,
+            sup.first_name || ' ' || sup.last_name AS supervisor_name
+        FROM employees e
+        LEFT JOIN roles r ON r.id = e.role_id
+        LEFT JOIN departments d ON d.id = e.department_id
+        LEFT JOIN jobs j ON j.id = e.job_id
+        LEFT JOIN projects p ON p.id = j.project_id
+        LEFT JOIN employees sup ON sup.id = e.supervisor_id
+    """
+    conditions: List[str] = []
+    params: List[Any] = []
+
+    if status:
+        conditions.append("e.status = ?")
+        params.append(status)
+    elif not include_inactive:
+        conditions.append("e.status != 'terminated'")
+
+    if role_id is not None:
+        conditions.append("e.role_id = ?")
+        params.append(role_id)
+
+    if department_id is not None:
+        conditions.append("e.department_id = ?")
+        params.append(department_id)
+
+    if job_id is not None:
+        conditions.append("e.job_id = ?")
+        params.append(job_id)
+
+    if search:
+        conditions.append(
+            "(e.last_name LIKE ? OR e.first_name LIKE ? "
+            "OR e.employee_number LIKE ? OR e.position LIKE ? "
+            "OR e.email LIKE ?)"
+        )
+        pat = f"%{search}%"
+        params.extend([pat, pat, pat, pat, pat])
+
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
+
+    sql += " ORDER BY e.last_name, e.first_name"
+    rows = conn.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_employee_stats(conn: sqlite3.Connection) -> Dict[str, Any]:
+    """Return summary statistics for the workforce dashboard cards."""
+    total_active = conn.execute(
+        "SELECT COUNT(*) FROM employees WHERE status = 'active'"
+    ).fetchone()[0]
+
+    total_inactive = conn.execute(
+        "SELECT COUNT(*) FROM employees WHERE status != 'active'"
+    ).fetchone()[0]
+
+    unassigned_manager = conn.execute(
+        "SELECT COUNT(*) FROM employees WHERE status = 'active' AND supervisor_id IS NULL"
+    ).fetchone()[0]
+
+    # Count by role
+    by_role = {}
+    rows = conn.execute(
+        "SELECT COALESCE(r.role_name, 'Unassigned') AS role_name, COUNT(*) AS cnt "
+        "FROM employees e LEFT JOIN roles r ON r.id = e.role_id "
+        "WHERE e.status = 'active' GROUP BY r.role_name ORDER BY cnt DESC"
+    ).fetchall()
+    for r in rows:
+        by_role[r["role_name"]] = r["cnt"]
+
+    # Count by department
+    dept_count = conn.execute(
+        "SELECT COUNT(DISTINCT department_id) FROM employees "
+        "WHERE status = 'active' AND department_id IS NOT NULL"
+    ).fetchone()[0]
+
+    return {
+        "total_active": total_active,
+        "total_inactive": total_inactive,
+        "unassigned_manager": unassigned_manager,
+        "by_role": by_role,
+        "department_count": dept_count,
+    }
+
+
+def list_potential_managers(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
+    """Return all active employees eligible to be supervisors.
+
+    Sorted by last_name for dropdown population.
+    """
+    rows = conn.execute(
+        "SELECT e.id, e.employee_number, e.first_name, e.last_name, "
+        "e.position, r.role_name "
+        "FROM employees e LEFT JOIN roles r ON r.id = e.role_id "
+        "WHERE e.status = 'active' ORDER BY e.last_name, e.first_name"
+    ).fetchall()
+    return [dict(r) for r in rows]
