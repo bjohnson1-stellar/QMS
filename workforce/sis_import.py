@@ -220,6 +220,20 @@ def _update_existing(
         notes=record.designation if record.designation else None,
     )
 
+    # Backfill real SIS employee number if not already set
+    if record.employee_number and record.employee_number.isdigit():
+        cur_num = existing.get("employee_number")
+        if not cur_num or cur_num != record.employee_number:
+            conflict = conn.execute(
+                "SELECT id FROM employees WHERE employee_number = ? AND id != ?",
+                (record.employee_number, employee_id),
+            ).fetchone()
+            if not conflict:
+                conn.execute(
+                    "UPDATE employees SET employee_number = ? WHERE id = ?",
+                    (record.employee_number, employee_id),
+                )
+
     if job_changed:
         # Close current employment period
         conn.execute(
@@ -302,6 +316,18 @@ def _create_new(
         notes=notes,
         created_by="SIS-IMPORT",
     )
+
+    # Overwrite the auto-generated EMP-NNNN with the real SIS employee number
+    if is_employee and record.employee_number and record.employee_number.isdigit():
+        existing = conn.execute(
+            "SELECT id FROM employees WHERE employee_number = ?",
+            (record.employee_number,),
+        ).fetchone()
+        if not existing:
+            conn.execute(
+                "UPDATE employees SET employee_number = ? WHERE id = ?",
+                (record.employee_number, employee_id),
+            )
 
     stats["employees_created"] += 1
     if job_id:
