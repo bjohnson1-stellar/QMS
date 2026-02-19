@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Map &mdash; QMS Admin</title>
+<style>
+  /* ---- Admin floating badge ---- */
+  .admin-badge {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(22, 27, 34, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 11px;
+    color: #7d8590;
+  }
+  .admin-badge .lock { color: #f78166; font-size: 14px; }
+  .admin-badge .user { color: #f0f3f6; font-weight: 600; }
+  .admin-badge .updated { color: #7d8590; border-left: 1px solid #30363d; padding-left: 12px; }
+  .admin-badge a { color: #79c0ff; text-decoration: none; }
+  .admin-badge a:hover { text-decoration: underline; }
+
+  /* ---- Live stats bar ---- */
+  .live-stats {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px 8px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: #7d8590;
+  }
+  .stat-chip .val { color: #f0f3f6; font-weight: 700; font-size: 14px; }
+  .stat-chip .label { font-size: 10px; }
+</style>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f1117;
+    color: #e1e4e8;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    text-align: center;
+    padding: 32px 24px 16px;
+    border-bottom: 1px solid #21262d;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f0f3f6;
+    letter-spacing: -0.5px;
+  }
+  .header p {
+    color: #7d8590;
+    margin-top: 6px;
+    font-size: 14px;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    padding: 16px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #7d8590;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  .map {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    grid-template-rows: auto auto auto auto;
+    gap: 20px;
+    grid-template-areas:
+      "external  inbox      webui"
+      "external  pipeline   webui"
+      "external  storage    webui"
+      "external  database   webui";
+  }
+
+  .zone {
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    background: #161b22;
+  }
+  .zone-label {
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: #161b22;
+    padding: 0 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #7d8590;
+  }
+
+  /* ---- External Sources ---- */
+  .external { grid-area: external; border-color: #f78166; }
+  .external .zone-label { color: #f78166; }
+
+  .source-card {
+    background: #1c2128;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .source-card:hover { border-color: #f78166; transform: translateX(4px); }
+  .source-card:last-child { margin-bottom: 0; }
+  .source-card h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f0f3f6;
+    margin-bottom: 4px;
+  }
+  .source-card .format {
+    font-size: 11px;
+    color: #f78166;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .source-card .desc {
+    font-size: 11px;
+    color: #7d8590;
+    line-height: 1.5;
+  }
+  .source-card .arrow {
+    color: #f78166;
+    font-size: 14px;
+    float: right;
+    margin-top: -20px;
+  }
+
+  /* ---- Inbox ---- */
+  .inbox { grid-area: inbox; border-color: #d29922; }
+  .inbox .zone-label { color: #d29922; }
+
+  .inbox-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .inbox-full { grid-column: 1 / -1; }
+
+  .inbox-item {
+    background: #1c2128;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px;
+    transition: border-color 0.2s;
+  }
+  .inbox-item:hover { border-color: #d29922; }
+  .inbox-item h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f0f3f6;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .inbox-item .count {
+    background: #d29922;
+    color: #0f1117;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .inbox-item .files {
+    font-size: 11px;
+    color: #7d8590;
+    line-height: 1.6;
+  }
+  .inbox-item .files .highlight {
+    color: #d29922;
+    font-weight: 500;
+  }
+  .subdir {
+    background: #272c33;
+    border: 1px dashed #30363d;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: #7d8590;
+  }
+  .subdir strong { color: #d29922; font-weight: 600; }
+
+  /* ---- Pipeline ---- */
+  .pipeline { grid-area: pipeline; border-color: #a371f7; }
+  .pipeline .zone-label { color: #a371f7; }
+
+  .pipeline-steps {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .step {
+    flex: 1;
+    background: #1c2128;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .step:hover { border-color: #a371f7; }
+  .step-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #a371f7;
+    color: #0f1117;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+  }
+  .step h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #f0f3f6;
+    margin-bottom: 4px;
+  }
+  .step .detail {
+    font-size: 10px;
+    color: #7d8590;
+    line-height: 1.5;
+  }
+  .step-arrow {
+    display: flex;
+    align-items: center;
+    color: #a371f7;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .doc-types {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .doc-type {
+    background: #272c33;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 10px;
+    text-align: center;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    cursor: default;
+  }
+  .doc-type:hover { border-color: #a371f7; }
+  .doc-type .name { font-weight: 600; color: #f0f3f6; display: block; }
+  .doc-type .handler { color: #a371f7; font-size: 9px; margin-top: 2px; display: block; }
+
+  .disc-map {
+    margin-top: 14px;
+    background: #1c2128;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .disc-map h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #f0f3f6;
+    margin-bottom: 8px;
+  }
+  .disc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+  .disc-entry {
+    font-size: 10px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    background: #272c33;
+  }
+  .disc-entry .prefix { color: #a371f7; font-weight: 600; }
+  .disc-entry .maps-to { color: #7d8590; }
+
+  /* ---- Storage ---- */
+  .storage { grid-area: storage; border-color: #3fb950; }
+  .storage .zone-label { color: #3fb950; }
+
+  .folder-tree {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #7d8590;
+    background: #1c2128;
+    border-radius: 8px;
+    padding: 14px;
+    border: 1px solid #30363d;
+  }
+  .folder-tree .dir { color: #3fb950; font-weight: 600; }
+  .folder-tree .file { color: #7d8590; }
+  .folder-tree .count { color: #3fb950; font-size: 10px; }
+  .folder-tree .zip-highlight {
+    color: #d29922;
+    font-weight: 600;
+    background: rgba(210, 153, 34, 0.1);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .project-card {
+    background: #1c2128;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px;
+    transition: border-color 0.2s;
+  }
+  .project-card:hover { border-color: #3fb950; }
+  .project-card.active { border-color: #3fb950; }
+  .project-card h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #f0f3f6;
+    margin-bottom: 4px;
+  }
+  .project-card .meta {
+    font-size: 10px;
+    color: #7d8590;
+  }
+  .project-card .disciplines {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 6px;
+  }
+  .disc-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: #272c33;
+    color: #3fb950;
+    font-weight: 500;
+  }
+
+  /* ---- Database ---- */
+  .database { grid-area: database; border-color: #79c0ff; }
+  .database .zone-label { color: #79c0ff; }
+
+  .db-tables {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .table-group {
+    background: #1c2128;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px;
+    transition: border-color 0.2s;
+  }
+  .table-group:hover { border-color: #79c0ff; }
+  .table-group h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #79c0ff;
+    margin-bottom: 6px;
+  }
+  .table-group .tables {
+    font-size: 10px;
+    color: #7d8590;
+    line-height: 1.7;
+  }
+  .table-group .tables code {
+    color: #f0f3f6;
+    background: #272c33;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'Cascadia Code', monospace;
+    font-size: 10px;
+  }
+
+  /* ---- Web UI ---- */
+  .webui { grid-area: webui; border-color: #56d364; }
+  .webui .zone-label { color: #56d364; }
+
+  .module-card {
+    background: #1c2128;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+  .module-card:hover { border-color: #56d364; }
+  .module-card:last-child { margin-bottom: 0; }
+  .module-card h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f0f3f6;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .module-card .route {
+    font-size: 10px;
+    color: #56d364;
+    font-family: monospace;
+    margin-bottom: 4px;
+  }
+  .module-card .pages {
+    font-size: 10px;
+    color: #7d8590;
+    line-height: 1.5;
+  }
+
+  /* ---- Flow Connectors ---- */
+  .flow-label {
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    color: #7d8590;
+    font-style: italic;
+  }
+  .flow-label .cmd {
+    color: #a371f7;
+    font-family: monospace;
+    font-style: normal;
+    font-weight: 500;
+  }
+
+  /* ---- Gap callout (the missing piece) ---- */
+  .gap-callout {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, rgba(210, 153, 34, 0.08), rgba(247, 129, 102, 0.08));
+    border: 2px dashed #d29922;
+    border-radius: 12px;
+    padding: 20px 24px;
+    text-align: center;
+  }
+  .gap-callout h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #d29922;
+    margin-bottom: 8px;
+  }
+  .gap-callout p {
+    font-size: 13px;
+    color: #e1e4e8;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .gap-callout .missing {
+    color: #f78166;
+    font-weight: 600;
+  }
+  .gap-callout .exists {
+    color: #3fb950;
+    font-weight: 500;
+  }
+
+  .gap-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .gap-node {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .gap-node.done { background: #1c3a2a; color: #3fb950; border: 1px solid #3fb950; }
+  .gap-node.missing { background: #3d1f1f; color: #f78166; border: 1px dashed #f78166; }
+  .gap-node.exists { background: #1c2128; color: #7d8590; border: 1px solid #30363d; }
+  .gap-arrow { color: #7d8590; font-size: 20px; }
+
+  /* ---- Bottom detail section ---- */
+  .detail-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px 40px;
+  }
+  .detail-section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #f0f3f6;
+    margin-bottom: 16px;
+    padding-top: 24px;
+    border-top: 1px solid #21262d;
+  }
+
+  .cli-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .cli-card {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .cli-card h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #a371f7;
+    font-family: monospace;
+    margin-bottom: 6px;
+  }
+  .cli-card .cmds {
+    font-size: 11px;
+    color: #7d8590;
+    line-height: 1.7;
+  }
+  .cli-card .cmds code {
+    color: #f0f3f6;
+    background: #272c33;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 10px;
+  }
+
+  @media (max-width: 1200px) {
+    .map {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "external"
+        "inbox"
+        "pipeline"
+        "storage"
+        "database"
+        "webui";
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Admin-only floating badge -->
+<div class="admin-badge">
+  <span class="lock">&#x1f512;</span>
+  <span class="user">{{ current_user.display_name }}</span>
+  <span class="updated">Updated {{ updated_at }}</span>
+  <a href="/">&#x2190; Back to QMS</a>
+</div>
+
+<div class="header">
+  <h1>QMS System Architecture</h1>
+  <p>Quality Management System &mdash; All components and data flows</p>
+</div>
+
+<!-- Live stats from database -->
+<div class="live-stats">
+  <div class="stat-chip"><span class="val">{{ stats.projects }}</span><span class="label">Projects</span></div>
+  <div class="stat-chip"><span class="val">{{ stats.sheets }}</span><span class="label">Sheets Indexed</span></div>
+  <div class="stat-chip"><span class="val">{{ stats.extracted }}</span><span class="label">Extracted</span></div>
+  <div class="stat-chip"><span class="val">{{ stats.employees }}</span><span class="label">Employees</span></div>
+  <div class="stat-chip"><span class="val">{{ stats.welders }}</span><span class="label">Welders</span></div>
+  <div class="stat-chip"><span class="val">{{ stats.wps_count }}</span><span class="label">WPS</span></div>
+  <div class="stat-chip"><span class="val">{{ stats.wpq_count }}</span><span class="label">WPQ</span></div>
+  <div class="stat-chip"><span class="val">{{ stats.tables }}</span><span class="label">DB Tables</span></div>
+  <div class="stat-chip"><span class="val">{{ stats.inbox_files }}</span><span class="label">Inbox Files</span></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#f78166"></div> External Sources</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d29922"></div> Unified Inbox</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a371f7"></div> Classification &amp; Routing</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3fb950"></div> File Storage</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#79c0ff"></div> Database (256 tables)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#56d364"></div> Web UI Modules</div>
+</div>
+
+<!-- ============ GAP CALLOUT ============ -->
+<div style="max-width:1400px; margin:0 auto; padding:0 24px;">
+<div class="gap-callout">
+  <h3>The Missing Piece: Procore Drawing Zip Import</h3>
+  <p>
+    Your inbox has a <span class="missing">261 MB Procore zip</span> with 196 PDFs organized by discipline.
+    The zip's folder structure maps perfectly to the existing project, but <span class="missing">no zip extraction exists</span> in the pipeline.
+  </p>
+  <div class="gap-flow">
+    <div class="gap-node done">Procore Export</div>
+    <div class="gap-arrow">&rarr;</div>
+    <div class="gap-node done">.zip in Inbox</div>
+    <div class="gap-arrow">&rarr;</div>
+    <div class="gap-node missing">Extract &amp; Route (MISSING)</div>
+    <div class="gap-arrow">&rarr;</div>
+    <div class="gap-node exists">07650/Plumbing/ etc.</div>
+    <div class="gap-arrow">&rarr;</div>
+    <div class="gap-node exists">Scanner &rarr; DB</div>
+  </div>
+</div>
+</div>
+
+<div class="map">
+
+  <!-- ============ EXTERNAL SOURCES ============ -->
+  <div class="zone external">
+    <div class="zone-label">External Sources</div>
+
+    <div class="source-card">
+      <h4>Procore</h4>
+      <div class="format">CSV / ZIP</div>
+      <div class="desc">
+        <strong>CSV exports</strong> &rarr; project metadata (jobs, budgets, stages)<br>
+        <strong>Drawing zips</strong> &rarr; PDFs organized by Building/Discipline
+      </div>
+      <div class="arrow">&rarr;</div>
+    </div>
+
+    <div class="source-card">
+      <h4>OneDrive / Power Automate</h4>
+      <div class="format">Excel / JSON</div>
+      <div class="desc">
+        <strong>Inbound:</strong> SIS field location workbooks, cert request JSONs<br>
+        <strong>Outbound:</strong> Welder lookup tables for Teams Adaptive Cards
+      </div>
+      <div class="arrow">&harr;</div>
+    </div>
+
+    <div class="source-card">
+      <h4>SIS Field Locations</h4>
+      <div class="format">Excel (.xlsx)</div>
+      <div class="desc">
+        Weekly workbooks with jobsite assignments, employee tracking, welder continuity
+      </div>
+      <div class="arrow">&rarr;</div>
+    </div>
+
+    <div class="source-card">
+      <h4>Welding Master Log</h4>
+      <div class="format">Excel (.xlsm)</div>
+      <div class="desc">
+        Welder registry, WPQ qualifications, stamps, departments
+      </div>
+      <div class="arrow">&rarr;</div>
+    </div>
+
+    <div class="source-card">
+      <h4>Weekly Weld Logs</h4>
+      <div class="format">Excel / CSV</div>
+      <div class="desc">
+        Production weld records, extends WPQ expiration via continuity
+      </div>
+      <div class="arrow">&rarr;</div>
+    </div>
+
+    <div class="source-card">
+      <h4>Workforce CSV</h4>
+      <div class="format">CSV</div>
+      <div class="desc">
+        Employee data, bulk updates by UUID
+      </div>
+      <div class="arrow">&rarr;</div>
+    </div>
+  </div>
+
+  <!-- ============ INBOX ============ -->
+  <div class="zone inbox">
+    <div class="zone-label">Unified Inbox &mdash; data/inbox/</div>
+    <div class="inbox-content">
+      <div class="inbox-item inbox-full">
+        <h4>Current Contents <span class="count">~160+ files</span></h4>
+        <div class="files">
+          <span class="highlight">Building---Brazos-River-Ventures---Perro-Grande_-_Drawings.zip</span> (261 MB, 196 PDFs)<br>
+          ~150 WPQ/WPS PDFs (welder qualifications)<br>
+          Support plans, schedule images, BPS forms
+        </div>
+      </div>
+      <div class="subdir"><strong>NEEDS-REVIEW/</strong> &mdash; unrecognized or handler failures</div>
+      <div class="subdir"><strong>CONFLICTS/</strong> &mdash; conflicting classifications</div>
+      <div class="subdir"><strong>DUPLICATES/</strong> &mdash; already exists at destination</div>
+      <div class="subdir"><strong>_EXTRACTING/</strong> &mdash; in-progress archives</div>
+    </div>
+    <div class="flow-label">
+      <span class="cmd">qms pipeline intake</span> or <span class="cmd">POST /pipeline/api/intake</span>
+    </div>
+  </div>
+
+  <!-- ============ PIPELINE ============ -->
+  <div class="zone pipeline">
+    <div class="zone-label">Classification &amp; Routing Pipeline</div>
+    <div class="pipeline-steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h4>Sync</h4>
+        <div class="detail">OneDrive &rarr; inbox<br>(optional --sync flag)</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h4>Scan</h4>
+        <div class="detail">Iterate inbox root<br>Skip subdirs</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h4>Classify</h4>
+        <div class="detail">Regex match<br>First match wins<br>15 document types</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h4>Resolve</h4>
+        <div class="detail">Template vars:<br>{project}, {discipline}<br>{year}, {drawing_set}</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <h4>Handler</h4>
+        <div class="detail">field-locations &rarr; DB import<br>Others &rarr; passthrough</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step">
+        <div class="step-num">6</div>
+        <h4>Route</h4>
+        <div class="detail">Move to dest<br>or NEEDS-REVIEW<br>Log to DB</div>
+      </div>
+    </div>
+
+    <div class="doc-types">
+      <div class="doc-type"><span class="name">Drawings</span><span class="handler">sis-intake</span></div>
+      <div class="doc-type"><span class="name">Specifications</span><span class="handler">sis-spec-intake</span></div>
+      <div class="doc-type"><span class="name">QM Modules</span><span class="handler">qm-intake</span></div>
+      <div class="doc-type"><span class="name">Procedures</span><span class="handler">qm-intake</span></div>
+      <div class="doc-type"><span class="name">WPS</span><span class="handler">weld-intake</span></div>
+      <div class="doc-type"><span class="name">PQR</span><span class="handler">weld-intake</span></div>
+      <div class="doc-type"><span class="name">WPQ</span><span class="handler">weld-intake</span></div>
+      <div class="doc-type"><span class="name">BPS / BPQ</span><span class="handler">weld-intake</span></div>
+      <div class="doc-type"><span class="name">Forms</span><span class="handler">qm-intake</span></div>
+      <div class="doc-type"><span class="name">Policies</span><span class="handler">qm-intake</span></div>
+      <div class="doc-type"><span class="name">Records</span><span class="handler">qm-intake</span></div>
+      <div class="doc-type"><span class="name">Procore CSV</span><span class="handler">procore-import</span></div>
+      <div class="doc-type"><span class="name">Weld Logs</span><span class="handler">weld-weekly</span></div>
+      <div class="doc-type"><span class="name">Field Locs</span><span class="handler">field-locations</span></div>
+      <div class="doc-type"><span class="name">Work Instrs</span><span class="handler">qm-intake</span></div>
+      <div class="doc-type"><span class="name">Templates</span><span class="handler">qm-intake</span></div>
+    </div>
+
+    <div class="disc-map">
+      <h4>Discipline Prefix Mapping (filename &rarr; folder)</h4>
+      <div class="disc-grid">
+        <div class="disc-entry"><span class="prefix">P, M</span> <span class="maps-to">&rarr; Mechanical</span></div>
+        <div class="disc-entry"><span class="prefix">E, EL, EP</span> <span class="maps-to">&rarr; Electrical</span></div>
+        <div class="disc-entry"><span class="prefix">PL, PP</span> <span class="maps-to">&rarr; Plumbing</span></div>
+        <div class="disc-entry"><span class="prefix">U, UT</span> <span class="maps-to">&rarr; Utility</span></div>
+        <div class="disc-entry"><span class="prefix">R, RF</span> <span class="maps-to">&rarr; Refrigeration</span></div>
+        <div class="disc-entry"><span class="prefix">H</span> <span class="maps-to">&rarr; HVAC</span></div>
+        <div class="disc-entry"><span class="prefix">S</span> <span class="maps-to">&rarr; Structural</span></div>
+        <div class="disc-entry"><span class="prefix">I</span> <span class="maps-to">&rarr; Instrumentation</span></div>
+        <div class="disc-entry"><span class="prefix">C</span> <span class="maps-to">&rarr; Civil</span></div>
+        <div class="disc-entry"><span class="prefix">A</span> <span class="maps-to">&rarr; Architectural</span></div>
+        <div class="disc-entry"><span class="prefix">F, FP</span> <span class="maps-to">&rarr; Fire-Protection</span></div>
+        <div class="disc-entry"><span class="prefix">G</span> <span class="maps-to">&rarr; General</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ STORAGE ============ -->
+  <div class="zone storage">
+    <div class="zone-label">File Storage &mdash; data/projects/ &amp; data/quality-documents/</div>
+
+    <div class="folder-tree">
+      <span class="dir">data/projects/</span><br>
+      &nbsp;&nbsp;<span class="dir">07650-BRV-PerroGrande/</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">Plumbing/</span> <span class="count">(33 PDFs)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">Mechanical/</span> <span class="count">(30 PDFs)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">Electrical/</span> <span class="count">(98 PDFs)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">Utility/</span> <span class="count">(42 PDFs)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">Architectural/</span> <span class="count">(160 PDFs)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">Structural/</span> <span class="count">(96 PDFs)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">Civil/</span> <span class="count">(90 PDFs)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="file">MANIFEST.json</span><br>
+      &nbsp;&nbsp;<span class="dir">07645-Vital/</span> &middot;&middot;&middot;<br>
+      &nbsp;&nbsp;<span class="dir">07609-Freshpet/</span> &middot;&middot;&middot;<br><br>
+      <span class="dir">data/quality-documents/</span><br>
+      &nbsp;&nbsp;<span class="dir">Welding/</span> WPS/ PQR/ WPQ/ BPS/ BPQ/ Production-Logs/<br>
+      &nbsp;&nbsp;<span class="dir">Procedures/</span> Forms/ Templates/ Policies/ Records/ Modules/
+    </div>
+
+    <div class="project-grid">
+      <div class="project-card active">
+        <h4>07650 BRV Perro Grande</h4>
+        <div class="meta">567 sheets indexed &bull; 65 extracted (11.5%)</div>
+        <div class="disciplines">
+          <span class="disc-badge">P:33</span>
+          <span class="disc-badge">M:30</span>
+          <span class="disc-badge">E:98</span>
+          <span class="disc-badge">U:42</span>
+          <span class="disc-badge">A:160</span>
+          <span class="disc-badge">S:96</span>
+          <span class="disc-badge">C:90</span>
+        </div>
+      </div>
+      <div class="project-card">
+        <h4>07645 Vital</h4>
+        <div class="meta">Active project</div>
+      </div>
+      <div class="project-card">
+        <h4>07609 Freshpet</h4>
+        <div class="meta">Active project</div>
+      </div>
+      <div class="project-card">
+        <h4>07600 Rosina</h4>
+        <div class="meta">Active project</div>
+      </div>
+    </div>
+
+    <div class="flow-label">
+      <span class="cmd">qms projects scan</span> discovers new PDFs &rarr; inserts into <code>sheets</code> table
+    </div>
+  </div>
+
+  <!-- ============ DATABASE ============ -->
+  <div class="zone database">
+    <div class="zone-label">Database &mdash; quality.db (256 tables)</div>
+    <div class="db-tables">
+      <div class="table-group">
+        <h4>Projects &amp; Jobs</h4>
+        <div class="tables">
+          <code>projects</code> &bull; <code>jobs</code><br>
+          <code>project_allocations</code><br>
+          <code>project_budgets</code><br>
+          <code>business_units</code><br>
+          <code>customers</code> &bull; <code>facilities</code>
+        </div>
+      </div>
+      <div class="table-group">
+        <h4>Drawings &amp; Extraction</h4>
+        <div class="tables">
+          <code>sheets</code> &bull; <code>disciplines</code><br>
+          <code>lines</code> &bull; <code>equipment</code><br>
+          <code>instruments</code> &bull; <code>welds</code><br>
+          <code>conflicts</code> &bull; <code>extraction_flags</code><br>
+          <code>processing_queue</code>
+        </div>
+      </div>
+      <div class="table-group">
+        <h4>Welding Program</h4>
+        <div class="tables">
+          <code>weld_welder_registry</code><br>
+          <code>weld_wpq</code> &bull; <code>weld_wps</code><br>
+          <code>weld_cert_requests</code><br>
+          <code>weld_production_records</code><br>
+          <code>weld_continuity_events</code>
+        </div>
+      </div>
+      <div class="table-group">
+        <h4>Workforce</h4>
+        <div class="tables">
+          <code>employees</code><br>
+          <code>employee_job_history</code><br>
+          <code>employee_sheets</code>
+        </div>
+      </div>
+      <div class="table-group">
+        <h4>Intake &amp; Audit</h4>
+        <div class="tables">
+          <code>document_intake_log</code><br>
+          <code>onedrive_sync_log</code><br>
+          <code>automation_processing_log</code><br>
+          <code>intake_log</code>
+        </div>
+      </div>
+      <div class="table-group">
+        <h4>Auth &amp; Config</h4>
+        <div class="tables">
+          <code>users</code><br>
+          <code>user_module_access</code><br>
+          <code>user_business_units</code><br>
+          <code>budget_settings</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ WEB UI ============ -->
+  <div class="zone webui">
+    <div class="zone-label">Web UI &mdash; localhost:5000</div>
+
+    <div class="module-card">
+      <h4>Projects</h4>
+      <div class="route">/projects/*</div>
+      <div class="pages">Dashboard, Projects list, Transactions, Business Units, Projections</div>
+    </div>
+
+    <div class="module-card">
+      <h4>Welding</h4>
+      <div class="route">/welding/*</div>
+      <div class="pages">Dashboard, Welders, Welder Profiles, Forms (WPS/PQR/WPQ/BPQ detail)</div>
+    </div>
+
+    <div class="module-card">
+      <h4>Pipeline</h4>
+      <div class="route">/pipeline/*</div>
+      <div class="pages">Intake Dashboard &mdash; classify, preview, route inbox files</div>
+    </div>
+
+    <div class="module-card">
+      <h4>Automation</h4>
+      <div class="route">/automation/*</div>
+      <div class="pages">Card Preview (Power Automate JSON request viewer)</div>
+    </div>
+
+    <div class="module-card">
+      <h4>Workforce</h4>
+      <div class="route">/workforce/*</div>
+      <div class="pages">Employees list with SIS/sheet data</div>
+    </div>
+
+    <div class="module-card">
+      <h4>Quality Manual</h4>
+      <div class="route">/qualitydocs/*</div>
+      <div class="pages">QM module viewer, search, detail</div>
+    </div>
+
+    <div class="module-card">
+      <h4>Settings</h4>
+      <div class="route">/settings/*</div>
+      <div class="pages">8 tabs: General, Projects, Welding, Pipeline, Extraction, Branding, Integrations, Users &amp; Access</div>
+    </div>
+
+    <div style="margin-top: 12px; padding: 10px; background: #1c2128; border-radius: 8px; border: 1px solid #30363d;">
+      <div style="font-size: 11px; color: #56d364; font-weight: 600; margin-bottom: 4px;">Access Control</div>
+      <div style="font-size: 10px; color: #7d8590; line-height: 1.6;">
+        Session auth &rarr; module-level roles (admin/editor/viewer) &rarr; BU filtering<br>
+        Config-driven module registry (config.yaml)
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ CLI COMMANDS ============ -->
+<div class="detail-section">
+  <h2>CLI Commands (65 total)</h2>
+  <div class="cli-grid">
+    <div class="cli-card">
+      <h4>qms pipeline</h4>
+      <div class="cmds">
+        <code>intake</code> Classify &amp; route inbox files<br>
+        <code>import-drawing</code> Import SIS Excel<br>
+        <code>import-batch</code> Batch import SIS files<br>
+        <code>process</code> Run extraction queue<br>
+        <code>status</code> / <code>queue</code> View state
+      </div>
+    </div>
+    <div class="cli-card">
+      <h4>qms projects</h4>
+      <div class="cmds">
+        <code>scan</code> Discover &amp; catalog drawings<br>
+        <code>list</code> / <code>summary</code> View projects<br>
+        <code>import-procore</code> Procore CSV import<br>
+        <code>export-timecard</code> Timecard export<br>
+        <code>migrate-timetracker</code> TT migration
+      </div>
+    </div>
+    <div class="cli-card">
+      <h4>qms welding</h4>
+      <div class="cmds">
+        <code>dashboard</code> / <code>continuity</code><br>
+        <code>import-wps</code> Master log import<br>
+        <code>import-weekly</code> Weld log import<br>
+        <code>extract</code> / <code>generate</code> Forms pipeline<br>
+        <code>cert-requests</code> / <code>approve-wcr</code><br>
+        <code>export-lookups</code> Power Automate sync
+      </div>
+    </div>
+    <div class="cli-card">
+      <h4>qms eng</h4>
+      <div class="cmds">
+        <code>line-sizing</code> Pipe sizing calc<br>
+        <code>relief-valve</code> Relief valve sizing<br>
+        <code>pump</code> / <code>ventilation</code> / <code>charge</code><br>
+        <code>validate-pipes</code> Drawing vs calc check<br>
+        <code>validate-relief</code> Relief valve check<br>
+        <code>history</code> Calculation audit trail
+      </div>
+    </div>
+    <div class="cli-card">
+      <h4>qms docs / refs</h4>
+      <div class="cmds">
+        <code>docs load-module</code> Load QM XML<br>
+        <code>docs summary</code> / <code>search</code> / <code>detail</code><br>
+        <code>refs extract</code> Standards extraction<br>
+        <code>refs list</code> / <code>search</code> / <code>clauses</code>
+      </div>
+    </div>
+    <div class="cli-card">
+      <h4>qms (other)</h4>
+      <div class="cmds">
+        <code>version</code> / <code>migrate</code> / <code>serve</code><br>
+        <code>workforce list</code> / <code>import-csv</code><br>
+        <code>vectordb index</code> / <code>search</code> / <code>status</code><br>
+        <code>auth create-user</code> / <code>grant-access</code><br>
+        <code>report system</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

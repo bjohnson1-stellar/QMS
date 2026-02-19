@@ -222,4 +222,54 @@ def create_app() -> Flask:
 
         return redirect(url_for(_first_endpoint))
 
+    # ── Admin-only system map (unlisted, no nav link) ───────────────────
+    @app.route("/admin/system-map")
+    def system_map():
+        from flask import render_template, abort, session
+        from datetime import datetime
+
+        user = session.get("user")
+        if not user or user.get("role") != "admin":
+            abort(404)  # hide from non-admins entirely
+
+        from qms.core import get_db
+        from qms.core.config import QMS_PATHS
+
+        stats = {}
+        try:
+            with get_db() as conn:
+                stats["projects"] = conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
+                stats["sheets"] = conn.execute("SELECT COUNT(*) FROM sheets").fetchone()[0]
+                stats["extracted"] = conn.execute(
+                    "SELECT COUNT(*) FROM sheets WHERE extracted_at IS NOT NULL"
+                ).fetchone()[0]
+                stats["employees"] = conn.execute("SELECT COUNT(*) FROM employees").fetchone()[0]
+                stats["welders"] = conn.execute(
+                    "SELECT COUNT(*) FROM weld_welder_registry WHERE status='active'"
+                ).fetchone()[0]
+                stats["wps_count"] = conn.execute("SELECT COUNT(*) FROM weld_wps").fetchone()[0]
+                stats["wpq_count"] = conn.execute("SELECT COUNT(*) FROM weld_wpq").fetchone()[0]
+                stats["tables"] = conn.execute(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table'"
+                ).fetchone()[0]
+        except Exception:
+            stats = {k: "?" for k in [
+                "projects", "sheets", "extracted", "employees",
+                "welders", "wps_count", "wpq_count", "tables",
+            ]}
+
+        # Count inbox files
+        inbox = QMS_PATHS.inbox
+        try:
+            stats["inbox_files"] = sum(1 for f in inbox.iterdir() if f.is_file())
+        except Exception:
+            stats["inbox_files"] = "?"
+
+        return render_template(
+            "admin/system-map.html",
+            stats=stats,
+            current_user=user,
+            updated_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
+        )
+
     return app
