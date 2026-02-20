@@ -49,20 +49,37 @@ run_service.py
 # LAN shortcut (machine-specific IP)
 SIS QMS (LAN).url
 
-# Extraction scripts (temporary/one-off)
+# Agent-created temp files (extraction pipeline artifacts)
 extract_*.py
 *_extraction*.py
 *_extractor.py
 extraction_*.txt
 extraction_*.md
+extraction_*.json
 extracted_*.txt
 extracted_*.json
 *_extracted.json
 FRESHPET_*.md
 EXTRACTION_REPORT_*.md
 EXTRACTION_*.md
+ARCHITECTURAL_*.md
 sheet_*_text.txt
 show_extraction_summary.py
 store_*_extraction.py
 test_extraction.py
 insert_freshpet_*.py
+insert_*_extractions.py
+insert_extraction_*.py
+manual_extract*.py
+manual_extraction*.py
+parse_mechanical*.py
+load_*_extraction*.py
+temp_extract*.py
+temp_load_*.py
+complete_insertion*.py
+electrical_extraction*.py
+utility_extraction*.py
+freshpet_*.txt
+freshpet_*.json
+freshpet_*.md
+nul
