@@ -125,6 +125,11 @@ D:\qms\                          # Repo root = package root
 │   ├── base.py                  # DisciplineCalculator ABC
 │   └── cli.py                   # 8 commands
 │
+├── imports/                     # Shared import infrastructure
+│   ├── specs.py                 # Dataclasses: ImportSpec, ColumnDef, ActionItem, ActionPlan
+│   ├── engine.py                # Parse, map, plan, execute, session CRUD
+│   └── schema.sql               # import_sessions + import_actions tables
+│
 ├── automation/                  # JSON request dispatcher (Power Automate intake)
 ├── blog/                        # The Observatory blog (scheduled publishing)
 │   ├── schema.sql, db.py, migrations.py
@@ -145,6 +150,8 @@ D:\qms\                          # Repo root = package root
 │   └── cli.py                   # export-timecard, migrate-timetracker
 ├── pipeline/                    # Drawing intake pipeline
 ├── workforce/                   # Employee management
+│   ├── employees.py             # CRUD, duplicate detection, import, certifications
+│   └── import_specs.py          # Employee import spec (15 columns, 4-level match)
 ├── vectordb/                    # Semantic search
 ├── reporting/                   # Reports
 └── cli/main.py                  # Typer CLI entrypoint
@@ -225,7 +232,7 @@ from qms.engineering.refrig_calc import NH3Properties, LineSizing
 
 ### Database
 
-Single SQLite database at `QMS_PATHS.database` with 256 tables across 10 schema files. FK dependency chain controlled by `SCHEMA_ORDER` in `core/db.py`. The `business_units` table is shared by projects, welding, and pipeline modules.
+Single SQLite database at `QMS_PATHS.database` with 258+ tables across 13 schema files. FK dependency chain controlled by `SCHEMA_ORDER` in `core/db.py`. The `business_units` table is shared by projects, welding, and pipeline modules.
 
 **Budget model** (three-tier): `projects` (5-digit base) → `project_allocations` (per-BU breakdown) → `project_budgets` (rollup total). The `sync_budget_rollup()` function in `budget.py` keeps `project_budgets.total_budget = SUM(project_allocations.allocated_budget)`.
 
@@ -251,6 +258,8 @@ api/blog.py          → Blueprint /blog/*, The Observatory blog + admin API
 api/settings.py      → Blueprint /settings/*, 9-tab settings UI (incl. BU CRUD)
 projects/budget.py   → Pure business logic (allocation, queries, hub data)
 timetracker/         → Projections, transactions, timecard (extracted from projects)
+imports/             → Shared import engine (parse, map, plan, execute)
+workforce/import_specs.py → Employee import spec + 4-level match + categorize
 frontend/templates/  → Jinja2 templates extending base.html
 frontend/static/     → Shared CSS/JS (style.css, dark.css, brand-fonts.css, favicon.ico)
 ```
