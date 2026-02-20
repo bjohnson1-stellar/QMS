@@ -95,6 +95,7 @@ D:\qms\                          # Repo root = package root
 │   ├── welding.py               # Blueprint: /welding/* routes
 │   ├── pipeline.py              # Blueprint: /pipeline/* routes
 │   ├── automation.py            # Blueprint: /automation/* routes
+│   ├── blog.py                  # Blueprint: /blog/* routes
 │   └── settings.py              # Blueprint: /settings/* routes
 │
 ├── frontend/                    # Web UI assets
@@ -105,7 +106,8 @@ D:\qms\                          # Repo root = package root
 │   │   ├── welding/             # 8 welding templates
 │   │   ├── settings/            # Settings UI templates
 │   │   ├── automation/          # Automation templates
-│   │   └── pipeline/            # Pipeline templates
+│   │   ├── pipeline/            # Pipeline templates
+│   │   └── blog/                # Blog list + detail pages
 │   └── static/
 │       ├── style.css            # Shared CSS
 │       ├── dark.css             # Dark mode styles
@@ -122,6 +124,8 @@ D:\qms\                          # Repo root = package root
 │   └── cli.py                   # 8 commands
 │
 ├── automation/                  # JSON request dispatcher (Power Automate intake)
+├── blog/                        # The Observatory blog (scheduled publishing)
+│   ├── schema.sql, db.py, migrations.py
 ├── welding/                     # WPS/WPQ/continuity tracking + forms pipeline
 │   ├── forms/, extraction/, generation/  # Form pipeline (28 files)
 │   └── cli.py                   # 18 commands
@@ -234,7 +238,8 @@ api/projects.py     → Blueprint /projects/*, calls budget.py
 api/welding.py      → Blueprint /welding/*, dashboard/forms
 api/pipeline.py     → Blueprint /pipeline/*, intake dashboard
 api/automation.py   → Blueprint /automation/*, request preview
-api/settings.py     → Blueprint /settings/*, 8-tab settings UI
+api/blog.py         → Blueprint /blog/*, The Observatory blog + admin API
+api/settings.py     → Blueprint /settings/*, 8-tab settings UI + blog editor
 projects/budget.py  → Pure business logic (allocation, queries)
 frontend/templates/ → Jinja2 templates extending base.html
 frontend/static/    → Shared CSS/JS (style.css, dark.css, brand-fonts.css, favicon.ico)

@@ -274,6 +274,7 @@ def create_app() -> Flask:
                 stats["tables"] = conn.execute(
                     "SELECT COUNT(*) FROM sqlite_master WHERE type='table'"
                 ).fetchone()[0]
+                stats["blog_posts"] = conn.execute("SELECT COUNT(*) FROM blog_posts").fetchone()[0]
 
                 # ── Recent activity feed ──────────────────────────
                 activity = conn.execute("""
@@ -328,7 +329,7 @@ def create_app() -> Flask:
         except Exception:
             stats = {k: "?" for k in [
                 "projects", "sheets", "extracted", "employees",
-                "welders", "wps_count", "wpq_count", "tables",
+                "welders", "wps_count", "wpq_count", "tables", "blog_posts",
             ]}
 
         # ── Disk health ───────────────────────────────────────────

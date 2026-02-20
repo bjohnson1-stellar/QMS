@@ -952,6 +952,7 @@
   <div class="stat-chip"><span class="val">{{ stats.wps_count }}</span><span class="label">WPS</span></div>
   <div class="stat-chip"><span class="val">{{ stats.wpq_count }}</span><span class="label">WPQ</span></div>
   <div class="stat-chip"><span class="val">{{ stats.tables }}</span><span class="label">DB Tables</span></div>
+  <div class="stat-chip"><span class="val">{{ stats.blog_posts }}</span><span class="label">Blog Posts</span></div>
   <div class="stat-chip"><span class="val">{{ stats.inbox_files }}</span><span class="label">Inbox Files</span></div>
 </div>
 
@@ -1309,9 +1310,15 @@
     </div>
 
     <div class="module-card">
+      <h4>The Observatory</h4>
+      <div class="route">/blog/*</div>
+      <div class="pages">Blog list, Post detail &mdash; draft/scheduled/published workflow with lazy auto-publish</div>
+    </div>
+
+    <div class="module-card">
       <h4>Settings</h4>
       <div class="route">/settings/*</div>
-      <div class="pages">8 tabs: General, Projects, Welding, Pipeline, Extraction, Branding, Integrations, Users &amp; Access</div>
+      <div class="pages">9 tabs: General, Projects, Welding, Pipeline, Extraction, Branding, Integrations, Users &amp; Access, The Observatory</div>
     </div>
 
     <div style="margin-top: 12px; padding: 10px; background: #1c2128; border-radius: 8px; border: 1px solid #30363d;">
