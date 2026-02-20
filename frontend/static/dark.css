@@ -137,9 +137,13 @@
 [data-theme="dark"] .toggle-switch input:checked + .knobs:before { background-color: var(--color-primary); }
 [data-theme="dark"] .toggle-switch input:checked ~ .layer { background-color: rgba(164, 31, 53, 0.2); }
 
-/* Active tab highlight in dark */
+/* Module tab overrides for dark mode */
 [data-theme="dark"] .module-tab.active {
-    background: rgba(164, 31, 53, 0.15);
+    background: rgba(164, 31, 53, 0.18);
+}
+
+[data-theme="dark"] .module-tab:hover {
+    background: rgba(255, 255, 255, 0.06);
 }
 
 /* Input color-scheme for native dark controls */
