@@ -55,6 +55,20 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "07609 Freshpet Full Drawing Extraction",
+          "desc": "286 sheets across 11 disciplines extracted via SIS pipeline. 72 equipment, 673 lines, 372 instruments. Cross-checker module created.",
+          "module": "pipeline",
+          "completed": "2026-02-20",
+          "tags": ["extraction", "pipeline", "batch"]
+        },
+        {
+          "title": "Pipeline Cross-Checker Module",
+          "desc": "Reusable cross_checker.py for detecting material mismatches, size discrepancies, and duplicate tags across drawings.",
+          "module": "pipeline",
+          "completed": "2026-02-20",
+          "tags": ["pipeline", "validation"]
+        },
+        {
           "title": "Admin System Architecture Map",
           "desc": "Secret /admin/system-map page with live DB stats, full system visual, roadmap tracker.",
           "module": "admin",
