@@ -44,6 +44,9 @@ welding = [
     # AI/LLM for form extraction
     "anthropic>=0.25.0",
 ]
+export = [
+    "weasyprint>=60.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",

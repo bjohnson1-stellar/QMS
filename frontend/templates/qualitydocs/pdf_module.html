@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ module.title }} — {{ branding.app_name }}</title>
+<link rel="stylesheet" href="{{ branding.fonts.google_fonts_url }}">
+<style>
+/* ================================================================
+   QMS Quality Manual — PDF Export Template
+   ================================================================
+   Self-contained HTML+CSS for WeasyPrint rendering.
+   All styling inline — no external dependencies except Google Fonts.
+   Edit this file to customize the PDF output.
+   ================================================================ */
+
+/* ── Page Setup ─────────────────────────────────────────────────── */
+@page {
+    size: letter;
+    margin: 1in 0.9in 1in 0.9in;
+
+    @top-left {
+        content: string(module-title);
+        font-family: "{{ branding.fonts.heading_fallback }}", "Barlow Condensed", sans-serif;
+        font-size: 8.5pt;
+        font-weight: 600;
+        color: {{ branding.colors.nav_bg }};
+        padding-top: 4pt;
+    }
+    @top-right {
+        content: "{{ branding.app_name }} Quality Manual";
+        font-family: "{{ branding.fonts.body_fallback }}", "Source Sans 3", sans-serif;
+        font-size: 8pt;
+        color: #666;
+        padding-top: 4pt;
+    }
+    @bottom-center {
+        content: "Page " counter(page) " of " counter(pages);
+        font-family: "{{ branding.fonts.body_fallback }}", "Source Sans 3", sans-serif;
+        font-size: 8pt;
+        color: #888;
+    }
+    @bottom-right {
+        content: "Effective {{ module.effective_date }}";
+        font-family: "{{ branding.fonts.body_fallback }}", "Source Sans 3", sans-serif;
+        font-size: 7.5pt;
+        color: #999;
+    }
+}
+
+/* Cover page — no header/footer */
+@page cover {
+    margin: 0;
+    @top-left { content: none; }
+    @top-right { content: none; }
+    @bottom-center { content: none; }
+    @bottom-right { content: none; }
+}
+
+/* TOC page — no running header */
+@page toc {
+    @top-left { content: none; }
+    @top-right { content: none; }
+}
+
+/* ── Base Typography ────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+body {
+    font-family: "{{ branding.fonts.body_fallback }}", "Source Sans 3", sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+    -weasyprint-hyphens: auto;
+}
+
+h1, h2, h3, h4 {
+    font-family: "{{ branding.fonts.heading_fallback }}", "Barlow Condensed", sans-serif;
+    color: {{ branding.colors.nav_bg }};
+    margin-top: 0;
+    orphans: 3;
+    widows: 3;
+}
+
+p { margin: 0 0 7pt 0; orphans: 2; widows: 2; }
+ul, ol { margin: 0 0 7pt 0; padding-left: 18pt; }
+li { margin-bottom: 3pt; }
+
+a { color: {{ branding.colors.primary }}; text-decoration: none; }
+
+/* ================================================================
+   COVER PAGE
+   ================================================================ */
+.cover {
+    page: cover;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    page-break-after: always;
+    position: relative;
+    overflow: hidden;
+}
+
+.cover-top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8pt;
+    background: {{ branding.colors.primary }};
+}
+
+.cover-bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 24pt;
+    background: {{ branding.colors.nav_bg }};
+}
+
+.cover-side-accent {
+    position: absolute;
+    top: 8pt;
+    left: 0;
+    width: 4pt;
+    bottom: 24pt;
+    background: {{ branding.colors.primary }};
+}
+
+.cover-content {
+    padding: 80pt 60pt;
+}
+
+.cover-company {
+    font-family: "{{ branding.fonts.heading_fallback }}", "Barlow Condensed", sans-serif;
+    font-size: 14pt;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: {{ branding.colors.nav_bg }};
+    margin-bottom: 20pt;
+}
+
+.cover-divider {
+    width: 60pt;
+    height: 3pt;
+    background: {{ branding.colors.primary }};
+    margin: 0 auto 28pt;
+}
+
+.cover-title {
+    font-family: "{{ branding.fonts.heading_fallback }}", "Barlow Condensed", sans-serif;
+    font-size: 34pt;
+    font-weight: 700;
+    color: {{ branding.colors.nav_bg }};
+    margin-bottom: 10pt;
+    line-height: 1.15;
+}
+
+.cover-subtitle {
+    font-size: 14pt;
+    font-weight: 600;
+    color: {{ branding.colors.primary }};
+    margin-bottom: 40pt;
+}
+
+.cover-meta {
+    font-size: 10pt;
+    color: #555;
+    line-height: 1.8;
+}
+
+.cover-meta strong {
+    color: {{ branding.colors.nav_bg }};
+    font-weight: 600;
+}
+
+/* ================================================================
+   TABLE OF CONTENTS
+   ================================================================ */
+.toc-page {
+    page: toc;
+    page-break-after: always;
+}
+
+.toc-heading {
+    font-size: 22pt;
+    font-weight: 700;
+    color: {{ branding.colors.nav_bg }};
+    margin-bottom: 6pt;
+}
+
+.toc-rule {
+    height: 2.5pt;
+    background: {{ branding.colors.primary }};
+    margin-bottom: 20pt;
+    width: 50pt;
+}
+
+.toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.toc-entry {
+    display: flex;
+    align-items: baseline;
+    padding: 5pt 0;
+    border-bottom: 1px dotted #ccc;
+}
+
+.toc-number {
+    font-family: "{{ branding.fonts.heading_fallback }}", "Barlow Condensed", sans-serif;
+    font-weight: 600;
+    color: {{ branding.colors.primary }};
+    min-width: 40pt;
+    flex-shrink: 0;
+}
+
+.toc-title {
+    flex: 1;
+    color: #1a1a1a;
+}
+
+.toc-title a {
+    color: #1a1a1a;
+    text-decoration: none;
+}
+
+.toc-page-num {
+    text-align: right;
+    min-width: 24pt;
+    flex-shrink: 0;
+    color: #888;
+    font-size: 9.5pt;
+}
+
+.toc-page-num a::after {
+    content: target-counter(attr(href), page);
+}
+
+/* ================================================================
+   SECTION CONTENT
+   ================================================================ */
+
+/* Running element for page header */
+.section-running-title {
+    string-set: module-title content();
+    display: none;
+}
+
+.section {
+    page-break-before: always;
+}
+
+.section-header {
+    margin-bottom: 18pt;
+    padding-bottom: 8pt;
+    border-bottom: 2.5pt solid {{ branding.colors.primary }};
+}
+
+.section-number {
+    font-family: "{{ branding.fonts.heading_fallback }}", "Barlow Condensed", sans-serif;
+    font-size: 11pt;
+    font-weight: 600;
+    color: {{ branding.colors.primary }};
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2pt;
+}
+
+.section-title {
+    font-size: 20pt;
+    font-weight: 700;
+    color: {{ branding.colors.nav_bg }};
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* ── Subsection ─────────────────────────────────────────────────── */
+.subsection {
+    margin-bottom: 16pt;
+    page-break-inside: auto;
+}
+
+.subsection-header {
+    margin-bottom: 8pt;
+    padding-bottom: 4pt;
+    border-bottom: 1pt solid #ddd;
+    orphans: 3;
+    widows: 3;
+    page-break-after: avoid;
+}
+
+.subsection-title {
+    font-size: 13pt;
+    font-weight: 700;
+    color: {{ branding.colors.nav_bg }};
+    margin: 0;
+    display: inline;
+}
+
+.subsection-ref {
+    font-size: 8.5pt;
+    color: #999;
+    margin-left: 6pt;
+}
+
+.subsection-type-badge {
+    display: inline-block;
+    font-size: 7pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1.5pt 6pt;
+    border-radius: 8pt;
+    background: {{ branding.colors.primary_subtle }};
+    color: {{ branding.colors.primary }};
+    margin-left: 6pt;
+    vertical-align: middle;
+}
+
+/* ── Content Blocks ─────────────────────────────────────────────── */
+.block { margin-bottom: 6pt; }
+
+.block-heading {
+    font-family: "{{ branding.fonts.heading_fallback }}", "Barlow Condensed", sans-serif;
+    font-size: 12pt;
+    font-weight: 600;
+    color: {{ branding.colors.nav_bg }};
+    margin-top: 10pt;
+    margin-bottom: 4pt;
+    page-break-after: avoid;
+}
+
+.block-subheading {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #333;
+    margin-top: 8pt;
+    margin-bottom: 3pt;
+    page-break-after: avoid;
+}
+
+.block p {
+    font-size: 10.5pt;
+    color: #222;
+}
+
+.block ul, .block ol {
+    font-size: 10.5pt;
+    color: #222;
+}
+
+.block li {
+    margin-bottom: 2pt;
+}
+
+/* Note callout */
+.block-note {
+    background: #fef9e7;
+    border-left: 3pt solid {{ branding.colors.warning }};
+    padding: 8pt 12pt;
+    border-radius: 0 4pt 4pt 0;
+    margin: 8pt 0;
+    font-size: 10pt;
+    page-break-inside: avoid;
+}
+
+.block-note strong {
+    color: #b45309;
+}
+
+/* Responsibility callout */
+.block-responsibility {
+    background: #eef6ff;
+    border-left: 3pt solid {{ branding.colors.nav_bg }};
+    padding: 8pt 12pt;
+    border-radius: 0 4pt 4pt 0;
+    margin: 8pt 0;
+    font-size: 10pt;
+    page-break-inside: avoid;
+}
+
+.block-responsibility .role {
+    font-weight: 700;
+    color: {{ branding.colors.nav_bg }};
+    margin-bottom: 3pt;
+}
+
+/* Tables */
+.block table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    margin: 6pt 0;
+    page-break-inside: auto;
+}
+
+.block table th,
+.block table td {
+    padding: 5pt 8pt;
+    border: 0.75pt solid #ccc;
+    text-align: left;
+    vertical-align: top;
+}
+
+.block table th {
+    background: {{ branding.colors.nav_bg }};
+    color: white;
+    font-weight: 600;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.block table tr:nth-child(even) td {
+    background: #f8f9fa;
+}
+
+/* Cross-reference styling (non-clickable in PDF) */
+.xref {
+    color: {{ branding.colors.primary }};
+    font-weight: 500;
+}
+
+/* ================================================================
+   FOOTER / CONFIDENTIALITY
+   ================================================================ */
+.doc-footer {
+    page-break-before: always;
+    text-align: center;
+    padding-top: 120pt;
+    color: #999;
+    font-size: 9pt;
+    line-height: 1.8;
+}
+
+.doc-footer strong {
+    color: {{ branding.colors.nav_bg }};
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════
+     COVER PAGE
+     ════════════════════════════════════════════════════════════════ -->
+<div class="cover">
+    <div class="cover-top-bar"></div>
+    <div class="cover-side-accent"></div>
+    <div class="cover-content">
+        <div class="cover-company">{{ branding.app_name }}</div>
+        <div class="cover-divider"></div>
+        <div class="cover-title">{{ module.title }}</div>
+        <div class="cover-subtitle">Quality Manual — Module {{ module.module_number }}</div>
+        <div class="cover-meta">
+            <strong>Version:</strong> {{ module.version }}<br>
+            <strong>Effective Date:</strong> {{ module.effective_date }}<br>
+            <strong>Status:</strong> {{ module.status }}<br>
+            <strong>Sections:</strong> {{ sections|length }}
+        </div>
+    </div>
+    <div class="cover-bottom-bar"></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     TABLE OF CONTENTS
+     ════════════════════════════════════════════════════════════════ -->
+<div class="toc-page">
+    <h1 class="toc-heading">Contents</h1>
+    <div class="toc-rule"></div>
+    <ul class="toc-list">
+        {% for sec in sections %}
+        <li class="toc-entry">
+            <span class="toc-number">{{ sec.section_number }}</span>
+            <span class="toc-title">
+                <a href="#section-{{ sec.section_number }}">{{ sec.title }}</a>
+            </span>
+            <span class="toc-page-num">
+                <a href="#section-{{ sec.section_number }}"></a>
+            </span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SECTIONS
+     ════════════════════════════════════════════════════════════════ -->
+{% for sec in sections %}
+<div class="section" id="section-{{ sec.section_number }}">
+
+    <!-- Running header text (invisible, consumed by @page) -->
+    <span class="section-running-title">Section {{ sec.section_number }} — {{ sec.title }}</span>
+
+    <div class="section-header">
+        <div class="section-number">Section {{ sec.section_number }}</div>
+        <h2 class="section-title">{{ sec.title }}</h2>
+    </div>
+
+    {% for sub in sec.subsections %}
+    <div class="subsection">
+        <div class="subsection-header">
+            <h3 class="subsection-title">{{ sub.title }}</h3>
+            <span class="subsection-ref">{{ sub.full_ref }}</span>
+            {% if sub.subsection_type and sub.subsection_type != 'General' %}
+            <span class="subsection-type-badge">{{ sub.subsection_type }}</span>
+            {% endif %}
+        </div>
+
+        {% for block in sub.content_blocks %}
+            {% if block.block_type == 'HeadingParagraph' %}
+                <div class="block block-heading">{{ block.content }}</div>
+
+            {% elif block.block_type == 'SubHeading' %}
+                <div class="block block-subheading">{{ block.content }}</div>
+
+            {% elif block.block_type == 'Paragraph' %}
+                <div class="block"><p>{{ block.content }}</p></div>
+
+            {% elif block.block_type == 'BulletList' %}
+                <div class="block">
+                    <ul>
+                    {% for item in block.content.split('\n') %}
+                        {% if item.strip() %}
+                        <li>{{ item.strip() }}</li>
+                        {% endif %}
+                    {% endfor %}
+                    </ul>
+                </div>
+
+            {% elif block.block_type == 'NumberedList' %}
+                <div class="block">
+                    <ol>
+                    {% for item in block.content.split('\n') %}
+                        {% if item.strip() %}
+                        <li>{{ item.strip() }}</li>
+                        {% endif %}
+                    {% endfor %}
+                    </ol>
+                </div>
+
+            {% elif block.block_type == 'Table' %}
+                <div class="block">
+                    <table>
+                    {% for line in block.content.split('\n') %}
+                        {% if line.strip() and not line.strip().startswith('---') %}
+                        <tr>
+                            {% set cells = line.split('|') %}
+                            {% for cell in cells %}
+                                {% if cell.strip() %}
+                                    {% if loop.parent.index0 == 0 %}
+                                    <th>{{ cell.strip() }}</th>
+                                    {% else %}
+                                    <td>{{ cell.strip() }}</td>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                    </table>
+                </div>
+
+            {% elif block.block_type == 'Note' %}
+                <div class="block block-note">
+                    <strong>NOTE:</strong> {{ block.content }}
+                </div>
+
+            {% elif block.block_type == 'ResponsibilityBlock' %}
+                {% set lines = block.content.split('\n') %}
+                <div class="block block-responsibility">
+                    <div class="role">{{ lines[0] if lines else '' }}</div>
+                    {% if lines|length > 1 %}
+                    <ul>
+                        {% for item in lines[1:] %}
+                            {% if item.strip() %}
+                            <li>{{ item.strip() }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+
+            {% else %}
+                <div class="block"><p>{{ block.content }}</p></div>
+            {% endif %}
+        {% endfor %}
+
+        {# Standalone responsibility assignments (from qm_responsibility_assignments table) #}
+        {% for resp in sub.responsibilities %}
+            {% if loop.first %}
+            <div class="block block-responsibility">
+            {% endif %}
+                <div class="role">{{ resp.role }}</div>
+                <p>{{ resp.responsibility }}</p>
+            {% if loop.last %}
+            </div>
+            {% endif %}
+        {% endfor %}
+
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}
+
+<!-- ════════════════════════════════════════════════════════════════
+     END MATTER
+     ════════════════════════════════════════════════════════════════ -->
+<div class="doc-footer">
+    <strong>{{ branding.app_name }}</strong><br>
+    {{ branding.app_tagline }}<br>
+    {{ module.title }} — Version {{ module.version }}<br>
+    Effective {{ module.effective_date }}
+</div>
+
+</body>
+</html>

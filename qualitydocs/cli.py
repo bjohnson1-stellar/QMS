@@ -140,6 +140,29 @@ def search(
 
 
 @app.command()
+def export(
+    module_number: int = typer.Argument(..., help="Module number to export"),
+    format: str = typer.Option("pdf", "--format", "-f", help="Output format: pdf or html"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output file path"),
+):
+    """Export a quality manual module as a formatted PDF."""
+    from qms.qualitydocs.export import export_module_html, export_module_pdf
+
+    try:
+        if format == "html":
+            path = export_module_html(module_number, output_path=output)
+        else:
+            path = export_module_pdf(module_number, output_path=output)
+        typer.echo(f"Exported: {path}")
+    except ImportError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command()
 def detail(
     module_number: int = typer.Argument(..., help="Module number to inspect"),
 ):

@@ -9,7 +9,7 @@ Routes:
     GET /qualitydocs/api/search?q=...      — FTS5 full-text search
 """
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, Response, jsonify, render_template, request
 
 from qms.qualitydocs.loader import (
     get_manual_summary,
@@ -53,6 +53,29 @@ def api_section(section_number: str):
     if content is None:
         return jsonify({"error": f"Section {section_number} not found"}), 404
     return jsonify(content)
+
+
+@bp.route("/api/export/<int:module_number>")
+def api_export(module_number: int):
+    """Download a module as a formatted PDF."""
+    from qms.qualitydocs.export import export_module_pdf_bytes
+
+    detail = get_module_detail(module_number)
+    if detail is None:
+        return jsonify({"error": f"Module {module_number} not found"}), 404
+
+    try:
+        pdf_bytes = export_module_pdf_bytes(module_number)
+    except ImportError:
+        return jsonify({"error": "WeasyPrint not installed"}), 501
+
+    version = detail.get("version", "0")
+    filename = f"Module_{module_number}_v{version}.pdf"
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @bp.route("/api/search")

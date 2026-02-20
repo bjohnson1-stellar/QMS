@@ -69,6 +69,13 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Quality Manual PDF Export",
+          "desc": "WeasyPrint-based PDF export for quality manual modules. Professional cover page, TOC with page numbers, all content block types, SIS branding. CLI (qms docs export), web download endpoint, and in-page PDF button. Customizable via standalone Jinja2+CSS template.",
+          "module": "qualitydocs",
+          "completed": "2026-02-20",
+          "tags": ["export", "pdf", "quality-manual", "weasyprint"]
+        },
+        {
           "title": "Contextualized Document Import — Workforce MVP",
           "desc": "4-step import wizard (Upload → Map Columns → Review Action Plan → Execute) with shared import engine, workforce-specific specs (15 columns, 4-level match, separation detection), and full web UI. Dark mode hover contrast fix included.",
           "module": "workforce",
