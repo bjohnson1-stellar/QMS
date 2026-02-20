@@ -27,6 +27,20 @@
       "icon": "&#9998;",
       "items": [
         {
+          "title": "Quality Manual Module 3 XML Authoring",
+          "desc": "Author module3_output.xml from planning doc. 8 sections: Program Framework (3.1), Welding Quality (3.2), Training & Workforce (3.3), Testing & Calibration (3.4), CI/CAPA (3.5), Field Operations Manual (3.6), Vendor & Subcontractor Quality (3.7), Internal Audit (3.8).",
+          "module": "qualitydocs",
+          "priority": "high",
+          "tags": ["docs", "quality-manual", "authoring"]
+        },
+        {
+          "title": "Quality Manual Module 4 XML Authoring",
+          "desc": "Author module4_output.xml from planning doc. ~50 SOPs across 11 categories with dual ID system (section 4.X + SOP-XXX-NNN). Reserved section ranges per category.",
+          "module": "qualitydocs",
+          "priority": "high",
+          "tags": ["docs", "quality-manual", "authoring", "sops"]
+        },
+        {
           "title": "Windows Service (nssm)",
           "desc": "Run Waitress as auto-start Windows service instead of manual qms serve.",
           "module": "core",
@@ -132,11 +146,18 @@
           "tags": ["ui", "welding"]
         },
         {
-          "title": "Module 3 Welding Program Planning",
-          "desc": "Quality manual Module 3 document for welding program planning.",
+          "title": "Module 4 SOP Architecture Planning",
+          "desc": "Comprehensive Module 4 architecture: 50 SOPs across 11 categories, dual ID system (4.X + SOP-XXX-NNN), reserved section ranges, standard XML template, cross-reference maps from M2/M3, 4-phase authoring plan.",
           "module": "qualitydocs",
-          "completed": "2026-02-17",
-          "tags": ["docs", "welding"]
+          "completed": "2026-02-20",
+          "tags": ["docs", "quality-manual", "planning", "sops"]
+        },
+        {
+          "title": "Module 3 Quality Programs Architecture",
+          "desc": "Expanded Module 3 from welding-only to 7 independent quality programs (3.2-3.8) with program framework (3.1). Bridge between M2 project procedures and M4 SOPs. Programs: Welding, Training, Testing & Calibration, CI/CAPA, Field Manual, Vendor Quality, Internal Audit.",
+          "module": "qualitydocs",
+          "completed": "2026-02-20",
+          "tags": ["docs", "quality-manual", "planning"]
         }
       ]
     }
