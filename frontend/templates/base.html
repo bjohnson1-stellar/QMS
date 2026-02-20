@@ -37,9 +37,8 @@
     </style>
 
     {% block extra_css %}{% endblock %}
-</head>
-<body{% if ns.module == 'home' %} class="no-subnav"{% endif %}>
-    {# Detect active module from the current route (config-driven) #}
+
+    {# Detect active module from the current route (config-driven) — must be before <body> class ref #}
     {% set ns = namespace(module='home') %}
     {% if request.endpoint %}
         {% if request.endpoint == 'index' or (request.endpoint and request.endpoint.startswith('blog.')) %}
@@ -54,6 +53,8 @@
             {% endfor %}
         {% endif %}
     {% endif %}
+</head>
+<body{% if ns.module == 'home' %} class="no-subnav"{% endif %}>
 
     <nav class="top-bar">
         <a href="/" class="top-bar-brand">
