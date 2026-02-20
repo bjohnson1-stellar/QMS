@@ -98,9 +98,11 @@ def api_employees():
     with get_db(readonly=True) as conn:
         rows = conn.execute(sql, params).fetchall()
 
+    # Skip employees without an employee_number (can't be referenced in cards)
+    valid = [r for r in rows if r["employee_number"]]
     choices = [
         {"title": r["display_name"], "value": r["employee_number"]}
-        for r in rows
+        for r in valid
     ]
     details = {
         r["employee_number"]: {
@@ -113,9 +115,9 @@ def api_employees():
             "project_number": r["project_number"] or "",
             "project_name": r["project_name"] or "",
         }
-        for r in rows
+        for r in valid
     }
-    return jsonify({"choices": choices, "details": details, "count": len(rows)})
+    return jsonify({"choices": choices, "details": details, "count": len(valid)})
 
 
 @bp.route("/api/wps")
