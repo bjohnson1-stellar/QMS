@@ -3078,3 +3078,201 @@ body.no-subnav .main-content {
         padding: 24px 20px;
     }
 }
+
+/* === Import Wizard === */
+
+/* Stepper */
+.import-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 28px;
+    padding: 16px 0;
+}
+
+.stepper-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    transition: all 0.2s ease;
+}
+
+.stepper-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    font-weight: 700;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+}
+
+.stepper-step.active .stepper-num {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+}
+
+.stepper-step.active .stepper-label {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.stepper-step.completed .stepper-num {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: #fff;
+}
+
+.stepper-step.completed .stepper-label {
+    color: var(--color-success);
+}
+
+.stepper-connector {
+    width: 40px;
+    height: 2px;
+    background: var(--color-border);
+}
+
+/* Upload zone */
+.upload-zone {
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--color-surface);
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-subtle);
+}
+
+/* Small spinner */
+.spinner-sm {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Action categories */
+.action-category {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.action-category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--color-surface-alt);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    user-select: none;
+}
+
+.action-category-header .chevron {
+    transition: transform 0.2s ease;
+}
+
+.action-category.collapsed .action-category-body {
+    display: none;
+}
+
+.action-category.collapsed .chevron {
+    transform: rotate(-90deg);
+}
+
+.action-category-body {
+    padding: 0;
+}
+
+.action-category-body .data-table {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+}
+
+/* Small buttons */
+.btn-sm {
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-sm.btn-success {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: #fff;
+}
+
+.btn-sm.btn-success:hover {
+    background: var(--color-success-hover);
+}
+
+/* Diff styling */
+.diff-field {
+    display: inline-block;
+    margin-right: 10px;
+    font-size: 0.82rem;
+}
+
+.diff-old {
+    color: var(--color-danger);
+    text-decoration: line-through;
+    opacity: 0.8;
+}
+
+.diff-new {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.diff-arrow {
+    color: var(--color-text-muted);
+    margin: 0 2px;
+}
+
+/* Secondary button */
+.btn-secondary {
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.88rem;
+}
+
+.btn-secondary:hover {
+    background: var(--color-surface-alt);
+    border-color: var(--color-border-light);
+}

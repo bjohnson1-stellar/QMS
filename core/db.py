@@ -69,6 +69,7 @@ def execute_query(query: str, params: tuple = (), readonly: bool = True) -> list
 SCHEMA_ORDER = [
     "auth",
     "core",
+    "imports",
     "workforce",
     "projects",
     "timetracker",

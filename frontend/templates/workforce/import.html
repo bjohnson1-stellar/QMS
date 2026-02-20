@@ -1,0 +1,578 @@
+{% extends "base.html" %}
+
+{% block title %}Import Employees - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Import Employees</h1>
+    <p class="subtitle">Upload a spreadsheet to add or update employee records</p>
+</div>
+
+<!-- Stepper -->
+<div class="import-stepper">
+    <div class="stepper-step active" data-step="1">
+        <span class="stepper-num">1</span>
+        <span class="stepper-label">Upload</span>
+    </div>
+    <div class="stepper-connector"></div>
+    <div class="stepper-step" data-step="2">
+        <span class="stepper-num">2</span>
+        <span class="stepper-label">Map Columns</span>
+    </div>
+    <div class="stepper-connector"></div>
+    <div class="stepper-step" data-step="3">
+        <span class="stepper-num">3</span>
+        <span class="stepper-label">Review Plan</span>
+    </div>
+    <div class="stepper-connector"></div>
+    <div class="stepper-step" data-step="4">
+        <span class="stepper-num">4</span>
+        <span class="stepper-label">Results</span>
+    </div>
+</div>
+
+<!-- Step 1: Upload -->
+<div class="import-step" id="step1">
+    <div class="upload-zone" id="uploadZone">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <p style="margin:12px 0 4px;font-weight:600;">Drop your file here</p>
+        <p style="margin:0;color:var(--color-text-muted);font-size:0.85rem;">
+            or <label for="fileInput" style="color:var(--color-primary);cursor:pointer;text-decoration:underline;">browse</label>
+            — accepts .csv and .xlsx
+        </p>
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none;">
+    </div>
+
+    <div id="uploadProgress" style="display:none;margin-top:16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div class="spinner-sm"></div>
+            <span>Parsing file...</span>
+        </div>
+    </div>
+
+    <div class="error-message" id="uploadError" style="display:none;margin-top:16px;"></div>
+
+    <!-- Recent Imports -->
+    <div style="margin-top:32px;">
+        <h3 style="margin-bottom:12px;">Recent Imports</h3>
+        <table class="data-table" id="historyTable">
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Rows</th>
+                    <th>Status</th>
+                    <th>Result</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="historyBody">
+                <tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Step 2: Map Columns -->
+<div class="import-step" id="step2" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div>
+            <strong id="mapFilename"></strong>
+            <span style="color:var(--color-text-muted);margin-left:8px;" id="mapRowCount"></span>
+        </div>
+        <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" onclick="goToStep(1)">Back</button>
+            <button id="btnGeneratePlan" onclick="generatePlan()">Generate Action Plan</button>
+        </div>
+    </div>
+
+    <div class="error-message" id="mappingError" style="display:none;margin-bottom:12px;"></div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>File Column</th>
+                <th>Sample Values</th>
+                <th>Maps To</th>
+                <th style="width:40px;"></th>
+            </tr>
+        </thead>
+        <tbody id="mappingBody"></tbody>
+    </table>
+
+    <div style="margin-top:16px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="detectMissing">
+            <span>Detect separations (flag active employees not in this file)</span>
+        </label>
+    </div>
+</div>
+
+<!-- Step 3: Review Action Plan -->
+<div class="import-step" id="step3" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="margin:0;border:none;padding:0;">Action Plan</h2>
+        <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" onclick="goToStep(2)">Back</button>
+            <button id="btnExecute" onclick="executeImport()">Apply Approved Changes</button>
+        </div>
+    </div>
+
+    <div id="planLoading" style="display:none;">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div class="spinner-sm"></div>
+            <span>Generating action plan...</span>
+        </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="stats-grid" id="planSummary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-bottom:20px;"></div>
+
+    <!-- Category sections -->
+    <div id="planCategories"></div>
+
+    <div class="error-message" id="executeError" style="display:none;margin-top:12px;"></div>
+</div>
+
+<!-- Step 4: Results -->
+<div class="import-step" id="step4" style="display:none;">
+    <div style="text-align:center;padding:32px 0;">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <h2 style="margin:16px 0 8px;">Import Complete</h2>
+        <p id="resultSummary" style="color:var(--color-text-secondary);"></p>
+    </div>
+
+    <div id="resultErrors" style="display:none;margin-bottom:20px;"></div>
+
+    <div style="display:flex;justify-content:center;gap:12px;">
+        <a href="{{ url_for('workforce.employees_page') }}" class="btn-secondary" style="text-decoration:none;">Go to Employees</a>
+        <button onclick="resetWizard()">Import Another File</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    // State
+    let currentStep = 1;
+    let sessionId = null;
+    let uploadData = null;    // response from /upload
+    let planData = null;      // response from /plan
+
+    // -----------------------------------------------------------------------
+    // Stepper navigation
+    // -----------------------------------------------------------------------
+    window.goToStep = function(step) {
+        document.querySelectorAll('.import-step').forEach(el => el.style.display = 'none');
+        document.getElementById('step' + step).style.display = '';
+        document.querySelectorAll('.stepper-step').forEach(el => {
+            const s = parseInt(el.dataset.step);
+            el.classList.toggle('active', s === step);
+            el.classList.toggle('completed', s < step);
+        });
+        currentStep = step;
+    };
+
+    // -----------------------------------------------------------------------
+    // Step 1: Upload
+    // -----------------------------------------------------------------------
+    const zone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+
+    zone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        zone.classList.add('dragover');
+    });
+    zone.addEventListener('dragleave', function() {
+        zone.classList.remove('dragover');
+    });
+    zone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+    });
+    zone.addEventListener('click', function(e) {
+        if (e.target.tagName !== 'LABEL') fileInput.click();
+    });
+    fileInput.addEventListener('change', function() {
+        if (fileInput.files.length) uploadFile(fileInput.files[0]);
+    });
+
+    function uploadFile(file) {
+        document.getElementById('uploadError').style.display = 'none';
+        document.getElementById('uploadProgress').style.display = '';
+
+        const fd = new FormData();
+        fd.append('file', file);
+
+        fetch('/workforce/api/import/upload', { method: 'POST', body: fd })
+            .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+            .then(({ ok, data }) => {
+                document.getElementById('uploadProgress').style.display = 'none';
+                if (!ok) {
+                    showError('uploadError', data.error || 'Upload failed');
+                    return;
+                }
+                sessionId = data.session_id;
+                uploadData = data;
+                buildMappingTable(data);
+                goToStep(2);
+            })
+            .catch(err => {
+                document.getElementById('uploadProgress').style.display = 'none';
+                showError('uploadError', 'Network error: ' + err.message);
+            });
+    }
+
+    // Load history on page load
+    fetch('/workforce/api/import/history')
+        .then(r => r.json())
+        .then(rows => {
+            const body = document.getElementById('historyBody');
+            if (!rows.length) {
+                body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);">No previous imports</td></tr>';
+                return;
+            }
+            body.innerHTML = rows.map(r => {
+                const summary = r.result_summary ? JSON.parse(r.result_summary) : null;
+                const summaryText = summary
+                    ? Object.entries(summary).map(([k,v]) => v + ' ' + k).join(', ')
+                    : '-';
+                return `<tr>
+                    <td>${esc(r.filename)}</td>
+                    <td>${r.total_rows}</td>
+                    <td><span class="status-${r.status}">${r.status}</span></td>
+                    <td>${summaryText}</td>
+                    <td>${r.created_at ? r.created_at.slice(0, 16) : ''}</td>
+                </tr>`;
+            }).join('');
+        })
+        .catch(() => {});
+
+    // -----------------------------------------------------------------------
+    // Step 2: Column Mapping
+    // -----------------------------------------------------------------------
+    function buildMappingTable(data) {
+        document.getElementById('mapFilename').textContent = data.filename;
+        document.getElementById('mapRowCount').textContent = data.total_rows + ' rows';
+
+        const body = document.getElementById('mappingBody');
+        const options = data.available_fields.map(f =>
+            `<option value="${f.name}">${f.label}${f.required ? ' *' : ''}</option>`
+        ).join('');
+
+        body.innerHTML = data.headers.map((header, idx) => {
+            const mapped = data.mapping[String(idx)] || '';
+            const samples = (data.sample_rows || []).map(r => r[idx] || '').filter(Boolean).slice(0, 3);
+            const sampleText = samples.join(', ');
+            const icon = mapped ? '<span style="color:var(--color-success);">&#10003;</span>'
+                                : '<span style="color:var(--color-text-muted);">&#8212;</span>';
+            return `<tr>
+                <td><strong>${esc(header)}</strong></td>
+                <td style="color:var(--color-text-muted);font-size:0.85rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(sampleText)}</td>
+                <td>
+                    <select class="col-map-select" data-col="${idx}" onchange="updateMapIcon(this)">
+                        <option value="">— skip —</option>
+                        ${options}
+                    </select>
+                </td>
+                <td class="map-icon">${icon}</td>
+            </tr>`;
+        }).join('');
+
+        // Pre-select mapped columns
+        body.querySelectorAll('.col-map-select').forEach(sel => {
+            const mapped = data.mapping[sel.dataset.col];
+            if (mapped) sel.value = mapped;
+        });
+    }
+
+    window.updateMapIcon = function(sel) {
+        const td = sel.closest('tr').querySelector('.map-icon');
+        td.innerHTML = sel.value
+            ? '<span style="color:var(--color-success);">&#10003;</span>'
+            : '<span style="color:var(--color-text-muted);">&#8212;</span>';
+    };
+
+    window.generatePlan = function() {
+        document.getElementById('mappingError').style.display = 'none';
+
+        // Collect mapping from selects
+        const mapping = {};
+        document.querySelectorAll('.col-map-select').forEach(sel => {
+            if (sel.value) mapping[sel.dataset.col] = sel.value;
+        });
+
+        const detectMissing = document.getElementById('detectMissing').checked;
+
+        document.getElementById('planLoading').style.display = '';
+        goToStep(3);
+
+        fetch(`/workforce/api/import/${sessionId}/plan`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mapping, detect_missing: detectMissing }),
+        })
+            .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+            .then(({ ok, data }) => {
+                document.getElementById('planLoading').style.display = 'none';
+                if (!ok) {
+                    goToStep(2);
+                    showError('mappingError', data.error || data.details?.join(', ') || 'Plan generation failed');
+                    return;
+                }
+                planData = data;
+                buildPlanReview(data);
+            })
+            .catch(err => {
+                document.getElementById('planLoading').style.display = 'none';
+                goToStep(2);
+                showError('mappingError', 'Network error: ' + err.message);
+            });
+    };
+
+    // -----------------------------------------------------------------------
+    // Step 3: Review Action Plan
+    // -----------------------------------------------------------------------
+    const categoryMeta = {
+        flag:       { label: 'Needs Review',  color: 'var(--color-warning)',  icon: '&#9888;' },
+        insert:     { label: 'New Employees',  color: 'var(--color-success)',  icon: '&#43;' },
+        update:     { label: 'Updates',        color: 'var(--color-primary)',  icon: '&#8635;' },
+        reactivate: { label: 'Reactivations',  color: '#8b5cf6',              icon: '&#8634;' },
+        separate:   { label: 'Separations',    color: 'var(--color-danger)',   icon: '&#8722;' },
+        skip:       { label: 'No Changes',     color: 'var(--color-text-muted)', icon: '&#8212;' },
+    };
+
+    function buildPlanReview(data) {
+        // Summary cards
+        const summaryEl = document.getElementById('planSummary');
+        summaryEl.innerHTML = Object.entries(data.summary).map(([type, count]) => {
+            const meta = categoryMeta[type] || { label: type, color: 'var(--color-text-muted)', icon: '' };
+            return `<div class="stat-card" style="border-left:3px solid ${meta.color};">
+                <div class="stat-value">${count}</div>
+                <div class="stat-label">${meta.label}</div>
+            </div>`;
+        }).join('');
+
+        // Category sections
+        const catEl = document.getElementById('planCategories');
+        const order = ['flag', 'insert', 'update', 'reactivate', 'separate', 'skip'];
+        catEl.innerHTML = '';
+
+        for (const type of order) {
+            const items = data.categories[type];
+            if (!items || !items.length) continue;
+            const meta = categoryMeta[type] || { label: type, color: '#888', icon: '' };
+
+            const section = document.createElement('div');
+            section.className = 'action-category';
+            section.innerHTML = `
+                <div class="action-category-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                    <span>${meta.icon} ${meta.label} (${items.length})</span>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        ${type !== 'skip' ? `
+                        <button class="btn-sm btn-success" onclick="event.stopPropagation();setCategoryApproval('${type}', true)">Approve All</button>
+                        <button class="btn-sm btn-secondary" onclick="event.stopPropagation();setCategoryApproval('${type}', false)">Reject All</button>
+                        ` : ''}
+                        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                </div>
+                <div class="action-category-body">
+                    <table class="data-table">
+                        <thead><tr>
+                            <th style="width:40px;"></th>
+                            <th>Name</th>
+                            <th>Details</th>
+                            <th>Reason</th>
+                        </tr></thead>
+                        <tbody>${items.map(item => renderActionRow(type, item)).join('')}</tbody>
+                    </table>
+                </div>
+            `;
+            catEl.appendChild(section);
+        }
+    }
+
+    function renderActionRow(type, item) {
+        const name = getName(item);
+        const details = getDetails(type, item);
+        const checked = type !== 'skip' ? 'checked' : '';
+        const inputHtml = type !== 'skip'
+            ? `<input type="checkbox" class="action-check" data-id="${item.id}" data-type="${type}" ${checked}>`
+            : '<span style="color:var(--color-text-muted);">&#8212;</span>';
+
+        return `<tr>
+            <td style="text-align:center;">${inputHtml}</td>
+            <td><strong>${esc(name)}</strong></td>
+            <td>${details}</td>
+            <td style="font-size:0.85rem;color:var(--color-text-secondary);">${esc(item.reason || '')}</td>
+        </tr>`;
+    }
+
+    function getName(item) {
+        const r = item.record || {};
+        const e = item.existing || {};
+        const first = r.first_name || e.first_name || '';
+        const last = r.last_name || e.last_name || '';
+        return `${first} ${last}`.trim() || '(unknown)';
+    }
+
+    function getDetails(type, item) {
+        if (type === 'update' || type === 'flag' || type === 'reactivate') {
+            if (!item.changes || !Object.keys(item.changes).length) return '';
+            return Object.entries(item.changes).map(([field, [old, val]]) =>
+                `<span class="diff-field">${esc(field)}: <span class="diff-old">${esc(String(old ?? ''))}</span> <span class="diff-arrow">&rarr;</span> <span class="diff-new">${esc(String(val ?? ''))}</span></span>`
+            ).join(' ');
+        }
+        if (type === 'insert') {
+            const r = item.record || {};
+            const parts = [];
+            if (r.position) parts.push(r.position);
+            if (r.email) parts.push(r.email);
+            if (r.phone) parts.push(r.phone);
+            return esc(parts.join(' | '));
+        }
+        if (type === 'separate') {
+            const e = item.existing || {};
+            const parts = [];
+            if (e.employee_number) parts.push('#' + e.employee_number);
+            if (e.position) parts.push(e.position);
+            return esc(parts.join(' | '));
+        }
+        return '';
+    }
+
+    window.setCategoryApproval = function(type, approved) {
+        document.querySelectorAll(`.action-check[data-type="${type}"]`).forEach(cb => {
+            cb.checked = approved;
+        });
+    };
+
+    // -----------------------------------------------------------------------
+    // Step 3 → 4: Execute
+    // -----------------------------------------------------------------------
+    window.executeImport = function() {
+        document.getElementById('executeError').style.display = 'none';
+
+        // Collect approvals
+        const approveCategories = [];
+        const rejectCategories = [];
+        const approvals = {};
+
+        // Group by type — if all checked in a category, approve whole category
+        const byType = {};
+        document.querySelectorAll('.action-check').forEach(cb => {
+            const t = cb.dataset.type;
+            if (!byType[t]) byType[t] = { total: 0, approved: 0 };
+            byType[t].total++;
+            if (cb.checked) byType[t].approved++;
+            approvals[cb.dataset.id] = cb.checked;
+        });
+
+        for (const [t, counts] of Object.entries(byType)) {
+            if (counts.approved === counts.total) approveCategories.push(t);
+            else if (counts.approved === 0) rejectCategories.push(t);
+        }
+
+        document.getElementById('btnExecute').disabled = true;
+        document.getElementById('btnExecute').textContent = 'Applying...';
+
+        fetch(`/workforce/api/import/${sessionId}/execute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                approve_categories: approveCategories,
+                reject_categories: rejectCategories,
+                approvals: approvals,
+            }),
+        })
+            .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+            .then(({ ok, data }) => {
+                document.getElementById('btnExecute').disabled = false;
+                document.getElementById('btnExecute').textContent = 'Apply Approved Changes';
+                if (!ok) {
+                    showError('executeError', data.error || 'Execution failed');
+                    return;
+                }
+                showResults(data);
+                goToStep(4);
+            })
+            .catch(err => {
+                document.getElementById('btnExecute').disabled = false;
+                document.getElementById('btnExecute').textContent = 'Apply Approved Changes';
+                showError('executeError', 'Network error: ' + err.message);
+            });
+    };
+
+    // -----------------------------------------------------------------------
+    // Step 4: Results
+    // -----------------------------------------------------------------------
+    function showResults(data) {
+        const parts = [];
+        if (data.executed) parts.push(data.executed + ' applied');
+        if (data.skipped) parts.push(data.skipped + ' skipped');
+        if (data.errors) parts.push(data.errors + ' errors');
+        document.getElementById('resultSummary').textContent = parts.join(', ') || 'No actions taken';
+    }
+
+    window.resetWizard = function() {
+        sessionId = null;
+        uploadData = null;
+        planData = null;
+        fileInput.value = '';
+        goToStep(1);
+        // Reload history
+        fetch('/workforce/api/import/history')
+            .then(r => r.json())
+            .then(rows => {
+                const body = document.getElementById('historyBody');
+                if (!rows.length) {
+                    body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);">No previous imports</td></tr>';
+                    return;
+                }
+                body.innerHTML = rows.map(r => {
+                    const summary = r.result_summary ? JSON.parse(r.result_summary) : null;
+                    const summaryText = summary
+                        ? Object.entries(summary).map(([k,v]) => v + ' ' + k).join(', ')
+                        : '-';
+                    return `<tr>
+                        <td>${esc(r.filename)}</td>
+                        <td>${r.total_rows}</td>
+                        <td><span class="status-${r.status}">${r.status}</span></td>
+                        <td>${summaryText}</td>
+                        <td>${r.created_at ? r.created_at.slice(0, 16) : ''}</td>
+                    </tr>`;
+                }).join('');
+            })
+            .catch(() => {});
+    };
+
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
+    function showError(id, msg) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.style.display = '';
+    }
+
+    function esc(s) {
+        if (s == null) return '';
+        const d = document.createElement('div');
+        d.textContent = String(s);
+        return d.innerHTML;
+    }
+})();
+</script>
+{% endblock %}

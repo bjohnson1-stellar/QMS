@@ -197,3 +197,46 @@
     background: #091625;
     border-color: #153050;
 }
+
+/* === Import Wizard — Dark Mode === */
+
+[data-theme="dark"] .upload-zone {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+}
+
+[data-theme="dark"] .upload-zone:hover,
+[data-theme="dark"] .upload-zone.dragover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-subtle);
+}
+
+[data-theme="dark"] .action-category-header {
+    background: #0f2b4d;
+}
+
+[data-theme="dark"] .diff-old {
+    color: #fca5a5;
+}
+
+[data-theme="dark"] .diff-new {
+    color: #6ee7b7;
+}
+
+[data-theme="dark"] .btn-secondary {
+    background: #0f2b4d;
+    border-color: #1a3a5c;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    background: #153050;
+}
+
+[data-theme="dark"] .btn-sm {
+    background: #0f2b4d;
+    border-color: #1a3a5c;
+}
+
+[data-theme="dark"] .stepper-num {
+    border-color: #1a3a5c;
+}

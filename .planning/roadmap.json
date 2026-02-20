@@ -55,6 +55,13 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Contextualized Document Import — Workforce MVP",
+          "desc": "4-step import wizard (Upload → Map Columns → Review Action Plan → Execute) with shared import engine, workforce-specific specs (15 columns, 4-level match, separation detection), and full web UI. Dark mode hover contrast fix included.",
+          "module": "workforce",
+          "completed": "2026-02-20",
+          "tags": ["import", "workforce", "ui", "infrastructure"]
+        },
+        {
           "title": "UI Restructure: Time Tracker + Project Hub + Home Dashboard",
           "desc": "Major restructure: extracted Time Tracker module (admin-only), moved BU CRUD to Settings, added project hub detail pages, operational home dashboard with activity feed, linked users to employees, cleaned up EMP- numbering.",
           "module": "projects",

@@ -19,9 +19,9 @@
     <link href="{{ theme.fonts.google_fonts_url }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='brand-fonts.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='dark.css') }}">
 
-    {# Brand color overrides — injected from config.yaml, applied after style.css via cascade #}
+    {# Brand color overrides — injected from config.yaml, BETWEEN style.css and dark.css
+       so dark.css [data-theme="dark"] selectors can override these :root values #}
     <style>
         :root {
             --color-primary: {{ theme.colors.primary }};
@@ -35,6 +35,8 @@
             --font-body: '{{ theme.fonts.body }}', '{{ theme.fonts.body_fallback }}', -apple-system, sans-serif;
         }
     </style>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='dark.css') }}">
 
     {% block extra_css %}{% endblock %}
 
@@ -136,6 +138,11 @@
         {% elif ns.module == 'workforce' %}
         <a href="{{ url_for('workforce.employees_page') }}"
            class="{{ 'active' if request.endpoint == 'workforce.employees_page' }}">Employees</a>
+        {% if current_user and (current_user.role == 'admin' or
+              current_user.modules.get('workforce') in ('admin', 'editor')) %}
+        <a href="{{ url_for('workforce.import_page') }}"
+           class="{{ 'active' if request.endpoint == 'workforce.import_page' }}">Import</a>
+        {% endif %}
         {% elif ns.module == 'qualitydocs' %}
         <a href="{{ url_for('qualitydocs.manual') }}"
            class="{{ 'active' if request.endpoint == 'qualitydocs.manual' }}">Quality Manual</a>
