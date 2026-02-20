@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <!-- Navigator Penguin — blocky/geometric astronomer mascot -->
+
+  <!-- Telescope tripod legs -->
+  <line x1="195" y1="180" x2="170" y2="280" stroke="#4a5568" stroke-width="4" stroke-linecap="round"/>
+  <line x1="205" y1="180" x2="240" y2="280" stroke="#4a5568" stroke-width="4" stroke-linecap="round"/>
+  <line x1="200" y1="180" x2="205" y2="280" stroke="#4a5568" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Telescope tube -->
+  <rect x="170" y="108" width="70" height="18" rx="4" fill="#0C2340" stroke="#1a3a5c" stroke-width="1.5" transform="rotate(-35, 205, 117)"/>
+  <!-- Telescope lens cap -->
+  <rect x="160" y="94" width="14" height="22" rx="3" fill="#A41F35" transform="rotate(-35, 167, 105)"/>
+  <!-- Telescope eyepiece -->
+  <rect x="235" y="120" width="12" height="14" rx="2" fill="#1a3a5c" transform="rotate(-35, 241, 127)"/>
+  <!-- Telescope mount joint -->
+  <circle cx="200" cy="175" r="8" fill="#4a5568" stroke="#2d3748" stroke-width="1.5"/>
+
+  <!-- Star chart (scroll held in flipper) -->
+  <rect x="60" y="160" width="40" height="52" rx="3" fill="#fefce8" stroke="#d4a574" stroke-width="1.5"/>
+  <!-- Star chart dots -->
+  <circle cx="72" cy="172" r="2" fill="#A41F35"/>
+  <circle cx="82" cy="180" r="1.5" fill="#0C2340"/>
+  <circle cx="76" cy="190" r="1.5" fill="#0C2340"/>
+  <circle cx="88" cy="176" r="1" fill="#4a5568"/>
+  <circle cx="68" cy="185" r="1" fill="#4a5568"/>
+  <!-- Chart grid lines -->
+  <line x1="65" y1="195" x2="95" y2="195" stroke="#d4a574" stroke-width="0.5" opacity="0.5"/>
+  <line x1="65" y1="200" x2="95" y2="200" stroke="#d4a574" stroke-width="0.5" opacity="0.5"/>
+  <line x1="65" y1="205" x2="95" y2="205" stroke="#d4a574" stroke-width="0.5" opacity="0.5"/>
+
+  <!-- Penguin body (blocky/geometric) -->
+  <!-- Back body (black) -->
+  <rect x="88" y="110" width="80" height="120" rx="28" fill="#1a1a2e"/>
+  <!-- White belly -->
+  <rect x="100" y="128" width="56" height="90" rx="20" fill="#f0f0f5"/>
+
+  <!-- Lab coat (white, open front) -->
+  <!-- Left lapel -->
+  <path d="M92 140 L92 250 Q92 262 104 262 L120 262 L120 155 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Right lapel -->
+  <path d="M164 140 L164 250 Q164 262 152 262 L136 262 L136 155 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Coat collar left -->
+  <path d="M98 132 L108 155 L98 155 Z" fill="#f8f8fc" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Coat collar right -->
+  <path d="M158 132 L148 155 L158 155 Z" fill="#f8f8fc" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Pocket square with star pattern (left breast) -->
+  <rect x="96" y="158" width="20" height="16" rx="2" fill="#f0f0f5" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="100" y="170" font-size="8" fill="#A41F35" font-family="serif">&#9733;</text>
+  <text x="109" y="170" font-size="6" fill="#0C2340" font-family="serif">&#9733;</text>
+
+  <!-- Badge (maroon, right breast) -->
+  <rect x="140" y="158" width="20" height="12" rx="2" fill="#A41F35"/>
+  <rect x="143" y="161" width="14" height="2" rx="1" fill="#ffffff" opacity="0.6"/>
+  <rect x="143" y="165" width="10" height="2" rx="1" fill="#ffffff" opacity="0.4"/>
+
+  <!-- Head (blocky oval) -->
+  <ellipse cx="128" cy="100" rx="38" ry="42" fill="#1a1a2e"/>
+  <!-- White face patch -->
+  <ellipse cx="128" cy="108" rx="24" ry="26" fill="#f0f0f5"/>
+
+  <!-- Eyes (geometric) -->
+  <circle cx="118" cy="96" r="7" fill="#ffffff" stroke="#1a1a2e" stroke-width="1.5"/>
+  <circle cx="138" cy="96" r="7" fill="#ffffff" stroke="#1a1a2e" stroke-width="1.5"/>
+  <!-- Pupils (looking toward telescope) -->
+  <circle cx="120" cy="95" r="3.5" fill="#1a1a2e"/>
+  <circle cx="140" cy="95" r="3.5" fill="#1a1a2e"/>
+  <!-- Eye highlights -->
+  <circle cx="121" cy="93" r="1.2" fill="#ffffff"/>
+  <circle cx="141" cy="93" r="1.2" fill="#ffffff"/>
+
+  <!-- Beak -->
+  <path d="M122 106 L128 116 L134 106 Z" fill="#e8a840" stroke="#d4922a" stroke-width="1"/>
+
+  <!-- Left flipper (holding star chart) -->
+  <path d="M88 155 Q70 170 65 185 Q62 195 72 195 L88 195 L88 155 Z" fill="#1a1a2e"/>
+
+  <!-- Right flipper (resting on telescope) -->
+  <path d="M168 150 Q185 160 195 170 Q200 175 192 178 L168 170 Z" fill="#1a1a2e"/>
+
+  <!-- Feet -->
+  <ellipse cx="112" cy="268" rx="16" ry="7" fill="#e8a840" stroke="#d4922a" stroke-width="1"/>
+  <ellipse cx="144" cy="268" rx="16" ry="7" fill="#e8a840" stroke="#d4922a" stroke-width="1"/>
+
+  <!-- Maroon tie -->
+  <path d="M124 132 L128 148 L132 132 Z" fill="#A41F35"/>
+  <rect x="125" y="128" width="6" height="6" rx="1" fill="#A41F35"/>
+
+  <!-- Background stars (subtle) -->
+  <circle cx="30" cy="30" r="2" fill="#A41F35" opacity="0.6"/>
+  <circle cx="260" cy="50" r="1.5" fill="#A41F35" opacity="0.4"/>
+  <circle cx="45" cy="80" r="1" fill="#0C2340" opacity="0.5"/>
+  <circle cx="270" cy="100" r="1.5" fill="#0C2340" opacity="0.5"/>
+  <circle cx="20" cy="140" r="1" fill="#A41F35" opacity="0.3"/>
+  <circle cx="280" cy="200" r="2" fill="#0C2340" opacity="0.3"/>
+  <circle cx="15" cy="250" r="1.5" fill="#A41F35" opacity="0.2"/>
+  <!-- Four-point star -->
+  <path d="M50 40 L52 46 L58 48 L52 50 L50 56 L48 50 L42 48 L48 46 Z" fill="#A41F35" opacity="0.3"/>
+  <path d="M250 150 L251.5 154 L256 155.5 L251.5 157 L250 161 L248.5 157 L244 155.5 L248.5 154 Z" fill="#0C2340" opacity="0.35"/>
+</svg>

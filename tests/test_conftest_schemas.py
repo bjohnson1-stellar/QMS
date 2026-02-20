@@ -16,19 +16,19 @@ def test_all_schemas_load_in_memory(memory_db):
     assert tables["n"] > 100, f"Expected >100 tables, got {tables['n']}"
 
 
-def test_schema_order_has_ten_modules():
-    """SCHEMA_ORDER should list all 10 modules in FK-dependency order."""
-    assert len(SCHEMA_ORDER) == 10
+def test_schema_order_has_eleven_modules():
+    """SCHEMA_ORDER should list all 11 modules in FK-dependency order."""
+    assert len(SCHEMA_ORDER) == 11
     assert SCHEMA_ORDER[0] == "auth"
     assert SCHEMA_ORDER[1] == "core"
-    assert SCHEMA_ORDER[-1] == "automation"
+    assert SCHEMA_ORDER[-1] == "blog"
 
 
 def test_schema_order_contents():
     """All expected modules should be in SCHEMA_ORDER."""
     expected = {"auth", "core", "workforce", "projects", "qualitydocs",
                 "references", "welding", "pipeline", "engineering",
-                "automation"}
+                "automation", "blog"}
     assert set(SCHEMA_ORDER) == expected
 
 

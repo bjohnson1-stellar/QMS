@@ -11,7 +11,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-from flask import Flask, abort, redirect, request, session, url_for
+from flask import Flask, abort, redirect, render_template, request, session, url_for
 
 
 def _get_or_create_secret() -> str:
@@ -199,28 +199,31 @@ def create_app() -> Flask:
     from qms.api.qualitydocs import bp as qualitydocs_bp
     app.register_blueprint(qualitydocs_bp)
 
-    # Root redirect — send user to their first accessible module
-    _MODULE_DEFAULTS = {
-        mod: info["default_endpoint"] for mod, info in _modules_cfg.items()
-    }
+    from qms.api.blog import bp as blog_bp
+    app.register_blueprint(blog_bp)
 
-    # Determine the fallback endpoint (first module in config)
-    _first_endpoint = next(iter(_MODULE_DEFAULTS.values()), "projects.dashboard")
-
+    # Root route — landing page
     @app.route("/")
     def index():
         user = session.get("user")
-        if user and user.get("role") == "admin":
-            return redirect(url_for(_first_endpoint))
+        if not user:
+            return redirect(url_for("auth.login_page"))
 
-        # Non-admin: redirect to first accessible module
-        if user:
-            modules = user.get("modules", {})
-            for mod, endpoint in _MODULE_DEFAULTS.items():
-                if mod in modules:
-                    return redirect(url_for(endpoint))
+        from qms.blog.db import list_posts
+        from qms.core import get_db
 
-        return redirect(url_for(_first_endpoint))
+        with get_db(readonly=True) as conn:
+            recent_posts = list_posts(conn, published_only=True, limit=3)
+            stats = {}
+            if user.get("role") == "admin":
+                try:
+                    stats["projects"] = conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
+                    stats["sheets"] = conn.execute("SELECT COUNT(*) FROM sheets").fetchone()[0]
+                    stats["welders"] = conn.execute("SELECT COUNT(*) FROM weld_welder_registry WHERE status='active'").fetchone()[0]
+                except Exception:
+                    pass
+
+        return render_template("home.html", posts=recent_posts, stats=stats)
 
     # ── Admin-only system map (unlisted, no nav link) ───────────────────
     @app.route("/admin/system-map")

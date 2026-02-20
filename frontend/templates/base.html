@@ -38,11 +38,13 @@
 
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body{% if ns.module == 'home' %} class="no-subnav"{% endif %}>
     {# Detect active module from the current route (config-driven) #}
-    {% set ns = namespace(module='projects') %}
+    {% set ns = namespace(module='home') %}
     {% if request.endpoint %}
-        {% if request.endpoint.startswith('settings.') %}
+        {% if request.endpoint == 'index' or (request.endpoint and request.endpoint.startswith('blog.')) %}
+            {% set ns.module = 'home' %}
+        {% elif request.endpoint.startswith('settings.') %}
             {% set ns.module = 'settings' %}
         {% else %}
             {% for mod_key in web_modules %}
@@ -54,10 +56,10 @@
     {% endif %}
 
     <nav class="top-bar">
-        <div class="top-bar-brand">
+        <a href="/" class="top-bar-brand">
             <span class="top-bar-logo">{{ theme.app_name }}</span>
             <span class="top-bar-tagline">{{ theme.app_tagline }}</span>
-        </div>
+        </a>
         <div class="top-bar-modules">
             {% for mod_key, mod_info in web_modules.items() %}
             {% if mod_key in accessible_modules %}
@@ -103,7 +105,7 @@
         </div>
     </nav>
 
-    <div class="sub-nav">
+    <div class="sub-nav{% if ns.module == 'home' %} sub-nav-hidden{% endif %}">
         {% if ns.module == 'projects' %}
         <a href="{{ url_for('projects.dashboard') }}"
            class="{{ 'active' if request.endpoint == 'projects.dashboard' }}">Dashboard</a>

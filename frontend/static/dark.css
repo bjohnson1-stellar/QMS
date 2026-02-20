@@ -178,3 +178,21 @@
 [data-theme="dark"] .bulk-toolbar {
     background: #060e1a;
 }
+
+/* Landing page hero */
+[data-theme="dark"] .landing-hero {
+    background: linear-gradient(135deg, #060e1a 0%, #091625 60%, #0C2340 100%);
+}
+
+/* Blog cards */
+[data-theme="dark"] .blog-card:hover,
+[data-theme="dark"] .blog-list-item:hover,
+[data-theme="dark"] .landing-module-card:hover {
+    border-color: var(--color-primary);
+}
+
+/* Blog detail */
+[data-theme="dark"] .blog-detail-content pre {
+    background: #091625;
+    border-color: #153050;
+}

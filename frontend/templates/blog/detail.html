@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - The Observatory{% endblock %}
+
+{% block content %}
+<div style="max-width:800px; margin:0 auto;">
+    <div style="margin-bottom:20px;">
+        <a href="{{ url_for('blog.blog_list') }}" style="color:var(--color-text-muted); text-decoration:none; font-size:13px;">
+            &larr; Back to The Observatory
+        </a>
+    </div>
+
+    <article class="blog-detail">
+        <header class="blog-detail-header">
+            <h1>{{ post.title }}</h1>
+            <div class="blog-detail-meta">
+                <span>{{ post.author_name or 'Admin' }}</span>
+                <span>&middot;</span>
+                <span>{{ post.created_at[:10] }}</span>
+                {% if not post.published %}
+                <span class="status-badge status-pending" style="font-size:10px; vertical-align:middle; margin-left:6px;">Draft</span>
+                {% endif %}
+            </div>
+        </header>
+        <div class="blog-detail-content">
+            {{ post.content_html | safe }}
+        </div>
+    </article>
+</div>
+{% endblock %}

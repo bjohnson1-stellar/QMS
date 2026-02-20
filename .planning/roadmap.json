@@ -55,6 +55,13 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Landing Page + The Observatory Blog",
+          "desc": "Branded landing page with Navigator Penguin mascot, module quick-link cards, and The Observatory astronomy-themed blog. Blog admin in Settings. Markdown support.",
+          "module": "blog",
+          "completed": "2026-02-20",
+          "tags": ["ui", "blog", "landing-page", "branding"]
+        },
+        {
           "title": "07609 Freshpet Full Drawing Extraction",
           "desc": "286 sheets across 11 disciplines extracted via SIS pipeline. 72 equipment, 673 lines, 372 instruments. Cross-checker module created.",
           "module": "pipeline",

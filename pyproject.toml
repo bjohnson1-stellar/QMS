@@ -24,6 +24,7 @@ web = [
     "flask>=3.0",
     "waitress>=3.0",
     "werkzeug>=3.0",
+    "markdown>=3.5",
 ]
 pipeline = [
     # Vector DB & Embeddings

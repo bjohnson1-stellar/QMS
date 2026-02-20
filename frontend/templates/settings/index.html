@@ -60,6 +60,12 @@
                 </span>
                 Users & Access
             </div>
+            <div class="settings-nav-item" data-tab="observatory">
+                <span class="settings-nav-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/></svg>
+                </span>
+                The Observatory
+            </div>
             {% if current_user and current_user.role == 'admin' %}
             <a href="/admin/system-map" style="display:block;margin-top:auto;padding:12px 16px;font-size:10px;color:var(--color-text-muted,#888);text-decoration:none;opacity:0.4;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='0.4'">sys v0.1.0</a>
             {% endif %}
@@ -471,6 +477,80 @@
                 </div>
             </div>
 
+            <!-- ═══════════════ THE OBSERVATORY ═══════════════ -->
+            <div class="settings-section" id="tab-observatory">
+                <h3>The Observatory</h3>
+                <p class="section-desc">Manage blog dispatches shown on the landing page</p>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <div style="font-size:13px; color:var(--color-text-muted);" id="posts-count"></div>
+                    <button onclick="openPostEditor()">+ New Dispatch</button>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table id="postsTable">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Author</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="postsBody">
+                            <tr><td colspan="5" class="loading">Loading dispatches...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Blog Post Editor Modal -->
+<div class="modal-overlay" id="postEditorModal" style="display:none;" onclick="if(event.target===this)closePostEditor()">
+    <div class="modal-content" style="max-width:650px;">
+        <div class="modal-header">
+            <h2 id="pe-title">New Dispatch</h2>
+            <button class="modal-close" onclick="closePostEditor()">&times;</button>
+        </div>
+        <div id="pe-postId" style="display:none;"></div>
+        <div class="form-group">
+            <label for="pe-postTitle">Title</label>
+            <input type="text" id="pe-postTitle" placeholder="Dispatch title">
+        </div>
+        <div class="form-group">
+            <label for="pe-excerpt">Excerpt</label>
+            <input type="text" id="pe-excerpt" placeholder="Brief summary (optional)">
+        </div>
+        <div class="form-group">
+            <label for="pe-content">Content (Markdown)</label>
+            <textarea id="pe-content" rows="12" placeholder="Write your dispatch in Markdown..." style="font-family:var(--font-mono); font-size:13px;"></textarea>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
+            <label style="display:flex; align-items:center; gap:8px; margin-bottom:0;">
+                <div class="toggle-switch">
+                    <input type="checkbox" id="pe-published">
+                    <div class="knobs"></div>
+                    <div class="layer"></div>
+                </div>
+                Published
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; margin-bottom:0;">
+                <div class="toggle-switch">
+                    <input type="checkbox" id="pe-pinned">
+                    <div class="knobs"></div>
+                    <div class="layer"></div>
+                </div>
+                Pinned
+            </label>
+        </div>
+        <div id="pe-error" style="display:none; margin-top:8px; padding:10px 14px; background:var(--color-danger-bg); color:var(--color-danger); border-radius:var(--radius-sm); font-size:13px;"></div>
+        <div class="settings-save-row" style="border-top:none; padding-top:12px;">
+            <button onclick="savePost()">Save</button>
+            <button class="secondary" onclick="closePostEditor()">Cancel</button>
         </div>
     </div>
 </div>
@@ -1218,6 +1298,125 @@ async function saveBuAccess() {
     } catch(e) {}
 }
 
+// ════════════════════════════════════════════
+// THE OBSERVATORY (Blog CRUD)
+// ════════════════════════════════════════════
+
+let _editingPostId = null;
+
+async function loadPosts() {
+    try {
+        const posts = await fetchJSON('/blog/api/posts');
+        const body = document.getElementById('postsBody');
+        document.getElementById('posts-count').textContent = posts.length + ' dispatch' + (posts.length !== 1 ? 'es' : '');
+
+        if (!posts.length) {
+            body.innerHTML = '<tr><td colspan="5" class="empty-state">No dispatches yet</td></tr>';
+            return;
+        }
+
+        body.innerHTML = posts.map(p => {
+            const statusClass = p.published ? 'status-active' : 'status-pending';
+            const statusText = p.published ? 'Published' : 'Draft';
+            const pinIcon = p.pinned ? ' &#9733;' : '';
+            return `<tr>
+                <td style="font-weight:500;">${esc(p.title)}${pinIcon}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td style="font-size:12.5px; color:var(--color-text-secondary);">${esc(p.author_name || 'Admin')}</td>
+                <td style="font-size:12.5px; color:var(--color-text-muted);">${p.created_at ? p.created_at.slice(0,10) : ''}</td>
+                <td>
+                    <button class="um-action-btn" onclick='editPost(${JSON.stringify(p).replace(/'/g,"&#39;")})' title="Edit">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="um-action-btn danger" onclick="deletePost(${p.id})" title="Delete">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch(e) {
+        document.getElementById('postsBody').innerHTML = '<tr><td colspan="5" class="empty-state">Error loading posts</td></tr>';
+    }
+}
+
+function openPostEditor() {
+    _editingPostId = null;
+    document.getElementById('pe-title').textContent = 'New Dispatch';
+    document.getElementById('pe-postTitle').value = '';
+    document.getElementById('pe-excerpt').value = '';
+    document.getElementById('pe-content').value = '';
+    setChecked('pe-published', false);
+    setChecked('pe-pinned', false);
+    document.getElementById('pe-error').style.display = 'none';
+    document.getElementById('postEditorModal').style.display = 'flex';
+    document.getElementById('pe-postTitle').focus();
+}
+
+function editPost(post) {
+    _editingPostId = post.id;
+    document.getElementById('pe-title').textContent = 'Edit Dispatch';
+    document.getElementById('pe-postTitle').value = post.title || '';
+    document.getElementById('pe-excerpt').value = post.excerpt || '';
+    document.getElementById('pe-content').value = post.content_md || '';
+    setChecked('pe-published', !!post.published);
+    setChecked('pe-pinned', !!post.pinned);
+    document.getElementById('pe-error').style.display = 'none';
+    document.getElementById('postEditorModal').style.display = 'flex';
+}
+
+function closePostEditor() {
+    document.getElementById('postEditorModal').style.display = 'none';
+    _editingPostId = null;
+}
+
+async function savePost() {
+    const title = val('pe-postTitle').trim();
+    const errEl = document.getElementById('pe-error');
+
+    if (!title) {
+        errEl.textContent = 'Title is required';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    const payload = {
+        title: title,
+        content_md: val('pe-content'),
+        excerpt: val('pe-excerpt'),
+        published: checked('pe-published'),
+        pinned: checked('pe-pinned'),
+    };
+
+    try {
+        const url = _editingPostId ? `/blog/api/posts/${_editingPostId}` : '/blog/api/posts';
+        const method = _editingPostId ? 'PUT' : 'POST';
+        const r = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+        });
+        if (r.ok) {
+            closePostEditor();
+            loadPosts();
+        } else {
+            const data = await r.json();
+            errEl.textContent = data.error || 'Error saving post';
+            errEl.style.display = 'block';
+        }
+    } catch(e) {
+        errEl.textContent = 'Error: ' + e.message;
+        errEl.style.display = 'block';
+    }
+}
+
+async function deletePost(postId) {
+    if (!confirm('Delete this dispatch?')) return;
+    try {
+        await fetch(`/blog/api/posts/${postId}`, {method: 'DELETE'});
+        loadPosts();
+    } catch(e) {}
+}
+
 // ═══ Load all on page init ═══
 loadGeneral();
 loadProjects();
@@ -1227,5 +1426,6 @@ loadExtraction();
 loadBranding();
 loadIntegrations();
 loadAllBUs().then(() => loadUsers());
+loadPosts();
 </script>
 {% endblock %}

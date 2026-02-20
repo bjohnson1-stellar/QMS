@@ -20,7 +20,7 @@ def test_execute_query_returns_rows(mock_db):
 
 
 def test_schema_order_length():
-    assert len(SCHEMA_ORDER) == 10
+    assert len(SCHEMA_ORDER) == 11
 
 
 def test_schema_order_starts_with_auth():
@@ -28,5 +28,5 @@ def test_schema_order_starts_with_auth():
     assert SCHEMA_ORDER[1] == "core"
 
 
-def test_schema_order_automation_last():
-    assert SCHEMA_ORDER[-1] == "automation"
+def test_schema_order_blog_last():
+    assert SCHEMA_ORDER[-1] == "blog"

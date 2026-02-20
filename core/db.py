@@ -77,6 +77,7 @@ SCHEMA_ORDER = [
     "pipeline",
     "engineering",
     "automation",
+    "blog",
 ]
 
 

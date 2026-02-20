@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}The Observatory - {{ theme.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>The Observatory</h1>
+    <p class="subtitle">Dispatches from Stellar</p>
+</div>
+
+{% if posts %}
+<div class="blog-list">
+    {% for post in posts %}
+    <a href="{{ url_for('blog.blog_detail', slug=post.slug) }}" class="blog-list-item">
+        <div class="blog-list-title">
+            {{ post.title }}
+            {% if post.pinned %}
+            <span class="status-badge status-draft" style="font-size:10px; vertical-align:middle; margin-left:6px;">Pinned</span>
+            {% endif %}
+        </div>
+        <div class="blog-list-excerpt">{{ post.excerpt or post.content_md[:200] }}{% if post.content_md|length > 200 and not post.excerpt %}...{% endif %}</div>
+        <div class="blog-list-meta">
+            <span>{{ post.author_name or 'Admin' }}</span>
+            <span>&middot;</span>
+            <span>{{ post.created_at[:10] }}</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <p>The Observatory is quiet — no dispatches yet.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
