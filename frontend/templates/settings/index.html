@@ -480,11 +480,11 @@
             <!-- ═══════════════ THE OBSERVATORY ═══════════════ -->
             <div class="settings-section" id="tab-observatory">
                 <h3>The Observatory</h3>
-                <p class="section-desc">Manage blog dispatches shown on the landing page</p>
+                <p class="section-desc">Manage observations shown on the landing page</p>
 
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                     <div style="font-size:13px; color:var(--color-text-muted);" id="posts-count"></div>
-                    <button onclick="openPostEditor()">+ New Dispatch</button>
+                    <button onclick="openPostEditor()">+ New Observation</button>
                 </div>
 
                 <div style="overflow-x:auto;">
@@ -499,7 +499,7 @@
                             </tr>
                         </thead>
                         <tbody id="postsBody">
-                            <tr><td colspan="5" class="loading">Loading dispatches...</td></tr>
+                            <tr><td colspan="5" class="loading">Loading observations...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -513,13 +513,13 @@
 <div class="modal-overlay" id="postEditorModal" style="display:none;" onclick="if(event.target===this)closePostEditor()">
     <div class="modal-content" style="max-width:650px;">
         <div class="modal-header">
-            <h2 id="pe-title">New Dispatch</h2>
+            <h2 id="pe-title">New Observation</h2>
             <button class="modal-close" onclick="closePostEditor()">&times;</button>
         </div>
         <div id="pe-postId" style="display:none;"></div>
         <div class="form-group">
             <label for="pe-postTitle">Title</label>
-            <input type="text" id="pe-postTitle" placeholder="Dispatch title">
+            <input type="text" id="pe-postTitle" placeholder="Observation title">
         </div>
         <div class="form-group">
             <label for="pe-excerpt">Excerpt</label>
@@ -527,7 +527,7 @@
         </div>
         <div class="form-group">
             <label for="pe-content">Content (Markdown)</label>
-            <textarea id="pe-content" rows="12" placeholder="Write your dispatch in Markdown..." style="font-family:var(--font-mono); font-size:13px;"></textarea>
+            <textarea id="pe-content" rows="12" placeholder="Write your observation in Markdown..." style="font-family:var(--font-mono); font-size:13px;"></textarea>
         </div>
         <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
             <label style="display:flex; align-items:center; gap:8px; margin-bottom:0;">
@@ -1308,10 +1308,10 @@ async function loadPosts() {
     try {
         const posts = await fetchJSON('/blog/api/posts');
         const body = document.getElementById('postsBody');
-        document.getElementById('posts-count').textContent = posts.length + ' dispatch' + (posts.length !== 1 ? 'es' : '');
+        document.getElementById('posts-count').textContent = posts.length + ' observation' + (posts.length !== 1 ? 's' : '');
 
         if (!posts.length) {
-            body.innerHTML = '<tr><td colspan="5" class="empty-state">No dispatches yet</td></tr>';
+            body.innerHTML = '<tr><td colspan="5" class="empty-state">No observations yet</td></tr>';
             return;
         }
 
@@ -1341,7 +1341,7 @@ async function loadPosts() {
 
 function openPostEditor() {
     _editingPostId = null;
-    document.getElementById('pe-title').textContent = 'New Dispatch';
+    document.getElementById('pe-title').textContent = 'New Observation';
     document.getElementById('pe-postTitle').value = '';
     document.getElementById('pe-excerpt').value = '';
     document.getElementById('pe-content').value = '';
@@ -1354,7 +1354,7 @@ function openPostEditor() {
 
 function editPost(post) {
     _editingPostId = post.id;
-    document.getElementById('pe-title').textContent = 'Edit Dispatch';
+    document.getElementById('pe-title').textContent = 'Edit Observation';
     document.getElementById('pe-postTitle').value = post.title || '';
     document.getElementById('pe-excerpt').value = post.excerpt || '';
     document.getElementById('pe-content').value = post.content_md || '';
@@ -1410,7 +1410,7 @@ async function savePost() {
 }
 
 async function deletePost(postId) {
-    if (!confirm('Delete this dispatch?')) return;
+    if (!confirm('Delete this observation?')) return;
     try {
         await fetch(`/blog/api/posts/${postId}`, {method: 'DELETE'});
         loadPosts();

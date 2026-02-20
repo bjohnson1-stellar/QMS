@@ -217,9 +217,13 @@ def create_app() -> Flask:
             stats = {}
             if user.get("role") == "admin":
                 try:
-                    stats["projects"] = conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
-                    stats["sheets"] = conn.execute("SELECT COUNT(*) FROM sheets").fetchone()[0]
-                    stats["welders"] = conn.execute("SELECT COUNT(*) FROM weld_welder_registry WHERE status='active'").fetchone()[0]
+                    stats["projects"] = conn.execute(
+                        "SELECT COUNT(*) FROM projects WHERE stage NOT IN ('Archive', 'Lost Proposal')"
+                    ).fetchone()[0]
+                    stats["employees"] = conn.execute("SELECT COUNT(*) FROM employees").fetchone()[0]
+                    stats["welders"] = conn.execute(
+                        "SELECT COUNT(*) FROM weld_welder_registry WHERE status='active'"
+                    ).fetchone()[0]
                 except Exception:
                     pass
 
