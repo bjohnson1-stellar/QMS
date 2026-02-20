@@ -17,7 +17,9 @@
                 <span>{{ post.author_name or 'Admin' }}</span>
                 <span>&middot;</span>
                 <span>{{ post.created_at[:10] }}</span>
-                {% if not post.published %}
+                {% if not post.published and post.publish_at %}
+                <span class="status-badge status-scheduled" style="font-size:10px; vertical-align:middle; margin-left:6px;">Scheduled {{ post.publish_at[:16] }}</span>
+                {% elif not post.published %}
                 <span class="status-badge status-pending" style="font-size:10px; vertical-align:middle; margin-left:6px;">Draft</span>
                 {% endif %}
             </div>

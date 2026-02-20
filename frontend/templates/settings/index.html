@@ -532,7 +532,7 @@
         <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
             <label style="display:flex; align-items:center; gap:8px; margin-bottom:0;">
                 <div class="toggle-switch">
-                    <input type="checkbox" id="pe-published">
+                    <input type="checkbox" id="pe-published" onchange="onPublishedToggle()">
                     <div class="knobs"></div>
                     <div class="layer"></div>
                 </div>
@@ -546,6 +546,14 @@
                 </div>
                 Pinned
             </label>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+            <label for="pe-publishAt" style="font-size:13px;">Schedule publish</label>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <input type="datetime-local" id="pe-publishAt" onchange="onScheduleChange()" style="flex:1;">
+                <button type="button" class="secondary" onclick="clearSchedule()" style="padding:6px 12px; font-size:12px;">Clear</button>
+            </div>
+            <div style="font-size:11px; color:var(--color-text-muted); margin-top:4px;">Leave empty for draft, or set a future date to auto-publish</div>
         </div>
         <div id="pe-error" style="display:none; margin-top:8px; padding:10px 14px; background:var(--color-danger-bg); color:var(--color-danger); border-radius:var(--radius-sm); font-size:13px;"></div>
         <div class="settings-save-row" style="border-top:none; padding-top:12px;">
@@ -1316,12 +1324,22 @@ async function loadPosts() {
         }
 
         body.innerHTML = posts.map(p => {
-            const statusClass = p.published ? 'status-active' : 'status-pending';
-            const statusText = p.published ? 'Published' : 'Draft';
+            let statusClass, statusText;
+            if (p.published) {
+                statusClass = 'status-active';
+                statusText = 'Published';
+            } else if (p.publish_at) {
+                statusClass = 'status-scheduled';
+                statusText = 'Scheduled';
+            } else {
+                statusClass = 'status-pending';
+                statusText = 'Draft';
+            }
+            const schedDate = p.publish_at ? `<div style="font-size:10px; color:var(--color-text-muted); margin-top:2px;">${p.publish_at.slice(0,16).replace('T',' ')}</div>` : '';
             const pinIcon = p.pinned ? ' &#9733;' : '';
             return `<tr>
                 <td style="font-weight:500;">${esc(p.title)}${pinIcon}</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span>${schedDate}</td>
                 <td style="font-size:12.5px; color:var(--color-text-secondary);">${esc(p.author_name || 'Admin')}</td>
                 <td style="font-size:12.5px; color:var(--color-text-muted);">${p.created_at ? p.created_at.slice(0,10) : ''}</td>
                 <td>
@@ -1347,6 +1365,7 @@ function openPostEditor() {
     document.getElementById('pe-content').value = '';
     setChecked('pe-published', false);
     setChecked('pe-pinned', false);
+    document.getElementById('pe-publishAt').value = '';
     document.getElementById('pe-error').style.display = 'none';
     document.getElementById('postEditorModal').style.display = 'flex';
     document.getElementById('pe-postTitle').focus();
@@ -1360,6 +1379,9 @@ function editPost(post) {
     document.getElementById('pe-content').value = post.content_md || '';
     setChecked('pe-published', !!post.published);
     setChecked('pe-pinned', !!post.pinned);
+    // Populate schedule picker — convert SQLite format to datetime-local format
+    const pa = post.publish_at || '';
+    document.getElementById('pe-publishAt').value = pa ? pa.replace(' ', 'T').slice(0,16) : '';
     document.getElementById('pe-error').style.display = 'none';
     document.getElementById('postEditorModal').style.display = 'flex';
 }
@@ -1367,6 +1389,24 @@ function editPost(post) {
 function closePostEditor() {
     document.getElementById('postEditorModal').style.display = 'none';
     _editingPostId = null;
+}
+
+function onPublishedToggle() {
+    // Checking Published → clears the schedule (mutually exclusive)
+    if (checked('pe-published')) {
+        document.getElementById('pe-publishAt').value = '';
+    }
+}
+
+function onScheduleChange() {
+    // Setting a schedule date → unchecks Published
+    if (document.getElementById('pe-publishAt').value) {
+        setChecked('pe-published', false);
+    }
+}
+
+function clearSchedule() {
+    document.getElementById('pe-publishAt').value = '';
 }
 
 async function savePost() {
@@ -1379,12 +1419,20 @@ async function savePost() {
         return;
     }
 
+    // Convert datetime-local value to SQLite format (replace T with space)
+    let publishAt = document.getElementById('pe-publishAt').value || '';
+    if (publishAt) {
+        publishAt = publishAt.replace('T', ' ');
+        if (publishAt.length === 16) publishAt += ':00';  // append seconds
+    }
+
     const payload = {
         title: title,
         content_md: val('pe-content'),
         excerpt: val('pe-excerpt'),
         published: checked('pe-published'),
         pinned: checked('pe-pinned'),
+        publish_at: publishAt || null,
     };
 
     try {

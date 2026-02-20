@@ -55,6 +55,13 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Scheduled Publishing for The Observatory",
+          "desc": "Draft/scheduled/published workflow for blog posts. Datetime picker in editor, auto-publish on read (lazy), three-state badges, mutual exclusion between Published toggle and schedule picker.",
+          "module": "blog",
+          "completed": "2026-02-20",
+          "tags": ["blog", "scheduling", "ui"]
+        },
+        {
           "title": "Landing Page + The Observatory Blog",
           "desc": "Branded landing page with Navigator Penguin mascot, module quick-link cards, and The Observatory astronomy-themed blog. Blog admin in Settings. Markdown support.",
           "module": "blog",

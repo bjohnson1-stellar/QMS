@@ -129,3 +129,11 @@ def migrate_all():
         logger.info("Welding migrations applied")
     except Exception as exc:
         logger.warning("Welding migration step failed (non-fatal): %s", exc)
+
+    try:
+        from qms.blog.migrations import run_blog_migrations
+        with get_db() as blog_conn:
+            run_blog_migrations(blog_conn)
+        logger.info("Blog migrations applied")
+    except Exception as exc:
+        logger.warning("Blog migration step failed (non-fatal): %s", exc)

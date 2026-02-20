@@ -84,6 +84,20 @@ def _render_markdown(md_text: str) -> str:
     return '\n'.join(out)
 
 
+def _auto_publish_scheduled(conn: sqlite3.Connection) -> int:
+    """Publish posts whose scheduled time has arrived. Returns count."""
+    cur = conn.execute(
+        """UPDATE blog_posts
+           SET published = 1, publish_at = NULL, updated_at = datetime('now')
+           WHERE published = 0
+             AND publish_at IS NOT NULL
+             AND publish_at <= datetime('now')"""
+    )
+    if cur.rowcount:
+        conn.commit()
+    return cur.rowcount
+
+
 def create_post(
     conn: sqlite3.Connection,
     title: str,
@@ -91,6 +105,7 @@ def create_post(
     author_id: int,
     excerpt: str = '',
     published: bool = False,
+    publish_at: Optional[str] = None,
 ) -> int:
     """Create a new blog post. Returns the post ID."""
     slug = _slugify(title)
@@ -106,9 +121,9 @@ def create_post(
     content_html = _render_markdown(content_md)
     cur = conn.execute(
         """INSERT INTO blog_posts
-           (title, slug, content_md, content_html, excerpt, author_id, published)
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (title, slug, content_md, content_html, excerpt, author_id, int(published)),
+           (title, slug, content_md, content_html, excerpt, author_id, published, publish_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (title, slug, content_md, content_html, excerpt, author_id, int(published), publish_at or None),
     )
     conn.commit()
     return cur.lastrowid
@@ -116,7 +131,7 @@ def create_post(
 
 def update_post(conn: sqlite3.Connection, post_id: int, **fields) -> bool:
     """Partial update of a blog post. Re-renders HTML if content_md changes."""
-    allowed = {'title', 'content_md', 'excerpt', 'published', 'pinned', 'slug'}
+    allowed = {'title', 'content_md', 'excerpt', 'published', 'pinned', 'slug', 'publish_at'}
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return False
@@ -181,7 +196,11 @@ def list_posts(
     published_only: bool = True,
     limit: int = 50,
 ) -> list:
-    """List posts ordered by pinned desc, created_at desc."""
+    """List posts ordered by pinned desc, created_at desc.
+
+    Auto-publishes any scheduled posts whose time has arrived.
+    """
+    _auto_publish_scheduled(conn)
     where = "WHERE bp.published = 1" if published_only else ""
     return conn.execute(
         f"""SELECT bp.*, u.display_name as author_name

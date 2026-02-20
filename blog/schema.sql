@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     author_id     INTEGER REFERENCES users(id),
     published     INTEGER NOT NULL DEFAULT 0,
     pinned        INTEGER NOT NULL DEFAULT 0,
+    publish_at    TEXT DEFAULT NULL,
     created_at    TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );

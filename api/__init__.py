@@ -212,7 +212,7 @@ def create_app() -> Flask:
         from qms.blog.db import list_posts
         from qms.core import get_db
 
-        with get_db(readonly=True) as conn:
+        with get_db() as conn:
             recent_posts = list_posts(conn, published_only=True, limit=3)
             stats = {}
             if user.get("role") == "admin":

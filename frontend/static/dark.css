@@ -75,6 +75,7 @@
 [data-theme="dark"] .status-inactive { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
 [data-theme="dark"] .status-terminated { background: rgba(248, 113, 113, 0.15); color: #fca5a5; }
 [data-theme="dark"] .status-archived { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
+[data-theme="dark"] .status-scheduled { background: rgba(167, 139, 250, 0.15); color: #c4b5fd; }
 
 /* Type badges */
 [data-theme="dark"] .type-time { background: rgba(16, 185, 129, 0.15); color: #34d399; }

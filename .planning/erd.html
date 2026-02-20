@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QMS Database ERD</title>
+<style>
+  :root {
+    --core: #6366f1;
+    --auth: #8b5cf6;
+    --workforce: #ec4899;
+    --projects: #f59e0b;
+    --qualitydocs: #10b981;
+    --references: #14b8a6;
+    --welding: #ef4444;
+    --pipeline: #3b82f6;
+    --engineering: #f97316;
+    --automation: #6b7280;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    overflow: hidden;
+    height: 100vh;
+  }
+  #toolbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: #1e293b; border-bottom: 1px solid #334155;
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  #toolbar h1 { font-size: 16px; font-weight: 600; color: #f8fafc; white-space: nowrap; }
+  #toolbar .stats { font-size: 12px; color: #94a3b8; white-space: nowrap; }
+  #search {
+    background: #0f172a; border: 1px solid #475569; border-radius: 6px;
+    color: #e2e8f0; padding: 6px 12px; font-size: 13px; width: 240px;
+    outline: none; transition: border-color 0.2s;
+  }
+  #search:focus { border-color: #6366f1; }
+  #search::placeholder { color: #64748b; }
+  .filter-btn {
+    padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 500;
+    border: 1px solid transparent; cursor: pointer; transition: all 0.15s;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .filter-btn.active { opacity: 1; }
+  .filter-btn:not(.active) { opacity: 0.4; }
+  .filter-btn:hover { opacity: 0.8; }
+  #canvas-wrap {
+    position: absolute; top: 52px; left: 0; right: 0; bottom: 0;
+    overflow: hidden; cursor: grab;
+  }
+  #canvas-wrap.dragging { cursor: grabbing; }
+  #canvas {
+    position: absolute; transform-origin: 0 0;
+    will-change: transform;
+  }
+  .module-group {
+    position: absolute; border-radius: 10px; border: 1px solid;
+    background: rgba(15,23,42,0.85); backdrop-filter: blur(8px);
+    min-width: 200px; transition: box-shadow 0.2s;
+  }
+  .module-group:hover { box-shadow: 0 0 24px rgba(99,102,241,0.15); }
+  .module-header {
+    padding: 8px 12px; border-radius: 9px 9px 0 0;
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; display: flex; justify-content: space-between;
+    align-items: center; cursor: pointer; user-select: none;
+  }
+  .module-header .count {
+    font-size: 10px; font-weight: 400; opacity: 0.7;
+    background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 10px;
+  }
+  .module-tables { padding: 4px 0; }
+  .table-row {
+    padding: 3px 12px; font-size: 11px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: background 0.1s; border-left: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .table-row:hover { background: rgba(255,255,255,0.05); }
+  .table-row.highlighted {
+    background: rgba(99,102,241,0.15);
+    border-left-color: #6366f1;
+  }
+  .table-row.search-match {
+    background: rgba(250,204,21,0.15);
+    border-left-color: #facc15;
+  }
+  .table-row.faded { opacity: 0.2; }
+  .table-row .tname { font-family: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace; }
+  .table-row .trows {
+    font-size: 10px; color: #64748b; margin-left: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .table-row .badge {
+    font-size: 9px; padding: 1px 5px; border-radius: 3px;
+    background: rgba(255,255,255,0.08); color: #94a3b8;
+    margin-left: 6px;
+  }
+  .subgroup-label {
+    padding: 4px 12px 2px; font-size: 10px; color: #64748b;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+    border-top: 1px solid rgba(255,255,255,0.05); margin-top: 2px;
+  }
+  svg.fk-lines {
+    position: absolute; top: 0; left: 0;
+    pointer-events: none; overflow: visible;
+  }
+  svg.fk-lines path {
+    fill: none; stroke: #334155; stroke-width: 1;
+    transition: stroke 0.2s, stroke-width 0.2s, opacity 0.2s;
+  }
+  svg.fk-lines path.highlighted {
+    stroke: #6366f1; stroke-width: 2; opacity: 1 !important;
+  }
+  svg.fk-lines path.faded { opacity: 0.05; }
+  svg.fk-lines circle {
+    transition: fill 0.2s, opacity 0.2s;
+  }
+  svg.fk-lines circle.faded { opacity: 0.05; }
+  svg.fk-lines circle.highlighted { fill: #6366f1 !important; }
+
+  /* Detail panel */
+  #detail-panel {
+    position: fixed; right: -380px; top: 52px; bottom: 0; width: 380px;
+    background: #1e293b; border-left: 1px solid #334155; z-index: 99;
+    transition: right 0.3s ease; overflow-y: auto; padding: 20px;
+  }
+  #detail-panel.open { right: 0; }
+  #detail-panel h2 {
+    font-size: 14px; font-family: 'JetBrains Mono', monospace;
+    color: #f8fafc; margin-bottom: 4px;
+  }
+  #detail-panel .module-tag {
+    font-size: 11px; padding: 2px 8px; border-radius: 4px;
+    display: inline-block; margin-bottom: 12px;
+  }
+  #detail-panel h3 {
+    font-size: 11px; color: #64748b; text-transform: uppercase;
+    letter-spacing: 1px; margin: 12px 0 6px; font-weight: 600;
+  }
+  #detail-panel .col-list { list-style: none; }
+  #detail-panel .col-list li {
+    font-size: 12px; padding: 3px 0;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex; gap: 8px; align-items: baseline;
+  }
+  #detail-panel .col-list .col-name { color: #e2e8f0; }
+  #detail-panel .col-list .col-type { color: #64748b; font-size: 10px; }
+  #detail-panel .col-list .col-pk { color: #facc15; font-size: 9px; }
+  #detail-panel .col-list .col-fk { color: #6366f1; font-size: 9px; }
+  #detail-panel .col-list .col-nn { color: #f97316; font-size: 9px; }
+  #detail-panel .fk-list { list-style: none; }
+  #detail-panel .fk-list li {
+    font-size: 12px; padding: 3px 0; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; color: #6366f1;
+  }
+  #detail-panel .fk-list li:hover { text-decoration: underline; }
+  #detail-panel .close-btn {
+    position: absolute; top: 12px; right: 12px;
+    background: none; border: none; color: #64748b; font-size: 18px;
+    cursor: pointer; padding: 4px 8px; border-radius: 4px;
+  }
+  #detail-panel .close-btn:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+  #legend {
+    position: fixed; bottom: 16px; left: 16px; z-index: 99;
+    background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+    padding: 12px 16px; font-size: 11px;
+  }
+  #legend .row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  #legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+  #zoom-controls {
+    position: fixed; bottom: 16px; right: 16px; z-index: 99;
+    display: flex; gap: 4px;
+  }
+  #zoom-controls button {
+    width: 32px; height: 32px; border-radius: 6px; border: 1px solid #334155;
+    background: #1e293b; color: #e2e8f0; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #zoom-controls button:hover { background: #334155; }
+  .cross-module-badge {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    margin-left: 4px; vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <h1>QMS Entity Relationship Diagram</h1>
+  <div class="stats" id="stats"></div>
+  <input type="text" id="search" placeholder="Search tables..." autocomplete="off">
+  <div id="filters"></div>
+</div>
+
+<div id="canvas-wrap">
+  <div id="canvas">
+    <svg class="fk-lines" id="fk-svg"></svg>
+  </div>
+</div>
+
+<div id="detail-panel">
+  <button class="close-btn" onclick="closeDetail()">&times;</button>
+  <div id="detail-content"></div>
+</div>
+
+<div id="legend"></div>
+<div id="zoom-controls">
+  <button onclick="zoomTo(zoom*1.2)">+</button>
+  <button onclick="zoomTo(zoom/1.2)">&minus;</button>
+  <button onclick="zoomTo(1)" title="Reset">1:1</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// DATA: Modules, tables, columns, FK relationships, row counts
+// ═══════════════════════════════════════════════════════════════════
+const MODULES = {
+  core: { label: "Core", color: "#6366f1" },
+  auth: { label: "Auth", color: "#8b5cf6" },
+  workforce: { label: "Workforce", color: "#ec4899" },
+  projects: { label: "Projects", color: "#f59e0b" },
+  qualitydocs: { label: "Quality Docs", color: "#10b981" },
+  references: { label: "References", color: "#14b8a6" },
+  welding: { label: "Welding", color: "#ef4444" },
+  pipeline: { label: "Pipeline", color: "#3b82f6" },
+  engineering: { label: "Engineering", color: "#f97316" },
+  automation: { label: "Automation", color: "#6b7280" },
+};
+
+// Table definitions: { name, module, rows, subgroup?, columns[] }
+const TABLES = [
+  // ── Core ──
+  { name: "audit_log", module: "core", rows: 26, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "entity_type", t: "TEXT", nn: true },{ n: "entity_id", t: "TEXT", nn: true },
+    { n: "action", t: "TEXT", nn: true },{ n: "changed_by", t: "TEXT" },{ n: "changed_at", t: "TIMESTAMP" },
+    { n: "old_values", t: "TEXT" },{ n: "new_values", t: "TEXT" }]},
+  { name: "attachments", module: "core", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "entity_type", t: "TEXT", nn: true },{ n: "entity_id", t: "TEXT", nn: true },
+    { n: "file_path", t: "TEXT", nn: true },{ n: "file_name", t: "TEXT", nn: true },{ n: "mime_type", t: "TEXT" },
+    { n: "uploaded_by", t: "TEXT" },{ n: "uploaded_at", t: "TIMESTAMP" }]},
+  { name: "notes", module: "core", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "entity_type", t: "TEXT", nn: true },{ n: "entity_id", t: "TEXT", nn: true },
+    { n: "content", t: "TEXT", nn: true },{ n: "created_by", t: "TEXT" },{ n: "created_at", t: "TIMESTAMP" }]},
+
+  // ── Auth ──
+  { name: "users", module: "auth", rows: 3, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "email", t: "TEXT", nn: true },{ n: "display_name", t: "TEXT", nn: true },
+    { n: "password_hash", t: "TEXT" },{ n: "role", t: "TEXT", nn: true },{ n: "is_active", t: "INTEGER", nn: true },
+    { n: "must_change_password", t: "INTEGER" },{ n: "first_login", t: "TEXT" },{ n: "last_login", t: "TEXT" }]},
+  { name: "user_module_access", module: "auth", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "user_id", t: "INTEGER", fk: "users" },
+    { n: "module", t: "TEXT", nn: true },{ n: "role", t: "TEXT", nn: true }]},
+  { name: "user_business_units", module: "auth", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "user_id", t: "INTEGER", fk: "users" },
+    { n: "business_unit_id", t: "INTEGER", fk: "business_units" }]},
+
+  // ── Workforce ──
+  { name: "departments", module: "workforce", rows: 7, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "department_number", t: "TEXT", nn: true },{ n: "name", t: "TEXT", nn: true },
+    { n: "full_name", t: "TEXT" },{ n: "manager", t: "TEXT" },{ n: "status", t: "TEXT" }]},
+  { name: "roles", module: "workforce", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "role_name", t: "TEXT", nn: true },{ n: "role_code", t: "TEXT", nn: true },
+    { n: "description", t: "TEXT" },{ n: "hierarchy_level", t: "INTEGER" },{ n: "status", t: "TEXT" }]},
+  { name: "permissions", module: "workforce", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "permission_code", t: "TEXT", nn: true },{ n: "permission_name", t: "TEXT", nn: true },
+    { n: "module", t: "TEXT" },{ n: "category", t: "TEXT" }]},
+  { name: "role_permissions", module: "workforce", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "role_id", t: "INTEGER", fk: "roles" },{ n: "permission_id", t: "INTEGER", fk: "permissions" }]},
+  { name: "employees", module: "workforce", rows: 264, columns: [
+    { n: "id", t: "TEXT", pk: true },{ n: "employee_number", t: "TEXT" },{ n: "last_name", t: "TEXT", nn: true },
+    { n: "first_name", t: "TEXT", nn: true },{ n: "is_employee", t: "INTEGER" },{ n: "is_subcontractor", t: "INTEGER" },
+    { n: "is_active", t: "INTEGER" },{ n: "department_id", t: "INTEGER", fk: "departments" },
+    { n: "role_id", t: "INTEGER", fk: "roles" },{ n: "supervisor_id", t: "TEXT", fk: "employees" },
+    { n: "email", t: "TEXT" },{ n: "status", t: "TEXT" }]},
+  { name: "employee_contacts", module: "workforce", rows: 0, columns: [
+    { n: "id", t: "TEXT", pk: true },{ n: "employee_id", t: "TEXT", fk: "employees" },{ n: "contact_type", t: "TEXT" },
+    { n: "contact_method", t: "TEXT" },{ n: "contact_value", t: "TEXT", nn: true }]},
+  { name: "employment_history", module: "workforce", rows: 0, columns: [
+    { n: "id", t: "TEXT", pk: true },{ n: "employee_id", t: "TEXT", fk: "employees" },{ n: "start_date", t: "TEXT", nn: true },
+    { n: "department_id", t: "INTEGER", fk: "departments" },{ n: "transition_type", t: "TEXT" }]},
+  { name: "employee_certifications", module: "workforce", rows: 0, columns: [
+    { n: "id", t: "TEXT", pk: true },{ n: "employee_id", t: "TEXT", fk: "employees" },{ n: "certification_type", t: "TEXT", nn: true },
+    { n: "expiry_date", t: "TEXT" },{ n: "status", t: "TEXT" }]},
+  { name: "employee_quality_documents", module: "workforce", rows: 0, columns: [
+    { n: "id", t: "TEXT", pk: true },{ n: "employee_id", t: "TEXT", fk: "employees" },{ n: "document_type", t: "TEXT" },
+    { n: "document_number", t: "TEXT" },{ n: "status", t: "TEXT" }]},
+  { name: "employee_permissions", module: "workforce", rows: 0, columns: [
+    { n: "id", t: "TEXT", pk: true },{ n: "employee_id", t: "TEXT", fk: "employees" },
+    { n: "permission_id", t: "INTEGER", fk: "permissions" },{ n: "is_granted", t: "INTEGER", nn: true }]},
+
+  // ── Projects ──
+  { name: "customers", module: "projects", rows: 7, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "name", t: "TEXT", nn: true },{ n: "contact_name", t: "TEXT" },
+    { n: "contact_email", t: "TEXT" },{ n: "status", t: "TEXT" }]},
+  { name: "facilities", module: "projects", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "customer_id", t: "INTEGER", fk: "customers" },
+    { n: "name", t: "TEXT", nn: true },{ n: "city", t: "TEXT" },{ n: "state", t: "TEXT" }]},
+  { name: "project_contacts", module: "projects", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "customer_id", t: "INTEGER", fk: "customers" },
+    { n: "facility_id", t: "INTEGER", fk: "facilities" },{ n: "project_id", t: "INTEGER", fk: "projects" },
+    { n: "name", t: "TEXT", nn: true },{ n: "role", t: "TEXT" }]},
+  { name: "business_units", module: "projects", rows: 3, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "code", t: "TEXT", nn: true },{ n: "name", t: "TEXT", nn: true },
+    { n: "full_name", t: "TEXT" },{ n: "manager", t: "TEXT" },{ n: "status", t: "TEXT" }]},
+  { name: "projects", module: "projects", rows: 34, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "number", t: "TEXT" },{ n: "name", t: "TEXT", nn: true },
+    { n: "client", t: "TEXT" },{ n: "status", t: "TEXT" },{ n: "stage", t: "TEXT" },
+    { n: "customer_id", t: "INTEGER", fk: "customers" },{ n: "facility_id", t: "INTEGER", fk: "facilities" },
+    { n: "pm_employee_id", t: "TEXT", fk: "employees" }]},
+  { name: "project_codes", module: "projects", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "project_id", t: "INTEGER", fk: "projects" },{ n: "code_name", t: "TEXT" }]},
+  { name: "project_patterns", module: "projects", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "project_id", t: "INTEGER", fk: "projects" },
+    { n: "pattern_type", t: "TEXT" },{ n: "pattern", t: "TEXT" }]},
+  { name: "project_flags", module: "projects", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "project_id", t: "INTEGER", fk: "projects" },
+    { n: "flag", t: "TEXT" },{ n: "resolved", t: "INTEGER" }]},
+  { name: "jobs", module: "projects", rows: 55, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "job_number", t: "TEXT", nn: true },
+    { n: "project_id", t: "INTEGER", fk: "projects" },{ n: "department_id", t: "INTEGER", fk: "business_units" },
+    { n: "scope_name", t: "TEXT", nn: true },{ n: "pm", t: "TEXT" },
+    { n: "pm_employee_id", t: "TEXT", fk: "employees" }]},
+  { name: "project_budgets", module: "projects", rows: 0, subgroup: "Budget", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "project_id", t: "INTEGER", fk: "projects" },
+    { n: "total_budget", t: "REAL", nn: true },{ n: "weight_adjustment", t: "REAL" }]},
+  { name: "project_allocations", module: "projects", rows: 0, subgroup: "Budget", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "project_id", t: "INTEGER", fk: "projects" },
+    { n: "business_unit_id", t: "INTEGER", fk: "business_units" },{ n: "job_id", t: "INTEGER", fk: "jobs" },
+    { n: "allocated_budget", t: "REAL" },{ n: "subjob", t: "TEXT" }]},
+  { name: "project_transactions", module: "projects", rows: 0, subgroup: "Budget", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "project_id", t: "INTEGER", fk: "projects" },
+    { n: "transaction_date", t: "TEXT", nn: true },{ n: "amount", t: "REAL", nn: true }]},
+  { name: "budget_settings", module: "projects", rows: 0, subgroup: "Budget", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "company_name", t: "TEXT" },{ n: "default_hourly_rate", t: "REAL" }]},
+  { name: "projection_periods", module: "projects", rows: 0, subgroup: "Projections", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "year", t: "INTEGER", nn: true },{ n: "month", t: "INTEGER", nn: true },
+    { n: "working_days", t: "INTEGER", nn: true },{ n: "is_locked", t: "INTEGER" }]},
+  { name: "projection_snapshots", module: "projects", rows: 0, subgroup: "Projections", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "period_id", t: "INTEGER", fk: "projection_periods" },
+    { n: "version", t: "INTEGER" },{ n: "status", t: "TEXT" },{ n: "total_projected_cost", t: "REAL" }]},
+  { name: "projection_entries", module: "projects", rows: 0, subgroup: "Projections", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "snapshot_id", t: "INTEGER", fk: "projection_snapshots" },
+    { n: "project_id", t: "INTEGER", fk: "projects" },{ n: "allocated_hours", t: "REAL" }]},
+  { name: "projection_period_jobs", module: "projects", rows: 0, subgroup: "Projections", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "period_id", t: "INTEGER", fk: "projection_periods" },
+    { n: "allocation_id", t: "INTEGER", fk: "project_allocations" }]},
+  { name: "projection_entry_details", module: "projects", rows: 0, subgroup: "Projections", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "entry_id", t: "INTEGER", fk: "projection_entries" },
+    { n: "allocation_id", t: "INTEGER", fk: "project_allocations" },{ n: "job_code", t: "TEXT" }]},
+
+  // ── Quality Docs ──
+  { name: "qm_modules", module: "qualitydocs", rows: 17, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "module_number", t: "INTEGER", nn: true },{ n: "title", t: "TEXT" },
+    { n: "version", t: "TEXT" },{ n: "status", t: "TEXT" }]},
+  { name: "qm_sections", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "module_id", t: "INTEGER", fk: "qm_modules" },
+    { n: "section_number", t: "TEXT", nn: true },{ n: "title", t: "TEXT" }]},
+  { name: "qm_subsections", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "section_id", t: "INTEGER", fk: "qm_sections" },
+    { n: "letter", t: "TEXT", nn: true },{ n: "subsection_type", t: "TEXT" }]},
+  { name: "qm_content_blocks", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "subsection_id", t: "INTEGER", fk: "qm_subsections" },
+    { n: "block_type", t: "TEXT", nn: true },{ n: "content", t: "TEXT" }]},
+  { name: "qm_cross_references", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "source_module_id", t: "INTEGER", fk: "qm_modules" },
+    { n: "source_subsection_id", t: "INTEGER", fk: "qm_subsections" }]},
+  { name: "qm_code_references", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "subsection_id", t: "INTEGER", fk: "qm_subsections" },
+    { n: "code", t: "TEXT", nn: true },{ n: "organization", t: "TEXT" }]},
+  { name: "qm_procedures", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "procedure_number", t: "TEXT", nn: true },{ n: "title", t: "TEXT", nn: true },
+    { n: "revision", t: "TEXT" },{ n: "status", t: "TEXT" },{ n: "supersedes_id", t: "INTEGER", fk: "qm_procedures" }]},
+  { name: "qm_forms", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "form_number", t: "TEXT", nn: true },{ n: "title", t: "TEXT", nn: true },
+    { n: "associated_procedure_id", t: "INTEGER", fk: "qm_procedures" },
+    { n: "associated_module_id", t: "INTEGER", fk: "qm_modules" }]},
+  { name: "qm_records", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "form_id", t: "INTEGER", fk: "qm_forms" },
+    { n: "project_id", t: "INTEGER", fk: "projects" },{ n: "record_date", t: "DATE", nn: true }]},
+  { name: "qm_templates", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "template_number", t: "TEXT", nn: true },{ n: "title", t: "TEXT", nn: true }]},
+  { name: "qm_responsibility_assignments", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "subsection_id", t: "INTEGER", fk: "qm_subsections" },
+    { n: "role", t: "TEXT", nn: true }]},
+  { name: "qm_document_history", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "document_type", t: "TEXT", nn: true },{ n: "revision", t: "TEXT", nn: true }]},
+  { name: "qm_intake_log", module: "qualitydocs", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "file_name", t: "TEXT", nn: true },{ n: "document_type", t: "TEXT" }]},
+
+  // ── References ──
+  { name: "qm_references", module: "references", rows: 4, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "standard_id", t: "TEXT", nn: true },{ n: "title", t: "TEXT", nn: true },
+    { n: "publisher", t: "TEXT" },{ n: "extraction_status", t: "TEXT" },{ n: "status", t: "TEXT" }]},
+  { name: "ref_sections", module: "references", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "reference_id", t: "INTEGER", fk: "qm_references" },
+    { n: "section_number", t: "TEXT", nn: true },{ n: "section_title", t: "TEXT" },{ n: "status", t: "TEXT" }]},
+  { name: "ref_clauses", module: "references", rows: 4450, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "reference_id", t: "INTEGER", fk: "qm_references" },
+    { n: "clause_number", t: "TEXT", nn: true },{ n: "parent_clause_id", t: "INTEGER", fk: "ref_clauses" },
+    { n: "section_id", t: "INTEGER", fk: "ref_sections" }]},
+  { name: "ref_content_blocks", module: "references", rows: 12104, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "clause_id", t: "INTEGER", fk: "ref_clauses" },
+    { n: "block_type", t: "TEXT", nn: true },{ n: "content", t: "TEXT", nn: true }]},
+  { name: "ref_procedure_links", module: "references", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "clause_id", t: "INTEGER", fk: "ref_clauses" },
+    { n: "procedure_id", t: "INTEGER", fk: "qm_procedures" }]},
+  { name: "ref_extraction_log", module: "references", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "reference_id", t: "INTEGER", fk: "qm_references" },
+    { n: "section_id", t: "INTEGER", fk: "ref_sections" },{ n: "operation", t: "TEXT", nn: true }]},
+
+  // ── Pipeline (Core extraction) ──
+  { name: "sheets", module: "pipeline", rows: 2193, subgroup: "Core", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "project_id", t: "INTEGER", fk: "projects" },
+    { n: "discipline", t: "TEXT" },{ n: "file_name", t: "TEXT" },{ n: "drawing_number", t: "TEXT" },
+    { n: "title", t: "TEXT" },{ n: "revision", t: "TEXT" },{ n: "is_current", t: "INTEGER" },
+    { n: "quality_score", t: "REAL" },{ n: "file_hash", t: "TEXT" }]},
+  { name: "lines", module: "pipeline", rows: 2452, subgroup: "Core", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "sheet_id", t: "INTEGER", fk: "sheets" },
+    { n: "line_number", t: "TEXT", nn: true },{ n: "size", t: "TEXT" },{ n: "material", t: "TEXT" },
+    { n: "service", t: "TEXT" },{ n: "confidence", t: "REAL" }]},
+  { name: "equipment", module: "pipeline", rows: 72, subgroup: "Core", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "sheet_id", t: "INTEGER", fk: "sheets" },
+    { n: "tag", t: "TEXT", nn: true },{ n: "description", t: "TEXT" },{ n: "confidence", t: "REAL" }]},
+  { name: "instruments", module: "pipeline", rows: 1392, subgroup: "Core", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "sheet_id", t: "INTEGER", fk: "sheets" },
+    { n: "tag", t: "TEXT", nn: true },{ n: "instrument_type", t: "TEXT" },{ n: "confidence", t: "REAL" }]},
+  { name: "welds", module: "pipeline", rows: 0, subgroup: "Core", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "sheet_id", t: "INTEGER", fk: "sheets" },
+    { n: "weld_number", t: "TEXT" },{ n: "weld_type", t: "TEXT" },{ n: "confidence", t: "REAL" }]},
+  { name: "conflicts", module: "pipeline", rows: 157, subgroup: "Core", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "project_id", t: "INTEGER", fk: "projects" },
+    { n: "conflict_type", t: "TEXT" },{ n: "severity", t: "TEXT" },{ n: "resolved", t: "INTEGER" }]},
+
+  // Pipeline QA
+  { name: "model_runs", module: "pipeline", rows: 30, subgroup: "QA", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "sheet_id", t: "INTEGER", fk: "sheets" }]},
+  { name: "extraction_flags", module: "pipeline", rows: 0, subgroup: "QA", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "sheet_id", t: "INTEGER", fk: "sheets" }]},
+  { name: "shadow_reviews", module: "pipeline", rows: 0, subgroup: "QA", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "sheet_id", t: "INTEGER", fk: "sheets" }]},
+  { name: "extraction_misses", module: "pipeline", rows: 0, subgroup: "QA", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "gold_standard", module: "pipeline", rows: 0, subgroup: "QA", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "accuracy_log", module: "pipeline", rows: 0, subgroup: "QA", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "processing_queue", module: "pipeline", rows: 0, subgroup: "QA", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "intake_log", module: "pipeline", rows: 175, subgroup: "QA", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "revision_deltas", module: "pipeline", rows: 0, subgroup: "QA", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "routing_changes", module: "pipeline", rows: 0, subgroup: "QA", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "validation_results", module: "pipeline", rows: 0, subgroup: "QA", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+
+  // Pipeline Specs
+  { name: "specifications", module: "pipeline", rows: 0, subgroup: "Specs", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "project_id", t: "INTEGER", fk: "projects" }]},
+  { name: "spec_sections", module: "pipeline", rows: 0, subgroup: "Specs", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "spec_id", t: "INTEGER", fk: "specifications" }]},
+  { name: "spec_items", module: "pipeline", rows: 0, subgroup: "Specs", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "section_id", t: "INTEGER", fk: "spec_sections" }]},
+  { name: "master_spec_items", module: "pipeline", rows: 0, subgroup: "Specs", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "spec_variations", module: "pipeline", rows: 0, subgroup: "Specs", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "master_spec_item_id", t: "INTEGER", fk: "master_spec_items" },
+    { n: "project_id", t: "INTEGER", fk: "projects" }]},
+
+  // Pipeline Discipline tables (grouped)
+  { name: "electrical_* (18 tables)", module: "pipeline", rows: null, subgroup: "Electrical", isGroup: true, groupCount: 18,
+    columns: [{ n: "All FK → sheets.id", t: "", fk: "sheets" }]},
+  { name: "plumbing_* (5 tables)", module: "pipeline", rows: null, subgroup: "Plumbing", isGroup: true, groupCount: 5,
+    columns: [{ n: "All FK → sheets.id", t: "", fk: "sheets" }]},
+  { name: "civil_* (19 tables)", module: "pipeline", rows: null, subgroup: "Civil/Survey", isGroup: true, groupCount: 19,
+    columns: [{ n: "All FK → sheets.id", t: "", fk: "sheets" }]},
+  { name: "survey_* (7 tables)", module: "pipeline", rows: null, subgroup: "Civil/Survey", isGroup: true, groupCount: 7,
+    columns: [{ n: "All FK → sheets.id", t: "", fk: "sheets" }]},
+  { name: "fire_protection_* (6 tables)", module: "pipeline", rows: null, subgroup: "Fire/Safety", isGroup: true, groupCount: 6,
+    columns: [{ n: "All FK → sheets.id", t: "", fk: "sheets" }]},
+  { name: "life_safety_* (6 tables)", module: "pipeline", rows: null, subgroup: "Fire/Safety", isGroup: true, groupCount: 6,
+    columns: [{ n: "All FK → sheets.id", t: "", fk: "sheets" }]},
+  { name: "mechanical_* (2 tables)", module: "pipeline", rows: null, subgroup: "Mechanical", isGroup: true, groupCount: 2,
+    columns: [{ n: "All FK → sheets.id", t: "", fk: "sheets" }]},
+  { name: "arch_* (3 tables)", module: "pipeline", rows: null, subgroup: "Architectural", isGroup: true, groupCount: 3,
+    columns: [{ n: "All FK → sheets.id", t: "", fk: "sheets" }]},
+  { name: "supports (3 tables)", module: "pipeline", rows: null, subgroup: "Supports", isGroup: true, groupCount: 3,
+    columns: [{ n: "All FK → sheets.id", t: "", fk: "sheets" }]},
+  { name: "refrigeration_* (2 tables)", module: "pipeline", rows: null, subgroup: "Refrigeration", isGroup: true, groupCount: 2,
+    columns: [{ n: "All FK → sheets.id", t: "", fk: "sheets" }]},
+  { name: "equipment_master", module: "pipeline", rows: 0, subgroup: "Equipment", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "project_id", t: "INTEGER", fk: "projects" },{ n: "tag", t: "TEXT" }]},
+  { name: "equipment_appearances", module: "pipeline", rows: 0, subgroup: "Equipment", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "equipment_id", t: "INTEGER", fk: "equipment_master" },
+    { n: "sheet_id", t: "INTEGER", fk: "sheets" }]},
+  { name: "other pipeline (7 tables)", module: "pipeline", rows: null, subgroup: "Other", isGroup: true, groupCount: 7,
+    columns: [{ n: "detail_drawings, drawing_details, insulation_*, design_criteria, drawing_*", t: "" }]},
+
+  // ── Welding ──
+  { name: "weld_welder_registry", module: "welding", rows: 0, subgroup: "Registry", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "employee_id", t: "TEXT", fk: "employees" },
+    { n: "welder_stamp", t: "TEXT" },{ n: "status", t: "TEXT" }]},
+  { name: "weld_wps", module: "welding", rows: 15, subgroup: "WPS", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "wps_number", t: "TEXT", nn: true },
+    { n: "status", t: "TEXT" },{ n: "is_swps", t: "INTEGER" }]},
+  { name: "weld_wps_* (11 child tables)", module: "welding", rows: null, subgroup: "WPS", isGroup: true, groupCount: 11,
+    columns: [{ n: "All FK → weld_wps.id", t: "", fk: "weld_wps" }]},
+  { name: "weld_pqr", module: "welding", rows: 0, subgroup: "PQR", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "pqr_number", t: "TEXT", nn: true },
+    { n: "supporting_wps_id", t: "INTEGER", fk: "weld_wps" }]},
+  { name: "weld_pqr_* (11 child tables)", module: "welding", rows: null, subgroup: "PQR", isGroup: true, groupCount: 11,
+    columns: [{ n: "All FK → weld_pqr.id", t: "", fk: "weld_pqr" }]},
+  { name: "weld_wpq", module: "welding", rows: 0, subgroup: "WPQ", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "welder_id", t: "INTEGER", fk: "weld_welder_registry" },
+    { n: "employee_id", t: "TEXT", fk: "employees" },{ n: "status", t: "TEXT" }]},
+  { name: "weld_wpq_tests", module: "welding", rows: 0, subgroup: "WPQ", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "wpq_id", t: "INTEGER", fk: "weld_wpq" }]},
+  { name: "weld_wpq_qualifications", module: "welding", rows: 0, subgroup: "WPQ", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "wpq_id", t: "INTEGER", fk: "weld_wpq" }]},
+  { name: "weld_bps", module: "welding", rows: 0, subgroup: "BPS/BPQ", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "bps_number", t: "TEXT", nn: true }]},
+  { name: "weld_bps_* (7 child tables)", module: "welding", rows: null, subgroup: "BPS/BPQ", isGroup: true, groupCount: 7,
+    columns: [{ n: "All FK → weld_bps.id", t: "", fk: "weld_bps" }]},
+  { name: "weld_bpq", module: "welding", rows: 0, subgroup: "BPS/BPQ", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "bpq_number", t: "TEXT", nn: true }]},
+  { name: "weld_bpqr", module: "welding", rows: 0, subgroup: "BPS/BPQ", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "brazer_id", t: "INTEGER", fk: "weld_welder_registry" }]},
+  { name: "weld_production_welds", module: "welding", rows: 24, subgroup: "Production", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "welder_id", t: "INTEGER", fk: "weld_welder_registry" },
+    { n: "employee_id", t: "TEXT", fk: "employees" },{ n: "project_id", t: "INTEGER", fk: "projects" }]},
+  { name: "weld_continuity_log", module: "welding", rows: 0, subgroup: "Production", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "welder_id", t: "INTEGER", fk: "weld_welder_registry" },
+    { n: "employee_id", t: "TEXT", fk: "employees" }]},
+  { name: "weld_continuity_events", module: "welding", rows: 0, subgroup: "Production", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "welder_id", t: "INTEGER", fk: "weld_welder_registry" }]},
+  { name: "weld_ndt_results", module: "welding", rows: 0, subgroup: "Production", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "welder_id", t: "INTEGER", fk: "weld_welder_registry" }]},
+  { name: "weld_cert_requests", module: "welding", rows: 0, subgroup: "Cert Requests", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "welder_id", t: "INTEGER", fk: "weld_welder_registry" },
+    { n: "project_id", t: "INTEGER", fk: "projects" }]},
+  { name: "weld_cert_request_coupons", module: "welding", rows: 0, subgroup: "Cert Requests", columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "request_id", t: "INTEGER", fk: "weld_cert_requests" }]},
+  { name: "weld_notifications", module: "welding", rows: 0, subgroup: "System", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "weld_notification_rules", module: "welding", rows: 0, subgroup: "System", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "weld_valid_* (14 lookup tables)", module: "welding", rows: null, subgroup: "Lookups", isGroup: true, groupCount: 14,
+    columns: [{ n: "Standalone lookup tables (processes, P-numbers, F-numbers, etc.)", t: "" }]},
+  { name: "weld_intake_log", module: "welding", rows: 0, subgroup: "System", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "weld_extraction_log", module: "welding", rows: 0, subgroup: "System", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "weld_form_templates", module: "welding", rows: 0, subgroup: "System", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "weld_document_revisions", module: "welding", rows: 0, subgroup: "System", columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+
+  // ── Engineering ──
+  { name: "eng_calculations", module: "engineering", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "project_id", t: "INTEGER", fk: "projects" },
+    { n: "sheet_id", t: "INTEGER", fk: "sheets" },{ n: "discipline", t: "TEXT", nn: true },
+    { n: "calculation_type", t: "TEXT", nn: true }]},
+  { name: "eng_validations", module: "engineering", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "calculation_id", t: "INTEGER", fk: "eng_calculations" },
+    { n: "project_id", t: "INTEGER", fk: "projects" },{ n: "sheet_id", t: "INTEGER", fk: "sheets" }]},
+
+  // ── Automation ──
+  { name: "automation_processing_log", module: "automation", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true },{ n: "file_name", t: "TEXT", nn: true },{ n: "request_type", t: "TEXT", nn: true }]},
+  { name: "onedrive_sync_log", module: "automation", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "document_intake_log", module: "automation", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+  { name: "build_log", module: "automation", rows: 0, columns: [
+    { n: "id", t: "INTEGER", pk: true }]},
+];
+
+// Build FK edges from column definitions
+const FK_EDGES = [];
+const tableIndex = {};
+TABLES.forEach((t, i) => { tableIndex[t.name] = i; });
+
+TABLES.forEach(t => {
+  if (!t.columns) return;
+  t.columns.forEach(c => {
+    if (c.fk && tableIndex[c.fk] !== undefined) {
+      FK_EDGES.push({ from: t.name, to: c.fk, col: c.n });
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// LAYOUT ENGINE
+// ═══════════════════════════════════════════════════════════════════
+
+const MODULE_LAYOUT = [
+  // row 0
+  { mod: "core", x: 50, y: 30 },
+  { mod: "auth", x: 280, y: 30 },
+  { mod: "workforce", x: 530, y: 30 },
+  // row 1
+  { mod: "projects", x: 50, y: 350 },
+  { mod: "qualitydocs", x: 530, y: 350 },
+  { mod: "references", x: 900, y: 30 },
+  // row 2
+  { mod: "pipeline", x: 50, y: 900 },
+  { mod: "welding", x: 700, y: 650 },
+  // row 3
+  { mod: "engineering", x: 530, y: 650 },
+  { mod: "automation", x: 900, y: 350 },
+];
+
+let zoom = 0.75, panX = 0, panY = 0;
+let isDragging = false, dragStartX, dragStartY;
+let highlightedTable = null;
+let activeModules = new Set(Object.keys(MODULES));
+
+function render() {
+  const canvas = document.getElementById("canvas");
+  const svg = document.getElementById("fk-svg");
+  canvas.innerHTML = '';
+  canvas.appendChild(svg);
+
+  // Group tables by module
+  const byModule = {};
+  TABLES.forEach(t => {
+    if (!byModule[t.module]) byModule[t.module] = [];
+    byModule[t.module].push(t);
+  });
+
+  // Track table element positions for FK lines
+  const tablePositions = {};
+
+  MODULE_LAYOUT.forEach(ml => {
+    if (!activeModules.has(ml.mod)) return;
+    const mod = MODULES[ml.mod];
+    const tables = byModule[ml.mod] || [];
+
+    const group = document.createElement("div");
+    group.className = "module-group";
+    group.style.left = ml.x + "px";
+    group.style.top = ml.y + "px";
+    group.style.borderColor = mod.color + "40";
+
+    const header = document.createElement("div");
+    header.className = "module-header";
+    header.style.background = mod.color + "20";
+    header.style.color = mod.color;
+    const totalTables = tables.reduce((s, t) => s + (t.groupCount || 1), 0);
+    header.innerHTML = `<span>${mod.label}</span><span class="count">${totalTables} tables</span>`;
+    group.appendChild(header);
+
+    const tbody = document.createElement("div");
+    tbody.className = "module-tables";
+
+    let currentSubgroup = null;
+    tables.forEach(t => {
+      if (t.subgroup && t.subgroup !== currentSubgroup) {
+        currentSubgroup = t.subgroup;
+        const sg = document.createElement("div");
+        sg.className = "subgroup-label";
+        sg.textContent = currentSubgroup;
+        tbody.appendChild(sg);
+      }
+
+      const row = document.createElement("div");
+      row.className = "table-row";
+      row.dataset.table = t.name;
+
+      let nameHtml = `<span class="tname">${t.name}</span>`;
+      // Cross-module FK indicator
+      if (t.columns) {
+        t.columns.forEach(c => {
+          if (c.fk) {
+            const target = TABLES[tableIndex[c.fk]];
+            if (target && target.module !== t.module) {
+              nameHtml += `<span class="cross-module-badge" style="background:${MODULES[target.module].color}" title="FK → ${c.fk} (${target.module})"></span>`;
+            }
+          }
+        });
+      }
+
+      let rightHtml = '';
+      if (t.isGroup) {
+        rightHtml = `<span class="badge">${t.groupCount}</span>`;
+      } else if (t.rows !== null && t.rows > 0) {
+        rightHtml = `<span class="trows">${t.rows.toLocaleString()}</span>`;
+      }
+
+      row.innerHTML = nameHtml + rightHtml;
+      row.addEventListener("click", () => selectTable(t));
+      row.addEventListener("mouseenter", () => highlightRelated(t.name));
+      row.addEventListener("mouseleave", () => clearHighlight());
+      tbody.appendChild(row);
+    });
+
+    group.appendChild(tbody);
+    canvas.appendChild(group);
+
+    // After render, record positions
+    requestAnimationFrame(() => {
+      const rows = group.querySelectorAll(".table-row");
+      rows.forEach(row => {
+        const rect = row.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        const name = row.dataset.table;
+        tablePositions[name] = {
+          left: ml.x,
+          right: ml.x + group.offsetWidth,
+          y: row.offsetTop + group.offsetTop + row.offsetHeight / 2,
+          cx: ml.x + group.offsetWidth / 2,
+        };
+      });
+      drawFKLines(svg, tablePositions, canvas);
+    });
+  });
+
+  updateTransform();
+  updateStats();
+}
+
+function drawFKLines(svg, positions, canvas) {
+  svg.innerHTML = '';
+  // Make SVG large enough
+  svg.setAttribute("width", "3000");
+  svg.setAttribute("height", "2200");
+
+  FK_EDGES.forEach(edge => {
+    const from = positions[edge.from];
+    const to = positions[edge.to];
+    if (!from || !to) return;
+
+    // Determine which side to connect
+    let x1, x2;
+    if (from.right < to.left - 20) {
+      x1 = from.right; x2 = to.left;
+    } else if (to.right < from.left - 20) {
+      x1 = from.left; x2 = to.right;
+    } else {
+      // Overlapping x — use right side for both
+      x1 = from.right; x2 = to.right + 10;
+    }
+
+    const y1 = from.y;
+    const y2 = to.y;
+    const dx = Math.abs(x2 - x1);
+    const cp = Math.max(40, dx * 0.4);
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", `M${x1},${y1} C${x1+cp},${y1} ${x2-cp},${y2} ${x2},${y2}`);
+    path.dataset.from = edge.from;
+    path.dataset.to = edge.to;
+    svg.appendChild(path);
+
+    // Target dot
+    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    dot.setAttribute("cx", x2);
+    dot.setAttribute("cy", y2);
+    dot.setAttribute("r", 3);
+    dot.setAttribute("fill", "#475569");
+    dot.dataset.from = edge.from;
+    dot.dataset.to = edge.to;
+    svg.appendChild(dot);
+  });
+}
+
+function highlightRelated(tableName) {
+  highlightedTable = tableName;
+  const related = new Set([tableName]);
+  FK_EDGES.forEach(e => {
+    if (e.from === tableName) related.add(e.to);
+    if (e.to === tableName) related.add(e.from);
+  });
+
+  document.querySelectorAll(".table-row").forEach(row => {
+    row.classList.toggle("highlighted", related.has(row.dataset.table));
+    row.classList.toggle("faded", !related.has(row.dataset.table));
+  });
+
+  document.querySelectorAll("#fk-svg path, #fk-svg circle").forEach(el => {
+    const isRelated = el.dataset.from === tableName || el.dataset.to === tableName;
+    el.classList.toggle("highlighted", isRelated);
+    el.classList.toggle("faded", !isRelated);
+  });
+}
+
+function clearHighlight() {
+  highlightedTable = null;
+  document.querySelectorAll(".table-row").forEach(r => {
+    r.classList.remove("highlighted", "faded");
+  });
+  document.querySelectorAll("#fk-svg path, #fk-svg circle").forEach(el => {
+    el.classList.remove("highlighted", "faded");
+  });
+}
+
+function selectTable(t) {
+  const panel = document.getElementById("detail-panel");
+  const content = document.getElementById("detail-content");
+  const mod = MODULES[t.module];
+
+  let html = `<h2>${t.name}</h2>`;
+  html += `<span class="module-tag" style="background:${mod.color}20;color:${mod.color}">${mod.label}</span>`;
+  if (t.rows !== null) html += `<span style="margin-left:8px;font-size:12px;color:#94a3b8">${t.rows.toLocaleString()} rows</span>`;
+
+  if (t.columns && t.columns.length && !t.isGroup) {
+    html += `<h3>Columns</h3><ul class="col-list">`;
+    t.columns.forEach(c => {
+      html += `<li><span class="col-name">${c.n}</span> <span class="col-type">${c.t}</span>`;
+      if (c.pk) html += ` <span class="col-pk">PK</span>`;
+      if (c.fk) html += ` <span class="col-fk">FK→${c.fk}</span>`;
+      if (c.nn) html += ` <span class="col-nn">NOT NULL</span>`;
+      html += `</li>`;
+    });
+    html += `</ul>`;
+  }
+
+  // FK references
+  const outgoing = FK_EDGES.filter(e => e.from === t.name);
+  const incoming = FK_EDGES.filter(e => e.to === t.name);
+
+  if (outgoing.length) {
+    html += `<h3>References (outgoing)</h3><ul class="fk-list">`;
+    outgoing.forEach(e => {
+      html += `<li onclick="selectTable(TABLES[tableIndex['${e.to}']])">${e.col} → ${e.to}</li>`;
+    });
+    html += `</ul>`;
+  }
+  if (incoming.length) {
+    html += `<h3>Referenced by (incoming)</h3><ul class="fk-list">`;
+    incoming.forEach(e => {
+      html += `<li onclick="selectTable(TABLES[tableIndex['${e.from}']])">${e.from}.${e.col}</li>`;
+    });
+    html += `</ul>`;
+  }
+
+  content.innerHTML = html;
+  panel.classList.add("open");
+}
+
+function closeDetail() {
+  document.getElementById("detail-panel").classList.remove("open");
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PAN & ZOOM
+// ═══════════════════════════════════════════════════════════════════
+
+function updateTransform() {
+  const canvas = document.getElementById("canvas");
+  canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+}
+
+function zoomTo(z) {
+  zoom = Math.max(0.2, Math.min(2, z));
+  updateTransform();
+}
+
+const wrap = document.getElementById("canvas-wrap");
+wrap.addEventListener("mousedown", e => {
+  if (e.target.closest(".module-group")) return;
+  isDragging = true;
+  dragStartX = e.clientX - panX;
+  dragStartY = e.clientY - panY;
+  wrap.classList.add("dragging");
+});
+wrap.addEventListener("mousemove", e => {
+  if (!isDragging) return;
+  panX = e.clientX - dragStartX;
+  panY = e.clientY - dragStartY;
+  updateTransform();
+});
+wrap.addEventListener("mouseup", () => { isDragging = false; wrap.classList.remove("dragging"); });
+wrap.addEventListener("mouseleave", () => { isDragging = false; wrap.classList.remove("dragging"); });
+wrap.addEventListener("wheel", e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  zoomTo(zoom * delta);
+}, { passive: false });
+
+// ═══════════════════════════════════════════════════════════════════
+// SEARCH & FILTERS
+// ═══════════════════════════════════════════════════════════════════
+
+document.getElementById("search").addEventListener("input", e => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll(".table-row").forEach(row => {
+    row.classList.toggle("search-match", q && row.dataset.table.toLowerCase().includes(q));
+  });
+});
+
+function updateStats() {
+  const totalTables = TABLES.reduce((s, t) => s + (t.groupCount || 1), 0);
+  const totalRows = TABLES.reduce((s, t) => s + (t.rows || 0), 0);
+  document.getElementById("stats").textContent =
+    `${totalTables} tables · ${FK_EDGES.length} FK relationships · ${totalRows.toLocaleString()} rows · 18 MB`;
+}
+
+// Module filter buttons
+const filtersDiv = document.getElementById("filters");
+Object.entries(MODULES).forEach(([key, mod]) => {
+  const btn = document.createElement("button");
+  btn.className = "filter-btn active";
+  btn.style.background = mod.color + "30";
+  btn.style.color = mod.color;
+  btn.style.borderColor = mod.color + "60";
+  btn.textContent = mod.label;
+  btn.dataset.mod = key;
+  btn.addEventListener("click", () => {
+    if (activeModules.has(key)) {
+      activeModules.delete(key);
+      btn.classList.remove("active");
+    } else {
+      activeModules.add(key);
+      btn.classList.add("active");
+    }
+    render();
+  });
+  filtersDiv.appendChild(btn);
+});
+
+// Legend
+const legend = document.getElementById("legend");
+let legendHtml = '';
+Object.entries(MODULES).forEach(([key, mod]) => {
+  legendHtml += `<div class="row"><div class="dot" style="background:${mod.color}"></div>${mod.label}</div>`;
+});
+legendHtml += `<div class="row" style="margin-top:6px;color:#64748b;font-size:10px">Click table for details · Hover for relationships</div>`;
+legendHtml += `<div class="row" style="color:#64748b;font-size:10px">Drag to pan · Scroll to zoom · Search to filter</div>`;
+legend.innerHTML = legendHtml;
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+render();
+</script>
+</body>
+</html>

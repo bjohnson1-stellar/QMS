@@ -11,11 +11,11 @@ bp = Blueprint("blog", __name__, url_prefix="/blog")
 
 @bp.route("/")
 def blog_list():
-    """All published posts."""
+    """All published posts (auto-publishes scheduled posts on visit)."""
     from qms.blog.db import list_posts
     from qms.core import get_db
 
-    with get_db(readonly=True) as conn:
+    with get_db() as conn:
         posts = list_posts(conn, published_only=True)
     return render_template("blog/list.html", posts=posts)
 
@@ -50,7 +50,7 @@ def api_list_posts():
     from qms.blog.db import list_posts
     from qms.core import get_db
 
-    with get_db(readonly=True) as conn:
+    with get_db() as conn:
         posts = list_posts(conn, published_only=False)
     return jsonify([dict(p) for p in posts])
 
@@ -67,6 +67,8 @@ def api_create_post():
     from qms.blog.db import create_post, get_post
     from qms.core import get_db
 
+    publish_at = (data.get("publish_at") or "").strip() or None
+
     with get_db() as conn:
         post_id = create_post(
             conn,
@@ -75,6 +77,7 @@ def api_create_post():
             author_id=user["id"],
             excerpt=data.get("excerpt", ""),
             published=data.get("published", False),
+            publish_at=publish_at,
         )
         post = get_post(conn, post_id=post_id)
     return jsonify(dict(post)), 201
@@ -88,6 +91,10 @@ def api_update_post(post_id):
 
     from qms.blog.db import get_post, update_post
     from qms.core import get_db
+
+    # Normalize empty publish_at to None
+    if "publish_at" in data:
+        data["publish_at"] = (data["publish_at"] or "").strip() or None
 
     with get_db() as conn:
         if not get_post(conn, post_id=post_id):
