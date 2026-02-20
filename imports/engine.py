@@ -21,15 +21,15 @@ from qms.imports.specs import ActionItem, ActionPlan, ColumnDef, ImportSpec
 _FILE_CACHE: Dict[str, Tuple[List[str], List[List[str]]]] = {}
 
 
-def _cache_file(session_id: str, headers: List[str], rows: List[List[str]]):
+def cache_file(session_id: str, headers: List[str], rows: List[List[str]]):
     _FILE_CACHE[session_id] = (headers, rows)
 
 
-def _get_cached(session_id: str) -> Optional[Tuple[List[str], List[List[str]]]]:
+def get_cached(session_id: str) -> Optional[Tuple[List[str], List[List[str]]]]:
     return _FILE_CACHE.get(session_id)
 
 
-def _clear_cache(session_id: str):
+def clear_cache(session_id: str):
     _FILE_CACHE.pop(session_id, None)
 
 
@@ -172,6 +172,7 @@ def transform_rows(
     col_map = spec.column_map
 
     # Pre-fetch FK lookup tables
+    _IDENT_RE = __import__("re").compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
     fk_cache: Dict[str, Dict[str, int]] = {}
     for col_def in spec.columns:
         if col_def.type == "fk_lookup" and col_def.fk_table and col_def.fk_display:
@@ -179,6 +180,10 @@ def transform_rows(
             if key not in fk_cache:
                 try:
                     fk_id_col = col_def.fk_id or "id"
+                    # Validate identifiers to prevent SQL injection
+                    for ident in (col_def.fk_table, col_def.fk_display, fk_id_col):
+                        if not _IDENT_RE.match(ident):
+                            raise ValueError(f"Invalid FK identifier: {ident!r}")
                     rows_fk = conn.execute(
                         f"SELECT {fk_id_col}, {col_def.fk_display} FROM {col_def.fk_table}"
                     ).fetchall()

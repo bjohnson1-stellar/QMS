@@ -53,7 +53,7 @@ def api_import_upload():
     """Parse uploaded file, create session, return headers + auto-mapping."""
     from qms.imports.engine import (
         auto_map_columns, create_import_session, file_hash,
-        parse_file, _cache_file,
+        parse_file, cache_file,
     )
     from qms.workforce.import_specs import get_employee_import_spec
 
@@ -87,7 +87,7 @@ def api_import_upload():
             file_hash=file_hash(file_bytes),
         )
 
-    _cache_file(session_id, headers, rows)
+    cache_file(session_id, headers, rows)
 
     # Build available fields for the mapping UI
     available_fields = [
@@ -116,7 +116,7 @@ def api_import_plan(session_id):
     from qms.imports.engine import (
         generate_action_plan, get_import_session, save_action_plan,
         transform_rows, update_session_status, validate_mapping,
-        _get_cached,
+        get_cached,
     )
     from qms.workforce.import_specs import get_employee_import_spec
 
@@ -132,7 +132,7 @@ def api_import_plan(session_id):
         return jsonify({"error": "Invalid mapping", "details": errors}), 400
 
     # Get cached file data
-    cached = _get_cached(session_id)
+    cached = get_cached(session_id)
     if not cached:
         return jsonify({"error": "Session expired — please re-upload the file"}), 410
 
@@ -187,7 +187,7 @@ def api_import_execute(session_id):
     """Apply approved actions from the plan."""
     from qms.imports.engine import (
         execute_approved_actions, get_import_session,
-        update_session_status, _clear_cache,
+        update_session_status, clear_cache,
     )
     from qms.workforce.import_specs import get_employee_import_spec
 
@@ -254,7 +254,7 @@ def api_import_execute(session_id):
             )
             return jsonify({"error": str(exc)}), 500
 
-    _clear_cache(session_id)
+    clear_cache(session_id)
 
     return jsonify({
         "session_id": session_id,
@@ -279,7 +279,7 @@ def api_import_history():
 def api_import_cancel(session_id):
     """Cancel an in-progress import session."""
     from qms.imports.engine import (
-        get_import_session, update_session_status, _clear_cache,
+        get_import_session, update_session_status, clear_cache,
     )
 
     with get_db() as conn:
@@ -288,7 +288,7 @@ def api_import_cancel(session_id):
             return jsonify({"error": "Session not found"}), 404
         update_session_status(conn, session_id, "cancelled")
 
-    _clear_cache(session_id)
+    clear_cache(session_id)
     return jsonify({"ok": True})
 
 
