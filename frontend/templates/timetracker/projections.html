@@ -1,0 +1,692 @@
+{% extends "base.html" %}
+
+{% block title %}Projections - Time Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Projections</h1>
+    <p class="subtitle">Monthly hour forecasting with per-job selection, editable results, and commit workflow</p>
+</div>
+
+<!-- Card 1: Period Selector -->
+<div class="card">
+    <h2>Period</h2>
+    <div class="month-selector">
+        <label>Month:</label>
+        <input type="month" id="monthInput">
+        <button onclick="loadPeriod()">Load Period</button>
+    </div>
+
+    <div class="success-message" id="successMessage"></div>
+    <div class="error-message" id="errorMessage"></div>
+
+    <div class="period-info" id="periodInfo">
+        <div class="period-info-grid">
+            <div class="period-stat">
+                <div class="period-stat-value" id="workingDays">0</div>
+                <div class="period-stat-label">Working Days</div>
+            </div>
+            <div class="period-stat">
+                <div class="period-stat-value" id="totalHours">0</div>
+                <div class="period-stat-label">Total Hours</div>
+            </div>
+            <div class="period-stat">
+                <div class="period-stat-value" id="hourlyRate">$0</div>
+                <div class="period-stat-label">Hourly Rate</div>
+            </div>
+            <div class="period-stat">
+                <div class="period-stat-value" id="totalCost">$0</div>
+                <div class="period-stat-label">Total Projected Cost</div>
+            </div>
+            <div class="period-stat">
+                <div class="period-stat-value" id="snapshotStatus">-</div>
+                <div class="period-stat-label">Status</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Card 2: Job Selection -->
+<div class="card" id="jobSelectionCard" style="display:none;">
+    <h2 id="jobSelectionTitle">Jobs for Period</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div>
+            <button class="secondary" onclick="selectAllJobs(true)" id="selectAllBtn">Select All</button>
+            <button class="secondary" onclick="selectAllJobs(false)" id="deselectAllBtn">Deselect All</button>
+        </div>
+        <button onclick="calculateProjection()" id="calcBtn">Calculate Projection</button>
+    </div>
+    <div class="job-selection-list" id="jobSelectionList"></div>
+    <div class="job-selection-footer" id="jobFooter">
+        <span id="jobSummary">0 jobs selected</span>
+        <span id="jobBudgetTotal">Total budget: $0</span>
+    </div>
+</div>
+
+<!-- Card 3: Projection Results -->
+<div class="card" id="resultsCard" style="display:none;">
+    <h2>Projection Results</h2>
+    <div id="hoursWarning" class="hours-warning" style="display:none;">
+        <span id="warningText"></span>
+        <a href="#" onclick="resetToCalculated(); return false;" style="color:#92400e;font-weight:600;">Reset to Calculated</a>
+    </div>
+    <div id="projectionResults"></div>
+    <div class="save-section" id="saveSection">
+        <input type="text" id="snapshotName" placeholder="Snapshot name (optional)">
+        <button class="success" onclick="saveProjection()" id="saveBtn">Save as Draft</button>
+    </div>
+</div>
+
+<!-- Card 4: Snapshot History -->
+<div class="card" id="historyCard" style="display:none;">
+    <h2>Snapshot History</h2>
+    <div id="snapshotList"><div class="empty-state">No saved projections yet</div></div>
+</div>
+
+<!-- Card 5: Hour Distribution -->
+<div class="card" id="distributionCard" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 id="distributionTitle">Hour Distribution</h2>
+        <button class="secondary" onclick="hideDistribution()">Close</button>
+    </div>
+    <div class="distribution-summary" id="distributionSummary"></div>
+    <div id="distributionWarnings"></div>
+    <div id="distributionGrid"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API_BASE = '/timetracker/api';
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    // State
+    let currentPeriod = null;
+    let periodJobs = [];
+    let calculatedEntries = [];
+    let originalEntries = [];
+    let snapshots = [];
+    let isReadOnly = false;
+    let currentHourlyRate = 0;
+
+    document.getElementById('monthInput').value = new Date().toISOString().slice(0, 7);
+
+    // ---- Period Loading ----
+
+    async function loadPeriod() {
+        const monthValue = document.getElementById('monthInput').value;
+        if (!monthValue) { showError('Please select a month'); return; }
+        const [year, month] = monthValue.split('-').map(Number);
+
+        try {
+            // Find or create period
+            const periodsRes = await fetch(`${API_BASE}/projection-periods`);
+            const periods = await periodsRes.json();
+            const existing = periods.find(p => p.year === year && p.month === month);
+
+            if (existing) {
+                currentPeriod = existing;
+            } else {
+                const res = await fetch(`${API_BASE}/projection-periods`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ year, month })
+                });
+                if (!res.ok) { showError((await res.json()).error || 'Failed to create period'); return; }
+                currentPeriod = await res.json();
+            }
+
+            // Get full period details (with active_snapshot)
+            const detailRes = await fetch(`${API_BASE}/projection-periods/${currentPeriod.id}`);
+            if (detailRes.ok) {
+                const detail = await detailRes.json();
+                currentPeriod = { ...currentPeriod, ...detail };
+            }
+
+            // Check if committed
+            isReadOnly = false;
+            await loadSnapshots();
+            const committed = snapshots.find(s => s.status === 'Committed');
+            if (committed) isReadOnly = true;
+
+            document.getElementById('periodInfo').style.display = 'block';
+            updatePeriodInfo();
+
+            // Load jobs
+            await loadPeriodJobs();
+
+            document.getElementById('jobSelectionCard').style.display = '';
+            document.getElementById('jobSelectionTitle').textContent =
+                `Jobs for ${MONTHS[month - 1]} ${year}`;
+            document.getElementById('historyCard').style.display = '';
+
+            // Clear previous results
+            document.getElementById('resultsCard').style.display = 'none';
+            calculatedEntries = [];
+            originalEntries = [];
+
+            applyReadOnly();
+            showSuccess('Period loaded');
+        } catch (err) { showError('Failed to load period: ' + err.message); }
+    }
+
+    function updatePeriodInfo() {
+        if (!currentPeriod) return;
+        document.getElementById('workingDays').textContent = currentPeriod.working_days || 0;
+        document.getElementById('totalHours').textContent = currentPeriod.total_hours || 0;
+
+        const committed = snapshots.find(s => s.status === 'Committed');
+        if (committed) {
+            document.getElementById('snapshotStatus').innerHTML = '<span class="status-badge status-committed">Committed</span>';
+        } else if (snapshots.some(s => s.status === 'Draft')) {
+            document.getElementById('snapshotStatus').innerHTML = '<span class="status-badge status-draft">Draft</span>';
+        } else {
+            document.getElementById('snapshotStatus').textContent = '-';
+        }
+    }
+
+    // ---- Job Selection ----
+
+    async function loadPeriodJobs() {
+        const res = await fetch(`${API_BASE}/projection-periods/${currentPeriod.id}/jobs`);
+        periodJobs = await res.json();
+        renderJobSelection();
+    }
+
+    function renderJobSelection() {
+        const list = document.getElementById('jobSelectionList');
+        if (periodJobs.length === 0) {
+            list.innerHTML = '<div class="empty-state">No eligible jobs found. Enable projections for jobs on the Projects page.</div>';
+            updateJobSummary();
+            return;
+        }
+
+        let html = '<div class="job-selection-item job-selection-header">';
+        html += '<div></div><div>Job Code</div><div>Scope / Client</div>';
+        html += '<div>BU</div><div>Budget</div><div>Remaining</div><div>GMP</div></div>';
+
+        periodJobs.forEach((j, idx) => {
+            const included = j.included;
+            const cls = included ? '' : ' excluded';
+            html += `<div class="job-selection-item${cls}" data-idx="${idx}">`;
+            html += `<div><input type="checkbox" class="projection-toggle" ${included ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''}
+                onchange="toggleJob(${idx}, this.checked)"></div>`;
+            html += `<div><span class="job-code">${j.job_code}</span></div>`;
+            html += `<div>${j.scope_name || j.project_name}</div>`;
+            html += `<div><span class="bu-code" style="font-size:12px;">${j.bu_code}</span> ${j.bu_name}</div>`;
+            html += `<div class="currency">$${(j.allocated_budget || 0).toLocaleString()}</div>`;
+            html += `<div class="currency">$${(j.remaining_budget || 0).toLocaleString()}</div>`;
+            html += `<div>${j.is_gmp ? '<span class="gmp-badge">GMP</span>' : ''}</div>`;
+            html += '</div>';
+        });
+
+        list.innerHTML = html;
+        updateJobSummary();
+    }
+
+    function updateJobSummary() {
+        const selected = periodJobs.filter(j => j.included);
+        const totalBudget = selected.reduce((s, j) => s + (j.allocated_budget || 0), 0);
+        document.getElementById('jobSummary').textContent = `${selected.length} jobs selected`;
+        document.getElementById('jobBudgetTotal').textContent = `Total budget: $${totalBudget.toLocaleString()}`;
+    }
+
+    async function toggleJob(idx, included) {
+        const job = periodJobs[idx];
+        job.included = included ? 1 : 0;
+        renderJobSelection();
+        await fetch(`${API_BASE}/projection-periods/${currentPeriod.id}/jobs/${job.allocation_id}/toggle`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ included })
+        });
+    }
+
+    async function selectAllJobs(included) {
+        if (isReadOnly) return;
+        const ids = periodJobs.map(j => j.allocation_id);
+        periodJobs.forEach(j => j.included = included ? 1 : 0);
+        renderJobSelection();
+        await fetch(`${API_BASE}/projection-periods/${currentPeriod.id}/jobs/bulk-toggle`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ allocationIds: ids, included })
+        });
+    }
+
+    // ---- Calculation ----
+
+    async function calculateProjection() {
+        if (!currentPeriod) { showError('Load a period first'); return; }
+        if (isReadOnly) { showError('Period is committed — cannot recalculate'); return; }
+
+        try {
+            const res = await fetch(`${API_BASE}/projections/calculate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ periodId: currentPeriod.id })
+            });
+            if (!res.ok) { showError((await res.json()).error || 'Calculation failed'); return; }
+
+            const result = await res.json();
+            calculatedEntries = result.entries.map(e => ({...e, is_manual_override: false}));
+            originalEntries = result.entries.map(e => ({...e}));
+            currentHourlyRate = result.hourly_rate;
+
+            document.getElementById('hourlyRate').textContent = `$${result.hourly_rate.toFixed(2)}`;
+            updateTotals();
+            renderResults();
+            document.getElementById('resultsCard').style.display = '';
+            showSuccess('Projection calculated');
+        } catch (err) { showError('Calculation failed: ' + err.message); }
+    }
+
+    function updateTotals() {
+        const totalHours = calculatedEntries.reduce((s, e) => s + e.allocated_hours, 0);
+        const totalCost = calculatedEntries.reduce((s, e) => s + e.projected_cost, 0);
+        document.getElementById('totalCost').textContent = `$${totalCost.toLocaleString()}`;
+
+        // Hours mismatch warning
+        const periodHours = currentPeriod.total_hours || 0;
+        const warning = document.getElementById('hoursWarning');
+        if (totalHours !== periodHours && calculatedEntries.length > 0) {
+            document.getElementById('warningText').textContent =
+                `Total hours (${totalHours}) differs from period hours (${periodHours}). Difference: ${totalHours - periodHours} hrs.`;
+            warning.style.display = 'flex';
+        } else {
+            warning.style.display = 'none';
+        }
+    }
+
+    function renderResults() {
+        const container = document.getElementById('projectionResults');
+        if (calculatedEntries.length === 0) {
+            container.innerHTML = '<div class="empty-state">No jobs in projection. Select jobs and calculate.</div>';
+            return;
+        }
+
+        let html = '<table><thead><tr>';
+        html += '<th>Job Code</th><th>Scope / Client</th><th>BU</th>';
+        html += '<th>Budget</th><th>Effective</th><th>Weight</th><th>GMP</th>';
+        html += '<th>Hours</th><th>Projected Cost</th>';
+        html += '</tr></thead><tbody>';
+
+        calculatedEntries.forEach((entry, idx) => {
+            const overrideClass = entry.is_manual_override ? ' manual-override' : '';
+            html += '<tr class="job-row">';
+            html += `<td><span class="job-code">${entry.job_code}</span></td>`;
+            html += `<td>${entry.scope_name || entry.project_name}</td>`;
+            html += `<td><span class="bu-code" style="font-size:12px;">${entry.bu_code}</span></td>`;
+            html += `<td class="currency">$${(entry.allocated_budget || 0).toLocaleString()}</td>`;
+            html += `<td class="currency">$${Math.round(entry.effective_budget || 0).toLocaleString()}</td>`;
+            html += `<td>${(entry.weight_adjustment || 1).toFixed(1)}x</td>`;
+            html += `<td>${entry.is_gmp ? '<span class="gmp-badge">GMP</span>' : ''}</td>`;
+            if (isReadOnly) {
+                html += `<td><span class="hours-input" style="border:none;background:transparent;">${entry.allocated_hours}</span></td>`;
+            } else {
+                html += `<td><input type="number" class="hours-input${overrideClass}" value="${entry.allocated_hours}"
+                    step="5" min="0" onchange="updateHours(${idx}, this.value)" data-idx="${idx}"></td>`;
+            }
+            html += `<td class="currency">$${(entry.projected_cost || 0).toLocaleString()}</td>`;
+            html += '</tr>';
+        });
+
+        // Totals row
+        const totalHours = calculatedEntries.reduce((s, e) => s + e.allocated_hours, 0);
+        const totalCost = calculatedEntries.reduce((s, e) => s + e.projected_cost, 0);
+        html += '<tr class="totals-row">';
+        html += '<td colspan="7" style="text-align:right;">Totals</td>';
+        html += `<td>${totalHours} hrs</td>`;
+        html += `<td class="currency">$${totalCost.toLocaleString()}</td>`;
+        html += '</tr>';
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function updateHours(idx, value) {
+        const hours = parseFloat(value) || 0;
+        calculatedEntries[idx].allocated_hours = hours;
+        calculatedEntries[idx].projected_cost = hours * currentHourlyRate;
+        calculatedEntries[idx].is_manual_override = true;
+        updateTotals();
+        renderResults();
+    }
+
+    function resetToCalculated() {
+        if (originalEntries.length === 0) return;
+        calculatedEntries = originalEntries.map(e => ({...e, is_manual_override: false}));
+        updateTotals();
+        renderResults();
+        showSuccess('Reset to calculated values');
+    }
+
+    // ---- Save ----
+
+    async function saveProjection() {
+        if (!currentPeriod || calculatedEntries.length === 0) {
+            showError('Calculate a projection first'); return;
+        }
+        if (isReadOnly) { showError('Period is committed'); return; }
+
+        const name = document.getElementById('snapshotName').value.trim() || null;
+        try {
+            const res = await fetch(`${API_BASE}/projections/${currentPeriod.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    hourlyRate: currentHourlyRate,
+                    totalHours: currentPeriod.total_hours,
+                    entries: calculatedEntries,
+                    name
+                })
+            });
+            if (!res.ok) { showError((await res.json()).error || 'Save failed'); return; }
+            const result = await res.json();
+            showSuccess(`Saved as Version ${result.version}`);
+            document.getElementById('snapshotName').value = '';
+            await loadSnapshots();
+            updatePeriodInfo();
+        } catch (err) { showError('Save failed: ' + err.message); }
+    }
+
+    // ---- Snapshots ----
+
+    async function loadSnapshots() {
+        if (!currentPeriod) return;
+        const res = await fetch(`${API_BASE}/projections/period/${currentPeriod.id}/snapshots`);
+        snapshots = await res.json();
+        renderSnapshots();
+    }
+
+    function renderSnapshots() {
+        const container = document.getElementById('snapshotList');
+        if (snapshots.length === 0) {
+            container.innerHTML = '<div class="empty-state">No saved projections yet</div>';
+            return;
+        }
+
+        let html = '';
+        snapshots.forEach(s => {
+            const statusClass = s.status === 'Committed' ? 'committed' :
+                                s.is_active ? 'active' : s.status === 'Superseded' ? 'superseded' : '';
+            const statusBadge = s.status === 'Committed'
+                ? '<span class="status-badge status-committed">Committed</span>'
+                : s.status === 'Superseded'
+                ? '<span class="status-badge status-superseded">Superseded</span>'
+                : '<span class="status-badge status-draft">Draft</span>';
+
+            html += `<div class="snapshot-card ${statusClass}">`;
+            html += '<div class="snapshot-meta">';
+            html += `<div class="snapshot-title">${s.name || 'Version ' + s.version} ${statusBadge}`;
+            if (s.is_active && s.status !== 'Superseded') html += ' <span class="status-badge" style="background:var(--color-info-bg);color:var(--color-info);font-size:10px;">Active</span>';
+            html += '</div>';
+            html += `<div class="snapshot-detail">v${s.version} &middot; ${new Date(s.created_at).toLocaleDateString()}`;
+            if (s.committed_at) html += ` &middot; Committed ${new Date(s.committed_at).toLocaleDateString()}`;
+            html += '</div></div>';
+
+            html += '<div class="snapshot-stats">';
+            html += `<span>${s.total_hours || 0} hrs</span>`;
+            html += `<span class="currency">$${(s.total_projected_cost || 0).toLocaleString()}</span>`;
+            html += '</div>';
+
+            html += '<div class="snapshot-actions">';
+            html += `<button class="secondary" onclick="loadSnapshot(${s.id})">Load</button>`;
+            html += `<button class="secondary" onclick="showDistribution(${s.id})">Distribution</button>`;
+            if (s.status === 'Draft') {
+                if (!s.is_active) html += `<button class="secondary" onclick="activateSnap(${s.id})">Activate</button>`;
+                html += `<button class="success" onclick="commitSnap(${s.id})">Commit</button>`;
+            }
+            if (s.status === 'Committed') {
+                html += `<button class="danger" onclick="uncommitSnap(${s.id})">Uncommit</button>`;
+            }
+            html += '</div></div>';
+        });
+        container.innerHTML = html;
+    }
+
+    async function loadSnapshot(snapshotId) {
+        try {
+            const res = await fetch(`${API_BASE}/projections/snapshot/${snapshotId}`);
+            if (!res.ok) { showError('Failed to load snapshot'); return; }
+            const snap = await res.json();
+
+            currentHourlyRate = snap.hourly_rate || 150;
+            document.getElementById('hourlyRate').textContent = `$${currentHourlyRate.toFixed(2)}`;
+
+            // Convert snapshot entries + details back to flat job entries
+            const entries = [];
+            (snap.entries || []).forEach(pe => {
+                if (pe.details && pe.details.length > 0) {
+                    pe.details.forEach(d => {
+                        entries.push({
+                            allocation_id: d.allocation_id,
+                            job_code: d.job_code,
+                            bu_code: d.bu_code || '',
+                            bu_name: d.bu_name || '',
+                            scope_name: d.scope_name || '',
+                            is_gmp: d.is_gmp || false,
+                            project_id: pe.project_id,
+                            project_name: pe.project_name || '',
+                            project_code: pe.project_code || '',
+                            allocated_budget: 0,
+                            effective_budget: 0,
+                            weight_adjustment: 1,
+                            weight_used: d.weight_used || 0,
+                            allocated_hours: d.allocated_hours,
+                            projected_cost: d.projected_cost,
+                            is_manual_override: !!d.is_manual_override,
+                        });
+                    });
+                } else {
+                    // No job details — show project-level entry
+                    entries.push({
+                        allocation_id: null,
+                        job_code: pe.project_code || '',
+                        bu_code: '',
+                        bu_name: '',
+                        scope_name: '',
+                        is_gmp: false,
+                        project_id: pe.project_id,
+                        project_name: pe.project_name || '',
+                        project_code: pe.project_code || '',
+                        allocated_budget: pe.remaining_budget_at_time || 0,
+                        effective_budget: pe.remaining_budget_at_time || 0,
+                        weight_adjustment: 1,
+                        weight_used: pe.weight_used || 0,
+                        allocated_hours: pe.allocated_hours,
+                        projected_cost: pe.projected_cost,
+                        is_manual_override: false,
+                    });
+                }
+            });
+
+            calculatedEntries = entries;
+            originalEntries = entries.map(e => ({...e}));
+
+            // If committed, set read-only
+            isReadOnly = snap.status === 'Committed';
+            applyReadOnly();
+            updateTotals();
+            renderResults();
+            document.getElementById('resultsCard').style.display = '';
+            showSuccess(`Loaded ${snap.name || 'Version ' + snap.version}`);
+        } catch (err) { showError('Load failed: ' + err.message); }
+    }
+
+    async function activateSnap(sid) {
+        await fetch(`${API_BASE}/projections/snapshot/${sid}/activate`, { method: 'PUT' });
+        await loadSnapshots();
+        showSuccess('Snapshot activated');
+    }
+
+    async function commitSnap(sid) {
+        if (!confirm('Commit this projection? This will lock the period and record costs against budgets.')) return;
+        const res = await fetch(`${API_BASE}/projections/snapshot/${sid}/commit`, { method: 'PUT' });
+        const result = await res.json();
+        if (result.error) { showError(result.error); return; }
+
+        isReadOnly = true;
+        applyReadOnly();
+        await loadSnapshots();
+        updatePeriodInfo();
+        showSuccess(`Committed — ${result.total_hours} hrs, $${(result.total_cost || 0).toLocaleString()}`);
+    }
+
+    async function uncommitSnap(sid) {
+        if (!confirm('Uncommit this projection? This will unlock the period and revert to Draft.')) return;
+        const res = await fetch(`${API_BASE}/projections/snapshot/${sid}/uncommit`, { method: 'PUT' });
+        const result = await res.json();
+        if (result.error) { showError(result.error); return; }
+
+        isReadOnly = false;
+        applyReadOnly();
+        await loadSnapshots();
+        updatePeriodInfo();
+        showSuccess('Uncommitted — period unlocked');
+    }
+
+    // ---- Read-Only Mode ----
+
+    function applyReadOnly() {
+        const cards = [
+            document.getElementById('jobSelectionCard'),
+            document.getElementById('resultsCard')
+        ];
+        cards.forEach(c => {
+            if (!c) return;
+            if (isReadOnly) c.classList.add('projection-readonly');
+            else c.classList.remove('projection-readonly');
+        });
+        const calcBtn = document.getElementById('calcBtn');
+        if (calcBtn) calcBtn.disabled = isReadOnly;
+        const saveSection = document.getElementById('saveSection');
+        if (saveSection) saveSection.style.display = isReadOnly ? 'none' : 'flex';
+    }
+
+    // ---- Distribution ----
+
+    async function showDistribution(snapshotId) {
+        try {
+            const res = await fetch(`${API_BASE}/projections/snapshot/${snapshotId}/distribute`);
+            if (!res.ok) { showError((await res.json()).error || 'Failed to load distribution'); return; }
+            const data = await res.json();
+            renderDistribution(data);
+            document.getElementById('distributionCard').style.display = '';
+            document.getElementById('distributionCard').scrollIntoView({ behavior: 'smooth' });
+        } catch (err) { showError('Distribution failed: ' + err.message); }
+    }
+
+    function hideDistribution() {
+        document.getElementById('distributionCard').style.display = 'none';
+    }
+
+    function renderDistribution(data) {
+        document.getElementById('distributionTitle').textContent =
+            `Hour Distribution — ${data.period}`;
+
+        // Summary bar
+        const summary = document.getElementById('distributionSummary');
+        summary.innerHTML = `
+            <div><div class="stat-label">Working Days</div><div class="stat-value">${data.num_working_days}</div></div>
+            <div><div class="stat-label">Jobs</div><div class="stat-value">${data.num_jobs}</div></div>
+            <div><div class="stat-label">Total Hours</div><div class="stat-value">${data.total_hours}</div></div>
+            <div><div class="stat-label">Schedule</div><div class="stat-value">Mon–Fri</div></div>
+        `;
+
+        // Warnings
+        const warningsEl = document.getElementById('distributionWarnings');
+        if (data.warnings && data.warnings.length > 0) {
+            warningsEl.innerHTML = data.warnings.map(w =>
+                `<div class="hours-warning" style="display:flex;margin-bottom:8px;"><span>${w}</span></div>`
+            ).join('');
+        } else {
+            warningsEl.innerHTML = '';
+        }
+
+        // Build weekly grid
+        const schedule = data.schedule;
+        if (!schedule || schedule.length === 0) {
+            document.getElementById('distributionGrid').innerHTML =
+                '<div class="empty-state">No entries to distribute</div>';
+            return;
+        }
+
+        // Group days by ISO week
+        const weeks = {};
+        schedule.forEach(day => {
+            const d = new Date(day.date + 'T00:00:00');
+            const isoWeek = getISOWeek(d);
+            const key = `${d.getFullYear()}-W${String(isoWeek).padStart(2, '0')}`;
+            if (!weeks[key]) weeks[key] = [];
+            weeks[key].push(day);
+        });
+
+        let html = '';
+        for (const [weekKey, days] of Object.entries(weeks)) {
+            const weekTotal = days.reduce((s, d) => s + d.day_total, 0);
+            const overClass = weekTotal > 40 ? ' over-40' : '';
+
+            html += '<div class="distribution-week">';
+            html += `<div class="distribution-week-header">
+                <span>${weekKey}</span>
+                <span class="distribution-week-total${overClass}">${weekTotal.toFixed(1)} hrs</span>
+            </div>`;
+            html += '<div class="distribution-days">';
+
+            // Pad to 5 columns (Mon-Fri), filling missing days
+            const dayMap = {};
+            days.forEach(d => {
+                const dow = new Date(d.date + 'T00:00:00').getDay(); // 0=Sun..6=Sat
+                dayMap[dow] = d;
+            });
+
+            for (let dow = 1; dow <= 5; dow++) { // Mon=1..Fri=5
+                const day = dayMap[dow];
+                if (day) {
+                    html += '<div class="distribution-day">';
+                    html += `<div class="distribution-day-header">
+                        <span><span class="distribution-day-name">${day.weekday}</span>
+                        <span class="distribution-day-date">${day.date.slice(5)}</span></span>
+                        <span class="distribution-day-total">${day.day_total.toFixed(1)}</span>
+                    </div>`;
+                    day.entries.forEach(e => {
+                        html += `<div class="distribution-entry">
+                            <span class="job-code">${e.job_code}</span>
+                            <span class="dist-hours">${e.hours.toFixed(1)}</span>
+                        </div>`;
+                    });
+                    html += '</div>';
+                } else {
+                    html += '<div class="distribution-day outside-month"></div>';
+                }
+            }
+
+            html += '</div></div>';
+        }
+
+        document.getElementById('distributionGrid').innerHTML = html;
+    }
+
+    function getISOWeek(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    // ---- Utilities ----
+
+    function showSuccess(msg) {
+        const el = document.getElementById('successMessage');
+        el.textContent = msg; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 3000);
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('errorMessage');
+        el.textContent = msg; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 5000);
+    }
+</script>
+{% endblock %}

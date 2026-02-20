@@ -53,7 +53,7 @@ qms welding dashboard        # Welding program status
 qms docs summary             # Quality manual summary
 qms refs search <term>       # Search reference standards
 qms projects scan            # Scan project folders
-qms projects migrate-timetracker  # Import from Time Tracker DB
+qms timetracker export-timecard   # UKG timecard export
 qms eng line-sizing          # Run pipe sizing calculation
 qms eng --help               # All engineering commands
 ```
@@ -92,6 +92,7 @@ D:\qms\                          # Repo root = package root
 │   ├── __init__.py              # App factory (create_app)
 │   ├── auth.py                  # Blueprint: /auth/* routes
 │   ├── projects.py              # Blueprint: /projects/* routes
+│   ├── timetracker.py           # Blueprint: /timetracker/* routes (admin-only)
 │   ├── welding.py               # Blueprint: /welding/* routes
 │   ├── pipeline.py              # Blueprint: /pipeline/* routes
 │   ├── automation.py            # Blueprint: /automation/* routes
@@ -102,7 +103,8 @@ D:\qms\                          # Repo root = package root
 │   ├── templates/
 │   │   ├── base.html            # Shared layout (sidebar nav)
 │   │   ├── auth/                # Login, profile templates
-│   │   ├── projects/            # 5 project pages (Jinja2)
+│   │   ├── projects/            # Project pages + hub detail (Jinja2)
+│   │   ├── timetracker/         # Projections + transactions (admin)
 │   │   ├── welding/             # 8 welding templates
 │   │   ├── settings/            # Settings UI templates
 │   │   ├── automation/          # Automation templates
@@ -132,10 +134,15 @@ D:\qms\                          # Repo root = package root
 ├── qualitydocs/                 # Quality manual loader
 ├── references/                  # Reference standard extraction
 ├── projects/                    # Project scanner + budget tracking
-│   ├── budget.py                # Per-BU allocations, budget queries, rollup sync
+│   ├── budget.py                # Per-BU allocations, budget queries, hub data, rollup sync
 │   ├── excel_io.py, procore_io.py  # Import/export (Excel, Procore)
 │   ├── migrations.py            # Incremental schema migrations
 │   └── migrate_timetracker.py   # One-time TT data migration
+├── timetracker/                 # Time tracking & projections (admin-only)
+│   ├── projections.py           # Projection periods, snapshots, calculations
+│   ├── transactions.py          # Budget transactions + settings
+│   ├── timecard.py              # UKG timecard export
+│   └── cli.py                   # export-timecard, migrate-timetracker
 ├── pipeline/                    # Drawing intake pipeline
 ├── workforce/                   # Employee management
 ├── vectordb/                    # Semantic search
@@ -168,7 +175,8 @@ All paths in `config.yaml` are **relative** to the package root. The `QMS_PATHS`
 | `qms automation` | `process`, `status` |
 | `qms docs` | `load-module`, `summary`, `search`, `detail` |
 | `qms refs` | `extract`, `list`, `search`, `clauses` |
-| `qms projects` | `scan`, `list`, `summary`, `import-procore`, `export-timecard`, `migrate-timetracker` |
+| `qms projects` | `scan`, `list`, `summary`, `import-procore` |
+| `qms timetracker` | `export-timecard`, `migrate-timetracker` |
 | `qms pipeline` | `status`, `queue`, `import-drawing`, `import-batch`, `process`, `intake` |
 | `qms workforce` | `list`, `import-csv`, `import-from-sis`, `bulk-update` |
 | `qms vectordb` | `index`, `search`, `status`, `queue` |
@@ -232,17 +240,19 @@ with get_db() as conn:
 `qms serve` launches a Flask app at `http://localhost:5000`. The app factory in `api/__init__.py` registers module blueprints. Business logic stays in module files (NO Flask imports in `projects/budget.py` etc.) — the API layer wraps results in Flask responses.
 
 ```
-api/__init__.py     → create_app(), registers blueprints
-api/auth.py         → Blueprint /auth/*, login/logout/users
-api/projects.py     → Blueprint /projects/*, calls budget.py
-api/welding.py      → Blueprint /welding/*, dashboard/forms
-api/pipeline.py     → Blueprint /pipeline/*, intake dashboard
-api/automation.py   → Blueprint /automation/*, request preview
-api/blog.py         → Blueprint /blog/*, The Observatory blog + admin API
-api/settings.py     → Blueprint /settings/*, 8-tab settings UI + blog editor
-projects/budget.py  → Pure business logic (allocation, queries)
-frontend/templates/ → Jinja2 templates extending base.html
-frontend/static/    → Shared CSS/JS (style.css, dark.css, brand-fonts.css, favicon.ico)
+api/__init__.py      → create_app(), registers blueprints, home dashboard
+api/auth.py          → Blueprint /auth/*, login/logout/users/employee-link
+api/projects.py      → Blueprint /projects/*, project hub + budget APIs
+api/timetracker.py   → Blueprint /timetracker/*, projections + transactions (admin-only)
+api/welding.py       → Blueprint /welding/*, dashboard/forms
+api/pipeline.py      → Blueprint /pipeline/*, intake dashboard
+api/automation.py    → Blueprint /automation/*, request preview
+api/blog.py          → Blueprint /blog/*, The Observatory blog + admin API
+api/settings.py      → Blueprint /settings/*, 9-tab settings UI (incl. BU CRUD)
+projects/budget.py   → Pure business logic (allocation, queries, hub data)
+timetracker/         → Projections, transactions, timecard (extracted from projects)
+frontend/templates/  → Jinja2 templates extending base.html
+frontend/static/     → Shared CSS/JS (style.css, dark.css, brand-fonts.css, favicon.ico)
 ```
 
 Optional dependency: `pip install -e ".[web]"` for Flask.

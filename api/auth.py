@@ -12,6 +12,8 @@ Routes:
     POST /auth/users/<id>/role  → Update user role (admin only)
     POST /auth/users/<id>/active → Toggle user active status (admin only)
     POST /auth/users/<id>/reset-password → Reset user password (admin only)
+    POST /auth/users/<id>/employee → Link user to employee (admin only)
+    GET  /auth/api/employees    → JSON: employee list for linking (admin only)
 """
 
 from flask import (
@@ -102,6 +104,14 @@ def login_page():
 
     limiter.reset(client_ip, email)
 
+    # Enrich with linked employee info (if any)
+    employee_name = None
+    if user.get("employee_id"):
+        from qms.auth.db import get_employee_for_user
+        emp = get_employee_for_user(conn, user["id"])
+        if emp:
+            employee_name = f"{emp['first_name']} {emp['last_name']}"
+
     # Store session (include module access map + BU restrictions)
     session["user"] = {
         "id": user["id"],
@@ -112,6 +122,8 @@ def login_page():
         "must_change_password": bool(user.get("must_change_password", False)),
         "modules": modules,
         "business_units": bu_ids or None,  # None = unrestricted, list = restricted
+        "employee_id": user.get("employee_id"),
+        "employee_name": employee_name,
     }
 
     # Force password change if required
@@ -364,6 +376,41 @@ def delete_user_module_access(user_id: int, module: str):
         )
 
     return jsonify({"ok": True})
+
+
+# ── Employee Link (admin only) ───────────────────────────────────────────────
+
+@bp.route("/api/employees")
+@role_required("admin")
+def employees_brief():
+    """Return lightweight employee list for user-employee linking."""
+    from qms.core.db import get_db
+    from qms.auth.db import list_employees_brief
+
+    with get_db(readonly=True) as conn:
+        employees = list_employees_brief(conn)
+    return jsonify(employees)
+
+
+@bp.route("/users/<int:user_id>/employee", methods=["POST"])
+@role_required("admin")
+def set_user_employee_link(user_id: int):
+    """Link or unlink a user to an employee."""
+    data = request.get_json(silent=True) or {}
+    employee_id = data.get("employee_id")  # None to unlink
+
+    from qms.core.db import get_db
+    from qms.auth.db import set_user_employee, log_auth_event
+
+    with get_db() as conn:
+        if not set_user_employee(conn, user_id, employee_id):
+            abort(404, "User not found")
+        log_auth_event(
+            conn, "employee_link", user_id, _current_email(),
+            {"employee_id": employee_id},
+        )
+
+    return jsonify({"ok": True, "employee_id": employee_id})
 
 
 # ── Business Unit Access (admin only) ────────────────────────────────────────

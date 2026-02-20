@@ -751,7 +751,7 @@
                     html += `<td onclick="event.stopPropagation()"><input type="checkbox" class="job-select-cb" data-alloc-id="${j.id}" ${selectedJobs.has(j.id) ? 'checked' : ''} onchange="toggleJobSelect(${j.id},this)"></td>`;
                     // Job code + project name + scope
                     html += `<td><span class="job-code">${esc(j.job_code)}</span>`;
-                    html += ` <span style="color:var(--color-text-muted)">${esc(j.project_name)}</span>`;
+                    html += ` <a href="/projects/${encodeURIComponent(j.project_number)}" style="color:var(--color-text-muted); text-decoration:none;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-text-muted)'">${esc(j.project_name)}</a>`;
                     if (j.scope_name) html += `<span class="job-scope">- ${esc(j.scope_name)}</span>`;
                     html += `</td>`;
                     // Stage dropdown
@@ -906,7 +906,7 @@
                     html += `<td onclick="event.stopPropagation()"><input type="checkbox" class="job-select-cb" data-alloc-id="${j.id}" ${selectedJobs.has(j.id) ? 'checked' : ''} onchange="toggleJobSelect(${j.id},this)"></td>`;
                     // Job code + project name + scope
                     html += `<td><span class="job-code">${esc(j.job_code)}</span>`;
-                    html += ` <span style="color:var(--color-text-muted)">${esc(j.project_name)}</span>`;
+                    html += ` <a href="/projects/${encodeURIComponent(j.project_number)}" style="color:var(--color-text-muted); text-decoration:none;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-text-muted)'">${esc(j.project_name)}</a>`;
                     if (j.scope_name) html += `<span class="job-scope">- ${esc(j.scope_name)}</span>`;
                     html += `</td>`;
                     // Stage dropdown

@@ -71,6 +71,7 @@ SCHEMA_ORDER = [
     "core",
     "workforce",
     "projects",
+    "timetracker",
     "qualitydocs",
     "references",
     "welding",

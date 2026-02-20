@@ -453,6 +453,10 @@ web_modules:
   qualitydocs:
     label: "Quality Manual"
     default_endpoint: "qualitydocs.manual"
+  timetracker:
+    label: "Time Tracker"
+    default_endpoint: "timetracker.projections_page"
+    admin_only: true
 
 # =============================================================================
 # AUTHENTICATION (Local email + password)

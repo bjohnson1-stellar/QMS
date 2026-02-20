@@ -80,12 +80,12 @@
             </button>
             {% if current_user %}
             <div class="user-menu">
-                <button class="user-avatar" onclick="toggleUserMenu()" title="{{ current_user.display_name }}">
-                    {{ current_user.display_name[:2] | upper }}
+                <button class="user-avatar" onclick="toggleUserMenu()" title="{{ current_user.employee_name or current_user.display_name }}">
+                    {{ (current_user.employee_name or current_user.display_name)[:2] | upper }}
                 </button>
                 <div class="user-dropdown" id="userDropdown">
                     <div class="user-dropdown-header">
-                        <div class="user-dropdown-name">{{ current_user.display_name }}</div>
+                        <div class="user-dropdown-name">{{ current_user.employee_name or current_user.display_name }}</div>
                         <div class="user-dropdown-email">{{ current_user.email }}</div>
                         <div class="user-dropdown-role">
                             <span class="role-badge role-{{ current_user.role }}">{{ current_user.role }}</span>
@@ -112,12 +112,11 @@
            class="{{ 'active' if request.endpoint == 'projects.dashboard' }}">Dashboard</a>
         <a href="{{ url_for('projects.projects_page') }}"
            class="{{ 'active' if request.endpoint == 'projects.projects_page' }}">Projects</a>
-        <a href="{{ url_for('projects.transactions_page') }}"
-           class="{{ 'active' if request.endpoint == 'projects.transactions_page' }}">Transactions</a>
-        <a href="{{ url_for('projects.business_units_page') }}"
-           class="{{ 'active' if request.endpoint == 'projects.business_units_page' }}">Business Units</a>
-        <a href="{{ url_for('projects.projections_page') }}"
-           class="{{ 'active' if request.endpoint == 'projects.projections_page' }}">Projections</a>
+        {% elif ns.module == 'timetracker' %}
+        <a href="{{ url_for('timetracker.projections_page') }}"
+           class="{{ 'active' if request.endpoint == 'timetracker.projections_page' }}">Projections</a>
+        <a href="{{ url_for('timetracker.transactions_page') }}"
+           class="{{ 'active' if request.endpoint == 'timetracker.transactions_page' }}">Transactions</a>
         {% elif ns.module == 'settings' %}
         <a href="{{ url_for('settings.settings_page') }}"
            class="active">Settings</a>

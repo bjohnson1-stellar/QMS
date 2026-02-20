@@ -78,14 +78,16 @@ def find_employee_by_name(
 # ---------------------------------------------------------------------------
 
 def get_next_employee_number(conn: sqlite3.Connection) -> str:
+    """Generate next auto-increment employee number (plain numeric string)."""
     row = conn.execute(
-        "SELECT COALESCE(MAX(CAST(SUBSTR(employee_number, 5) AS INTEGER)), 0) + 1 AS n "
-        "FROM employees WHERE employee_number LIKE 'EMP-%'"
+        "SELECT COALESCE(MAX(CAST(employee_number AS INTEGER)), 0) + 1 AS n "
+        "FROM employees WHERE employee_number GLOB '[0-9]*'"
     ).fetchone()
-    return f"EMP-{row['n']:04d}"
+    return str(row["n"])
 
 
 def get_next_subcontractor_number(conn: sqlite3.Connection) -> str:
+    """Generate next auto-increment subcontractor number (SUB-NNNN)."""
     row = conn.execute(
         "SELECT COALESCE(MAX(CAST(SUBSTR(subcontractor_number, 5) AS INTEGER)), 0) + 1 AS n "
         "FROM employees WHERE subcontractor_number LIKE 'SUB-%'"

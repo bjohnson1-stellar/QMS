@@ -10,7 +10,7 @@ from flask import Blueprint, jsonify, request, render_template
 
 from qms.core import get_db
 from qms.core.config import get_config, update_config_section
-from qms.projects import budget
+from qms.timetracker import transactions as tt_transactions
 
 bp = Blueprint("settings", __name__, url_prefix="/settings")
 
@@ -45,14 +45,14 @@ def settings_page():
 
 @bp.route("/api/budget", methods=["GET"])
 def api_get_budget():
-    return jsonify(budget.get_settings())
+    return jsonify(tt_transactions.get_settings())
 
 
 @bp.route("/api/budget", methods=["PUT"])
 def api_update_budget():
     data = request.json
     with get_db() as conn:
-        budget.update_settings(
+        tt_transactions.update_settings(
             conn,
             company_name=data.get("companyName", "My Company"),
             default_hourly_rate=float(data.get("defaultHourlyRate", 150)),

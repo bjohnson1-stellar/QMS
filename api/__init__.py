@@ -93,7 +93,10 @@ def create_app() -> Flask:
         if user and user.get("role") == "admin":
             accessible = set(modules_cfg.keys()) | {"settings"}
         elif user:
-            accessible = set(user.get("modules", {}).keys())
+            accessible = {
+                k for k, v in modules_cfg.items()
+                if not v.get("admin_only") and k in user.get("modules", {})
+            }
         else:
             accessible = set()
         return {
@@ -169,9 +172,12 @@ def create_app() -> Flask:
         module = _BLUEPRINT_MODULE.get(bp_name)
 
         if module:
+            # Admin-only modules return 404 (hide, not 403) for non-admins
+            mod_cfg = _modules_cfg.get(module, {})
+            if mod_cfg.get("admin_only") and user.get("role") != "admin":
+                abort(404)
             modules = user.get("modules", {})
             if module not in modules:
-                from flask import abort
                 abort(403)
 
     # ── Register blueprints ──────────────────────────────────────────────
@@ -202,6 +208,9 @@ def create_app() -> Flask:
     from qms.api.blog import bp as blog_bp
     app.register_blueprint(blog_bp)
 
+    from qms.api.timetracker import bp as timetracker_bp
+    app.register_blueprint(timetracker_bp)
+
     # Root route — landing page
     @app.route("/")
     def index():
@@ -212,22 +221,84 @@ def create_app() -> Flask:
         from qms.blog.db import list_posts
         from qms.core import get_db
 
+        accessible = set()
+        if user.get("role") == "admin":
+            accessible = set(_modules_cfg.keys()) | {"settings"}
+        elif user.get("modules"):
+            accessible = set(user["modules"].keys())
+
         with get_db() as conn:
             recent_posts = list_posts(conn, published_only=True, limit=3)
-            stats = {}
-            if user.get("role") == "admin":
-                try:
-                    stats["projects"] = conn.execute(
-                        "SELECT COUNT(*) FROM projects WHERE stage NOT IN ('Archive', 'Lost Proposal')"
-                    ).fetchone()[0]
-                    stats["employees"] = conn.execute("SELECT COUNT(*) FROM employees").fetchone()[0]
-                    stats["welders"] = conn.execute(
-                        "SELECT COUNT(*) FROM weld_welder_registry WHERE status='active'"
-                    ).fetchone()[0]
-                except Exception:
-                    pass
 
-        return render_template("home.html", posts=recent_posts, stats=stats)
+            # Dashboard stats (everyone sees basic stats)
+            stats = {}
+            try:
+                stats["active_projects"] = conn.execute(
+                    "SELECT COUNT(*) FROM projects WHERE stage NOT IN ('Archive', 'Lost Proposal')"
+                ).fetchone()[0]
+                stats["open_alerts"] = conn.execute(
+                    "SELECT COUNT(*) FROM project_flags WHERE resolved = 0"
+                ).fetchone()[0]
+            except Exception:
+                stats["active_projects"] = 0
+                stats["open_alerts"] = 0
+
+            # Module-specific stats
+            try:
+                if "pipeline" in accessible:
+                    stats["pending_drawings"] = conn.execute(
+                        "SELECT COUNT(*) FROM processing_queue WHERE status = 'pending'"
+                    ).fetchone()[0]
+                if "welding" in accessible:
+                    stats["active_welders"] = conn.execute(
+                        "SELECT COUNT(*) FROM weld_welder_registry WHERE status = 'active'"
+                    ).fetchone()[0]
+                if "workforce" in accessible or user.get("role") == "admin":
+                    stats["employees"] = conn.execute(
+                        "SELECT COUNT(*) FROM employees WHERE is_active = 1"
+                    ).fetchone()[0]
+            except Exception:
+                pass
+
+            # Activity feed — recent timestamped events
+            activity = []
+            try:
+                for r in conn.execute(
+                    "SELECT 'drawing' AS type, filename AS detail, created_at AS ts, "
+                    "  (SELECT number FROM projects WHERE id = s.project_id) AS project "
+                    "FROM sheets s WHERE created_at IS NOT NULL "
+                    "ORDER BY created_at DESC LIMIT 5"
+                ).fetchall():
+                    activity.append(dict(r))
+                for r in conn.execute(
+                    "SELECT 'weld' AS type, weld_number AS detail, created_at AS ts, "
+                    "  project_number AS project "
+                    "FROM weld_production_welds "
+                    "ORDER BY created_at DESC LIMIT 5"
+                ).fetchall():
+                    activity.append(dict(r))
+                activity.sort(key=lambda x: x.get("ts") or "", reverse=True)
+                activity = activity[:10]
+            except Exception:
+                pass
+
+            # Recent projects (for quick links)
+            recent_projects = []
+            try:
+                recent_projects = [
+                    dict(r) for r in conn.execute(
+                        "SELECT number, name, stage FROM projects "
+                        "WHERE stage NOT IN ('Archive', 'Lost Proposal') "
+                        "ORDER BY updated_at DESC LIMIT 5"
+                    ).fetchall()
+                ]
+            except Exception:
+                pass
+
+        return render_template(
+            "home.html", posts=recent_posts, stats=stats,
+            activity=activity, recent_projects=recent_projects,
+        )
 
     # ── Admin-only system map (unlisted, no nav link) ───────────────────
     @app.route("/admin/system-map")

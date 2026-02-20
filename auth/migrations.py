@@ -21,6 +21,7 @@ def run_auth_migrations(conn: sqlite3.Connection) -> None:
     _drop_entra_oid(conn)
     _create_business_unit_access_table(conn)
     _fix_module_access_fk(conn)
+    _add_employee_link(conn)
 
 
 def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
@@ -230,5 +231,16 @@ def _fix_module_access_fk(conn: sqlite3.Connection) -> None:
     conn.execute("DROP TABLE _uma_fix")
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_uma_user ON user_module_access(user_id)"
+    )
+    conn.commit()
+
+
+def _add_employee_link(conn: sqlite3.Connection) -> None:
+    """Add employee_id FK column to users table (links auth → workforce)."""
+    if _column_exists(conn, "users", "employee_id"):
+        return
+    logger.info("Adding employee_id column to users")
+    conn.execute(
+        "ALTER TABLE users ADD COLUMN employee_id TEXT REFERENCES employees(id)"
     )
     conn.commit()

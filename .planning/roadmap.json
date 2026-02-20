@@ -11,6 +11,13 @@
           "module": "pipeline",
           "priority": "high",
           "tags": ["intake", "procore", "drawings"]
+        },
+        {
+          "title": "Batch WPQ/WPS Extraction",
+          "desc": "Extract ~500 welding PDFs from D:\\RAW_DATA\\ using dual Sonnet + Opus shadow review pipeline.",
+          "module": "welding",
+          "priority": "high",
+          "tags": ["extraction", "welding", "batch"]
         }
       ]
     },
@@ -19,13 +26,6 @@
       "color": "#a371f7",
       "icon": "&#9998;",
       "items": [
-        {
-          "title": "Batch WPQ/WPS Extraction",
-          "desc": "Extract ~500 welding PDFs from D:\\RAW_DATA\\ using dual Sonnet + Opus shadow review pipeline.",
-          "module": "welding",
-          "priority": "high",
-          "tags": ["extraction", "welding", "batch"]
-        },
         {
           "title": "Windows Service (nssm)",
           "desc": "Run Waitress as auto-start Windows service instead of manual qms serve.",
@@ -54,6 +54,13 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "UI Restructure: Time Tracker + Project Hub + Home Dashboard",
+          "desc": "Major restructure: extracted Time Tracker module (admin-only), moved BU CRUD to Settings, added project hub detail pages, operational home dashboard with activity feed, linked users to employees, cleaned up EMP- numbering.",
+          "module": "projects",
+          "completed": "2026-02-20",
+          "tags": ["ui", "restructure", "timetracker", "dashboard"]
+        },
         {
           "title": "Scheduled Publishing for The Observatory",
           "desc": "Draft/scheduled/published workflow for blog posts. Datetime picker in editor, auto-publish on read (lazy), three-state badges, mutual exclusion between Published toggle and schedule picker.",

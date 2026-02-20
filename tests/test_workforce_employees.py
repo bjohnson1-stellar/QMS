@@ -20,16 +20,16 @@ class TestCreateEmployee:
     def test_auto_number(self, memory_db):
         create_employee(memory_db, "Smith", "Jane", is_employee=True)
         row = memory_db.execute("SELECT employee_number FROM employees").fetchone()
-        assert row["employee_number"] == "EMP-0001"
+        assert row["employee_number"] == "1"
 
     def test_second_employee_increments(self, memory_db):
         create_employee(memory_db, "Smith", "Jane", is_employee=True)
         create_employee(memory_db, "Doe", "John", is_employee=True)
         rows = memory_db.execute(
-            "SELECT employee_number FROM employees ORDER BY employee_number"
+            "SELECT employee_number FROM employees ORDER BY CAST(employee_number AS INTEGER)"
         ).fetchall()
-        assert rows[0]["employee_number"] == "EMP-0001"
-        assert rows[1]["employee_number"] == "EMP-0002"
+        assert rows[0]["employee_number"] == "1"
+        assert rows[1]["employee_number"] == "2"
 
     def test_subcontractor_number(self, memory_db):
         create_employee(memory_db, "Contractor", "Bob",
@@ -41,7 +41,7 @@ class TestCreateEmployee:
 class TestFindEmployee:
     def test_by_number(self, memory_db):
         create_employee(memory_db, "Smith", "Jane", is_employee=True)
-        found = find_employee_by_number(memory_db, employee_number="EMP-0001")
+        found = find_employee_by_number(memory_db, employee_number="1")
         assert found["last_name"] == "Smith"
 
     def test_by_email(self, memory_db):

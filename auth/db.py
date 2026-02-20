@@ -108,8 +108,11 @@ def get_user_by_email(conn: sqlite3.Connection, email: str) -> dict | None:
 def list_users(conn: sqlite3.Connection) -> list[dict]:
     """List all users, ordered by display name."""
     rows = conn.execute(
-        "SELECT id, email, display_name, role, is_active, must_change_password, "
-        "first_login, last_login FROM users ORDER BY display_name"
+        "SELECT u.id, u.email, u.display_name, u.role, u.is_active, "
+        "u.must_change_password, u.first_login, u.last_login, u.employee_id, "
+        "e.first_name || ' ' || e.last_name AS employee_name "
+        "FROM users u LEFT JOIN employees e ON u.employee_id = e.id "
+        "ORDER BY u.display_name"
     ).fetchall()
     return [dict(r) for r in rows]
 
@@ -317,3 +320,38 @@ def set_user_business_units_bulk(
             (user_id, bu_id),
         )
     conn.commit()
+
+
+# ── Employee Link ────────────────────────────────────────────────────────────
+
+
+def list_employees_brief(conn: sqlite3.Connection) -> list[dict]:
+    """Return a lightweight list of employees for linking to users."""
+    rows = conn.execute(
+        "SELECT id, first_name, last_name, employee_number, is_active "
+        "FROM employees ORDER BY last_name, first_name"
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def set_user_employee(
+    conn: sqlite3.Connection, user_id: int, employee_id: str | None
+) -> bool:
+    """Link or unlink a user to an employee. Returns True if user was found."""
+    cursor = conn.execute(
+        "UPDATE users SET employee_id = ? WHERE id = ?",
+        (employee_id, user_id),
+    )
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def get_employee_for_user(conn: sqlite3.Connection, user_id: int) -> dict | None:
+    """Get linked employee info for a user, or None."""
+    row = conn.execute(
+        "SELECT e.id, e.first_name, e.last_name, e.employee_number, e.position "
+        "FROM users u JOIN employees e ON u.employee_id = e.id "
+        "WHERE u.id = ?",
+        (user_id,),
+    ).fetchone()
+    return dict(row) if row else None

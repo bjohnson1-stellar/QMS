@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.number }} - {{ project.name }} - {{ theme.app_name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px; font-size:13px; color:var(--color-text-muted);">
+    <a href="{{ url_for('projects.projects_page') }}" style="color:var(--color-primary); text-decoration:none;">Projects</a>
+    <span style="margin:0 6px;">/</span>
+    <span>{{ project.number }}</span>
+</div>
+
+<div class="page-header" style="margin-bottom:8px;">
+    <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+        <h1 style="margin:0;">{{ project.name }}</h1>
+        <span class="status-badge {% if project.stage in ('Course of Construction','Pre-Construction') %}status-active{% elif project.stage in ('Archive','Lost Proposal') %}status-expired{% else %}status-pending{% endif %}"
+              style="font-size:12px;">{{ project.stage or 'Unknown' }}</span>
+    </div>
+    <p class="subtitle" style="margin-top:4px;">
+        {{ project.number }}{% if project.city %} &mdash; {{ project.city }}{% if project.state %}, {{ project.state }}{% endif %}{% endif %}
+    </p>
+</div>
+
+{% set total_sheets = project.disciplines | sum(attribute='sheets') %}
+{% set total_processed = project.disciplines | sum(attribute='processed') %}
+{% set total_conflicts = project.disciplines | sum(attribute='conflicts') %}
+{% set budget = project.total_budget or 0 %}
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">${{ '{:,.0f}'.format(budget) }}</div>
+        <div class="stat-label">Total Budget</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ project.allocations | length }}</div>
+        <div class="stat-label">Active Jobs</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_sheets }}</div>
+        <div class="stat-label">Drawing Sheets</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ project.alerts | length }}</div>
+        <div class="stat-label">Open Alerts</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:3fr 2fr; gap:20px; margin-top:20px;">
+    <!-- Left column -->
+    <div>
+        <div class="card">
+            <h2>Jobs</h2>
+            {% if project.allocations %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Job Code</th>
+                        <th>Business Unit</th>
+                        <th>Scope</th>
+                        <th style="text-align:right;">Budget</th>
+                        <th>Stage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for a in project.allocations %}
+                    <tr>
+                        <td style="font-weight:500; white-space:nowrap;">
+                            {{ a.job_code }}
+                            {% if a.is_gmp %}<span style="background:var(--color-warning); color:#fff; padding:1px 5px; border-radius:3px; font-size:10px; margin-left:4px;">GMP</span>{% endif %}
+                        </td>
+                        <td>{{ a.bu_name }}</td>
+                        <td style="color:var(--color-text-secondary);">{{ a.scope_name or '' }}</td>
+                        <td style="text-align:right; font-variant-numeric:tabular-nums;">${{ '{:,.0f}'.format(a.allocated_budget or 0) }}</td>
+                        <td><span style="font-size:12px; color:var(--color-text-muted);">{{ a.stage or '' }}</span></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="color:var(--color-text-muted); font-size:13px;">No job allocations yet.</p>
+            {% endif %}
+        </div>
+
+        {% if project.disciplines %}
+        <div class="card" style="margin-top:20px;">
+            <h2>Drawings</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Discipline</th>
+                        <th style="text-align:right;">Sheets</th>
+                        <th style="text-align:right;">Processed</th>
+                        <th style="text-align:right;">Conflicts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for d in project.disciplines %}
+                    <tr>
+                        <td style="font-weight:500;">{{ d.discipline }}</td>
+                        <td style="text-align:right;">{{ d.sheets }}</td>
+                        <td style="text-align:right;">
+                            <span style="color:{% if d.processed == d.sheets %}var(--color-primary){% elif d.processed > 0 %}var(--color-warning){% else %}var(--color-text-muted){% endif %};">
+                                {{ d.processed }} / {{ d.sheets }}
+                            </span>
+                        </td>
+                        <td style="text-align:right;">
+                            {% if d.conflicts > 0 %}
+                            <span style="color:var(--color-warning); font-weight:500;">{{ d.conflicts }}</span>
+                            {% else %}
+                            <span style="color:var(--color-text-muted);">0</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr style="font-weight:600; border-top:2px solid var(--color-border-light);">
+                        <td>Total</td>
+                        <td style="text-align:right;">{{ total_sheets }}</td>
+                        <td style="text-align:right;">{{ total_processed }} / {{ total_sheets }}</td>
+                        <td style="text-align:right;">{{ total_conflicts }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right column -->
+    <div>
+        <div class="card">
+            <h2>Details</h2>
+            <dl style="display:grid; grid-template-columns:auto 1fr; gap:6px 16px; font-size:13px; margin:0;">
+                {% if project.pm %}
+                <dt style="color:var(--color-text-muted); font-weight:500;">PM</dt>
+                <dd style="margin:0;">{{ project.pm }}</dd>
+                {% endif %}
+                {% if project.customer_name or project.client %}
+                <dt style="color:var(--color-text-muted); font-weight:500;">Client</dt>
+                <dd style="margin:0;">{{ project.customer_name or project.client }}</dd>
+                {% endif %}
+                {% if project.street %}
+                <dt style="color:var(--color-text-muted); font-weight:500;">Address</dt>
+                <dd style="margin:0;">{{ project.street }}{% if project.city %}, {{ project.city }}{% endif %}{% if project.state %}, {{ project.state }}{% endif %} {{ project.zip or '' }}</dd>
+                {% endif %}
+                {% if project.start_date %}
+                <dt style="color:var(--color-text-muted); font-weight:500;">Start</dt>
+                <dd style="margin:0;">{{ project.start_date }}</dd>
+                {% endif %}
+                {% if project.end_date %}
+                <dt style="color:var(--color-text-muted); font-weight:500;">End</dt>
+                <dd style="margin:0;">{{ project.end_date }}</dd>
+                {% endif %}
+                {% if project.description %}
+                <dt style="color:var(--color-text-muted); font-weight:500;">Description</dt>
+                <dd style="margin:0;">{{ project.description }}</dd>
+                {% endif %}
+            </dl>
+        </div>
+
+        {% if project.specs %}
+        <div class="card" style="margin-top:20px;">
+            <h2>Specifications</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Spec #</th>
+                        <th>Title</th>
+                        <th>Rev</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for s in project.specs %}
+                    <tr>
+                        <td style="font-weight:500; white-space:nowrap;">{{ s.spec_number }}</td>
+                        <td style="font-size:12.5px; color:var(--color-text-secondary);">{{ s.title or '' }}</td>
+                        <td style="white-space:nowrap;">{{ s.revision or '' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if project.weld_count > 0 %}
+        <div class="card" style="margin-top:20px;">
+            <h2>Welding</h2>
+            <div style="font-size:14px;">
+                <span style="font-weight:600; font-size:24px; color:var(--color-primary);">{{ project.weld_count }}</span>
+                <span style="color:var(--color-text-muted); margin-left:6px;">production welds logged</span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if project.alerts %}
+        <div class="card" style="margin-top:20px;">
+            <h2>Alerts</h2>
+            {% for a in project.alerts %}
+            <div style="padding:8px 0; border-bottom:1px solid var(--color-border-light); font-size:13px;">
+                <span style="font-weight:500; color:var(--color-warning);">{{ a.flag }}</span>
+                <span style="color:var(--color-text-secondary); margin-left:8px;">{{ a.message }}</span>
+                <div style="font-size:11px; color:var(--color-text-muted); margin-top:2px;">{{ a.created_at }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

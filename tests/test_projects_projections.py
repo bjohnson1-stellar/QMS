@@ -7,7 +7,8 @@ list/activate/commit/uncommit snapshots, budget summary, negative budgets.
 
 import pytest
 
-from qms.projects.budget import (
+from qms.projects.budget import sync_budget_rollup
+from qms.timetracker.projections import (
     MAX_ENTRIES_PER_DAY,
     _assign_days_to_jobs,
     _distribute_single_job,
@@ -21,15 +22,14 @@ from qms.projects.budget import (
     create_projection_snapshot,
     distribute_projection_hours,
     get_budget_summary,
-    get_settings,
     get_snapshot_with_details,
     has_committed_projections,
     list_snapshots,
     load_period_jobs,
-    sync_budget_rollup,
     toggle_period_job,
     uncommit_snapshot,
 )
+from qms.timetracker.transactions import get_settings
 
 
 # ---------------------------------------------------------------------------
@@ -1031,7 +1031,7 @@ class TestDistributeProjectionHours:
 
     def test_custom_max_hours_per_week(self, memory_db):
         """Changing max_hours_per_week in settings is respected."""
-        from qms.projects.budget import update_settings
+        from qms.timetracker.transactions import update_settings
         _seed_settings(memory_db)
         # Lower the weekly cap to 32 hours
         settings = get_settings(memory_db)

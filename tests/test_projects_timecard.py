@@ -3,7 +3,7 @@
 import pytest
 from datetime import date
 
-from qms.projects.timecard import (
+from qms.timetracker.timecard import (
     clean_job_number,
     distribute_hours,
     format_ukg_transfer,

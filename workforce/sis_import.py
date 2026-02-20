@@ -317,7 +317,7 @@ def _create_new(
         created_by="SIS-IMPORT",
     )
 
-    # Overwrite the auto-generated EMP-NNNN with the real SIS employee number
+    # Overwrite the auto-generated number with the real SIS payroll number
     if is_employee and record.employee_number and record.employee_number.isdigit():
         existing = conn.execute(
             "SELECT id FROM employees WHERE employee_number = ?",

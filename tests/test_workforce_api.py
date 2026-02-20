@@ -65,7 +65,7 @@ class TestListEmployees:
     def test_search_by_number(self, memory_db):
         create_employee(memory_db, "Smith", "Jane", is_employee=True)
         create_employee(memory_db, "Doe", "John", is_employee=True)
-        rows = list_employees(memory_db, search="EMP-0002")
+        rows = list_employees(memory_db, search="2")
         assert len(rows) == 1
         assert rows[0]["last_name"] == "Doe"
 
