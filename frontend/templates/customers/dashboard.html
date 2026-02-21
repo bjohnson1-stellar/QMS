@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Customers - {{ theme.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+            <h1>Customers</h1>
+            <p class="subtitle">Customer profiles, engineering requirements, and quality preferences</p>
+        </div>
+        {% if current_user and (current_user.role == 'admin' or
+              current_user.modules.get('customers') in ('admin', 'editor')) %}
+        <button class="btn btn-primary" onclick="showCreateCustomer()">+ New Customer</button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ customers | length }}</div>
+        <div class="stat-label">Total Customers</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ tier_counts.get('key', 0) }}</div>
+        <div class="stat-label">Key Accounts</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ tier_counts.get('strategic', 0) }}</div>
+        <div class="stat-label">Strategic</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ customers | selectattr('project_count', 'gt', 1) | list | length }}</div>
+        <div class="stat-label">Repeat Customers</div>
+    </div>
+</div>
+
+<!-- Filter bar -->
+<div class="card" style="margin-top:20px; padding:12px 20px;">
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <label style="font-size:13px; font-weight:500; color:var(--color-text-secondary);">Filter:</label>
+        <select id="tierFilter" onchange="filterCustomers()" style="padding:6px 10px; border:1px solid var(--color-border); border-radius:4px; background:var(--color-bg); color:var(--color-text); font-size:13px;">
+            <option value="">All Tiers</option>
+            <option value="key">Key Account</option>
+            <option value="strategic">Strategic</option>
+            <option value="standard">Standard</option>
+        </select>
+        <input type="text" id="searchFilter" placeholder="Search customers..." oninput="filterCustomers()"
+               style="padding:6px 10px; border:1px solid var(--color-border); border-radius:4px; background:var(--color-bg); color:var(--color-text); font-size:13px; flex:1; min-width:200px;">
+    </div>
+</div>
+
+<!-- Customer table -->
+<div class="card" style="margin-top:16px;">
+    <table id="customerTable">
+        <thead>
+            <tr>
+                <th>Customer</th>
+                <th>Tier</th>
+                <th>Industry</th>
+                <th style="text-align:center;">Projects</th>
+                <th style="text-align:center;">Requirements</th>
+                <th style="text-align:center;">Specs</th>
+                <th>Last Activity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in customers %}
+            <tr class="customer-row" data-tier="{{ c.tier or 'standard' }}" data-name="{{ c.name | lower }}"
+                onclick="window.location='{{ url_for('customers.customer_detail', customer_id=c.id) }}'"
+                style="cursor:pointer;">
+                <td>
+                    <div style="font-weight:500;">{{ c.name }}</div>
+                    {% if c.contact_name %}
+                    <div style="font-size:12px; color:var(--color-text-muted);">{{ c.contact_name }}{% if c.contact_email %} &middot; {{ c.contact_email }}{% endif %}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if c.tier == 'key' %}
+                    <span class="status-badge status-active">Key</span>
+                    {% elif c.tier == 'strategic' %}
+                    <span class="status-badge status-pending">Strategic</span>
+                    {% else %}
+                    <span style="font-size:12px; color:var(--color-text-muted);">Standard</span>
+                    {% endif %}
+                </td>
+                <td style="color:var(--color-text-secondary); font-size:13px;">{{ c.industry or '—' }}</td>
+                <td style="text-align:center;">
+                    {% if c.project_count > 0 %}
+                    <span style="font-weight:500;">{{ c.project_count }}</span>
+                    {% else %}
+                    <span style="color:var(--color-text-muted);">0</span>
+                    {% endif %}
+                </td>
+                <td style="text-align:center;">
+                    {% if c.requirement_count > 0 %}
+                    <span style="font-weight:500;">{{ c.requirement_count }}</span>
+                    {% else %}
+                    <span style="color:var(--color-text-muted);">0</span>
+                    {% endif %}
+                </td>
+                <td style="text-align:center;">
+                    {% if c.spec_count > 0 %}
+                    <span style="font-weight:500;">{{ c.spec_count }}</span>
+                    {% else %}
+                    <span style="color:var(--color-text-muted);">0</span>
+                    {% endif %}
+                </td>
+                <td style="font-size:12px; color:var(--color-text-muted); white-space:nowrap;">
+                    {{ c.last_project_activity[:10] if c.last_project_activity else '—' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if not customers %}
+    <div class="empty-state" style="padding:40px; text-align:center;">
+        No customers yet. Create one to start building customer profiles.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Create customer modal -->
+<div id="createModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:var(--color-bg-card); border-radius:8px; padding:24px; width:100%; max-width:500px; max-height:85vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <h2 style="margin-top:0;">New Customer</h2>
+        <form id="createForm" onsubmit="return createCustomer(event)">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:500; margin-bottom:4px;">Name *</label>
+                    <input type="text" name="name" required style="width:100%; padding:8px 10px; border:1px solid var(--color-border); border-radius:4px; background:var(--color-bg); color:var(--color-text);">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:13px; font-weight:500; margin-bottom:4px;">Tier</label>
+                        <select name="tier" style="width:100%; padding:8px 10px; border:1px solid var(--color-border); border-radius:4px; background:var(--color-bg); color:var(--color-text);">
+                            <option value="standard">Standard</option>
+                            <option value="strategic">Strategic</option>
+                            <option value="key">Key Account</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:13px; font-weight:500; margin-bottom:4px;">Industry</label>
+                        <input type="text" name="industry" placeholder="e.g., Food & Beverage" style="width:100%; padding:8px 10px; border:1px solid var(--color-border); border-radius:4px; background:var(--color-bg); color:var(--color-text);">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:500; margin-bottom:4px;">Contact Name</label>
+                    <input type="text" name="contact_name" style="width:100%; padding:8px 10px; border:1px solid var(--color-border); border-radius:4px; background:var(--color-bg); color:var(--color-text);">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:13px; font-weight:500; margin-bottom:4px;">Email</label>
+                        <input type="email" name="contact_email" style="width:100%; padding:8px 10px; border:1px solid var(--color-border); border-radius:4px; background:var(--color-bg); color:var(--color-text);">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:13px; font-weight:500; margin-bottom:4px;">Phone</label>
+                        <input type="text" name="contact_phone" style="width:100%; padding:8px 10px; border:1px solid var(--color-border); border-radius:4px; background:var(--color-bg); color:var(--color-text);">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:500; margin-bottom:4px;">Website</label>
+                    <input type="text" name="website" placeholder="https://" style="width:100%; padding:8px 10px; border:1px solid var(--color-border); border-radius:4px; background:var(--color-bg); color:var(--color-text);">
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:500; margin-bottom:4px;">Notes</label>
+                    <textarea name="notes" rows="3" style="width:100%; padding:8px 10px; border:1px solid var(--color-border); border-radius:4px; background:var(--color-bg); color:var(--color-text); resize:vertical;"></textarea>
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:20px;">
+                <button type="button" onclick="hideCreateCustomer()" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Customer</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterCustomers() {
+    const tier = document.getElementById('tierFilter').value;
+    const search = document.getElementById('searchFilter').value.toLowerCase();
+    document.querySelectorAll('.customer-row').forEach(row => {
+        const matchTier = !tier || row.dataset.tier === tier;
+        const matchSearch = !search || row.dataset.name.includes(search);
+        row.style.display = (matchTier && matchSearch) ? '' : 'none';
+    });
+}
+
+function showCreateCustomer() {
+    document.getElementById('createModal').style.display = 'flex';
+}
+function hideCreateCustomer() {
+    document.getElementById('createModal').style.display = 'none';
+}
+document.getElementById('createModal').addEventListener('click', function(e) {
+    if (e.target === this) hideCreateCustomer();
+});
+
+async function createCustomer(e) {
+    e.preventDefault();
+    const form = document.getElementById('createForm');
+    const data = {};
+    new FormData(form).forEach((v, k) => { if (v) data[k] = v; });
+
+    const res = await fetch('/customers/api/customers', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+    });
+    if (res.ok) {
+        const customer = await res.json();
+        window.location = '/customers/' + customer.id;
+    } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to create customer');
+    }
+    return false;
+}
+</script>
+{% endblock %}

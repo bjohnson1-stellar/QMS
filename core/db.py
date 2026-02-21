@@ -72,6 +72,7 @@ SCHEMA_ORDER = [
     "imports",
     "workforce",
     "projects",
+    "customers",
     "timetracker",
     "qualitydocs",
     "references",
@@ -139,3 +140,11 @@ def migrate_all():
         logger.info("Blog migrations applied")
     except Exception as exc:
         logger.warning("Blog migration step failed (non-fatal): %s", exc)
+
+    try:
+        from qms.customers.migrations import run_customer_migrations
+        with get_db() as cust_conn:
+            run_customer_migrations(cust_conn)
+        logger.info("Customer migrations applied")
+    except Exception as exc:
+        logger.warning("Customer migration step failed (non-fatal): %s", exc)

@@ -69,6 +69,13 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Customer Profile System",
+          "desc": "New customers module with full profile management: engineering requirements, specifications, quality preferences, and interaction history. Dashboard with tier-based filtering, tabbed detail pages, complete CRUD API, CLI commands, and repeat-business tracking. Extends existing customers table with industry, territory, tier, and account manager fields.",
+          "module": "customers",
+          "completed": "2026-02-21",
+          "tags": ["customers", "profiles", "requirements", "quality", "ui"]
+        },
+        {
           "title": "Quality Manual PDF Export",
           "desc": "WeasyPrint-based PDF export for quality manual modules. Professional cover page, TOC with page numbers, all content block types, SIS branding. CLI (qms docs export), web download endpoint, and in-page PDF button. Customizable via standalone Jinja2+CSS template.",
           "module": "qualitydocs",

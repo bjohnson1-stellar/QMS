@@ -1,0 +1,627 @@
+{% extends "base.html" %}
+
+{% block title %}{{ customer.name }} - Customers - {{ theme.app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-tabs { display:flex; gap:0; border-bottom:2px solid var(--color-border-light); margin-bottom:20px; }
+    .profile-tabs button { padding:10px 18px; border:none; background:none; color:var(--color-text-muted); font-size:13px; font-weight:500; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s; }
+    .profile-tabs button:hover { color:var(--color-text); }
+    .profile-tabs button.active { color:var(--color-primary); border-bottom-color:var(--color-primary); }
+    .tab-pane { display:none; }
+    .tab-pane.active { display:block; }
+    .inline-form { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+    .inline-form .field { display:flex; flex-direction:column; gap:3px; }
+    .inline-form label { font-size:11px; font-weight:500; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.3px; }
+    .inline-form input, .inline-form select, .inline-form textarea { padding:7px 10px; border:1px solid var(--color-border); border-radius:4px; background:var(--color-bg); color:var(--color-text); font-size:13px; }
+    .item-card { padding:14px 16px; border:1px solid var(--color-border-light); border-radius:6px; margin-bottom:10px; }
+    .item-card:hover { border-color:var(--color-border); }
+    .item-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+    .item-title { font-weight:500; font-size:14px; }
+    .item-meta { font-size:12px; color:var(--color-text-muted); margin-top:4px; }
+    .item-desc { font-size:13px; color:var(--color-text-secondary); margin-top:6px; }
+    .item-actions { display:flex; gap:6px; flex-shrink:0; }
+    .btn-xs { padding:4px 10px; font-size:11px; border-radius:4px; border:1px solid var(--color-border); background:var(--color-bg); color:var(--color-text-secondary); cursor:pointer; }
+    .btn-xs:hover { border-color:var(--color-primary); color:var(--color-primary); }
+    .btn-xs.danger:hover { border-color:#d32f2f; color:#d32f2f; }
+    .category-badge { display:inline-block; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:500; background:var(--color-primary-subtle); color:var(--color-primary); }
+    .pref-table td { padding:8px 12px; font-size:13px; }
+    .pref-table .pref-type { font-weight:500; text-transform:capitalize; white-space:nowrap; }
+    .pref-table .pref-key { color:var(--color-text-secondary); }
+    .timeline-item { display:flex; gap:14px; padding:12px 0; border-bottom:1px solid var(--color-border-light); }
+    .timeline-item:last-child { border-bottom:none; }
+    .timeline-dot { width:10px; height:10px; border-radius:50%; background:var(--color-primary); margin-top:5px; flex-shrink:0; }
+    .timeline-dot.lesson_learned { background:#4caf50; }
+    .timeline-dot.feedback { background:#2196f3; }
+    .timeline-dot.issue { background:#ff9800; }
+    .timeline-dot.success { background:#4caf50; }
+    .timeline-dot.requirement_change { background:#9c27b0; }
+    .profile-info-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px; }
+    .profile-field { }
+    .profile-field-label { font-size:11px; font-weight:500; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.3px; margin-bottom:2px; }
+    .profile-field-value { font-size:14px; color:var(--color-text); }
+    .profile-field-value.empty { color:var(--color-text-muted); font-style:italic; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:12px; font-size:13px; color:var(--color-text-muted);">
+    <a href="{{ url_for('customers.dashboard') }}" style="color:var(--color-primary); text-decoration:none;">Customers</a>
+    <span style="margin:0 6px;">/</span>
+    <span>{{ customer.name }}</span>
+</div>
+
+<div class="page-header" style="margin-bottom:8px;">
+    <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+        <h1 style="margin:0;">{{ customer.name }}</h1>
+        {% if customer.tier == 'key' %}
+        <span class="status-badge status-active">Key Account</span>
+        {% elif customer.tier == 'strategic' %}
+        <span class="status-badge status-pending">Strategic</span>
+        {% else %}
+        <span class="status-badge" style="background:var(--color-bg-alt); color:var(--color-text-muted);">Standard</span>
+        {% endif %}
+        {% if customer.status != 'active' %}
+        <span class="status-badge status-expired">{{ customer.status }}</span>
+        {% endif %}
+    </div>
+    <p class="subtitle" style="margin-top:4px;">
+        {{ customer.industry or '' }}{% if customer.industry and customer.territory %} &mdash; {% endif %}{{ customer.territory or '' }}
+    </p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ customer.project_count }}</div>
+        <div class="stat-label">Projects</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ customer.requirement_count }}</div>
+        <div class="stat-label">Requirements</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ customer.spec_count }}</div>
+        <div class="stat-label">Specifications</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ customer.preference_count }}</div>
+        <div class="stat-label">Quality Prefs</div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="profile-tabs" style="margin-top:20px;">
+    <button class="active" onclick="switchTab('overview')">Overview</button>
+    <button onclick="switchTab('requirements')">Requirements ({{ requirements | length }})</button>
+    <button onclick="switchTab('specifications')">Specifications ({{ specifications | length }})</button>
+    <button onclick="switchTab('preferences')">Quality Preferences ({{ preferences | length }})</button>
+    <button onclick="switchTab('history')">History ({{ history | length }})</button>
+    <button onclick="switchTab('projects')">Projects ({{ projects | length }})</button>
+</div>
+
+<!-- Overview tab -->
+<div id="tab-overview" class="tab-pane active">
+    <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h2 style="margin:0;">Profile</h2>
+                <button class="btn-xs" onclick="toggleEditProfile()">Edit</button>
+            </div>
+            <div id="profileView">
+                <div class="profile-info-grid">
+                    <div class="profile-field">
+                        <div class="profile-field-label">Contact Name</div>
+                        <div class="profile-field-value {{ 'empty' if not customer.contact_name }}">{{ customer.contact_name or 'Not set' }}</div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-field-label">Email</div>
+                        <div class="profile-field-value {{ 'empty' if not customer.contact_email }}">{{ customer.contact_email or 'Not set' }}</div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-field-label">Phone</div>
+                        <div class="profile-field-value {{ 'empty' if not customer.contact_phone }}">{{ customer.contact_phone or 'Not set' }}</div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-field-label">Website</div>
+                        <div class="profile-field-value {{ 'empty' if not customer.website }}">
+                            {% if customer.website %}<a href="{{ customer.website }}" target="_blank" style="color:var(--color-primary);">{{ customer.website }}</a>{% else %}Not set{% endif %}
+                        </div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-field-label">Industry</div>
+                        <div class="profile-field-value {{ 'empty' if not customer.industry }}">{{ customer.industry or 'Not set' }}</div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-field-label">Territory</div>
+                        <div class="profile-field-value {{ 'empty' if not customer.territory }}">{{ customer.territory or 'Not set' }}</div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-field-label">Tier</div>
+                        <div class="profile-field-value">{{ (customer.tier or 'standard') | capitalize }}</div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-field-label">Account Manager</div>
+                        <div class="profile-field-value {{ 'empty' if not customer.account_manager_name }}">{{ customer.account_manager_name or 'Not assigned' }}</div>
+                    </div>
+                </div>
+                {% if customer.billing_street or customer.billing_city %}
+                <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--color-border-light);">
+                    <div class="profile-field-label">Billing Address</div>
+                    <div class="profile-field-value" style="margin-top:2px;">
+                        {{ customer.billing_street or '' }}{% if customer.billing_street %}<br>{% endif %}
+                        {{ customer.billing_city or '' }}{% if customer.billing_state %}, {{ customer.billing_state }}{% endif %} {{ customer.billing_zip or '' }}
+                    </div>
+                </div>
+                {% endif %}
+                {% if customer.notes %}
+                <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--color-border-light);">
+                    <div class="profile-field-label">Notes</div>
+                    <div class="profile-field-value" style="margin-top:2px; white-space:pre-wrap;">{{ customer.notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+            <div id="profileEdit" style="display:none;">
+                <form onsubmit="return saveProfile(event)">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="field"><label>Contact Name</label><input type="text" name="contact_name" value="{{ customer.contact_name or '' }}"></div>
+                        <div class="field"><label>Email</label><input type="email" name="contact_email" value="{{ customer.contact_email or '' }}"></div>
+                        <div class="field"><label>Phone</label><input type="text" name="contact_phone" value="{{ customer.contact_phone or '' }}"></div>
+                        <div class="field"><label>Website</label><input type="text" name="website" value="{{ customer.website or '' }}"></div>
+                        <div class="field"><label>Industry</label><input type="text" name="industry" value="{{ customer.industry or '' }}"></div>
+                        <div class="field"><label>Territory</label><input type="text" name="territory" value="{{ customer.territory or '' }}"></div>
+                        <div class="field">
+                            <label>Tier</label>
+                            <select name="tier">
+                                <option value="standard" {{ 'selected' if customer.tier == 'standard' or not customer.tier }}>Standard</option>
+                                <option value="strategic" {{ 'selected' if customer.tier == 'strategic' }}>Strategic</option>
+                                <option value="key" {{ 'selected' if customer.tier == 'key' }}>Key Account</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field" style="margin-top:12px;"><label>Notes</label><textarea name="notes" rows="3" style="width:100%;">{{ customer.notes or '' }}</textarea></div>
+                    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+                        <button type="button" class="btn btn-secondary" onclick="toggleEditProfile()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div>
+            <div class="card">
+                <h2>Facilities ({{ facilities | length }})</h2>
+                {% if facilities %}
+                {% for f in facilities %}
+                <div style="padding:8px 0; {% if not loop.last %}border-bottom:1px solid var(--color-border-light);{% endif %}">
+                    <div style="font-weight:500; font-size:13px;">{{ f.name }}</div>
+                    {% if f.city %}<div style="font-size:12px; color:var(--color-text-muted);">{{ f.city }}{% if f.state %}, {{ f.state }}{% endif %}</div>{% endif %}
+                    <div style="font-size:11px; color:var(--color-text-muted);">{{ f.project_count }} project{{ 's' if f.project_count != 1 }}</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p style="color:var(--color-text-muted); font-size:13px;">No facilities on record.</p>
+                {% endif %}
+            </div>
+            <div class="card" style="margin-top:16px;">
+                <h2>Contacts ({{ contacts | length }})</h2>
+                {% if contacts %}
+                {% for pc in contacts %}
+                <div style="padding:8px 0; {% if not loop.last %}border-bottom:1px solid var(--color-border-light);{% endif %}">
+                    <div style="font-weight:500; font-size:13px;">{{ pc.name }}{% if pc.is_primary %} <span style="font-size:10px; background:var(--color-primary-subtle); color:var(--color-primary); padding:1px 6px; border-radius:3px;">Primary</span>{% endif %}</div>
+                    {% if pc.role %}<div style="font-size:12px; color:var(--color-text-secondary);">{{ pc.role }}</div>{% endif %}
+                    {% if pc.email %}<div style="font-size:12px; color:var(--color-text-muted);">{{ pc.email }}</div>{% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <p style="color:var(--color-text-muted); font-size:13px;">No contacts on record.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Requirements tab -->
+<div id="tab-requirements" class="tab-pane">
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="margin:0;">Engineering Requirements</h2>
+            <button class="btn btn-primary" onclick="toggleAddReq()" style="font-size:13px; padding:6px 14px;">+ Add Requirement</button>
+        </div>
+        <div id="addReqForm" style="display:none; padding:16px; background:var(--color-bg-alt); border-radius:6px; margin-bottom:16px;">
+            <form onsubmit="return addRequirement(event)">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="field"><label>Category *</label>
+                        <select name="category" required>
+                            <option value="welding">Welding</option>
+                            <option value="inspection">Inspection</option>
+                            <option value="testing">Testing</option>
+                            <option value="documentation">Documentation</option>
+                            <option value="materials">Materials</option>
+                            <option value="safety">Safety</option>
+                            <option value="general">General</option>
+                        </select>
+                    </div>
+                    <div class="field"><label>Title *</label><input type="text" name="title" required></div>
+                    <div class="field"><label>Reference Code</label><input type="text" name="reference_code" placeholder="e.g., ASME IX, AWS D1.1"></div>
+                    <div class="field"><label>Applies To</label><input type="text" name="applies_to" value="all_projects"></div>
+                </div>
+                <div class="field" style="margin-top:10px;"><label>Description</label><textarea name="description" rows="2" style="width:100%;"></textarea></div>
+                <div style="display:flex; gap:8px; align-items:center; margin-top:12px;">
+                    <label style="font-size:13px;"><input type="checkbox" name="mandatory" checked> Mandatory</label>
+                    <span style="flex:1;"></span>
+                    <button type="button" class="btn btn-secondary" onclick="toggleAddReq()" style="font-size:12px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="font-size:12px;">Save Requirement</button>
+                </div>
+            </form>
+        </div>
+        <div id="reqList">
+        {% if requirements %}
+            {% for r in requirements %}
+            <div class="item-card" id="req-{{ r.id }}">
+                <div class="item-header">
+                    <div>
+                        <span class="category-badge">{{ r.category }}</span>
+                        {% if r.mandatory %}<span style="font-size:10px; background:#fff3e0; color:#e65100; padding:1px 6px; border-radius:3px; margin-left:4px;">Mandatory</span>{% endif %}
+                        <div class="item-title" style="margin-top:4px;">{{ r.title }}</div>
+                        {% if r.reference_code %}<div class="item-meta">Ref: {{ r.reference_code }}</div>{% endif %}
+                        {% if r.applies_to and r.applies_to != 'all_projects' %}<div class="item-meta">Applies to: {{ r.applies_to }}</div>{% endif %}
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-xs danger" onclick="deleteReq({{ r.id }})">Delete</button>
+                    </div>
+                </div>
+                {% if r.description %}<div class="item-desc">{{ r.description }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state" style="padding:30px; text-align:center; color:var(--color-text-muted);">
+                No engineering requirements defined yet. Add corporate standards and requirements that apply to this customer's projects.
+            </div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Specifications tab -->
+<div id="tab-specifications" class="tab-pane">
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="margin:0;">Specifications</h2>
+            <button class="btn btn-primary" onclick="toggleAddSpec()" style="font-size:13px; padding:6px 14px;">+ Add Specification</button>
+        </div>
+        <div id="addSpecForm" style="display:none; padding:16px; background:var(--color-bg-alt); border-radius:6px; margin-bottom:16px;">
+            <form onsubmit="return addSpecification(event)">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="field"><label>Type *</label>
+                        <select name="spec_type" required>
+                            <option value="corporate_standard">Corporate Standard</option>
+                            <option value="project_template">Project Template</option>
+                            <option value="quality_requirement">Quality Requirement</option>
+                            <option value="design_standard">Design Standard</option>
+                            <option value="test_procedure">Test Procedure</option>
+                        </select>
+                    </div>
+                    <div class="field"><label>Spec Number</label><input type="text" name="spec_number" placeholder="e.g., CS-001"></div>
+                    <div class="field"><label>Title *</label><input type="text" name="title" required></div>
+                    <div class="field"><label>Revision</label><input type="text" name="revision" placeholder="e.g., Rev 3"></div>
+                    <div class="field"><label>Discipline</label><input type="text" name="discipline" placeholder="e.g., Mechanical, Electrical"></div>
+                </div>
+                <div class="field" style="margin-top:10px;"><label>Description</label><textarea name="description" rows="2" style="width:100%;"></textarea></div>
+                <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                    <button type="button" class="btn btn-secondary" onclick="toggleAddSpec()" style="font-size:12px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="font-size:12px;">Save Specification</button>
+                </div>
+            </form>
+        </div>
+        <div id="specList">
+        {% if specifications %}
+            {% for s in specifications %}
+            <div class="item-card" id="spec-{{ s.id }}">
+                <div class="item-header">
+                    <div>
+                        <span class="category-badge">{{ s.spec_type | replace('_', ' ') }}</span>
+                        {% if s.revision %}<span style="font-size:11px; color:var(--color-text-muted); margin-left:6px;">{{ s.revision }}</span>{% endif %}
+                        <div class="item-title" style="margin-top:4px;">{% if s.spec_number %}{{ s.spec_number }} &mdash; {% endif %}{{ s.title }}</div>
+                        {% if s.discipline %}<div class="item-meta">Discipline: {{ s.discipline }}</div>{% endif %}
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-xs danger" onclick="deleteSpec({{ s.id }})">Delete</button>
+                    </div>
+                </div>
+                {% if s.description %}<div class="item-desc">{{ s.description }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state" style="padding:30px; text-align:center; color:var(--color-text-muted);">
+                No specifications on file. Add corporate standards, project templates, and design criteria for this customer.
+            </div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quality Preferences tab -->
+<div id="tab-preferences" class="tab-pane">
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="margin:0;">Quality Preferences</h2>
+            <button class="btn btn-primary" onclick="toggleAddPref()" style="font-size:13px; padding:6px 14px;">+ Add Preference</button>
+        </div>
+        <p style="font-size:13px; color:var(--color-text-secondary); margin-bottom:16px;">
+            Document how this customer wants quality deliverables formatted, named, and delivered.
+        </p>
+        <div id="addPrefForm" style="display:none; padding:16px; background:var(--color-bg-alt); border-radius:6px; margin-bottom:16px;">
+            <form onsubmit="return addPreference(event)">
+                <div style="display:grid; grid-template-columns:1fr 1fr 2fr; gap:10px;">
+                    <div class="field"><label>Type *</label>
+                        <select name="preference_type" required>
+                            <option value="document_format">Document Format</option>
+                            <option value="naming_convention">Naming Convention</option>
+                            <option value="delivery_method">Delivery Method</option>
+                            <option value="review_process">Review Process</option>
+                            <option value="submittal_format">Submittal Format</option>
+                            <option value="retention">Retention</option>
+                        </select>
+                    </div>
+                    <div class="field"><label>Key *</label><input type="text" name="preference_key" required placeholder="e.g., drawing_format"></div>
+                    <div class="field"><label>Value *</label><input type="text" name="preference_value" required placeholder="e.g., PDF with bookmarks"></div>
+                </div>
+                <div class="field" style="margin-top:10px;"><label>Notes</label><input type="text" name="notes" style="width:100%;" placeholder="Additional context"></div>
+                <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                    <button type="button" class="btn btn-secondary" onclick="toggleAddPref()" style="font-size:12px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="font-size:12px;">Save Preference</button>
+                </div>
+            </form>
+        </div>
+        {% if preferences %}
+        <table class="pref-table">
+            <thead>
+                <tr><th>Type</th><th>Key</th><th>Value</th><th>Notes</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for p in preferences %}
+                <tr id="pref-{{ p.id }}">
+                    <td class="pref-type">{{ p.preference_type | replace('_', ' ') }}</td>
+                    <td class="pref-key">{{ p.preference_key }}</td>
+                    <td>{{ p.preference_value }}</td>
+                    <td style="color:var(--color-text-muted); font-size:12px;">{{ p.notes or '' }}</td>
+                    <td><button class="btn-xs danger" onclick="deletePref({{ p.id }})">Delete</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state" style="padding:30px; text-align:center; color:var(--color-text-muted);">
+            No quality preferences set. Define how this customer wants documents formatted and delivered.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- History tab -->
+<div id="tab-history" class="tab-pane">
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="margin:0;">Interaction History</h2>
+            <button class="btn btn-primary" onclick="toggleAddHistory()" style="font-size:13px; padding:6px 14px;">+ Add Entry</button>
+        </div>
+        <div id="addHistoryForm" style="display:none; padding:16px; background:var(--color-bg-alt); border-radius:6px; margin-bottom:16px;">
+            <form onsubmit="return addHistory(event)">
+                <div style="display:grid; grid-template-columns:1fr 2fr; gap:10px;">
+                    <div class="field"><label>Type *</label>
+                        <select name="entry_type" required>
+                            <option value="note">Note</option>
+                            <option value="lesson_learned">Lesson Learned</option>
+                            <option value="feedback">Customer Feedback</option>
+                            <option value="issue">Issue</option>
+                            <option value="success">Success</option>
+                            <option value="requirement_change">Requirement Change</option>
+                        </select>
+                    </div>
+                    <div class="field"><label>Title *</label><input type="text" name="title" required></div>
+                </div>
+                <div class="field" style="margin-top:10px;"><label>Description</label><textarea name="description" rows="3" style="width:100%;"></textarea></div>
+                <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                    <button type="button" class="btn btn-secondary" onclick="toggleAddHistory()" style="font-size:12px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="font-size:12px;">Save Entry</button>
+                </div>
+            </form>
+        </div>
+        {% if history %}
+        <div>
+            {% for h in history %}
+            <div class="timeline-item">
+                <div class="timeline-dot {{ h.entry_type }}"></div>
+                <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <span class="category-badge" style="font-size:10px;">{{ h.entry_type | replace('_', ' ') }}</span>
+                            <div style="font-weight:500; margin-top:3px;">{{ h.title }}</div>
+                        </div>
+                        <div style="font-size:11px; color:var(--color-text-muted); white-space:nowrap;">
+                            {{ h.created_at[:10] if h.created_at else '' }}
+                        </div>
+                    </div>
+                    {% if h.description %}<div style="font-size:13px; color:var(--color-text-secondary); margin-top:4px;">{{ h.description }}</div>{% endif %}
+                    <div style="font-size:11px; color:var(--color-text-muted); margin-top:4px;">
+                        {% if h.project_number %}Project: {{ h.project_number }} &mdash; {{ h.project_name }}{% endif %}
+                        {% if h.recorded_by_name %}{% if h.project_number %} | {% endif %}By: {{ h.recorded_by_name }}{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:30px; text-align:center; color:var(--color-text-muted);">
+            No history entries yet. Record lessons learned, customer feedback, and project outcomes to improve repeat engagements.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Projects tab -->
+<div id="tab-projects" class="tab-pane">
+    <div class="card">
+        <h2>Projects</h2>
+        {% if projects %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Number</th>
+                    <th>Name</th>
+                    <th>Facility</th>
+                    <th>Stage</th>
+                    <th>PM</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in projects %}
+                <tr>
+                    <td style="font-weight:500;">
+                        {% if p.number %}<a href="{{ url_for('projects.project_detail', project_number=p.number) }}" style="color:var(--color-primary); text-decoration:none;">{{ p.number }}</a>{% else %}—{% endif %}
+                    </td>
+                    <td>{{ p.name }}</td>
+                    <td style="color:var(--color-text-secondary); font-size:13px;">{{ p.facility_name or '—' }}</td>
+                    <td>
+                        <span class="status-badge {% if p.stage in ('Course of Construction','Pre-Construction') %}status-active{% elif p.stage in ('Archive','Lost Proposal') %}status-expired{% else %}status-pending{% endif %}">
+                            {{ p.stage or 'Unknown' }}
+                        </span>
+                    </td>
+                    <td style="font-size:13px; color:var(--color-text-secondary);">{{ p.pm or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state" style="padding:30px; text-align:center; color:var(--color-text-muted);">
+            No projects linked to this customer yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CID = {{ customer.id }};
+const API = '/customers/api';
+
+function switchTab(name) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.profile-tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+}
+
+function toggleEditProfile() {
+    const view = document.getElementById('profileView');
+    const edit = document.getElementById('profileEdit');
+    view.style.display = view.style.display === 'none' ? '' : 'none';
+    edit.style.display = edit.style.display === 'none' ? '' : 'none';
+}
+
+async function saveProfile(e) {
+    e.preventDefault();
+    const data = {};
+    new FormData(e.target).forEach((v, k) => { data[k] = v; });
+    const res = await fetch(`${API}/customers/${CID}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+    });
+    if (res.ok) location.reload();
+    else alert('Failed to save profile');
+    return false;
+}
+
+// Requirements
+function toggleAddReq() {
+    const f = document.getElementById('addReqForm');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+async function addRequirement(e) {
+    e.preventDefault();
+    const data = {};
+    new FormData(e.target).forEach((v, k) => {
+        if (k === 'mandatory') { data[k] = 1; return; }
+        if (v) data[k] = v;
+    });
+    if (!data.mandatory) data.mandatory = 0;
+    const res = await fetch(`${API}/customers/${CID}/requirements`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+    });
+    if (res.ok) location.reload();
+    else alert('Failed to add requirement');
+    return false;
+}
+async function deleteReq(id) {
+    if (!confirm('Delete this requirement?')) return;
+    const res = await fetch(`${API}/requirements/${id}`, { method: 'DELETE' });
+    if (res.ok) document.getElementById('req-' + id).remove();
+}
+
+// Specifications
+function toggleAddSpec() {
+    const f = document.getElementById('addSpecForm');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+async function addSpecification(e) {
+    e.preventDefault();
+    const data = {};
+    new FormData(e.target).forEach((v, k) => { if (v) data[k] = v; });
+    const res = await fetch(`${API}/customers/${CID}/specifications`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+    });
+    if (res.ok) location.reload();
+    else alert('Failed to add specification');
+    return false;
+}
+async function deleteSpec(id) {
+    if (!confirm('Delete this specification?')) return;
+    const res = await fetch(`${API}/specifications/${id}`, { method: 'DELETE' });
+    if (res.ok) document.getElementById('spec-' + id).remove();
+}
+
+// Preferences
+function toggleAddPref() {
+    const f = document.getElementById('addPrefForm');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+async function addPreference(e) {
+    e.preventDefault();
+    const data = {};
+    new FormData(e.target).forEach((v, k) => { if (v) data[k] = v; });
+    const res = await fetch(`${API}/customers/${CID}/preferences`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+    });
+    if (res.ok) location.reload();
+    else alert('Failed to add preference');
+    return false;
+}
+async function deletePref(id) {
+    if (!confirm('Delete this preference?')) return;
+    const res = await fetch(`${API}/preferences/${id}`, { method: 'DELETE' });
+    if (res.ok) document.getElementById('pref-' + id).remove();
+}
+
+// History
+function toggleAddHistory() {
+    const f = document.getElementById('addHistoryForm');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+async function addHistory(e) {
+    e.preventDefault();
+    const data = {};
+    new FormData(e.target).forEach((v, k) => { if (v) data[k] = v; });
+    const res = await fetch(`${API}/customers/${CID}/history`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+    });
+    if (res.ok) location.reload();
+    else alert('Failed to add history entry');
+    return false;
+}
+</script>
+{% endblock %}

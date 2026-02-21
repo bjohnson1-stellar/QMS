@@ -457,6 +457,9 @@ web_modules:
     label: "Time Tracker"
     default_endpoint: "timetracker.projections_page"
     admin_only: true
+  customers:
+    label: "Customers"
+    default_endpoint: "customers.dashboard"
 
 # =============================================================================
 # AUTHENTICATION (Local email + password)
