@@ -34,6 +34,13 @@ git push origin main
 - New feature → add to "In Progress" or "Planned" with module, priority, tags
 - Feeds the admin system map at `/admin/system-map`
 
+### Documentation Maintenance
+**ALWAYS update the relevant `.planning/` reference doc when changing system structure.**
+- New/removed API blueprint, template dir, or static asset → update `architecture.md`
+- New/removed CLI command or module → update `cli-reference.md`
+- New dev pattern, convention, or dependency → update `development-guide.md`
+- Changed table count or schema files → update `architecture.md`
+
 ## Key Paths
 
 | Resource | Path |
