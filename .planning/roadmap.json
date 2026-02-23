@@ -165,6 +165,13 @@
           "module": "qualitydocs",
           "completed": "2026-02-20",
           "tags": ["docs", "quality-manual", "planning"]
+        },
+        {
+          "title": "Federated Documentation (CLAUDE.md Restructure)",
+          "desc": "Split CLAUDE.md from 276 lines to 59-line contract + 3 reference files in .planning/ (architecture.md, cli-reference.md, development-guide.md). Corrected stale facts, deleted 651-line RESTRUCTURE_PLANNING_PROMPT.md.",
+          "module": "core",
+          "completed": "2026-02-23",
+          "tags": ["docs", "developer-experience"]
         }
       ]
     }
