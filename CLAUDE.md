@@ -41,6 +41,12 @@ git push origin main
 - New dev pattern, convention, or dependency → update `development-guide.md`
 - Changed table count or schema files → update `architecture.md`
 
+## Tool Usage Rules
+- **NEVER use `dir`, `type`, or other cmd.exe commands** — the shell is Git Bash, not cmd.exe
+- **NEVER use Bash for file discovery** — use Glob (not `find`, `ls`, `dir`) and Grep (not `grep`, `rg`)
+- **NEVER use Bash to read files** — use the Read tool (not `cat`, `head`, `tail`)
+- Reserve Bash for: `git`, `pip`, `pytest`, `python`, `qms` CLI, and system commands only
+
 ## Key Paths
 
 | Resource | Path |
