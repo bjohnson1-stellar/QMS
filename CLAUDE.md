@@ -69,4 +69,5 @@ Detailed documentation lives in `.planning/` — read on demand:
 | [`.planning/architecture.md`](.planning/architecture.md) | Directory tree, module map, DB schema, API blueprints, auth, theming |
 | [`.planning/cli-reference.md`](.planning/cli-reference.md) | All 65 CLI commands, examples, unified inbox routing |
 | [`.planning/development-guide.md`](.planning/development-guide.md) | Import patterns, DB conventions, web architecture, model routing, testing |
+| [`.planning/procore-integration.md`](.planning/procore-integration.md) | Procore integration planning, observation export, config reference |
 | [`.planning/roadmap.json`](.planning/roadmap.json) | Feature roadmap (feeds `/admin/system-map`) |

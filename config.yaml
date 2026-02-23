@@ -427,8 +427,18 @@ welding:
       default_format: "excel"
 
 # =============================================================================
-# BRANDING & THEMING
+# PROCORE INTEGRATION
 # =============================================================================
+
+procore:
+  base_url: "https://app.procore.com"
+  # Per-project mapping: project_number → Procore IDs and URLs
+  # Add entries as projects are linked to Procore
+  projects: {}
+  #   "07645":
+  #     company_id: ""
+  #     project_id: ""
+  #     observations_url: ""
 
 # =============================================================================
 # WEB MODULES (single source of truth for nav, access control, routing)
