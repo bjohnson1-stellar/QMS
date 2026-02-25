@@ -86,6 +86,7 @@ def _register_modules():
         ("qms.welding.cli", "welding", "Welding program management"),
         ("qms.workforce.cli", "workforce", "Employee & workforce management"),
         ("qms.projects.cli", "projects", "Projects, customers & jobs"),
+        ("qms.quality.cli", "quality", "Quality issues & observations"),
         ("qms.timetracker.cli", "timetracker", "Time tracking & projections"),
         ("qms.pipeline.cli", "pipeline", "Drawing extraction & conflict detection"),
         ("qms.qualitydocs.cli", "docs", "Quality manual & documents"),
