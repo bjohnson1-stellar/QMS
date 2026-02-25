@@ -69,6 +69,13 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Pre-Approved Coupons + AWS SWPS Import",
+          "desc": "Quick-select bar for 11 pre-approved coupon configs (W1-W7 welding, B1-B2 brazing, S1-S2 structural) that auto-fill all cascade fields. Imported 2 AWS Standard WPS records (SWPS-B2.1-1-022 SMAW, SWPS-B2.1-1-020 FCAW-G) with full child data. New schema table, seed functions, API endpoint.",
+          "module": "welding",
+          "completed": "2026-02-25",
+          "tags": ["welding", "cert-requests", "swps", "seed-data"]
+        },
+        {
           "title": "Welding Certification Request Web Form",
           "desc": "Web-based WCR intake form replacing Power Automate. Material-first cascade (Material → Process → WPS → Position), welder search with auto-fill, 1-4 coupons per request, duplicate qualification warnings, project search, new welder registration toggle. List view with status badges. 9 new API endpoints, 2 templates.",
           "module": "welding",

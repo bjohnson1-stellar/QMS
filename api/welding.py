@@ -324,6 +324,22 @@ def api_lookup_positions():
     return jsonify([dict(r) for r in rows])
 
 
+@bp.route("/api/lookup/preapproved-coupons")
+@module_required("welding")
+def api_lookup_preapproved_coupons():
+    """All active pre-approved coupon configurations, grouped by category."""
+    with get_db(readonly=True) as conn:
+        rows = conn.execute("""
+            SELECT code, name, description, qualification_code, category,
+                   process, base_material, p_number, position, wps_number,
+                   filler_metal, diameter, thickness, priority
+            FROM weld_preapproved_coupons
+            WHERE status = 'active'
+            ORDER BY category, priority, code
+        """).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
 @bp.route("/api/welders/search")
 @module_required("welding")
 def api_welders_search():

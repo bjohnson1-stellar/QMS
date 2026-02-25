@@ -128,6 +128,21 @@
         <h2 style="margin:0;">Test Coupons</h2>
         <button type="button" class="small" onclick="addCoupon()" id="add-coupon-btn">+ Add Coupon</button>
     </div>
+
+    <!-- Quick Select Bar -->
+    <div id="quick-select-bar" class="quick-select-bar" style="margin-bottom:16px;">
+        <div style="display:flex; gap:10px; align-items:flex-end;">
+            <div class="form-group" style="flex:1; margin-bottom:0;">
+                <label style="font-size:12px; font-weight:600;">Quick Select — Pre-Approved Coupon</label>
+                <select id="preapproved-select">
+                    <option value="">Choose a pre-approved configuration...</option>
+                </select>
+            </div>
+            <button type="button" class="small" onclick="addPreapprovedCoupon()" id="quick-add-btn"
+                    style="margin-bottom:0; white-space:nowrap;">+ Quick Add</button>
+        </div>
+    </div>
+
     <div id="coupons-container"></div>
 </div>
 
@@ -273,6 +288,15 @@ button.small {
     padding: 5px 12px;
     font-size: 12px;
 }
+.quick-select-bar {
+    background: var(--color-primary-subtle);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+}
+.quick-select-bar label {
+    color: var(--color-primary);
+}
 </style>
 
 <script>
@@ -280,19 +304,25 @@ button.small {
 let selectedWelder = null;
 let materialsCache = [];
 let positionsCache = [];
+let preapprovedCache = [];
 let couponCount = 0;
 
 // --- Init ---
 document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('request-date').value = new Date().toISOString().slice(0, 10);
 
-    // Load materials and positions
-    const [matRes, posRes] = await Promise.all([
+    // Load materials, positions, and pre-approved coupons
+    const [matRes, posRes, preRes] = await Promise.all([
         fetch('/welding/api/lookup/materials'),
         fetch('/welding/api/lookup/positions'),
+        fetch('/welding/api/lookup/preapproved-coupons'),
     ]);
     materialsCache = await matRes.json();
     positionsCache = await posRes.json();
+    preapprovedCache = await preRes.json();
+
+    // Populate pre-approved dropdown (grouped by category)
+    populatePreapprovedDropdown();
 
     // Add first coupon
     addCoupon();
@@ -673,6 +703,143 @@ async function submitRequest() {
         btn.disabled = false;
         btn.textContent = 'Submit Request';
     }
+}
+
+// --- Pre-Approved Coupon Quick Select ---
+function populatePreapprovedDropdown() {
+    const sel = document.getElementById('preapproved-select');
+    if (!preapprovedCache.length) {
+        sel.closest('.quick-select-bar').style.display = 'none';
+        return;
+    }
+
+    const groups = {};
+    const groupLabels = { welding: 'Welding (ASME IX)', brazing: 'Brazing (ASME IX QB)', structural: 'Structural (AWS D1.1)' };
+    preapprovedCache.forEach(c => {
+        const cat = c.category || 'other';
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(c);
+    });
+
+    for (const [cat, items] of Object.entries(groups)) {
+        const grp = document.createElement('optgroup');
+        grp.label = groupLabels[cat] || cat;
+        items.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.code;
+            let label = `${c.code} — ${c.name}`;
+            if (c.priority === 'optional') label += ' (optional — 6" pipe)';
+            else if (c.priority === 'as-needed') label += ' (as-needed)';
+            opt.textContent = label;
+            grp.appendChild(opt);
+        });
+        sel.appendChild(grp);
+    }
+}
+
+function addPreapprovedCoupon() {
+    const sel = document.getElementById('preapproved-select');
+    const code = sel.value;
+    if (!code) return;
+
+    const config = preapprovedCache.find(c => c.code === code);
+    if (!config) return;
+
+    if (couponCount >= 4) return;
+
+    // Add a new coupon card
+    couponCount++;
+    const tmpl = document.getElementById('coupon-template');
+    const clone = tmpl.content.cloneNode(true);
+    const card = clone.querySelector('.coupon-card');
+    card.dataset.index = couponCount;
+    card.querySelector('.coupon-label').textContent = `Coupon ${couponCount} — ${config.code}`;
+
+    // Populate material dropdown and pre-select
+    const matSel = card.querySelector('.coupon-material');
+    materialsCache.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.material_spec;
+        opt.textContent = m.material_spec + (m.p_number ? ` (P${m.p_number})` : '');
+        opt.dataset.pNumber = m.p_number || '';
+        matSel.appendChild(opt);
+    });
+    const otherOpt = document.createElement('option');
+    otherOpt.value = '__all__';
+    otherOpt.textContent = 'Other / Show all WPSes';
+    matSel.appendChild(otherOpt);
+
+    // Pre-select material (match by name or add custom)
+    let matFound = false;
+    for (const opt of matSel.options) {
+        if (opt.value === config.base_material) { opt.selected = true; matFound = true; break; }
+    }
+    if (!matFound && config.base_material) {
+        const custom = document.createElement('option');
+        custom.value = config.base_material;
+        custom.textContent = config.base_material + (config.p_number ? ` (P${config.p_number})` : '');
+        custom.selected = true;
+        matSel.insertBefore(custom, matSel.lastElementChild);
+    }
+
+    // Populate and pre-select process
+    const procSel = card.querySelector('.coupon-process');
+    if (config.process) {
+        const opt = document.createElement('option');
+        opt.value = config.process;
+        opt.textContent = config.process;
+        opt.selected = true;
+        procSel.appendChild(opt);
+    }
+
+    // Populate and pre-select WPS
+    const wpsSel = card.querySelector('.coupon-wps');
+    if (config.wps_number) {
+        const opt = document.createElement('option');
+        opt.value = config.wps_number;
+        opt.textContent = config.wps_number;
+        opt.selected = true;
+        wpsSel.appendChild(opt);
+    }
+
+    // Populate position dropdown and pre-select
+    const posSel = card.querySelector('.coupon-position');
+    positionsCache.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.code;
+        opt.textContent = `${p.code} — ${p.description}`;
+        opt.dataset.qualifiesFor = p.qualifies_for || '';
+        posSel.appendChild(opt);
+    });
+    // Pre-select position (may be compound like "3G+4G")
+    if (config.position) {
+        let posFound = false;
+        for (const opt of posSel.options) {
+            if (opt.value === config.position) { opt.selected = true; posFound = true; break; }
+        }
+        if (!posFound) {
+            const custom = document.createElement('option');
+            custom.value = config.position;
+            custom.textContent = config.position;
+            custom.selected = true;
+            posSel.insertBefore(custom, posSel.firstElementChild.nextSibling);
+        }
+    }
+
+    // Pre-fill filler metal and diameter
+    card.querySelector('.coupon-filler').value = config.filler_metal || '';
+    card.querySelector('.coupon-diameter').value = config.diameter || '';
+    card.querySelector('.coupon-thickness').value = config.thickness || '';
+
+    document.getElementById('coupons-container').appendChild(clone);
+    if (couponCount >= 4) document.getElementById('add-coupon-btn').disabled = true;
+
+    // Reset dropdown
+    sel.selectedIndex = 0;
+
+    // Check for duplicate
+    const addedCard = document.querySelectorAll('.coupon-card');
+    checkDuplicate(addedCard[addedCard.length - 1]);
 }
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }

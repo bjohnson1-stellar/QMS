@@ -277,6 +277,90 @@ GAS_TYPES: List[Tuple[str, str, str, str]] = [
 
 
 # ---------------------------------------------------------------------------
+# Pre-Approved Coupon Configurations
+# ---------------------------------------------------------------------------
+
+PREAPPROVED_COUPONS: List[Tuple[str, str, str, str, str, str, str, int,
+                                str, str, str, str, str, str]] = [
+    # (code, name, description, qualification_code, category, process,
+    #  base_material, p_number, position, wps_number, filler_metal,
+    #  diameter, thickness, priority)
+    ("W1", "CS P1 6G GTAW/SMAW — 2\"", "Carbon steel pipe, combo process, all-position",
+     "ASME IX", "welding", "GTAW/SMAW", "Carbon Steel (P1)", 1,
+     "6G", "WPS-001", "E6010/E7018", "2\" (2.375\" OD)", "", "default"),
+    ("W2", "CS P1 6G GTAW/SMAW — 6\"", "Carbon steel pipe, combo process, large diameter",
+     "ASME IX", "welding", "GTAW/SMAW", "Carbon Steel (P1)", 1,
+     "6G", "WPS-001", "E6010/E7018", "6\" (6.625\" OD)", "", "optional"),
+    ("W3", "SS P8 6G GTAW — 2\"", "Stainless steel pipe, GTAW only, all-position",
+     "ASME IX", "welding", "GTAW", "Stainless Steel (P8)", 8,
+     "6G", "SS-01-P8-GTAW", "ER308L/ER316L", "2\" (2.375\" OD)", "", "default"),
+    ("W4", "SS P8 6G GTAW — 6\"", "Stainless steel pipe, GTAW only, large diameter",
+     "ASME IX", "welding", "GTAW", "Stainless Steel (P8)", 8,
+     "6G", "SS-01-P8-GTAW", "ER308L/ER316L", "6\" (6.625\" OD)", "", "optional"),
+    ("W5", "CS P1 6G FCAW-G — 2\"", "Carbon steel pipe, flux-cored gas shielded",
+     "ASME IX", "welding", "FCAW-G", "Carbon Steel (P1)", 1,
+     "6G", "FCAW-G", "E71T-1", "2\" (2.375\" OD)", "", "default"),
+    ("W6", "CS P1 6G FCAW-G — 6\"", "Carbon steel pipe, flux-cored, large diameter",
+     "ASME IX", "welding", "FCAW-G", "Carbon Steel (P1)", 1,
+     "6G", "FCAW-G", "E71T-1", "6\" (6.625\" OD)", "", "optional"),
+    ("W7", "SS P8 Orbital GTAW", "Stainless steel orbital welding per spec",
+     "ASME IX", "welding", "GTAW (orbital)", "Stainless Steel (P8)", 8,
+     "6G", "ORB-P08-001", "ER308L", "Per spec", "", "as-needed"),
+    ("B1", "Copper P-107 TB Horizontal — 2\"", "Copper tube brazing, horizontal flow",
+     "ASME IX QB", "brazing", "TB", "Copper (P-107)", 107,
+     "Horizontal", "P107-TB-01", "BCuP-5", "2\" OD", "", "default"),
+    ("B2", "Copper P-107 TB Vertical — 2\"", "Copper tube brazing, vertical flow",
+     "ASME IX QB", "brazing", "TB", "Copper (P-107)", 107,
+     "Vertical", "P107-TB-01", "BCuP-5", "2\" OD", "", "default"),
+    ("S1", "Structural SMAW 3G+4G Plate", "AWS D1.1 structural plate, SMAW all-position",
+     "AWS D1.1", "structural", "SMAW", "Structural CS (Group I/II)", 1,
+     "3G+4G", "SWPS-B2.1-1-022", "E6010/E7018", "Plate", "", "default"),
+    ("S2", "Structural FCAW-G 3G+4G Plate", "AWS D1.1 structural plate, FCAW-G all-position",
+     "AWS D1.1", "structural", "FCAW-G", "Structural CS (Group I/II)", 1,
+     "3G+4G", "SWPS-B2.1-1-020", "E71T-1", "Plate", "", "default"),
+]
+
+
+# ---------------------------------------------------------------------------
+# AWS Standard WPS (SWPS) Records
+# ---------------------------------------------------------------------------
+
+SWPS_RECORDS: List[Dict[str, Any]] = [
+    {
+        "wps_number": "SWPS-B2.1-1-022",
+        "swps_document_number": "AWS B2.1-1-022",
+        "title": "SMAW E6010 Root / E7018 Fill — Structural CS",
+        "applicable_codes": "AWS D1.1",
+        "is_swps": 1,
+        "status": "active",
+        "file_path": "data/welding/swps/AWS_B2.1-1-022.pdf",
+        "processes": [("SMAW", None, "root and fill")],
+        "base_metals": [(1, None, None, "Structural Steel", "Group I/II")],
+        "filler_metals": [
+            (3, None, "SFA-5.1", "E6010", None, None),
+            (4, None, "SFA-5.1", "E7018", None, None),
+        ],
+        "positions": [("1G, 2G, 3G, 4G", "1F, 2F, 3F, 4F", "Uphill", None)],
+    },
+    {
+        "wps_number": "SWPS-B2.1-1-020",
+        "swps_document_number": "AWS B2.1-1-020",
+        "title": "FCAW-G — Structural CS",
+        "applicable_codes": "AWS D1.1",
+        "is_swps": 1,
+        "status": "active",
+        "file_path": "data/welding/swps/AWS_B2.1-1-020.pdf",
+        "processes": [("FCAW-G", None, "all passes")],
+        "base_metals": [(1, None, None, "Structural Steel", "Group I/II")],
+        "filler_metals": [
+            (6, None, "SFA-5.20", "E71T-1", None, None),
+        ],
+        "positions": [("1G, 2G, 3G, 4G", "1F, 2F, 3F, 4F", "Uphill", None)],
+    },
+]
+
+
+# ---------------------------------------------------------------------------
 # Seed functions
 # ---------------------------------------------------------------------------
 
@@ -371,6 +455,76 @@ def seed_gas_types(conn: sqlite3.Connection) -> int:
                           GAS_TYPES)
 
 
+def seed_preapproved_coupons(conn: sqlite3.Connection) -> int:
+    return _insert_ignore(
+        conn, "weld_preapproved_coupons",
+        ["code", "name", "description", "qualification_code", "category",
+         "process", "base_material", "p_number", "position", "wps_number",
+         "filler_metal", "diameter", "thickness", "priority"],
+        PREAPPROVED_COUPONS,
+    )
+
+
+def seed_swps_records(conn: sqlite3.Connection) -> int:
+    """Insert AWS SWPS records into weld_wps and child tables."""
+    count = 0
+    for swps in SWPS_RECORDS:
+        # Parent WPS record
+        cursor = conn.execute(
+            """INSERT OR IGNORE INTO weld_wps
+               (wps_number, swps_document_number, title, applicable_codes,
+                is_swps, status, file_path)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (swps["wps_number"], swps["swps_document_number"], swps["title"],
+             swps["applicable_codes"], swps["is_swps"], swps["status"],
+             swps["file_path"]),
+        )
+        if cursor.rowcount == 0:
+            continue  # Already exists
+        count += 1
+        wps_id = cursor.lastrowid
+
+        # Processes
+        for seq, (proc_type, variation, layer) in enumerate(swps["processes"], 1):
+            conn.execute(
+                """INSERT OR IGNORE INTO weld_wps_processes
+                   (wps_id, process_sequence, process_type, process_variation, layer_deposit)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (wps_id, seq, proc_type, variation, layer),
+            )
+
+        # Base metals
+        for seq, (p_num, grp, spec, mat_type, grade) in enumerate(swps["base_metals"], 1):
+            conn.execute(
+                """INSERT OR IGNORE INTO weld_wps_base_metals
+                   (wps_id, metal_sequence, p_number, group_number,
+                    material_spec, material_type, material_grade)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (wps_id, seq, p_num, grp, spec, mat_type, grade),
+            )
+
+        # Filler metals
+        for seq, (f_num, a_num, sfa, aws_cls, diameter, form) in enumerate(swps["filler_metals"], 1):
+            conn.execute(
+                """INSERT OR IGNORE INTO weld_wps_filler_metals
+                   (wps_id, process_sequence, f_number, a_number,
+                    sfa_spec, aws_class, filler_diameter, filler_form)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (wps_id, seq, f_num, a_num, sfa, aws_cls, diameter, form),
+            )
+
+        # Positions
+        for groove, fillet, progression, notes in swps["positions"]:
+            conn.execute(
+                """INSERT OR IGNORE INTO weld_wps_positions
+                   (wps_id, groove_positions, fillet_positions, progression, position_notes)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (wps_id, groove, fillet, progression, notes),
+            )
+
+    return count
+
+
 def seed_all_lookups(conn: sqlite3.Connection | None = None, force: bool = False) -> Dict[str, int]:
     """
     Populate all ASME IX lookup tables.
@@ -402,6 +556,8 @@ def seed_all_lookups(conn: sqlite3.Connection | None = None, force: bool = False
             ("weld_valid_groove_types", seed_groove_types),
             ("weld_valid_bead_types", seed_bead_types),
             ("weld_valid_gas_types", seed_gas_types),
+            ("weld_preapproved_coupons", seed_preapproved_coupons),
+            ("weld_wps (SWPS)", seed_swps_records),
         ]
 
         results: Dict[str, int] = {}

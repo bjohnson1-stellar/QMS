@@ -966,6 +966,32 @@ CREATE TABLE IF NOT EXISTS weld_cert_request_coupons (
 CREATE INDEX IF NOT EXISTS idx_wcr_coupon_wcr ON weld_cert_request_coupons(wcr_id);
 CREATE INDEX IF NOT EXISTS idx_wcr_coupon_status ON weld_cert_request_coupons(status);
 
+-- =========== PRE-APPROVED COUPON CONFIGURATIONS ===========
+
+CREATE TABLE IF NOT EXISTS weld_preapproved_coupons (
+    id              INTEGER PRIMARY KEY,
+    code            TEXT UNIQUE NOT NULL,
+    name            TEXT NOT NULL,
+    description     TEXT,
+    qualification_code TEXT,
+    category        TEXT,
+    process         TEXT,
+    base_material   TEXT,
+    p_number        INTEGER,
+    position        TEXT,
+    wps_number      TEXT,
+    filler_metal    TEXT,
+    diameter        TEXT,
+    thickness       TEXT,
+    priority        TEXT DEFAULT 'default',
+    status          TEXT DEFAULT 'active',
+    approved_by     TEXT,
+    approved_date   TEXT,
+    notes           TEXT,
+    created_at      TEXT DEFAULT (datetime('now')),
+    updated_at      TEXT DEFAULT (datetime('now'))
+);
+
 -- =========== LOOKUP TABLES (ASME IX Reference Data) ===========
 
 CREATE TABLE IF NOT EXISTS weld_valid_processes (
