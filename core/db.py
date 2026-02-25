@@ -72,6 +72,7 @@ SCHEMA_ORDER = [
     "imports",
     "workforce",
     "projects",
+    "quality",
     "timetracker",
     "qualitydocs",
     "references",

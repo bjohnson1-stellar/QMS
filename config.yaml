@@ -439,6 +439,39 @@ procore:
   #     company_id: ""
   #     project_id: ""
   #     observations_url: ""
+  #     observation_types: ["Safety", "Quality", "Commissioning"]
+
+# =============================================================================
+# QUALITY ISSUES
+# =============================================================================
+
+quality:
+  attachment_dir: "data/quality-issues"
+  normalize:
+    trades:
+      "Mech": "Mechanical"
+      "HVAC": "Mechanical"
+      "Mech/HVAC": "Mechanical"
+      "Plbg": "Plumbing"
+      "Plb": "Plumbing"
+      "Elec": "Electrical"
+      "Elect": "Electrical"
+      "Refrig": "Refrigeration"
+      "FP": "Fire Protection"
+      "Fire Prot": "Fire Protection"
+    statuses:
+      "Ready for Review": "in_review"
+      "Ready For Review": "in_review"
+      "Not Accepted": "open"
+      "Closed": "closed"
+      "Open": "open"
+      "In Progress": "in_progress"
+    types:
+      "Safety": "observation"
+      "Quality": "observation"
+      "Commissioning": "observation"
+      "Deficiency List Item": "deficiency"
+      "Punch List Item": "punch"
 
 # =============================================================================
 # WEB MODULES (single source of truth for nav, access control, routing)
