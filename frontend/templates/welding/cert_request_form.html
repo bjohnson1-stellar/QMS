@@ -713,15 +713,36 @@ function populatePreapprovedDropdown() {
         return;
     }
 
+    // Explicit group order: ASME welding → AWS structural → ASME brazing
+    const groupOrder = ['welding', 'structural', 'brazing'];
+    const groupLabels = {
+        welding: 'Welding (ASME IX)',
+        structural: 'Structural (AWS D1.1)',
+        brazing: 'Brazing (ASME IX QB)',
+    };
+
+    // Priority sort: default first, then optional, then as-needed
+    const priorityRank = { default: 0, optional: 1, 'as-needed': 2 };
+
     const groups = {};
-    const groupLabels = { welding: 'Welding (ASME IX)', brazing: 'Brazing (ASME IX QB)', structural: 'Structural (AWS D1.1)' };
     preapprovedCache.forEach(c => {
         const cat = c.category || 'other';
         if (!groups[cat]) groups[cat] = [];
         groups[cat].push(c);
     });
 
-    for (const [cat, items] of Object.entries(groups)) {
+    for (const cat of groupOrder) {
+        const items = groups[cat];
+        if (!items) continue;
+
+        // Sort: by priority rank, then by code (natural: W1 < W2 < W7)
+        items.sort((a, b) => {
+            const pa = priorityRank[a.priority] ?? 9;
+            const pb = priorityRank[b.priority] ?? 9;
+            if (pa !== pb) return pa - pb;
+            return a.code.localeCompare(b.code, undefined, { numeric: true });
+        });
+
         const grp = document.createElement('optgroup');
         grp.label = groupLabels[cat] || cat;
         items.forEach(c => {
