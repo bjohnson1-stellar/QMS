@@ -713,10 +713,10 @@ function populatePreapprovedDropdown() {
         return;
     }
 
-    // Explicit group order: ASME welding → AWS structural → ASME brazing
-    const groupOrder = ['welding', 'structural', 'brazing'];
+    // Explicit group order: piping → structural → brazing
+    const groupOrder = ['piping', 'structural', 'brazing'];
     const groupLabels = {
-        welding: 'Welding (ASME IX)',
+        piping: 'Piping (ASME IX)',
         structural: 'Structural (AWS D1.1)',
         brazing: 'Brazing (ASME IX QB)',
     };
