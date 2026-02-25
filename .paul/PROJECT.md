@@ -12,9 +12,9 @@ All quality data from siloed Procore projects unified in one database — enabli
 
 | Attribute | Value |
 |-----------|-------|
-| Version | 0.0.0 |
-| Status | Planning |
-| Last Updated | 2026-02-25 |
+| Version | 0.1.0-alpha |
+| Status | In Progress |
+| Last Updated | 2026-02-25 (Phase 1 complete) |
 
 **Production URL:** http://L004470-CAD:5000
 
@@ -23,6 +23,9 @@ All quality data from siloed Procore projects unified in one database — enabli
 ### Validated (Shipped)
 
 - [x] CSV project import from Procore Company Home export — `projects/procore_io.py`
+- [x] Unified quality issues schema (8 tables, all issue types) — Phase 1
+- [x] Root cause taxonomy and normalization config — Phase 1
+- [x] Audit trail and issue linking infrastructure — Phase 1
 
 ### Active (In Progress)
 
@@ -78,6 +81,9 @@ SIS field teams use Procore for project management. Quality observations created
 |----------|-----------|------|--------|
 | Two-track approach | Personal mobile pipeline vs team-wide import serve different audiences | 2026-02-25 | Active |
 | OneDrive as bridge | Already in use on mobile, local sync avoids API complexity | 2026-02-25 | Active |
+| Wide schema (all issue types) | quality_issues supports observations, NCRs, CARs, deficiencies, punch — not just observations | 2026-02-25 | Active |
+| Audit trail from day one | Cannot be retrofitted — captures all history from initial import | 2026-02-25 | Active |
+| Normalization config in YAML | Trade/status/type aliases in config.yaml for import-time normalization | 2026-02-25 | Active |
 
 ## Success Metrics
 
@@ -113,4 +119,4 @@ Quick Reference:
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-02-25*
+*Last updated: 2026-02-25 after Phase 1*
