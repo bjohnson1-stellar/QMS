@@ -1,0 +1,680 @@
+{% extends "base.html" %}
+
+{% block title %}New Certification Request - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header page-header-actions">
+    <div>
+        <h1>New Certification Request</h1>
+        <p class="subtitle">Submit a welder coupon test request</p>
+    </div>
+    <div class="action-buttons">
+        <a href="{{ url_for('welding.cert_requests_list') }}"><button class="secondary">Back to List</button></a>
+    </div>
+</div>
+
+<form id="wcr-form" onsubmit="return false;">
+
+<!-- Section 1: Welder -->
+<div class="card" style="margin-bottom: 16px;">
+    <h2 style="margin-top:0;">Welder</h2>
+    <div class="wcr-form-grid">
+        <div class="form-group" style="grid-column: 1 / -1; position: relative;">
+            <label>Search Welder *</label>
+            <input type="text" id="welder-search" placeholder="Name, stamp, or employee number..."
+                   autocomplete="off">
+            <div id="welder-dropdown" class="search-dropdown" style="display:none;"></div>
+            <div style="margin-top:6px;">
+                <label style="display:inline; cursor:pointer; font-size:12px;">
+                    <input type="checkbox" id="new-welder-toggle" style="width:auto; margin-right:4px;">
+                    New welder (not in system)
+                </label>
+            </div>
+        </div>
+
+        <!-- Auto-filled welder info -->
+        <div id="welder-info" style="display:none; grid-column: 1 / -1;">
+            <div class="wcr-form-grid">
+                <div class="form-group">
+                    <label>Stamp</label>
+                    <input type="text" id="welder-stamp" readonly class="readonly-field">
+                </div>
+                <div class="form-group">
+                    <label>Employee #</label>
+                    <input type="text" id="welder-emp" readonly class="readonly-field">
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <input type="text" id="welder-dept" readonly class="readonly-field">
+                </div>
+            </div>
+            <div id="welder-wpqs" style="margin-top:8px;"></div>
+        </div>
+
+        <!-- New welder fields (hidden by default) -->
+        <div id="new-welder-fields" style="display:none; grid-column: 1 / -1;">
+            <div class="wcr-form-grid">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="new-welder-name" placeholder="First Last">
+                </div>
+                <div class="form-group">
+                    <label>Employee # *</label>
+                    <input type="text" id="new-welder-emp" placeholder="e.g. 12345">
+                </div>
+                <div class="form-group">
+                    <label>Stamp (optional)</label>
+                    <input type="text" id="new-welder-stamp" placeholder="e.g. Z-15">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: Project -->
+<div class="card" style="margin-bottom: 16px;">
+    <h2 style="margin-top:0;">Project</h2>
+    <div class="wcr-form-grid">
+        <div class="form-group" style="grid-column: 1 / -1; position: relative;">
+            <label>Search Project</label>
+            <input type="text" id="project-search" placeholder="Project number or name..."
+                   autocomplete="off">
+            <div id="project-dropdown" class="search-dropdown" style="display:none;"></div>
+        </div>
+        <div class="form-group">
+            <label>Project Number</label>
+            <input type="text" id="project-number" readonly class="readonly-field">
+        </div>
+        <div class="form-group" style="grid-column: 2 / -1;">
+            <label>Project Name</label>
+            <input type="text" id="project-name" readonly class="readonly-field">
+        </div>
+    </div>
+</div>
+
+<!-- Section 3: Request Context -->
+<div class="card" style="margin-bottom: 16px;">
+    <h2 style="margin-top:0;">Request Details</h2>
+    <div class="wcr-form-grid">
+        <div class="form-group">
+            <label>Reason *</label>
+            <select id="request-reason">
+                <option value="">Select reason...</option>
+                <option value="New Hire">New Hire</option>
+                <option value="New Process">New Process</option>
+                <option value="Re-qualification">Re-qualification</option>
+                <option value="Project Requirement">Project Requirement</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Urgency</label>
+            <select id="request-urgency">
+                <option value="Normal">Normal</option>
+                <option value="Priority">Priority</option>
+                <option value="Urgent">Urgent</option>
+            </select>
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Notes</label>
+            <textarea id="request-notes" placeholder="Additional details..."></textarea>
+        </div>
+    </div>
+</div>
+
+<!-- Section 4: Coupons -->
+<div class="card" style="margin-bottom: 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h2 style="margin:0;">Test Coupons</h2>
+        <button type="button" class="small" onclick="addCoupon()" id="add-coupon-btn">+ Add Coupon</button>
+    </div>
+    <div id="coupons-container"></div>
+</div>
+
+<!-- Section 5: Submit -->
+<div class="card">
+    <div class="wcr-form-grid">
+        <div class="form-group">
+            <label>Submitted By</label>
+            <input type="text" id="submitted-by" readonly class="readonly-field"
+                   value="{{ current_user.name if current_user else 'Unknown' }}">
+        </div>
+        <div class="form-group">
+            <label>Request Date</label>
+            <input type="text" id="request-date" readonly class="readonly-field">
+        </div>
+    </div>
+    <div style="margin-top:16px; text-align:right;">
+        <button type="button" class="secondary" onclick="location.href='{{ url_for('welding.cert_requests_list') }}'">Cancel</button>
+        <button type="button" class="success" onclick="submitRequest()" id="submit-btn">Submit Request</button>
+    </div>
+</div>
+
+</form>
+
+<!-- Coupon template (cloned by JS) -->
+<template id="coupon-template">
+<div class="coupon-card" data-index="0">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <strong class="coupon-label">Coupon 1</strong>
+        <button type="button" class="danger small" onclick="removeCoupon(this)">Remove</button>
+    </div>
+    <div id="coupon-dupe-warning" class="dupe-warning" style="display:none;"></div>
+    <div class="wcr-form-grid">
+        <div class="form-group">
+            <label>Base Material *</label>
+            <select class="coupon-material" onchange="onMaterialChange(this)">
+                <option value="">Select material...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Process *</label>
+            <select class="coupon-process" onchange="onProcessChange(this)">
+                <option value="">Select process...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>WPS</label>
+            <select class="coupon-wps" onchange="onWpsChange(this)">
+                <option value="">Select WPS...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Position *</label>
+            <select class="coupon-position" onchange="checkDuplicate(this.closest('.coupon-card'))">
+                <option value="">Select position...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Thickness</label>
+            <input type="text" class="coupon-thickness" placeholder='e.g. 3/4"'>
+            <span class="help-text coupon-thickness-hint"></span>
+        </div>
+        <div class="form-group coupon-diameter-group">
+            <label>Diameter</label>
+            <input type="text" class="coupon-diameter" placeholder='e.g. 6"'>
+            <span class="help-text coupon-diameter-hint"></span>
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Filler Metal</label>
+            <input type="text" class="coupon-filler" placeholder="Auto-filled from WPS">
+        </div>
+    </div>
+</div>
+</template>
+
+<style>
+.wcr-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 16px;
+}
+.readonly-field {
+    background: var(--color-bg) !important;
+    color: var(--color-text-secondary) !important;
+    cursor: default;
+}
+.search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,.12);
+}
+.search-dropdown .dd-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+}
+.search-dropdown .dd-item:last-child { border-bottom: none; }
+.search-dropdown .dd-item:hover {
+    background: var(--color-primary-subtle);
+}
+.search-dropdown .dd-item .dd-sub {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+.coupon-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.coupon-card:last-child { margin-bottom: 0; }
+.dupe-warning {
+    background: var(--color-warning-bg);
+    border: 1px solid var(--color-warning);
+    color: var(--color-warning);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+.welder-wpq-summary {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+}
+.welder-wpq-summary table { width: 100%; border-collapse: collapse; }
+.welder-wpq-summary th { text-align: left; font-weight: 600; padding: 3px 8px 3px 0; }
+.welder-wpq-summary td { padding: 3px 8px 3px 0; }
+button.small {
+    padding: 5px 12px;
+    font-size: 12px;
+}
+</style>
+
+<script>
+// --- State ---
+let selectedWelder = null;
+let materialsCache = [];
+let positionsCache = [];
+let couponCount = 0;
+
+// --- Init ---
+document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('request-date').value = new Date().toISOString().slice(0, 10);
+
+    // Load materials and positions
+    const [matRes, posRes] = await Promise.all([
+        fetch('/welding/api/lookup/materials'),
+        fetch('/welding/api/lookup/positions'),
+    ]);
+    materialsCache = await matRes.json();
+    positionsCache = await posRes.json();
+
+    // Add first coupon
+    addCoupon();
+
+    // Welder search
+    const welderInput = document.getElementById('welder-search');
+    let welderTimer;
+    welderInput.addEventListener('input', () => {
+        clearTimeout(welderTimer);
+        welderTimer = setTimeout(() => searchWelder(welderInput.value), 300);
+    });
+    welderInput.addEventListener('blur', () => {
+        setTimeout(() => { document.getElementById('welder-dropdown').style.display = 'none'; }, 200);
+    });
+
+    // Project search
+    const projInput = document.getElementById('project-search');
+    let projTimer;
+    projInput.addEventListener('input', () => {
+        clearTimeout(projTimer);
+        projTimer = setTimeout(() => searchProject(projInput.value), 300);
+    });
+    projInput.addEventListener('blur', () => {
+        setTimeout(() => { document.getElementById('project-dropdown').style.display = 'none'; }, 200);
+    });
+
+    // New welder toggle
+    document.getElementById('new-welder-toggle').addEventListener('change', (e) => {
+        document.getElementById('new-welder-fields').style.display = e.target.checked ? 'block' : 'none';
+        document.getElementById('welder-search').closest('.form-group').style.display = e.target.checked ? 'none' : '';
+        document.getElementById('welder-info').style.display = e.target.checked ? 'none' : (selectedWelder ? '' : 'none');
+        if (e.target.checked) selectedWelder = null;
+    });
+});
+
+// --- Welder Search ---
+async function searchWelder(q) {
+    if (q.length < 2) { document.getElementById('welder-dropdown').style.display = 'none'; return; }
+    const res = await fetch(`/welding/api/welders/search?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    const dd = document.getElementById('welder-dropdown');
+    if (!data.length) { dd.innerHTML = '<div class="dd-item" style="color:var(--color-text-muted)">No welders found</div>'; dd.style.display = 'block'; return; }
+
+    dd.innerHTML = data.map(w => `
+        <div class="dd-item" onclick='selectWelder(${JSON.stringify(w).replace(/'/g,"&#39;")})'>
+            <div><strong>${esc(w.display_name || 'Unknown')}</strong></div>
+            <div class="dd-sub">Stamp: ${esc(w.welder_stamp || '—')} &middot; Emp#: ${esc(w.employee_number || '—')} &middot; ${esc(w.department || '')}</div>
+        </div>
+    `).join('');
+    dd.style.display = 'block';
+}
+
+function selectWelder(w) {
+    selectedWelder = w;
+    document.getElementById('welder-search').value = w.display_name || '';
+    document.getElementById('welder-dropdown').style.display = 'none';
+    document.getElementById('welder-stamp').value = w.welder_stamp || '';
+    document.getElementById('welder-emp').value = w.employee_number || '';
+    document.getElementById('welder-dept').value = w.department || '';
+    document.getElementById('welder-info').style.display = '';
+
+    // Show active WPQs
+    const wpqDiv = document.getElementById('welder-wpqs');
+    if (w.active_wpqs && w.active_wpqs.length) {
+        let html = '<div class="welder-wpq-summary"><strong>Current Qualifications:</strong><table><tr><th>WPQ</th><th>Process</th><th>Positions</th><th>Expires</th></tr>';
+        w.active_wpqs.forEach(q => {
+            html += `<tr><td>${esc(q.wpq_number)}</td><td>${esc(q.process_type||'')}</td><td>${esc(q.groove_positions_qualified||'')}</td><td>${esc(q.current_expiration_date||'—')}</td></tr>`;
+        });
+        html += '</table></div>';
+        wpqDiv.innerHTML = html;
+    } else {
+        wpqDiv.innerHTML = '<div class="welder-wpq-summary" style="color:var(--color-text-muted);">No active qualifications</div>';
+    }
+
+    // Re-check all coupons for duplicates
+    document.querySelectorAll('.coupon-card').forEach(c => checkDuplicate(c));
+}
+
+// --- Project Search ---
+async function searchProject(q) {
+    if (q.length < 2) { document.getElementById('project-dropdown').style.display = 'none'; return; }
+    const res = await fetch(`/welding/api/projects/search?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    const dd = document.getElementById('project-dropdown');
+    if (!data.length) { dd.innerHTML = '<div class="dd-item" style="color:var(--color-text-muted)">No projects found</div>'; dd.style.display = 'block'; return; }
+
+    dd.innerHTML = data.map(p => `
+        <div class="dd-item" onclick="selectProject('${esc(p.project_number)}','${esc(p.project_name)}')">
+            <div><strong>${esc(p.project_number)}</strong> — ${esc(p.project_name)}</div>
+        </div>
+    `).join('');
+    dd.style.display = 'block';
+}
+
+function selectProject(num, name) {
+    document.getElementById('project-search').value = `${num} — ${name}`;
+    document.getElementById('project-number').value = num;
+    document.getElementById('project-name').value = name;
+    document.getElementById('project-dropdown').style.display = 'none';
+}
+
+// --- Coupon Management ---
+function addCoupon() {
+    if (couponCount >= 4) return;
+    couponCount++;
+    const tmpl = document.getElementById('coupon-template');
+    const clone = tmpl.content.cloneNode(true);
+    const card = clone.querySelector('.coupon-card');
+    card.dataset.index = couponCount;
+    card.querySelector('.coupon-label').textContent = `Coupon ${couponCount}`;
+
+    // Populate material dropdown
+    const matSel = card.querySelector('.coupon-material');
+    materialsCache.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.material_spec;
+        opt.textContent = m.material_spec + (m.p_number ? ` (P${m.p_number})` : '');
+        opt.dataset.pNumber = m.p_number || '';
+        matSel.appendChild(opt);
+    });
+    // Also add "Other / All WPSes" option
+    const otherOpt = document.createElement('option');
+    otherOpt.value = '__all__';
+    otherOpt.textContent = 'Other / Show all WPSes';
+    matSel.appendChild(otherOpt);
+
+    // Populate position dropdown
+    const posSel = card.querySelector('.coupon-position');
+    positionsCache.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.code;
+        opt.textContent = `${p.code} — ${p.description}`;
+        opt.dataset.qualifiesFor = p.qualifies_for || '';
+        posSel.appendChild(opt);
+    });
+
+    document.getElementById('coupons-container').appendChild(clone);
+
+    if (couponCount >= 4) document.getElementById('add-coupon-btn').disabled = true;
+}
+
+function removeCoupon(btn) {
+    btn.closest('.coupon-card').remove();
+    couponCount--;
+    document.getElementById('add-coupon-btn').disabled = false;
+    // Re-number
+    document.querySelectorAll('.coupon-card').forEach((c, i) => {
+        c.dataset.index = i + 1;
+        c.querySelector('.coupon-label').textContent = `Coupon ${i + 1}`;
+    });
+}
+
+// --- Cascade Logic ---
+async function onMaterialChange(sel) {
+    const card = sel.closest('.coupon-card');
+    const material = sel.value;
+    const procSel = card.querySelector('.coupon-process');
+    const wpsSel = card.querySelector('.coupon-wps');
+
+    // Reset downstream
+    procSel.innerHTML = '<option value="">Select process...</option>';
+    wpsSel.innerHTML = '<option value="">Select WPS...</option>';
+    card.querySelector('.coupon-filler').value = '';
+    card.querySelector('.coupon-thickness-hint').textContent = '';
+    card.querySelector('.coupon-diameter-hint').textContent = '';
+
+    if (!material) return;
+
+    const pNumber = sel.selectedOptions[0]?.dataset?.pNumber || '';
+    const url = material === '__all__'
+        ? '/welding/api/lookup/processes'
+        : `/welding/api/lookup/processes?material=${encodeURIComponent(material)}&p_number=${pNumber}`;
+    const res = await fetch(url);
+    const processes = await res.json();
+
+    if (processes.length) {
+        processes.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.process_type;
+            opt.textContent = p.process_type + (p.count_of_wps ? ` (${p.count_of_wps} WPS)` : '');
+            procSel.appendChild(opt);
+        });
+    } else {
+        // Fallback: let user type or show all known processes
+        ['SMAW', 'GTAW', 'GMAW', 'FCAW', 'SAW', 'GTAW/SMAW'].forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p;
+            opt.textContent = p;
+            procSel.appendChild(opt);
+        });
+    }
+}
+
+async function onProcessChange(sel) {
+    const card = sel.closest('.coupon-card');
+    const material = card.querySelector('.coupon-material').value;
+    const process = sel.value;
+    const wpsSel = card.querySelector('.coupon-wps');
+
+    wpsSel.innerHTML = '<option value="">Select WPS...</option>';
+    card.querySelector('.coupon-filler').value = '';
+    card.querySelector('.coupon-thickness-hint').textContent = '';
+    card.querySelector('.coupon-diameter-hint').textContent = '';
+
+    if (!process) return;
+
+    const params = new URLSearchParams();
+    if (material && material !== '__all__') params.set('material', material);
+    params.set('process', process);
+
+    const res = await fetch(`/welding/api/lookup/wps?${params}`);
+    const wpsList = await res.json();
+
+    wpsList.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w.wps_number;
+        opt.textContent = w.wps_number + (w.title ? ` — ${w.title}` : '');
+        opt.dataset.wpsData = JSON.stringify(w);
+        wpsSel.appendChild(opt);
+    });
+
+    // If only one WPS, auto-select
+    if (wpsList.length === 1) {
+        wpsSel.selectedIndex = 1;
+        onWpsChange(wpsSel);
+    }
+}
+
+function onWpsChange(sel) {
+    const card = sel.closest('.coupon-card');
+    const opt = sel.selectedOptions[0];
+    if (!opt || !opt.dataset.wpsData) {
+        card.querySelector('.coupon-filler').value = '';
+        card.querySelector('.coupon-thickness-hint').textContent = '';
+        card.querySelector('.coupon-diameter-hint').textContent = '';
+        return;
+    }
+
+    const wps = JSON.parse(opt.dataset.wpsData);
+
+    // Auto-fill filler metal
+    if (wps.filler_metals && wps.filler_metals.length) {
+        card.querySelector('.coupon-filler').value =
+            wps.filler_metals.map(f => f.aws_class || f.sfa_spec || '').filter(Boolean).join(', ');
+    }
+
+    // Show thickness/diameter ranges as hints
+    if (wps.thickness_range) {
+        const t = wps.thickness_range;
+        if (t.min != null || t.max != null) {
+            card.querySelector('.coupon-thickness-hint').textContent =
+                `WPS range: ${t.min ?? '—'}" to ${t.max ?? '—'}"`;
+        }
+    }
+    if (wps.diameter_range) {
+        const d = wps.diameter_range;
+        if (d.min != null || d.max != null) {
+            card.querySelector('.coupon-diameter-hint').textContent =
+                `WPS range: ${d.min ?? '—'}" to ${d.max ?? '—'}"`;
+        }
+    }
+
+    checkDuplicate(card);
+}
+
+// --- Duplicate Check ---
+async function checkDuplicate(card) {
+    const warning = card.querySelector('#coupon-dupe-warning') || card.querySelector('.dupe-warning');
+    if (!warning) return;
+
+    const stamp = selectedWelder?.welder_stamp;
+    const wps = card.querySelector('.coupon-wps').value;
+    const process = card.querySelector('.coupon-process').value;
+    const position = card.querySelector('.coupon-position').value;
+
+    if (!stamp || (!wps && !process) || !position) {
+        warning.style.display = 'none';
+        return;
+    }
+
+    const params = new URLSearchParams({ stamp, wps, process, position });
+    const res = await fetch(`/welding/api/welders/check-duplicate?${params}`);
+    const data = await res.json();
+
+    if (data.duplicate) {
+        warning.textContent = `Existing qualification: ${data.wpq_number} (expires ${data.expiration || 'N/A'}). This will be a re-qualification.`;
+        warning.style.display = 'block';
+    } else {
+        warning.style.display = 'none';
+    }
+}
+
+// --- Submit ---
+async function submitRequest() {
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+        // Build welder data
+        const isNew = document.getElementById('new-welder-toggle').checked;
+        let welder;
+        if (isNew) {
+            const name = document.getElementById('new-welder-name').value.trim();
+            const emp = document.getElementById('new-welder-emp').value.trim();
+            if (!name || !emp) { alert('New welder name and employee number are required.'); return; }
+            welder = { name, employee_number: emp, stamp: document.getElementById('new-welder-stamp').value.trim(), is_new: true };
+        } else if (selectedWelder) {
+            welder = {
+                name: selectedWelder.display_name,
+                employee_number: selectedWelder.employee_number || '',
+                stamp: selectedWelder.welder_stamp || '',
+            };
+        } else {
+            alert('Please select a welder.'); return;
+        }
+
+        // Build coupons
+        const couponCards = document.querySelectorAll('.coupon-card');
+        if (!couponCards.length) { alert('At least one coupon is required.'); return; }
+
+        const coupons = [];
+        let valid = true;
+        couponCards.forEach((card, i) => {
+            const process = card.querySelector('.coupon-process').value;
+            const position = card.querySelector('.coupon-position').value;
+            if (!process) { alert(`Coupon ${i+1}: Process is required.`); valid = false; }
+            if (!position) { alert(`Coupon ${i+1}: Position is required.`); valid = false; }
+
+            coupons.push({
+                process: process,
+                position: position,
+                wps_number: card.querySelector('.coupon-wps').value,
+                base_material: card.querySelector('.coupon-material').value === '__all__' ? '' : card.querySelector('.coupon-material').value,
+                filler_metal: card.querySelector('.coupon-filler').value,
+                thickness: card.querySelector('.coupon-thickness').value,
+                diameter: card.querySelector('.coupon-diameter').value,
+            });
+        });
+        if (!valid) return;
+
+        const reason = document.getElementById('request-reason').value;
+        if (!reason) { alert('Please select a reason.'); return; }
+
+        const payload = {
+            type: 'weld_cert_request',
+            welder,
+            project: {
+                number: document.getElementById('project-number').value,
+                name: document.getElementById('project-name').value,
+            },
+            coupons,
+            submitted_by: document.getElementById('submitted-by').value,
+            request_date: document.getElementById('request-date').value,
+            notes: [
+                `Reason: ${reason}`,
+                `Urgency: ${document.getElementById('request-urgency').value}`,
+                document.getElementById('request-notes').value,
+            ].filter(Boolean).join('\n'),
+        };
+
+        const res = await fetch('/welding/api/cert-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert('Error: ' + (data.errors || []).join('\n'));
+            return;
+        }
+
+        // Success — redirect to list
+        window.location.href = '{{ url_for("welding.cert_requests_list") }}?created=' + encodeURIComponent(data.wcr_number);
+
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Submit Request';
+    }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+</script>
+{% endblock %}

@@ -69,6 +69,13 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Welding Certification Request Web Form",
+          "desc": "Web-based WCR intake form replacing Power Automate. Material-first cascade (Material → Process → WPS → Position), welder search with auto-fill, 1-4 coupons per request, duplicate qualification warnings, project search, new welder registration toggle. List view with status badges. 9 new API endpoints, 2 templates.",
+          "module": "welding",
+          "completed": "2026-02-25",
+          "tags": ["ui", "welding", "forms", "cert-requests"]
+        },
+        {
           "title": "Quality Manual PDF Export",
           "desc": "WeasyPrint-based PDF export for quality manual modules. Professional cover page, TOC with page numbers, all content block types, SIS branding. CLI (qms docs export), web download endpoint, and in-page PDF button. Customizable via standalone Jinja2+CSS template.",
           "module": "qualitydocs",

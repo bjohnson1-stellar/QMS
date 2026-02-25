@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Certification Requests - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header page-header-actions">
+    <div>
+        <h1>Certification Requests</h1>
+        <p class="subtitle">Welder coupon test requests and status tracking</p>
+    </div>
+    <div class="action-buttons">
+        <a href="{{ url_for('welding.cert_request_new') }}"><button>+ New Request</button></a>
+    </div>
+</div>
+
+<div id="created-banner" class="card" style="display:none; border-left: 3px solid var(--color-success); margin-bottom: 16px;">
+    <span id="created-msg" style="color: var(--color-success); font-weight: 600;"></span>
+</div>
+
+<div class="card">
+    {% if requests %}
+    <table>
+        <thead>
+            <tr>
+                <th>WCR Number</th>
+                <th>Welder</th>
+                <th>Stamp</th>
+                <th>Project</th>
+                <th>Coupons</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in requests %}
+            <tr>
+                <td><strong>{{ r.wcr_number }}</strong></td>
+                <td>{{ r.welder_name or '—' }}</td>
+                <td>{{ r.welder_stamp or '—' }}</td>
+                <td>{{ r.project_number or '—' }}{% if r.project_name %} — {{ r.project_name }}{% endif %}</td>
+                <td>{{ r.coupon_count }}</td>
+                <td>
+                    {% set status_colors = {
+                        'pending_approval': 'warning',
+                        'approved': 'primary',
+                        'testing': 'primary',
+                        'results_received': 'primary',
+                        'completed': 'success',
+                        'cancelled': 'danger'
+                    } %}
+                    {% set badge_color = status_colors.get(r.status, 'primary') %}
+                    <span class="badge badge-{{ badge_color }}">{{ r.status | replace('_', ' ') | title }}</span>
+                </td>
+                <td>{{ r.request_date or r.created_at[:10] if r.created_at else '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center; padding: 40px 20px; color: var(--color-text-muted);">
+        <p style="font-size: 16px; margin-bottom: 8px;">No certification requests yet</p>
+        <p>Create a new request to get started.</p>
+        <a href="{{ url_for('welding.cert_request_new') }}" style="margin-top: 12px; display: inline-block;">
+            <button>+ New Request</button>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.badge-warning { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge-primary { background: var(--color-primary-subtle); color: var(--color-primary); }
+.badge-success { background: var(--color-success-bg); color: var(--color-success); }
+.badge-danger { background: var(--color-danger-bg); color: var(--color-danger); }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const created = params.get('created');
+    if (created) {
+        const banner = document.getElementById('created-banner');
+        document.getElementById('created-msg').textContent = `Certification request ${created} created successfully.`;
+        banner.style.display = 'block';
+        // Clean URL
+        history.replaceState(null, '', window.location.pathname);
+    }
+});
+</script>
+{% endblock %}

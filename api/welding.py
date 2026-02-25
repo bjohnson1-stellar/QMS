@@ -8,7 +8,7 @@ and welding.forms. CRUD operations go through the database directly.
 from flask import Blueprint, jsonify, request, render_template, session
 
 from qms.core import get_db
-from qms.auth.decorators import role_required
+from qms.auth.decorators import module_required, role_required
 
 bp = Blueprint("welding", __name__, url_prefix="/welding")
 
@@ -125,6 +125,391 @@ def pqr_detail(pqr_id):
         if not pqr:
             return "PQR not found", 404
     return render_template("welding/pqr_detail.html", pqr=dict(pqr), edit=edit)
+
+
+# ---------------------------------------------------------------------------
+# Cert Request Page Routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/cert-requests")
+@module_required("welding")
+def cert_requests_list():
+    from qms.welding.cert_requests import list_cert_requests
+    requests_data = list_cert_requests(limit=100)
+    return render_template("welding/cert_requests_list.html", requests=requests_data)
+
+
+@bp.route("/cert-request/new")
+@module_required("welding", min_role="editor")
+def cert_request_new():
+    return render_template("welding/cert_request_form.html")
+
+
+# ---------------------------------------------------------------------------
+# Cert Request Lookup API (cascade endpoints)
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/lookup/materials")
+@module_required("welding")
+def api_lookup_materials():
+    """Distinct base materials from WPS base metals (all WPSes with data)."""
+    with get_db(readonly=True) as conn:
+        # Primary: from weld_wps_base_metals child table
+        rows = conn.execute("""
+            SELECT DISTINCT bm.material_spec, bm.p_number, bm.group_number
+            FROM weld_wps_base_metals bm
+            JOIN weld_wps w ON w.id = bm.wps_id
+            WHERE bm.material_spec IS NOT NULL AND bm.material_spec != ''
+            ORDER BY bm.material_spec
+        """).fetchall()
+        materials = [dict(r) for r in rows]
+
+        # Fallback: if no child data, parse WPS numbers for P-number hints
+        if not materials:
+            wps_rows = conn.execute(
+                "SELECT DISTINCT wps_number FROM weld_wps ORDER BY wps_number"
+            ).fetchall()
+            seen = set()
+            for r in wps_rows:
+                num = r["wps_number"] or ""
+                # e.g. CS-01-P1-SMAW → infer "Carbon Steel (P1)"
+                if "P1" in num and "Carbon Steel" not in seen:
+                    materials.append({"material_spec": "Carbon Steel (P1)", "p_number": 1, "group_number": None})
+                    seen.add("Carbon Steel")
+                elif "P8" in num and "Stainless Steel" not in seen:
+                    materials.append({"material_spec": "Stainless Steel (P8)", "p_number": 8, "group_number": None})
+                    seen.add("Stainless Steel")
+                elif "P08" in num and "Stainless Steel" not in seen:
+                    materials.append({"material_spec": "Stainless Steel (P8)", "p_number": 8, "group_number": None})
+                    seen.add("Stainless Steel")
+
+    return jsonify(materials)
+
+
+@bp.route("/api/lookup/processes")
+@module_required("welding")
+def api_lookup_processes():
+    """Processes from WPSes that cover a given base material."""
+    material = request.args.get("material", "")
+    with get_db(readonly=True) as conn:
+        if material:
+            # Try child table first
+            rows = conn.execute("""
+                SELECT p.process_type, COUNT(DISTINCT w.id) as count_of_wps
+                FROM weld_wps_processes p
+                JOIN weld_wps w ON w.id = p.wps_id
+                JOIN weld_wps_base_metals bm ON bm.wps_id = w.id
+                WHERE bm.material_spec = ?
+                AND p.process_type IS NOT NULL
+                GROUP BY p.process_type
+                ORDER BY p.process_type
+            """, (material,)).fetchall()
+
+            if not rows:
+                # Fallback: parse process from WPS number for matching P-number
+                p_num = request.args.get("p_number", "")
+                p_pattern = f"P{p_num}" if p_num else ""
+                all_wps = conn.execute(
+                    "SELECT wps_number FROM weld_wps ORDER BY wps_number"
+                ).fetchall()
+                process_counts = {}
+                for r in all_wps:
+                    num = r["wps_number"] or ""
+                    if p_pattern and p_pattern not in num:
+                        continue
+                    for proc in ("GTAW/SMAW", "GTAW", "SMAW", "FCAW", "GMAW", "SAW"):
+                        if proc in num:
+                            process_counts[proc] = process_counts.get(proc, 0) + 1
+                            break
+                rows = [{"process_type": k, "count_of_wps": v}
+                        for k, v in sorted(process_counts.items())]
+        else:
+            rows = conn.execute("""
+                SELECT p.process_type, COUNT(DISTINCT w.id) as count_of_wps
+                FROM weld_wps_processes p
+                JOIN weld_wps w ON w.id = p.wps_id
+                WHERE p.process_type IS NOT NULL
+                GROUP BY p.process_type
+                ORDER BY p.process_type
+            """).fetchall()
+            if not rows:
+                # Fallback: all known processes from lookup table
+                rows = conn.execute(
+                    "SELECT code as process_type, 0 as count_of_wps FROM weld_valid_processes ORDER BY code"
+                ).fetchall()
+
+    return jsonify([dict(r) if hasattr(r, 'keys') else r for r in rows])
+
+
+@bp.route("/api/lookup/wps")
+@module_required("welding")
+def api_lookup_wps():
+    """Active WPSes matching material and/or process filters."""
+    material = request.args.get("material", "")
+    process = request.args.get("process", "")
+
+    with get_db(readonly=True) as conn:
+        # Build query based on available child data
+        if material and process:
+            rows = conn.execute("""
+                SELECT DISTINCT w.id, w.wps_number, w.revision, w.title, w.status
+                FROM weld_wps w
+                LEFT JOIN weld_wps_base_metals bm ON bm.wps_id = w.id
+                LEFT JOIN weld_wps_processes p ON p.wps_id = w.id
+                WHERE (bm.material_spec = ? OR w.wps_number LIKE ?)
+                  AND (p.process_type = ? OR w.wps_number LIKE ?)
+                ORDER BY w.wps_number
+            """, (material, f"%{process}%", process, f"%{process}%")).fetchall()
+        elif material:
+            rows = conn.execute("""
+                SELECT DISTINCT w.id, w.wps_number, w.revision, w.title, w.status
+                FROM weld_wps w
+                LEFT JOIN weld_wps_base_metals bm ON bm.wps_id = w.id
+                WHERE bm.material_spec = ? OR 1=1
+                ORDER BY w.wps_number
+            """, (material,)).fetchall()
+        elif process:
+            rows = conn.execute("""
+                SELECT DISTINCT w.id, w.wps_number, w.revision, w.title, w.status
+                FROM weld_wps w
+                LEFT JOIN weld_wps_processes p ON p.wps_id = w.id
+                WHERE p.process_type = ? OR w.wps_number LIKE ?
+                ORDER BY w.wps_number
+            """, (process, f"%{process}%")).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT id, wps_number, revision, title, status FROM weld_wps ORDER BY wps_number"
+            ).fetchall()
+
+        results = []
+        for r in rows:
+            wps = dict(r)
+            wps_id = wps["id"]
+            # Enrich with child data
+            fillers = conn.execute(
+                "SELECT sfa_spec, aws_class FROM weld_wps_filler_metals WHERE wps_id = ?",
+                (wps_id,)
+            ).fetchall()
+            wps["filler_metals"] = [dict(f) for f in fillers]
+
+            positions = conn.execute(
+                "SELECT groove_positions, fillet_positions FROM weld_wps_positions WHERE wps_id = ?",
+                (wps_id,)
+            ).fetchone()
+            wps["positions"] = dict(positions) if positions else {}
+
+            thickness = conn.execute(
+                "SELECT MIN(thickness_min) as t_min, MAX(thickness_max) as t_max, "
+                "MIN(diameter_min) as d_min, MAX(diameter_max) as d_max "
+                "FROM weld_wps_base_metals WHERE wps_id = ?",
+                (wps_id,)
+            ).fetchone()
+            if thickness:
+                wps["thickness_range"] = {"min": thickness["t_min"], "max": thickness["t_max"]}
+                wps["diameter_range"] = {"min": thickness["d_min"], "max": thickness["d_max"]}
+
+            results.append(wps)
+
+    return jsonify(results)
+
+
+@bp.route("/api/lookup/positions")
+@module_required("welding")
+def api_lookup_positions():
+    """All valid welding positions."""
+    with get_db(readonly=True) as conn:
+        rows = conn.execute(
+            "SELECT code, description, joint_type, qualifies_for FROM weld_valid_positions ORDER BY code"
+        ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@bp.route("/api/welders/search")
+@module_required("welding")
+def api_welders_search():
+    """Search welders by name, stamp, or employee number."""
+    q = request.args.get("q", "").strip()
+    if len(q) < 2:
+        return jsonify([])
+
+    with get_db(readonly=True) as conn:
+        like = f"%{q}%"
+        rows = conn.execute("""
+            SELECT r.id, r.display_name, r.welder_stamp, r.employee_number,
+                   r.department, r.status
+            FROM weld_welder_registry r
+            WHERE r.status = 'active'
+              AND (r.display_name LIKE ? OR r.welder_stamp LIKE ?
+                   OR r.employee_number LIKE ? OR r.first_name LIKE ?
+                   OR r.last_name LIKE ?)
+            ORDER BY r.display_name
+            LIMIT 20
+        """, (like, like, like, like, like)).fetchall()
+
+        results = []
+        for r in rows:
+            w = dict(r)
+            # Get active WPQs for this welder
+            wpqs = conn.execute("""
+                SELECT wpq_number, process_type, groove_positions_qualified,
+                       current_expiration_date, status
+                FROM weld_wpq WHERE welder_stamp = ? AND status = 'active'
+                ORDER BY current_expiration_date
+            """, (w["welder_stamp"],)).fetchall()
+            w["active_wpqs"] = [dict(wpq) for wpq in wpqs]
+            results.append(w)
+
+    return jsonify(results)
+
+
+@bp.route("/api/projects/search")
+@module_required("welding")
+def api_projects_search():
+    """Search projects by number or name (filtered by user BU access)."""
+    q = request.args.get("q", "").strip()
+    if len(q) < 2:
+        return jsonify([])
+
+    with get_db(readonly=True) as conn:
+        like = f"%{q}%"
+        rows = conn.execute("""
+            SELECT id, project_number, project_name
+            FROM projects
+            WHERE project_number LIKE ? OR project_name LIKE ?
+            ORDER BY project_number
+            LIMIT 20
+        """, (like, like)).fetchall()
+
+    return jsonify([dict(r) for r in rows])
+
+
+@bp.route("/api/welders/check-duplicate")
+@module_required("welding")
+def api_check_duplicate_qual():
+    """Check if a welder already has an active WPQ for a given WPS+process+position."""
+    stamp = request.args.get("stamp", "")
+    wps = request.args.get("wps", "")
+    process = request.args.get("process", "")
+    position = request.args.get("position", "")
+
+    if not stamp:
+        return jsonify({"duplicate": False})
+
+    with get_db(readonly=True) as conn:
+        conditions = ["welder_stamp = ?", "status = 'active'"]
+        params = [stamp]
+
+        if wps:
+            conditions.append("wps_number = ?")
+            params.append(wps)
+        if process:
+            conditions.append("process_type = ?")
+            params.append(process)
+        if position:
+            conditions.append("(groove_positions_qualified LIKE ? OR test_position = ?)")
+            params.extend([f"%{position}%", position])
+
+        where = " AND ".join(conditions)
+        row = conn.execute(
+            f"SELECT id, wpq_number, current_expiration_date FROM weld_wpq WHERE {where} LIMIT 1",
+            params
+        ).fetchone()
+
+        if row:
+            return jsonify({
+                "duplicate": True,
+                "wpq_number": row["wpq_number"],
+                "expiration": row["current_expiration_date"],
+            })
+
+    return jsonify({"duplicate": False})
+
+
+@bp.route("/api/cert-requests", methods=["POST"])
+@module_required("welding", min_role="editor")
+def api_create_cert_request():
+    """Create a new WCR from the web form (same logic as JSON intake)."""
+    from datetime import date, datetime
+    from qms.welding.cert_requests import (
+        validate_cert_request_json, get_next_wcr_number,
+        _lookup_or_register_welder,
+    )
+
+    data = request.json
+    if not data:
+        return jsonify({"errors": ["No data provided"]}), 400
+
+    # Ensure required structure
+    if "type" not in data:
+        data["type"] = "weld_cert_request"
+
+    # Validate
+    errors = validate_cert_request_json(data)
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    with get_db() as conn:
+        # Welder lookup/registration
+        welder_data = data["welder"]
+        welder_result = _lookup_or_register_welder(conn, welder_data)
+        if welder_result["errors"]:
+            return jsonify({"errors": welder_result["errors"]}), 400
+
+        wcr_number = get_next_wcr_number(conn)
+        project = data.get("project", {})
+        user = session.get("user", {})
+
+        conn.execute(
+            """INSERT INTO weld_cert_requests (
+                   wcr_number, welder_id, employee_number, welder_name,
+                   welder_stamp, project_number, project_name,
+                   request_date, submitted_by, submitted_at,
+                   status, is_new_welder, notes, source_file
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval', ?, ?, 'web-form')""",
+            (
+                wcr_number,
+                welder_result["welder_id"],
+                welder_data.get("employee_number"),
+                welder_data.get("name"),
+                welder_result["stamp"],
+                project.get("number"),
+                project.get("name"),
+                data.get("request_date", date.today().isoformat()),
+                data.get("submitted_by") or user.get("name", "web"),
+                datetime.now().isoformat(),
+                1 if welder_data.get("is_new") else 0,
+                data.get("notes"),
+            ),
+        )
+        wcr_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        coupons = data.get("coupons", [])
+        for i, coupon in enumerate(coupons, 1):
+            conn.execute(
+                """INSERT INTO weld_cert_request_coupons (
+                       wcr_id, coupon_number, process, position,
+                       wps_number, base_material, filler_metal,
+                       thickness, diameter, status
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')""",
+                (
+                    wcr_id, i,
+                    coupon.get("process", "").upper(),
+                    coupon.get("position"),
+                    coupon.get("wps_number"),
+                    coupon.get("base_material"),
+                    coupon.get("filler_metal"),
+                    coupon.get("thickness"),
+                    coupon.get("diameter"),
+                ),
+            )
+        conn.commit()
+
+    return jsonify({
+        "wcr_number": wcr_number,
+        "coupon_count": len(coupons),
+        "welder_stamp": welder_result["stamp"],
+        "welder_created": welder_result["was_created"],
+    }), 201
 
 
 # ---------------------------------------------------------------------------

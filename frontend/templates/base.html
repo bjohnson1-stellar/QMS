@@ -136,8 +136,10 @@
            class="{{ 'active' if request.endpoint == 'welding.dashboard' }}">Dashboard</a>
         <a href="{{ url_for('welding.welders_list') }}"
            class="{{ 'active' if request.endpoint in ('welding.welders_list', 'welding.welder_profile') }}">Welders</a>
+        <a href="{{ url_for('welding.cert_requests_list') }}"
+           class="{{ 'active' if request.endpoint in ('welding.cert_requests_list', 'welding.cert_request_new') }}">Cert Requests</a>
         <a href="{{ url_for('welding.forms_list') }}"
-           class="{{ 'active' if request.endpoint and request.endpoint.startswith('welding.') and request.endpoint not in ('welding.dashboard', 'welding.welders_list', 'welding.welder_profile') }}">Forms</a>
+           class="{{ 'active' if request.endpoint and request.endpoint.startswith('welding.') and request.endpoint not in ('welding.dashboard', 'welding.welders_list', 'welding.welder_profile', 'welding.cert_requests_list', 'welding.cert_request_new') }}">Forms</a>
         {% elif ns.module == 'pipeline' %}
         <a href="{{ url_for('pipeline.intake_dashboard') }}"
            class="{{ 'active' if request.endpoint == 'pipeline.intake_dashboard' }}">Document Intake</a>
