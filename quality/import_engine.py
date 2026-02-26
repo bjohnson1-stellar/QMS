@@ -381,6 +381,139 @@ _UPDATE_FIELDS = [
 ]
 
 
+def resolve_project_from_filename(
+    conn: sqlite3.Connection, filename: str
+) -> Optional[Tuple[int, str]]:
+    """Extract a 5-digit project number from a filename and look it up.
+
+    Supports patterns like:
+        "07645 - Observations.csv" → "07645"
+        "Observations_07645.csv"   → "07645"
+        "07645_observations.csv"   → "07645"
+        "07645.csv"                → "07645"
+
+    Returns:
+        (project_id, project_number) or None if no match / not in DB.
+    """
+    stem = Path(filename).stem
+    m = re.search(r"(?<!\d)(\d{5})(?!\d)", stem)
+    if not m:
+        return None
+
+    project_number = m.group(1)
+    row = conn.execute(
+        "SELECT id, number FROM projects WHERE number = ?", (project_number,)
+    ).fetchone()
+    if row:
+        return (row["id"], row["number"])
+    return None
+
+
+def import_batch(
+    conn: sqlite3.Connection,
+    directory: str,
+    *,
+    source: str = "procore",
+    dry_run: bool = False,
+    project_number: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Import all CSV files from a directory, resolving projects from filenames.
+
+    Args:
+        conn: Database connection.
+        directory: Path to directory containing CSV files.
+        source: Source tag (default "procore").
+        dry_run: If True, compute counts but don't write.
+        project_number: If provided, use this project for ALL files.
+
+    Returns:
+        Dict with per-file results, totals, unresolved list, and errors.
+    """
+    dir_path = Path(directory)
+    if not dir_path.is_dir():
+        raise NotADirectoryError(f"Not a directory: {directory}")
+
+    result: Dict[str, Any] = {
+        "files_processed": 0,
+        "files_skipped": 0,
+        "total_created": 0,
+        "total_updated": 0,
+        "total_skipped": 0,
+        "per_file": [],
+        "unresolved": [],
+        "errors": [],
+    }
+
+    # Resolve explicit project_number once if given
+    explicit_project_id: Optional[int] = None
+    if project_number:
+        row = conn.execute(
+            "SELECT id FROM projects WHERE number = ?", (project_number,)
+        ).fetchone()
+        if not row:
+            result["errors"].append(f"Project '{project_number}' not found in database")
+            return result
+        explicit_project_id = row["id"]
+
+    csv_files = sorted(dir_path.glob("*.csv"))
+    if not csv_files:
+        logger.info("No CSV files found in %s", directory)
+        return result
+
+    for csv_file in csv_files:
+        # Determine project_id for this file
+        if explicit_project_id is not None:
+            pid = explicit_project_id
+            pnum = project_number
+        else:
+            resolved = resolve_project_from_filename(conn, csv_file.name)
+            if resolved is None:
+                result["files_skipped"] += 1
+                result["unresolved"].append({
+                    "file": csv_file.name,
+                    "reason": "No project number found in filename",
+                })
+                continue
+            pid, pnum = resolved
+
+        try:
+            file_result = import_quality_csv(
+                conn,
+                str(csv_file),
+                project_id=pid,
+                source=source,
+                dry_run=dry_run,
+            )
+            result["files_processed"] += 1
+            result["total_created"] += file_result["issues_created"]
+            result["total_updated"] += file_result["issues_updated"]
+            result["total_skipped"] += file_result["issues_skipped"]
+            result["per_file"].append({
+                "file": csv_file.name,
+                "project": pnum,
+                "created": file_result["issues_created"],
+                "updated": file_result["issues_updated"],
+                "skipped": file_result["issues_skipped"],
+                "errors": len(file_result["errors"]),
+            })
+        except Exception as e:
+            logger.error("Error processing %s: %s", csv_file.name, e)
+            result["files_skipped"] += 1
+            result["errors"].append({
+                "file": csv_file.name,
+                "error": str(e),
+            })
+
+    logger.info(
+        "Batch import: %d files processed, %d skipped, %d created, %d updated",
+        result["files_processed"],
+        result["files_skipped"],
+        result["total_created"],
+        result["total_updated"],
+    )
+    return result
+
+
 def _update_issue(conn: sqlite3.Connection, issue_id: int, fields: Dict[str, Any]) -> None:
     """Update an existing quality_issues row."""
     sets = []

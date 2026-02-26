@@ -2,7 +2,8 @@
 Tests for the quality issue import engine.
 
 Covers: CSV parsing, field normalization, deduplication, dry-run mode,
-header auto-mapping, date parsing, and error handling.
+header auto-mapping, date parsing, error handling, batch import,
+and project resolution from filenames.
 """
 
 import sqlite3
@@ -11,6 +12,8 @@ from pathlib import Path
 
 from qms.quality.import_engine import (
     import_quality_csv,
+    import_batch,
+    resolve_project_from_filename,
     _auto_map_headers,
     _parse_date,
 )
@@ -355,3 +358,121 @@ class TestImportErrorHandling:
         )
         assert len(result["errors"]) == 1
         assert "title" in result["errors"][0].lower()
+
+
+# ---------------------------------------------------------------------------
+# Fixtures: Batch import
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def seed_two_projects(memory_db):
+    """Insert two projects for batch import testing. Returns (id1, id2)."""
+    memory_db.execute(
+        "INSERT INTO projects (id, number, name, status) VALUES (10, '07645', 'Cold Storage Alpha', 'active')"
+    )
+    memory_db.execute(
+        "INSERT INTO projects (id, number, name, status) VALUES (11, '07587', 'Cold Storage Beta', 'active')"
+    )
+    memory_db.commit()
+    return (10, 11)
+
+
+@pytest.fixture
+def batch_csv_dir(tmp_path):
+    """Create a directory with 2 CSVs named with project numbers."""
+    csv1 = tmp_path / "07645 - Observations.csv"
+    csv1.write_text(
+        "Title,Type,Status,ID\n"
+        "Cracked weld on beam,Safety,Open,OBS-101\n"
+        "Missing insulation,Quality,Open,OBS-102\n",
+        encoding="utf-8",
+    )
+
+    csv2 = tmp_path / "07587 - Observations.csv"
+    csv2.write_text(
+        "Title,Type,Status,ID\n"
+        "Pipe support missing,Quality,Open,OBS-201\n",
+        encoding="utf-8",
+    )
+    return str(tmp_path)
+
+
+# ---------------------------------------------------------------------------
+# Test: Project resolution from filename
+# ---------------------------------------------------------------------------
+
+
+class TestResolveProjectFromFilename:
+    def test_standard_pattern(self, memory_db, seed_two_projects):
+        result = resolve_project_from_filename(memory_db, "07645 - Observations.csv")
+        assert result == (10, "07645")
+
+    def test_underscore_pattern(self, memory_db, seed_two_projects):
+        result = resolve_project_from_filename(memory_db, "Observations_07587.csv")
+        assert result == (11, "07587")
+
+    def test_bare_number(self, memory_db, seed_two_projects):
+        result = resolve_project_from_filename(memory_db, "07645.csv")
+        assert result == (10, "07645")
+
+    def test_no_match(self, memory_db, seed_two_projects):
+        result = resolve_project_from_filename(memory_db, "random.csv")
+        assert result is None
+
+    def test_number_not_in_db(self, memory_db, seed_two_projects):
+        result = resolve_project_from_filename(memory_db, "99999 - Observations.csv")
+        assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Test: Batch import
+# ---------------------------------------------------------------------------
+
+
+class TestImportBatch:
+    def test_batch_multiple_files(self, memory_db, seed_two_projects, batch_csv_dir):
+        result = import_batch(memory_db, batch_csv_dir)
+        assert result["files_processed"] == 2
+        assert result["files_skipped"] == 0
+        assert result["total_created"] == 3  # 2 + 1
+        assert len(result["per_file"]) == 2
+
+    def test_batch_with_explicit_project(self, memory_db, seed_two_projects, batch_csv_dir):
+        result = import_batch(memory_db, batch_csv_dir, project_number="07645")
+        assert result["files_processed"] == 2
+        # All 3 rows go to project 07645
+        assert result["total_created"] == 3
+        for pf in result["per_file"]:
+            assert pf["project"] == "07645"
+
+    def test_batch_unresolved_skipped(self, memory_db, seed_two_projects, tmp_path):
+        csv_file = tmp_path / "unknown_file.csv"
+        csv_file.write_text(
+            "Title,Type,Status\nSome issue,Safety,Open\n",
+            encoding="utf-8",
+        )
+        result = import_batch(memory_db, str(tmp_path))
+        assert result["files_processed"] == 0
+        assert result["files_skipped"] == 1
+        assert len(result["unresolved"]) == 1
+        assert result["unresolved"][0]["file"] == "unknown_file.csv"
+
+    def test_batch_dry_run(self, memory_db, seed_two_projects, batch_csv_dir):
+        result = import_batch(memory_db, batch_csv_dir, dry_run=True)
+        assert result["total_created"] == 3
+        # Verify nothing actually in DB
+        count = memory_db.execute(
+            "SELECT COUNT(*) as cnt FROM quality_issues"
+        ).fetchone()["cnt"]
+        assert count == 0
+
+    def test_batch_empty_directory(self, memory_db, seed_two_projects, tmp_path):
+        result = import_batch(memory_db, str(tmp_path))
+        assert result["files_processed"] == 0
+
+    def test_batch_not_a_directory(self, memory_db, seed_two_projects, tmp_path):
+        fake = tmp_path / "not_a_dir.txt"
+        fake.write_text("hi")
+        with pytest.raises(NotADirectoryError):
+            import_batch(memory_db, str(fake))
