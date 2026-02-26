@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from qms.core import get_config_value, get_db, get_logger, QMS_PATHS
+from qms.core.qrcode import build_metadata, generate_qr
 from qms.welding.forms.base import BaseFormDefinition
 
 logger = get_logger("qms.welding.generation.generator")
@@ -250,6 +251,73 @@ def get_form_data(conn: sqlite3.Connection, form_def: BaseFormDefinition,
 
 
 # ---------------------------------------------------------------------------
+# Welding QR code helper
+# ---------------------------------------------------------------------------
+
+# Maps form_type -> list of (qr_field_name, parent_column) pairs.
+# Child-table fields are handled separately below.
+_WELDING_QR_FIELDS: Dict[str, list] = {
+    "wps": [("WPS", "wps_number"), ("Rev", "revision"), ("Code", "code_edition")],
+    "pqr": [
+        ("PQR", "pqr_number"), ("Rev", "revision"), ("WPS", "supporting_wps"),
+        ("Code", "code_edition"), ("Status", "status"),
+    ],
+    "wpq": [
+        ("WPQ", "wpq_number"), ("Welder", "welder_name"),
+        ("ID", "welder_stamp"), ("WPS", "wps_number"),
+    ],
+    "bps": [("BPS", "bps_number"), ("Rev", "revision"), ("Code", "code_edition")],
+    "bpq": [("BPQ", "bpq_number"), ("Rev", "revision")],
+    "bpqr": [("BPQR", "bpqr_number")],
+}
+
+
+def build_welding_qr(form_def: BaseFormDefinition,
+                     form_data: Dict[str, Any]) -> str:
+    """
+    Build a branded QR data URI for a welding form.
+
+    Extracts the appropriate fields from *form_data* (parent row + child
+    lists returned by :func:`get_form_data`) and returns a base64 data URI
+    ready for an HTML ``<img src="...">``.
+    """
+    parent = form_data.get("parent", {})
+    ft = form_def.form_type
+    fields: Dict[str, Any] = {}
+
+    for qr_key, col in _WELDING_QR_FIELDS.get(ft, []):
+        val = parent.get(col)
+        if val is not None:
+            fields[qr_key] = val
+
+    # Add first-child-row data where available
+    if ft == "wps":
+        procs = form_data.get("processes", [])
+        if procs:
+            fields.setdefault("Process", procs[0].get("process_type", ""))
+        metals = form_data.get("base_metals", [])
+        if metals:
+            fields.setdefault("Base Metal", metals[0].get("p_number", ""))
+    elif ft == "pqr":
+        metals = form_data.get("base_metals", [])
+        if metals:
+            fields.setdefault("Base Metal", metals[0].get("material_spec", ""))
+        procs = form_data.get("processes", [])
+        if procs:
+            fields.setdefault("Process", procs[0].get("process_type", ""))
+    elif ft == "wpq":
+        quals = form_data.get("qualifications", [])
+        if quals:
+            q = quals[0]
+            qr = q.get("qualified_range") or q.get("thickness_range", "")
+            if qr:
+                fields["Qualified Range"] = qr
+
+    payload = build_metadata(ft, fields)
+    return generate_qr(payload)
+
+
+# ---------------------------------------------------------------------------
 # Main generation entry point
 # ---------------------------------------------------------------------------
 
@@ -290,6 +358,12 @@ def generate(form_type: str, identifier: str,
     if not form_data:
         logger.error("No data found for %s '%s'", form_type, identifier)
         return None
+
+    # Attach QR data URI so renderers can optionally embed it
+    try:
+        form_data["_qr_data_uri"] = build_welding_qr(form_def, form_data)
+    except Exception as exc:
+        logger.warning("Could not generate QR for %s '%s': %s", form_type, identifier, exc)
 
     outputs: List[Path] = []
 

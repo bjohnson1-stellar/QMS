@@ -22,6 +22,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from qms.core import get_logger
 from qms.core.config import QMS_PATHS, get_branding
+from qms.core.qrcode import build_metadata, generate_qr
 from qms.qualitydocs.loader import get_module_detail, get_section_content
 
 logger = get_logger("qms.qualitydocs.export")
@@ -75,13 +76,23 @@ def render_module_html(module_number: int) -> str:
     # 3. Get branding config
     branding = get_branding()
 
-    # 4. Render template
+    # 4. Build QR code for cover page
+    qr_payload = build_metadata("quality_manual", {
+        "Module": str(module["module_number"]),
+        "Title": module["title"],
+        "Version": module["version"],
+        "Effective": module.get("effective_date", ""),
+    })
+    qr_data_uri = generate_qr(qr_payload)
+
+    # 5. Render template
     env = _get_jinja_env()
     template = env.get_template("pdf_module.html")
     html = template.render(
         module=module,
         sections=sections,
         branding=branding,
+        qr_data_uri=qr_data_uri,
     )
 
     logger.info(

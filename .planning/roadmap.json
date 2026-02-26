@@ -69,6 +69,14 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Unified QR Code System",
+          "desc": "Shared QR utility in core/ for encoding self-contained metadata on welding forms (WPS/PQR/WPQ/BPS/BPQ/BPQR) and quality manual exports. Branded with nav_bg color, field ordering per doc type.",
+          "module": "core",
+          "priority": "medium",
+          "tags": ["qr", "welding", "qualitydocs", "export"],
+          "completed": "2026-02-26"
+        },
+        {
           "title": "Pre-Approved Coupons + AWS SWPS Import",
           "desc": "Quick-select bar for 11 pre-approved coupon configs (W1-W7 welding, B1-B2 brazing, S1-S2 structural) that auto-fill all cascade fields. Imported 2 AWS Standard WPS records (SWPS-B2.1-1-022 SMAW, SWPS-B2.1-1-020 FCAW-G) with full child data. New schema table, seed functions, API endpoint.",
           "module": "welding",

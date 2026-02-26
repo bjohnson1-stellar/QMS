@@ -17,6 +17,9 @@ dependencies = [
 
     # Data processing
     "openpyxl>=3.1.0",
+
+    # QR codes (welding forms + quality manual exports)
+    "qrcode[pil]>=7.4.2",
 ]
 
 [project.optional-dependencies]

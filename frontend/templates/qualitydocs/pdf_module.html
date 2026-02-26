@@ -468,6 +468,10 @@ a { color: {{ branding.colors.primary }}; text-decoration: none; }
             <strong>Sections:</strong> {{ sections|length }}
         </div>
     </div>
+    {% if qr_data_uri %}
+    <img src="{{ qr_data_uri }}" alt="Module QR"
+         style="position: absolute; bottom: 1in; right: 0.9in; width: 52pt; height: 52pt; image-rendering: pixelated;">
+    {% endif %}
     <div class="cover-bottom-bar"></div>
 </div>
 
