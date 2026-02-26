@@ -82,7 +82,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Semicolon URL delimiter for attachments | Phase 2 | Matches Procore CSV multi-value convention |
 
 ### Git State
-Last commit: c190fa1
+Last commit: 1345c7b
 Branch: main
 Feature branches merged: none
 

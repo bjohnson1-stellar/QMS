@@ -69,6 +69,22 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Procore Bulk Import Pipeline (Phase 2)",
+          "desc": "CSV import engine with header auto-mapping, normalization, dedup. Batch import with project-from-filename resolution. Attachment URL capture. Quality issues vector indexing. Pipeline auto-detection for observation CSVs. 44 tests.",
+          "module": "quality",
+          "priority": "high",
+          "tags": ["import", "procore", "quality", "vectordb", "batch"],
+          "completed": "2026-02-26"
+        },
+        {
+          "title": "Quality Issues Foundation (Phase 1)",
+          "desc": "Unified quality issues schema (8 tables), root cause taxonomy, normalization config, audit trail, issue linking, tagging, corrective actions. Quality module registered in SCHEMA_ORDER.",
+          "module": "quality",
+          "priority": "high",
+          "tags": ["schema", "quality", "foundation"],
+          "completed": "2026-02-25"
+        },
+        {
           "title": "Unified QR Code System",
           "desc": "Shared QR utility in core/ for encoding self-contained metadata on welding forms (WPS/PQR/WPQ/BPS/BPQ/BPQR) and quality manual exports. Branded with nav_bg color, field ordering per doc type.",
           "module": "core",
