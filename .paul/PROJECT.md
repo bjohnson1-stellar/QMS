@@ -14,7 +14,7 @@ All quality data from siloed Procore projects unified in one database — enabli
 |-----------|-------|
 | Version | 0.1.0-alpha |
 | Status | In Progress |
-| Last Updated | 2026-02-25 (Phase 1 complete) |
+| Last Updated | 2026-02-26 (Phase 2 complete) |
 
 **Production URL:** http://L004470-CAD:5000
 
@@ -26,11 +26,16 @@ All quality data from siloed Procore projects unified in one database — enabli
 - [x] Unified quality issues schema (8 tables, all issue types) — Phase 1
 - [x] Root cause taxonomy and normalization config — Phase 1
 - [x] Audit trail and issue linking infrastructure — Phase 1
+- [x] CSV import engine with header auto-mapping, normalization, dedup — Phase 2
+- [x] Batch import with project-from-filename resolution — Phase 2
+- [x] Attachment URL capture during import — Phase 2
+- [x] Quality issues vector indexing for semantic search — Phase 2
+- [x] Pipeline classifier for observation CSV auto-detection — Phase 2
 
 ### Active (In Progress)
 
 - [ ] Track 1: OneDrive → AI processing → structured observation → Procore push
-- [ ] Track 2: Procore observation import into QMS (team-wide, including historical)
+- [ ] Track 2: Quality intelligence dashboard (cross-project analytics)
 
 ### Planned (Next)
 
@@ -84,6 +89,9 @@ SIS field teams use Procore for project management. Quality observations created
 | Wide schema (all issue types) | quality_issues supports observations, NCRs, CARs, deficiencies, punch — not just observations | 2026-02-25 | Active |
 | Audit trail from day one | Cannot be retrofitted — captures all history from initial import | 2026-02-25 | Active |
 | Normalization config in YAML | Trade/status/type aliases in config.yaml for import-time normalization | 2026-02-25 | Active |
+| Manual CSV export from Procore | No API/browser automation needed for now; can add later | 2026-02-26 | Active |
+| Data-source-agnostic import engine | CSV in → quality_issues out, regardless of extraction method | 2026-02-26 | Active |
+| Attachment URL-only recording | Capture URLs now, download files later (Phase 4) | 2026-02-26 | Active |
 
 ## Success Metrics
 
@@ -119,4 +127,4 @@ Quick Reference:
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-02-25 after Phase 1*
+*Last updated: 2026-02-26 after Phase 2*

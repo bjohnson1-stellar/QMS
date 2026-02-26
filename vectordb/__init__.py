@@ -23,6 +23,7 @@ from qms.vectordb.embedder import (
 from qms.vectordb.indexer import (
     index_all,
     index_drawings,
+    index_quality_issues,
     index_qm_content,
     index_ref_clauses,
     index_specifications,
@@ -48,6 +49,7 @@ __all__ = [
     # indexer
     "index_all",
     "index_drawings",
+    "index_quality_issues",
     "index_qm_content",
     "index_ref_clauses",
     "index_specifications",

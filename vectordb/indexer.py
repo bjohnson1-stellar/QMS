@@ -24,6 +24,7 @@ COLLECTIONS: Dict[str, str] = {
     "specifications": "Project specification requirements and items",
     "procedures": "SOPs, Work Instructions, and Policies",
     "drawings": "Drawing metadata and extracted annotations",
+    "quality_issues": "Quality issue observations, NCRs, deficiencies, and other quality records",
 }
 
 
@@ -557,6 +558,97 @@ def index_drawings(rebuild: bool = False) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Quality Issues
+# ---------------------------------------------------------------------------
+
+def index_quality_issues(rebuild: bool = False) -> int:
+    """
+    Index quality issue titles and descriptions into the ``quality_issues``
+    collection for semantic search.
+
+    Args:
+        rebuild: Delete existing documents and rebuild from scratch.
+
+    Returns:
+        Number of new documents indexed.
+    """
+    _require_chromadb()
+    collection = _get_collection("quality_issues")
+
+    if rebuild:
+        _clear_collection(collection)
+
+    with get_db(readonly=True) as conn:
+        if not conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='quality_issues'"
+        ).fetchone():
+            logger.warning("quality_issues table not found - skipping")
+            return 0
+
+        cursor = conn.execute("""
+            SELECT
+                qi.id,
+                qi.title,
+                qi.description,
+                qi.location,
+                qi.type,
+                qi.status,
+                qi.severity,
+                qi.trade,
+                qi.priority,
+                p.number as project_number,
+                p.name as project_name
+            FROM quality_issues qi
+            LEFT JOIN projects p ON qi.project_id = p.id
+            WHERE qi.title IS NOT NULL AND qi.title != ''
+        """)
+        rows = cursor.fetchall()
+
+    if not rows:
+        logger.warning("No quality issues found to index")
+        return 0
+
+    documents: List[str] = []
+    metadatas: List[dict] = []
+    ids: List[str] = []
+
+    for row in rows:
+        doc_id = f"qi_{row['id']}"
+
+        if not rebuild:
+            existing = collection.get(ids=[doc_id])
+            if existing["ids"]:
+                continue
+
+        # Build document text from title + description + location
+        parts = [row["title"]]
+        if row["description"]:
+            parts.append(row["description"])
+        if row["location"]:
+            parts.append(row["location"])
+        doc_text = "\n".join(parts)
+
+        documents.append(doc_text)
+
+        meta: Dict[str, Any] = {"source": "quality_issue", "db_id": row["id"]}
+        for key in (
+            "type", "status", "severity", "trade", "priority",
+            "project_number", "project_name",
+        ):
+            if row[key] is not None:
+                meta[key] = row[key]
+        metadatas.append(meta)
+        ids.append(doc_id)
+
+    if documents:
+        _index_batch(collection, documents, metadatas, ids)
+
+    total = collection.count()
+    logger.info("Quality issues indexed: %d total documents", total)
+    return len(documents)
+
+
+# ---------------------------------------------------------------------------
 # Index all
 # ---------------------------------------------------------------------------
 
@@ -579,6 +671,7 @@ def index_all(rebuild: bool = False) -> Dict[str, int]:
         "ref_clauses": index_ref_clauses(rebuild=rebuild),
         "specifications": index_specifications(rebuild=rebuild),
         "drawings": index_drawings(rebuild=rebuild),
+        "quality_issues": index_quality_issues(rebuild=rebuild),
     }
 
     logger.info("=" * 50)

@@ -5,20 +5,21 @@
 See: .paul/PROJECT.md (updated 2026-02-25 after Phase 1)
 
 **Core value:** All quality data from siloed Procore projects unified in one database — enabling cross-project pattern analysis, trend detection, and data-driven quality decisions.
-**Current focus:** Phase 2 — Procore Bulk Import (2/3 plans complete)
+**Current focus:** Phase 3 — Quality Intelligence Dashboard
 
 ## Current Position
 
 Milestone: v0.1 Quality Intelligence Platform
-Phase: 2 of 5 (Procore Bulk Import)
-Plan: 02-02 unified, loop closed (2 of 3 plans complete)
-Status: Ready for next PLAN
-Last activity: 2026-02-26 — Unified plan 02-02 (batch import, project resolver, pipeline config)
+Phase: 3 of 5 (Quality Intelligence Dashboard)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-02-26 — Phase 2 complete, transitioned to Phase 3
 
 Progress:
-- Milestone: [██░░░░░░░░] 20%
+- Milestone: [████░░░░░░] 40%
 - Phase 1: [██████████] 100% Complete
-- Phase 2: [██████░░░░] 67% (2/3 plans)
+- Phase 2: [██████████] 100% Complete
+- Phase 3: [░░░░░░░░░░] 0%
 
 ## Loop Position
 
@@ -56,6 +57,13 @@ PLAN ──▶ APPLY ──▶ UNIFY
 - Deviations: None
 - Summary: `.paul/phases/02-procore-bulk-import/02-02-SUMMARY.md`
 
+### Plan 02-03 Results
+- Task 1: Attachment URL extraction — PASS (_insert_attachments, _filename_from_url, attachments column aliases)
+- Task 2: Quality issues vector indexer + CLI — PASS (index_quality_issues, quality_issues collection, `qms quality index`)
+- Task 3: Tests + regression — PASS (7 new tests, 44 quality import total, 534 total)
+- Deviations: None
+- Summary: `.paul/phases/02-procore-bulk-import/02-03-SUMMARY.md`
+
 ## Accumulated Context
 
 ### Decisions
@@ -70,6 +78,8 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | migrate_all() not init_db() | Phase 1 | QMS uses migrate_all() to apply schemas |
 | Manual CSV export from Procore (for now) | Phase 2 | No API/browser automation needed; can add later |
 | Data-source-agnostic import engine | Phase 2 | CSV in → quality_issues out, regardless of extraction method |
+| URL-only attachment recording | Phase 2 | Capture URLs now, download files in Phase 4 |
+| Semicolon URL delimiter for attachments | Phase 2 | Matches Procore CSV multi-value convention |
 
 ### Git State
 Last commit: c190fa1
@@ -87,9 +97,9 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Plan 02-02 unified, loop closed
-Next action: /paul:plan for plan 02-03 (Attachments + vector indexing)
-Resume file: .paul/phases/02-procore-bulk-import/02-02-SUMMARY.md
+Stopped at: Phase 2 complete, ready to plan Phase 3
+Next action: /paul:plan for Phase 3 (Quality Intelligence Dashboard)
+Resume file: .paul/ROADMAP.md
 
 ---
 *STATE.md — Updated after every significant action*

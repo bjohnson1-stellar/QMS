@@ -8,14 +8,14 @@ Build a unified quality intelligence platform that aggregates siloed quality dat
 
 **v0.1 Quality Intelligence Platform** (v0.1.0)
 Status: In progress
-Phases: 1 of 5 complete
+Phases: 2 of 5 complete
 
 ## Phases
 
 | Phase | Name | Plans | Status | Completed |
 |-------|------|-------|--------|-----------|
 | 1 | Quality Issues Foundation | 1 | Complete | 2026-02-25 |
-| 2 | Procore Bulk Import | 3 | Planning | - |
+| 2 | Procore Bulk Import | 3 | Complete | 2026-02-26 |
 | 3 | Quality Intelligence Dashboard | TBD | Not started | - |
 | 4 | Mobile Capture Pipeline | TBD | Not started | - |
 | 5 | Procore Push | TBD | Not started | - |
@@ -53,9 +53,9 @@ Phases: 1 of 5 complete
 - Deduplication via source_id tracking
 
 **Plans:**
-- [ ] 02-01: Quality issue import engine (CSV parser, normalizer, dedup, CLI)
-- [ ] 02-02: Procore data extraction (research: API vs browser automation)
-- [ ] 02-03: Attachment pipeline + vector indexing
+- [x] 02-01: Quality issue import engine (CSV parser, normalizer, dedup, CLI) — Complete (2026-02-25)
+- [x] 02-02: Batch import, project resolver, pipeline config — Complete (2026-02-26)
+- [x] 02-03: Attachment pipeline + vector indexing — Complete (2026-02-26)
 
 ### Phase 3: Quality Intelligence Dashboard
 
@@ -107,4 +107,4 @@ Phases: 1 of 5 complete
 
 ---
 *Roadmap created: 2026-02-25*
-*Last updated: 2026-02-25 — Phase 1 complete*
+*Last updated: 2026-02-26 — Phase 2 complete*

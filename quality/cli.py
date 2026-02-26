@@ -244,3 +244,26 @@ def summary() -> None:
         ).fetchall()
         for r in rows:
             typer.echo(f"  {r['source']:15s} {r['cnt']:>5d}")
+
+
+@app.command("index")
+def index_cmd(
+    rebuild: bool = typer.Option(False, "--rebuild", help="Clear and rebuild index from scratch"),
+) -> None:
+    """Index quality issues into the vector database for semantic search."""
+    try:
+        from qms.vectordb.indexer import index_quality_issues
+    except ImportError:
+        typer.echo(
+            "Error: chromadb is required for indexing. Install: pip install chromadb",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    if rebuild:
+        typer.echo("Rebuilding quality issues index...")
+    else:
+        typer.echo("Indexing quality issues...")
+
+    count = index_quality_issues(rebuild=rebuild)
+    typer.echo(f"Indexed {count} quality issue documents.")

@@ -15,6 +15,7 @@ from qms.quality.import_engine import (
     import_batch,
     resolve_project_from_filename,
     _auto_map_headers,
+    _filename_from_url,
     _parse_date,
 )
 
@@ -476,3 +477,112 @@ class TestImportBatch:
         fake.write_text("hi")
         with pytest.raises(NotADirectoryError):
             import_batch(memory_db, str(fake))
+
+
+# ---------------------------------------------------------------------------
+# Fixtures: Attachment import
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def csv_with_attachments(tmp_path):
+    """CSV with an Attachments column containing URLs."""
+    csv_file = tmp_path / "with_photos.csv"
+    csv_file.write_text(
+        "Title,Type,Status,ID,Attachments\n"
+        "Cracked pipe,Safety,Open,ATT-001,https://example.com/photos/IMG_001.jpg\n"
+        'Missing label,Quality,Open,ATT-002,https://example.com/photos/IMG_002.jpg;https://example.com/photos/IMG_003.png\n'
+        "No photo issue,Quality,Open,ATT-003,\n",
+        encoding="utf-8",
+    )
+    return str(csv_file)
+
+
+# ---------------------------------------------------------------------------
+# Test: Attachment import
+# ---------------------------------------------------------------------------
+
+
+class TestAttachmentImport:
+    def test_single_attachment_url(self, memory_db, seed_project, csv_with_attachments):
+        result = import_quality_csv(
+            memory_db, csv_with_attachments, project_id=seed_project
+        )
+        assert result["issues_created"] == 3
+        assert result["attachments_recorded"] >= 1
+
+        # Check ATT-001 has exactly 1 attachment
+        issue = memory_db.execute(
+            "SELECT id FROM quality_issues WHERE source_id = 'ATT-001'"
+        ).fetchone()
+        attachments = memory_db.execute(
+            "SELECT * FROM quality_issue_attachments WHERE issue_id = ?",
+            (issue["id"],),
+        ).fetchall()
+        assert len(attachments) == 1
+        assert attachments[0]["source_url"] == "https://example.com/photos/IMG_001.jpg"
+        assert attachments[0]["filename"] == "IMG_001.jpg"
+        assert attachments[0]["file_type"] == "image"
+
+    def test_multiple_attachment_urls(self, memory_db, seed_project, csv_with_attachments):
+        import_quality_csv(
+            memory_db, csv_with_attachments, project_id=seed_project
+        )
+        issue = memory_db.execute(
+            "SELECT id FROM quality_issues WHERE source_id = 'ATT-002'"
+        ).fetchone()
+        attachments = memory_db.execute(
+            "SELECT * FROM quality_issue_attachments WHERE issue_id = ? ORDER BY id",
+            (issue["id"],),
+        ).fetchall()
+        assert len(attachments) == 2
+        assert attachments[0]["source_url"] == "https://example.com/photos/IMG_002.jpg"
+        assert attachments[1]["source_url"] == "https://example.com/photos/IMG_003.png"
+
+    def test_no_attachment_column(self, memory_db, seed_project, sample_csv):
+        """Existing CSV without attachment column works fine."""
+        result = import_quality_csv(
+            memory_db, sample_csv, project_id=seed_project
+        )
+        assert result["issues_created"] == 3
+        assert result["attachments_recorded"] == 0
+
+        count = memory_db.execute(
+            "SELECT COUNT(*) as cnt FROM quality_issue_attachments"
+        ).fetchone()["cnt"]
+        assert count == 0
+
+    def test_empty_attachment_field(self, memory_db, seed_project, csv_with_attachments):
+        import_quality_csv(
+            memory_db, csv_with_attachments, project_id=seed_project
+        )
+        # ATT-003 has empty attachment field
+        issue = memory_db.execute(
+            "SELECT id FROM quality_issues WHERE source_id = 'ATT-003'"
+        ).fetchone()
+        attachments = memory_db.execute(
+            "SELECT * FROM quality_issue_attachments WHERE issue_id = ?",
+            (issue["id"],),
+        ).fetchall()
+        assert len(attachments) == 0
+
+    def test_attachment_filename_from_url(self):
+        assert _filename_from_url("https://example.com/photos/IMG_001.jpg", 1) == "IMG_001.jpg"
+        assert _filename_from_url("https://cdn.procore.com/uploads/photo.png", 1) == "photo.png"
+        assert _filename_from_url("https://example.com/", 3) == "attachment_3.jpg"
+        assert _filename_from_url("not-a-url", 2) == "attachment_2.jpg"
+
+
+# ---------------------------------------------------------------------------
+# Test: Quality issues vector indexer
+# ---------------------------------------------------------------------------
+
+
+class TestIndexQualityIssues:
+    def test_index_function_importable(self):
+        from qms.vectordb.indexer import index_quality_issues
+        assert callable(index_quality_issues)
+
+    def test_index_in_module_exports(self):
+        from qms.vectordb import index_quality_issues
+        assert callable(index_quality_issues)

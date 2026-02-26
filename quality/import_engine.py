@@ -45,6 +45,10 @@ _COLUMN_ALIASES: Dict[str, List[str]] = {
     "source_id": ["id", "observation id", "number", "observation number", "#", "ref", "reference"],
     "source_url": ["url", "link", "observation url", "procore url"],
     "created_at": ["created at", "created date", "created", "date created", "date"],
+    "attachments": [
+        "attachments", "photos", "photo url", "photo urls",
+        "attachment url", "attachment urls", "images",
+    ],
 }
 
 # Valid values for CHECK-constrained fields
@@ -229,6 +233,7 @@ def import_quality_csv(
         "issues_created": 0,
         "issues_updated": 0,
         "issues_skipped": 0,
+        "attachments_recorded": 0,
         "rows_total": 0,
         "errors": [],
         "skipped_details": [],
@@ -317,8 +322,14 @@ def import_quality_csv(
                     result["issues_updated"] += 1
                     continue
 
-            _insert_issue(conn, fields)
+            issue_id = _insert_issue(conn, fields)
             result["issues_created"] += 1
+
+            # Record attachment URLs if present
+            if fields.get("attachments"):
+                result["attachments_recorded"] += _insert_attachments(
+                    conn, issue_id, fields["attachments"]
+                )
 
         except Exception as e:
             logger.error("Error importing row %d: %s", row_idx, e)
@@ -533,3 +544,41 @@ def _update_issue(conn: sqlite3.Connection, issue_id: int, fields: Dict[str, Any
         f"UPDATE quality_issues SET {', '.join(sets)} WHERE id = ?",
         vals,
     )
+
+
+def _filename_from_url(url: str, index: int) -> str:
+    """Derive a filename from a URL, falling back to attachment_N.jpg."""
+    try:
+        # Extract last path segment
+        from urllib.parse import urlparse
+
+        path = urlparse(url).path
+        name = Path(path).name
+        if name and "." in name:
+            return name
+    except Exception:
+        pass
+    return f"attachment_{index}.jpg"
+
+
+def _insert_attachments(
+    conn: sqlite3.Connection, issue_id: int, raw_urls: str
+) -> int:
+    """Insert attachment records from a semicolon-separated URL string.
+
+    Returns the number of attachments inserted.
+    """
+    count = 0
+    for i, url in enumerate(raw_urls.split(";"), start=1):
+        url = url.strip()
+        if not url:
+            continue
+        filename = _filename_from_url(url, i)
+        conn.execute(
+            """INSERT INTO quality_issue_attachments
+               (issue_id, filename, filepath, file_type, source_url)
+               VALUES (?, ?, '', 'image', ?)""",
+            (issue_id, filename, url),
+        )
+        count += 1
+    return count
