@@ -69,6 +69,14 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Quality Intelligence Dashboard (Phase 3, Plan 01)",
+          "desc": "Flask blueprint at /quality/ with stats cards (total/open/in-progress/critical), recent issues table, issues-by-project breakdown, JSON APIs (/api/stats, /api/issues with filters), BU filtering, shield+checkmark nav icon. Zero custom CSS.",
+          "module": "quality",
+          "priority": "high",
+          "tags": ["ui", "quality", "dashboard", "api"],
+          "completed": "2026-02-27"
+        },
+        {
           "title": "Procore Bulk Import Pipeline (Phase 2)",
           "desc": "CSV import engine with header auto-mapping, normalization, dedup. Batch import with project-from-filename resolution. Attachment URL capture. Quality issues vector indexing. Pipeline auto-detection for observation CSVs. 44 tests.",
           "module": "quality",
