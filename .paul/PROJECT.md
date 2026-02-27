@@ -14,7 +14,7 @@ All quality data from siloed Procore projects unified in one database — enabli
 |-----------|-------|
 | Version | 0.1.0-alpha |
 | Status | In Progress |
-| Last Updated | 2026-02-26 (Phase 2 complete) |
+| Last Updated | 2026-02-27 (Phase 3 complete) |
 
 **Production URL:** http://L004470-CAD:5000
 
@@ -31,11 +31,11 @@ All quality data from siloed Procore projects unified in one database — enabli
 - [x] Attachment URL capture during import — Phase 2
 - [x] Quality issues vector indexing for semantic search — Phase 2
 - [x] Pipeline classifier for observation CSV auto-detection — Phase 2
+- [x] Quality intelligence dashboard with Chart.js analytics, browse page, semantic search — Phase 3
 
 ### Active (In Progress)
 
 - [ ] Track 1: OneDrive → AI processing → structured observation → Procore push
-- [ ] Track 2: Quality intelligence dashboard (cross-project analytics)
 
 ### Planned (Next)
 
@@ -92,6 +92,8 @@ SIS field teams use Procore for project management. Quality observations created
 | Manual CSV export from Procore | No API/browser automation needed for now; can add later | 2026-02-26 | Active |
 | Data-source-agnostic import engine | CSV in → quality_issues out, regardless of extraction method | 2026-02-26 | Active |
 | Attachment URL-only recording | Capture URLs now, download files later (Phase 4) | 2026-02-26 | Active |
+| Chart.js via CDN for analytics | No build step, matches QMS inline-script convention | 2026-02-27 | Active |
+| vectordb-first search with SQL fallback | Graceful degradation when vectordb unavailable | 2026-02-27 | Active |
 
 ## Success Metrics
 
@@ -127,4 +129,4 @@ Quick Reference:
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-02-26 after Phase 2*
+*Last updated: 2026-02-27 after Phase 3*

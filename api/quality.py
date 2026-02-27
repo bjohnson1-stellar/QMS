@@ -119,8 +119,110 @@ def dashboard():
     )
 
 
+@bp.route("/browse")
+def browse():
+    return render_template("quality/browse.html")
+
+
 # ---------------------------------------------------------------------------
-# JSON API
+# JSON API — aggregations for charts
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/by-type")
+def api_by_type():
+    frag, params = _bu_filter(_user_bu_ids())
+    with get_db(readonly=True) as conn:
+        rows = conn.execute(
+            f"SELECT type, COUNT(*) AS count FROM quality_issues qi "
+            f"WHERE 1=1 {frag} GROUP BY type ORDER BY count DESC",
+            params,
+        ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@bp.route("/api/by-status")
+def api_by_status():
+    frag, params = _bu_filter(_user_bu_ids())
+    with get_db(readonly=True) as conn:
+        rows = conn.execute(
+            f"SELECT status, COUNT(*) AS count FROM quality_issues qi "
+            f"WHERE 1=1 {frag} GROUP BY status ORDER BY count DESC",
+            params,
+        ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@bp.route("/api/by-trade")
+def api_by_trade():
+    frag, params = _bu_filter(_user_bu_ids())
+    with get_db(readonly=True) as conn:
+        rows = conn.execute(
+            f"SELECT trade, COUNT(*) AS count FROM quality_issues qi "
+            f"WHERE trade IS NOT NULL AND trade != '' AND 1=1 {frag} "
+            f"GROUP BY trade ORDER BY count DESC",
+            params,
+        ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@bp.route("/api/search")
+def api_search():
+    query = request.args.get("q", "").strip()
+    if not query:
+        return jsonify([])
+
+    bu_ids = _user_bu_ids()
+    frag, bu_params = _bu_filter(bu_ids)
+
+    # Try vector search first
+    try:
+        from qms.vectordb.search import search_collection
+
+        results = search_collection("quality_issues", query, n_results=30)
+        if results:
+            issue_ids = [r["metadata"]["db_id"] for r in results if "metadata" in r]
+            if issue_ids:
+                placeholders = ",".join("?" * len(issue_ids))
+                with get_db(readonly=True) as conn:
+                    rows = conn.execute(
+                        f"""
+                        SELECT qi.id, qi.title, qi.type, qi.status, qi.severity,
+                               qi.trade, qi.location, qi.due_date, qi.created_at,
+                               p.number AS project_number, p.name AS project_name
+                        FROM quality_issues qi
+                        LEFT JOIN projects p ON p.id = qi.project_id
+                        WHERE qi.id IN ({placeholders}) {frag}
+                        """,
+                        issue_ids + bu_params,
+                    ).fetchall()
+                # Preserve vector similarity order
+                row_map = {r["id"]: dict(r) for r in rows}
+                ordered = [row_map[iid] for iid in issue_ids if iid in row_map]
+                return jsonify(ordered)
+    except Exception:
+        pass  # Fallback to SQL LIKE
+
+    # SQL LIKE fallback
+    with get_db(readonly=True) as conn:
+        like_param = f"%{query}%"
+        rows = conn.execute(
+            f"""
+            SELECT qi.id, qi.title, qi.type, qi.status, qi.severity,
+                   qi.trade, qi.location, qi.due_date, qi.created_at,
+                   p.number AS project_number, p.name AS project_name
+            FROM quality_issues qi
+            LEFT JOIN projects p ON p.id = qi.project_id
+            WHERE (qi.title LIKE ? OR qi.description LIKE ?) {frag}
+            ORDER BY qi.created_at DESC LIMIT 50
+            """,
+            [like_param, like_param] + bu_params,
+        ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+# ---------------------------------------------------------------------------
+# JSON API — core endpoints (from Plan 01)
 # ---------------------------------------------------------------------------
 
 

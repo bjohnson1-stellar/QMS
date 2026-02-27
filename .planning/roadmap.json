@@ -69,6 +69,14 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Quality Intelligence Dashboard (Phase 3)",
+          "desc": "Chart.js analytics (by type/status/trade), filterable browse page with semantic search (vectordb + SQL LIKE fallback), 4 new API endpoints, sub-nav integration. Completes Phase 3 of Quality Intelligence Platform milestone.",
+          "module": "quality",
+          "priority": "high",
+          "tags": ["ui", "quality", "dashboard", "chartjs", "search", "analytics"],
+          "completed": "2026-02-27"
+        },
+        {
           "title": "Quality Intelligence Dashboard (Phase 3, Plan 01)",
           "desc": "Flask blueprint at /quality/ with stats cards (total/open/in-progress/critical), recent issues table, issues-by-project breakdown, JSON APIs (/api/stats, /api/issues with filters), BU filtering, shield+checkmark nav icon. Zero custom CSS.",
           "module": "quality",

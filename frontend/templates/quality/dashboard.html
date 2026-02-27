@@ -29,6 +29,25 @@
 
 <div class="main-grid-equal">
     <div class="card">
+        <h2>Issues by Type</h2>
+        <div id="noDataType" class="empty-state" style="display:none;">No data available.</div>
+        <canvas id="chartByType" height="220"></canvas>
+    </div>
+    <div class="card">
+        <h2>Issues by Status</h2>
+        <div id="noDataStatus" class="empty-state" style="display:none;">No data available.</div>
+        <canvas id="chartByStatus" height="220"></canvas>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Issues by Trade</h2>
+    <div id="noDataTrade" class="empty-state" style="display:none;">No data available.</div>
+    <canvas id="chartByTrade" height="160"></canvas>
+</div>
+
+<div class="main-grid-equal">
+    <div class="card">
         <h2>Recent Issues</h2>
         {% if recent %}
         <table>
@@ -75,17 +94,13 @@
     <div class="card">
         <h2>Quick Actions</h2>
         <div class="quick-links">
-            <a href="{{ url_for('quality.api_issues') }}" class="quick-link" target="_blank">
+            <a href="{{ url_for('quality.browse') }}" class="quick-link">
                 <span class="quick-link-icon">&#128269;</span>
-                <span class="quick-link-label">Browse All Issues (API)</span>
+                <span class="quick-link-label">Browse All Issues</span>
             </a>
-            <a href="#" class="quick-link" onclick="return false;" style="opacity: 0.5; cursor: default;">
-                <span class="quick-link-icon">&#128200;</span>
-                <span class="quick-link-label">Analytics (coming soon)</span>
-            </a>
-            <a href="#" class="quick-link" onclick="return false;" style="opacity: 0.5; cursor: default;">
+            <a href="{{ url_for('quality.browse') }}?search=1" class="quick-link">
                 <span class="quick-link-icon">&#128270;</span>
-                <span class="quick-link-label">Semantic Search (coming soon)</span>
+                <span class="quick-link-label">Search Issues</span>
             </a>
         </div>
     </div>
@@ -126,4 +141,118 @@
     <div class="empty-state">No project-linked issues found.</div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    var PALETTE = ['#A41F35', '#064975', '#FFA400', '#3fb950', '#77777A', '#a371f7',
+                   '#d29922', '#58a6ff', '#f778ba', '#8b949e'];
+
+    function textColor() {
+        return document.documentElement.getAttribute('data-theme') === 'dark'
+            ? '#DBE2E9' : '#333';
+    }
+
+    function gridColor() {
+        return document.documentElement.getAttribute('data-theme') === 'dark'
+            ? 'rgba(219,226,233,0.12)' : 'rgba(0,0,0,0.08)';
+    }
+
+    function showEmpty(canvasId, emptyId, data) {
+        if (!data || data.length === 0) {
+            document.getElementById(canvasId).style.display = 'none';
+            document.getElementById(emptyId).style.display = 'block';
+            return true;
+        }
+        return false;
+    }
+
+    function renderBarChart(id, data, labelKey, valueKey) {
+        if (showEmpty(id, 'noDataType', data)) return;
+        new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: {
+                labels: data.map(function(d) { return d[labelKey]; }),
+                datasets: [{
+                    data: data.map(function(d) { return d[valueKey]; }),
+                    backgroundColor: PALETTE.slice(0, data.length),
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: textColor() }, grid: { display: false } },
+                    y: { ticks: { color: textColor(), stepSize: 1 }, grid: { color: gridColor() }, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    function renderDoughnutChart(id, data, labelKey, valueKey) {
+        if (showEmpty(id, 'noDataStatus', data)) return;
+        new Chart(document.getElementById(id), {
+            type: 'doughnut',
+            data: {
+                labels: data.map(function(d) { return d[labelKey].replace('_', ' '); }),
+                datasets: [{
+                    data: data.map(function(d) { return d[valueKey]; }),
+                    backgroundColor: PALETTE.slice(0, data.length),
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: textColor(), padding: 12, usePointStyle: true }
+                    }
+                },
+                cutout: '55%'
+            }
+        });
+    }
+
+    function renderHBarChart(id, data, labelKey, valueKey) {
+        if (showEmpty(id, 'noDataTrade', data)) return;
+        new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: {
+                labels: data.map(function(d) { return d[labelKey]; }),
+                datasets: [{
+                    data: data.map(function(d) { return d[valueKey]; }),
+                    backgroundColor: '#064975',
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: textColor(), stepSize: 1 }, grid: { color: gridColor() }, beginAtZero: true },
+                    y: { ticks: { color: textColor() }, grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    Chart.defaults.color = textColor();
+    Chart.defaults.font.family = getComputedStyle(document.body).getPropertyValue('--font-body') || 'sans-serif';
+
+    Promise.all([
+        fetch('/quality/api/by-type').then(function(r) { return r.json(); }),
+        fetch('/quality/api/by-status').then(function(r) { return r.json(); }),
+        fetch('/quality/api/by-trade').then(function(r) { return r.json(); })
+    ]).then(function(results) {
+        renderBarChart('chartByType', results[0], 'type', 'count');
+        renderDoughnutChart('chartByStatus', results[1], 'status', 'count');
+        renderHBarChart('chartByTrade', results[2], 'trade', 'count');
+    });
+})();
+</script>
 {% endblock %}

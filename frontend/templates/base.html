@@ -122,6 +122,8 @@
         {% if ns.module == 'quality' %}
         <a href="{{ url_for('quality.dashboard') }}"
            class="{{ 'active' if request.endpoint == 'quality.dashboard' }}">Dashboard</a>
+        <a href="{{ url_for('quality.browse') }}"
+           class="{{ 'active' if request.endpoint == 'quality.browse' }}">Browse</a>
         {% elif ns.module == 'projects' %}
         <a href="{{ url_for('projects.dashboard') }}"
            class="{{ 'active' if request.endpoint == 'projects.dashboard' }}">Dashboard</a>

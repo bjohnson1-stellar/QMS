@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Issues - {{ theme.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Browse Issues</h1>
+    <p class="subtitle">Filter, search, and explore quality issues across all projects</p>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <input type="text" id="searchInput" placeholder="Search issues (semantic or keyword)..."
+               style="flex: 1; min-width: 200px; padding: 0.5rem 0.75rem; border: 1px solid var(--color-border, #ddd); border-radius: 4px; font-size: 0.9rem; background: var(--color-bg, #fff); color: var(--color-text, #333);">
+        <select id="filterType" style="padding: 0.5rem; border: 1px solid var(--color-border, #ddd); border-radius: 4px; background: var(--color-bg, #fff); color: var(--color-text, #333);">
+            <option value="">All Types</option>
+            <option value="observation">Observation</option>
+            <option value="ncr">NCR</option>
+            <option value="car">CAR</option>
+            <option value="deficiency">Deficiency</option>
+            <option value="punch">Punch</option>
+            <option value="other">Other</option>
+        </select>
+        <select id="filterStatus" style="padding: 0.5rem; border: 1px solid var(--color-border, #ddd); border-radius: 4px; background: var(--color-bg, #fff); color: var(--color-text, #333);">
+            <option value="">All Statuses</option>
+            <option value="open">Open</option>
+            <option value="in_review">In Review</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+            <option value="deferred">Deferred</option>
+        </select>
+        <select id="filterSeverity" style="padding: 0.5rem; border: 1px solid var(--color-border, #ddd); border-radius: 4px; background: var(--color-bg, #fff); color: var(--color-text, #333);">
+            <option value="">All Severities</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+        </select>
+        <button id="clearBtn" style="padding: 0.5rem 1rem; border: 1px solid var(--color-border, #ddd); border-radius: 4px; background: var(--color-bg, #fff); color: var(--color-text, #333); cursor: pointer;">Clear</button>
+    </div>
+</div>
+
+<div class="card">
+    <div id="resultCount" style="font-size: 0.85rem; color: var(--color-text-muted, #777); margin-bottom: 0.75rem;"></div>
+    <table id="issuesTable">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Project</th>
+                <th>Status</th>
+                <th>Severity</th>
+                <th>Trade</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody id="issuesBody"></tbody>
+    </table>
+    <div id="emptyState" class="empty-state" style="display:none;">
+        No issues match your filters.
+    </div>
+    <div id="loadingState" class="empty-state">Loading issues...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var searchInput = document.getElementById('searchInput');
+    var filterType = document.getElementById('filterType');
+    var filterStatus = document.getElementById('filterStatus');
+    var filterSeverity = document.getElementById('filterSeverity');
+    var clearBtn = document.getElementById('clearBtn');
+    var tbody = document.getElementById('issuesBody');
+    var emptyState = document.getElementById('emptyState');
+    var loadingState = document.getElementById('loadingState');
+    var table = document.getElementById('issuesTable');
+    var resultCount = document.getElementById('resultCount');
+    var debounceTimer = null;
+
+    function severityHtml(sev) {
+        if (sev === 'critical') return '<span style="color: var(--color-warning); font-weight: 600;">critical</span>';
+        return sev || '-';
+    }
+
+    function statusBadge(status) {
+        var label = (status || 'open').replace(/_/g, ' ');
+        return '<span class="status-badge status-' + (status || 'open') + '">' + label + '</span>';
+    }
+
+    function renderRows(issues) {
+        loadingState.style.display = 'none';
+        if (!issues || issues.length === 0) {
+            table.style.display = 'none';
+            emptyState.style.display = 'block';
+            resultCount.textContent = '0 issues found';
+            return;
+        }
+        table.style.display = '';
+        emptyState.style.display = 'none';
+        resultCount.textContent = issues.length + ' issue' + (issues.length !== 1 ? 's' : '') + ' found';
+
+        var html = '';
+        for (var i = 0; i < issues.length; i++) {
+            var r = issues[i];
+            html += '<tr>';
+            html += '<td><strong>' + (r.title || '(untitled)') + '</strong>';
+            if (r.location) html += '<br><small style="color:var(--color-text-muted);">' + r.location + '</small>';
+            html += '</td>';
+            html += '<td><span class="status-badge">' + (r.type || '-') + '</span></td>';
+            html += '<td>' + (r.project_number || '-') + '</td>';
+            html += '<td>' + statusBadge(r.status) + '</td>';
+            html += '<td>' + severityHtml(r.severity) + '</td>';
+            html += '<td>' + (r.trade || '-') + '</td>';
+            html += '<td>' + (r.created_at || '').substring(0, 10) + '</td>';
+            html += '</tr>';
+        }
+        tbody.innerHTML = html;
+    }
+
+    function loadIssues() {
+        var query = searchInput.value.trim();
+        var url;
+
+        if (query) {
+            url = '/quality/api/search?q=' + encodeURIComponent(query);
+        } else {
+            url = '/quality/api/issues?';
+            var params = [];
+            if (filterType.value) params.push('type=' + filterType.value);
+            if (filterStatus.value) params.push('status=' + filterStatus.value);
+            if (filterSeverity.value) params.push('severity=' + filterSeverity.value);
+            url += params.join('&');
+        }
+
+        loadingState.style.display = 'block';
+        table.style.display = 'none';
+        emptyState.style.display = 'none';
+
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(renderRows)
+            .catch(function() {
+                loadingState.style.display = 'none';
+                emptyState.style.display = 'block';
+                emptyState.textContent = 'Error loading issues.';
+            });
+    }
+
+    function debouncedLoad() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(loadIssues, 300);
+    }
+
+    searchInput.addEventListener('input', debouncedLoad);
+    filterType.addEventListener('change', loadIssues);
+    filterStatus.addEventListener('change', loadIssues);
+    filterSeverity.addEventListener('change', loadIssues);
+    clearBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        filterType.value = '';
+        filterStatus.value = '';
+        filterSeverity.value = '';
+        loadIssues();
+    });
+
+    // Auto-focus search if ?search=1 in URL
+    if (window.location.search.indexOf('search=1') !== -1) {
+        searchInput.focus();
+    }
+
+    loadIssues();
+})();
+</script>
+{% endblock %}
