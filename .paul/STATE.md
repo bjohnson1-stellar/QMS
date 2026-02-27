@@ -107,7 +107,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | vectordb-first search with SQL fallback | Phase 3 | Graceful degradation when vectordb unavailable |
 
 ### Git State
-Last commit: (pending — phase transition commit next)
+Last commit: `470def4`
 Branch: main
 Feature branches merged: none
 
