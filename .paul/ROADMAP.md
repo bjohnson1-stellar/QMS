@@ -16,7 +16,7 @@ Phases: 2 of 5 complete
 |-------|------|-------|--------|-----------|
 | 1 | Quality Issues Foundation | 1 | Complete | 2026-02-25 |
 | 2 | Procore Bulk Import | 3 | Complete | 2026-02-26 |
-| 3 | Quality Intelligence Dashboard | TBD | Not started | - |
+| 3 | Quality Intelligence Dashboard | 1+ | Planning | - |
 | 4 | Mobile Capture Pipeline | TBD | Not started | - |
 | 5 | Procore Push | TBD | Not started | - |
 
@@ -72,7 +72,8 @@ Phases: 2 of 5 complete
 - Trend charts and KPIs
 
 **Plans:**
-- [ ] TBD during Phase 3 planning
+- [ ] 03-01: Quality blueprint, dashboard page, issue list API, module registration — Planning
+- [ ] 03-02: Analytics charts, semantic search UI, trend detection (TBD)
 
 ### Phase 4: Mobile Capture Pipeline
 

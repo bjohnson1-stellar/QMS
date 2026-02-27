@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Quality Intelligence - {{ theme.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Quality Intelligence</h1>
+    <p class="subtitle">Cross-project quality issue tracking and analytics</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_issues }}</div>
+        <div class="stat-label">Total Issues</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.open_issues }}</div>
+        <div class="stat-label">Open</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.in_progress }}</div>
+        <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat-card" {% if stats.critical_issues > 0 %}style="border-left: 3px solid var(--color-warning);"{% endif %}>
+        <div class="stat-value" {% if stats.critical_issues > 0 %}style="color: var(--color-warning);"{% endif %}>{{ stats.critical_issues }}</div>
+        <div class="stat-label">Critical</div>
+    </div>
+</div>
+
+<div class="main-grid-equal">
+    <div class="card">
+        <h2>Recent Issues</h2>
+        {% if recent %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Project</th>
+                    <th>Status</th>
+                    <th>Severity</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in recent %}
+                <tr>
+                    <td><strong>{{ r.title or '(untitled)' }}</strong>
+                        {% if r.trade %}<br><small style="color:var(--color-text-muted);">{{ r.trade }}</small>{% endif %}
+                    </td>
+                    <td><span class="status-badge">{{ r.type or '-' }}</span></td>
+                    <td>{{ r.project_number or '-' }}</td>
+                    <td><span class="status-badge status-{{ r.status or 'open' }}">{{ (r.status or 'open') | replace('_', ' ') }}</span></td>
+                    <td>
+                        {% if r.severity == 'critical' %}
+                        <span style="color: var(--color-warning); font-weight: 600;">{{ r.severity }}</span>
+                        {% elif r.severity %}
+                        {{ r.severity }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>{{ (r.created_at or '')[:10] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">No quality issues recorded yet. Import observations using the CLI:<br>
+            <code style="margin-top: 0.5rem; display: inline-block;">qms quality import-csv "path/to/observations.csv"</code>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Quick Actions</h2>
+        <div class="quick-links">
+            <a href="{{ url_for('quality.api_issues') }}" class="quick-link" target="_blank">
+                <span class="quick-link-icon">&#128269;</span>
+                <span class="quick-link-label">Browse All Issues (API)</span>
+            </a>
+            <a href="#" class="quick-link" onclick="return false;" style="opacity: 0.5; cursor: default;">
+                <span class="quick-link-icon">&#128200;</span>
+                <span class="quick-link-label">Analytics (coming soon)</span>
+            </a>
+            <a href="#" class="quick-link" onclick="return false;" style="opacity: 0.5; cursor: default;">
+                <span class="quick-link-icon">&#128270;</span>
+                <span class="quick-link-label">Semantic Search (coming soon)</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Issues by Project</h2>
+    {% if by_project %}
+    <table>
+        <thead>
+            <tr>
+                <th>Project #</th>
+                <th>Project Name</th>
+                <th>Total</th>
+                <th>Open</th>
+                <th>Critical</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in by_project %}
+            <tr>
+                <td><strong>{{ p.project_number }}</strong></td>
+                <td>{{ p.project_name or '-' }}</td>
+                <td>{{ p.total }}</td>
+                <td>{{ p.open_count }}</td>
+                <td>
+                    {% if p.critical_count > 0 %}
+                    <span style="color: var(--color-warning); font-weight: 600;">{{ p.critical_count }}</span>
+                    {% else %}
+                    {{ p.critical_count }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">No project-linked issues found.</div>
+    {% endif %}
+</div>
+{% endblock %}

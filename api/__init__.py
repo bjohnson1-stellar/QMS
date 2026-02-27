@@ -205,6 +205,9 @@ def create_app() -> Flask:
     from qms.api.qualitydocs import bp as qualitydocs_bp
     app.register_blueprint(qualitydocs_bp)
 
+    from qms.api.quality import bp as quality_bp
+    app.register_blueprint(quality_bp)
+
     from qms.api.blog import bp as blog_bp
     app.register_blueprint(blog_bp)
 

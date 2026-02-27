@@ -486,6 +486,9 @@ quality:
 # =============================================================================
 
 web_modules:
+  quality:
+    label: "Quality"
+    default_endpoint: "quality.dashboard"
   projects:
     label: "Projects"
     default_endpoint: "projects.dashboard"
