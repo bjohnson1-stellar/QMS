@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}{{ state_name }} Licenses - QMS{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div style="margin-bottom:16px;font-size:0.85rem;color:var(--color-text-muted);">
+    <a href="{{ url_for('licenses.licenses_page') }}" style="color:var(--color-primary);text-decoration:none;">Licenses</a>
+    <span style="margin:0 6px;">/</span>
+    <span>{{ state_name }} ({{ state_code }})</span>
+</div>
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1 style="margin:0;">{{ state_name }} <span class="badge" style="font-size:0.6em;vertical-align:middle;background:var(--color-primary);color:#fff;">{{ state_code }}</span></h1>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:20px 0;">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total or 0 }}</div>
+        <div class="stat-label">Total Licenses</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.active or 0 }}</div>
+        <div class="stat-label">Active</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--color-warning, #d29922);">{{ stats.expiring_90 or 0 }}</div>
+        <div class="stat-label">Expiring (90 days)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--color-danger, #da3633);">{{ stats.expired or 0 }}</div>
+        <div class="stat-label">Expired</div>
+    </div>
+</div>
+
+<!-- Board Info -->
+<div class="card" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="margin:0;border:none;padding:0;">Licensing Board</h3>
+        {% if current_user and current_user.role == 'admin' %}
+        <button class="btn-sm" onclick="editBoard()">Edit</button>
+        {% endif %}
+    </div>
+    {% if board %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.9rem;">
+        <div>
+            <div style="color:var(--color-text-muted);font-size:0.8rem;">Board Name</div>
+            <div style="font-weight:600;" id="boardName">{{ board.board_name }}</div>
+        </div>
+        <div>
+            <div style="color:var(--color-text-muted);font-size:0.8rem;">Website</div>
+            <div id="boardUrl">
+                {% if board.website_url %}
+                <a href="{{ board.website_url }}" target="_blank" rel="noopener" style="color:var(--color-primary);">{{ board.website_url }}</a>
+                {% else %}—{% endif %}
+            </div>
+        </div>
+        <div>
+            <div style="color:var(--color-text-muted);font-size:0.8rem;">Phone</div>
+            <div id="boardPhone">{{ board.phone or '—' }}</div>
+        </div>
+        <div>
+            <div style="color:var(--color-text-muted);font-size:0.8rem;">Notes</div>
+            <div id="boardNotes">{{ board.notes or '—' }}</div>
+        </div>
+    </div>
+    {% else %}
+    <p style="color:var(--color-text-muted);margin:0;">No board information available.</p>
+    {% endif %}
+</div>
+
+<!-- CE Requirements -->
+<div class="card" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="margin:0;border:none;padding:0;">Continuing Education Requirements</h3>
+        {% if current_user and (current_user.role == 'admin' or
+              current_user.modules.get('licenses') in ('admin', 'editor')) %}
+        <button class="btn-sm" onclick="openCeReqModal()">+ Add Requirement</button>
+        {% endif %}
+    </div>
+    {% if ce_reqs %}
+    <table>
+        <thead>
+            <tr>
+                <th>License Type</th>
+                <th>Hours Required</th>
+                <th>Period</th>
+                <th>Provider Requirements</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in ce_reqs %}
+            <tr>
+                <td>{{ req.license_type }}</td>
+                <td>{{ req.hours_required }} hrs</td>
+                <td>{{ req.period_months }} months</td>
+                <td>{{ req.provider_requirements or '—' }}</td>
+                <td style="white-space:nowrap;">
+                    {% if current_user and (current_user.role == 'admin' or
+                          current_user.modules.get('licenses') in ('admin', 'editor')) %}
+                    <button class="btn-sm" onclick="editCeReq('{{ req.id }}')">Edit</button>
+                    <button class="btn-sm btn-danger" onclick="deleteCeReq('{{ req.id }}')">Delete</button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--color-text-muted);margin:0;">No CE requirements defined for this state.</p>
+    {% endif %}
+</div>
+
+<!-- Coverage Gaps Alert -->
+<div id="gapsAlert" style="display:none;margin-bottom:20px;padding:16px;border-left:4px solid var(--color-warning, #d29922);background:var(--color-surface-alt);border-radius:0 6px 6px 0;">
+    <strong style="color:var(--color-warning, #d29922);">Coverage Gaps Detected</strong>
+    <p style="margin:8px 0 0;font-size:0.85rem;color:var(--color-text-secondary);" id="gapsMessage"></p>
+</div>
+
+<!-- License Table -->
+<div class="card" style="padding:20px;">
+    <h3 style="margin:0 0 16px;border:none;padding:0;">Licenses</h3>
+    {% if licenses %}
+    <table>
+        <thead>
+            <tr>
+                <th>License Type</th>
+                <th>License #</th>
+                <th>Business Entity</th>
+                <th>Qualifying Party</th>
+                <th>Scopes</th>
+                <th>Expiration</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for l in licenses %}
+            <tr onclick="window.location='/licenses/{{ l.id }}'" style="cursor:pointer;">
+                <td>{{ l.license_type }}</td>
+                <td>{{ l.license_number }}</td>
+                <td>{{ l.business_entity or l.holder_name }}</td>
+                <td>{{ l.qualifying_party_name or '—' }}</td>
+                <td>
+                    {% for s in l.scopes %}
+                    <span class="badge" style="font-size:10px;background:var(--color-primary-subtle);color:var(--color-primary);margin:1px;">{{ s.name }}</span>
+                    {% endfor %}
+                    {% if not l.scopes %}
+                    <span style="color:var(--color-text-muted);font-size:0.8rem;">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {{ l.expiration_date or 'No Expiry' }}
+                    {% if l.days_until_expiry is not none %}
+                        {% if l.days_until_expiry < 0 %}
+                            <span style="color:var(--color-danger,#da3633);font-size:12px;">Expired</span>
+                        {% elif l.days_until_expiry <= 30 %}
+                            <span style="color:var(--color-danger,#da3633);font-size:12px;">{{ l.days_until_expiry }}d</span>
+                        {% elif l.days_until_expiry <= 90 %}
+                            <span style="color:var(--color-warning,#d29922);font-size:12px;">{{ l.days_until_expiry }}d</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    {% set status_colors = {'active':'#238636','expired':'#da3633','pending':'#d29922','revoked':'#6e7681'} %}
+                    <span class="badge" style="font-size:11px;background:{{ status_colors.get(l.status, '#6e7681') }};color:#fff;">{{ l.status }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--color-text-muted);text-align:center;margin:0;">No licenses in {{ state_name }}.</p>
+    {% endif %}
+</div>
+
+<!-- Board Edit Modal -->
+<div id="boardModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h2 style="margin:0;border:none;padding:0;">Edit Licensing Board</h2>
+            <button class="modal-close" onclick="closeBoardModal()">&times;</button>
+        </div>
+        <div class="error-message" id="boardError"></div>
+        <form onsubmit="return saveBoard(event)">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="form-group">
+                    <label>Board Name *</label>
+                    <input type="text" id="bName" required>
+                </div>
+                <div class="form-group">
+                    <label>Website URL</label>
+                    <input type="url" id="bUrl">
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="text" id="bPhone">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="bNotes" rows="2"></textarea>
+                </div>
+            </div>
+            <div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--color-border-light);display:flex;gap:10px;">
+                <button type="submit">Save</button>
+                <button type="button" class="secondary" onclick="closeBoardModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CE Requirement Modal -->
+<div id="ceReqModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h2 id="ceReqTitle" style="margin:0;border:none;padding:0;">Add CE Requirement</h2>
+            <button class="modal-close" onclick="closeCeReqModal()">&times;</button>
+        </div>
+        <div class="error-message" id="ceReqError"></div>
+        <form onsubmit="return saveCeReq(event)">
+            <input type="hidden" id="ceReqEditId">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="form-group">
+                    <label>License Type *</label>
+                    <input type="text" id="ceReqLicType" required placeholder="e.g. Mechanical Contractor">
+                </div>
+                <div class="form-group">
+                    <label>Hours Required *</label>
+                    <input type="number" id="ceReqHours" required step="0.5" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Period (months) *</label>
+                    <input type="number" id="ceReqPeriod" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>Provider Requirements</label>
+                    <textarea id="ceReqProvider" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="ceReqNotes" rows="2"></textarea>
+                </div>
+            </div>
+            <div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--color-border-light);display:flex;gap:10px;">
+                <button type="submit" id="ceReqSubmitBtn">Add Requirement</button>
+                <button type="button" class="secondary" onclick="closeCeReqModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API = '/licenses/api';
+    const STATE_CODE = '{{ state_code }}';
+    const CE_REQS = {{ ce_reqs | tojson }};
+
+    // ── Board ────────────────────────────────────────────────────────────
+    function editBoard() {
+        document.getElementById('bName').value = document.getElementById('boardName')?.textContent?.trim() || '';
+        const urlEl = document.getElementById('boardUrl')?.querySelector('a');
+        document.getElementById('bUrl').value = urlEl ? urlEl.href : '';
+        document.getElementById('bPhone').value = document.getElementById('boardPhone')?.textContent?.trim() || '';
+        const notes = document.getElementById('boardNotes')?.textContent?.trim();
+        document.getElementById('bNotes').value = (notes === '—') ? '' : (notes || '');
+        document.getElementById('boardModal').style.display = 'flex';
+    }
+
+    function closeBoardModal() {
+        document.getElementById('boardModal').style.display = 'none';
+    }
+
+    async function saveBoard(e) {
+        e.preventDefault();
+        const data = {
+            board_name: document.getElementById('bName').value,
+            website_url: document.getElementById('bUrl').value || null,
+            phone: document.getElementById('bPhone').value || null,
+            notes: document.getElementById('bNotes').value || null,
+        };
+        try {
+            const res = await fetch(`${API}/boards/${STATE_CODE}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+            window.location.reload();
+        } catch (err) {
+            const el = document.getElementById('boardError');
+            el.textContent = err.message;
+            el.style.display = 'block';
+        }
+        return false;
+    }
+
+    // ── CE Requirements ──────────────────────────────────────────────────
+    function openCeReqModal() {
+        document.getElementById('ceReqEditId').value = '';
+        document.getElementById('ceReqTitle').textContent = 'Add CE Requirement';
+        document.getElementById('ceReqSubmitBtn').textContent = 'Add Requirement';
+        document.getElementById('ceReqLicType').value = '';
+        document.getElementById('ceReqHours').value = '';
+        document.getElementById('ceReqPeriod').value = '';
+        document.getElementById('ceReqProvider').value = '';
+        document.getElementById('ceReqNotes').value = '';
+        document.getElementById('ceReqError').style.display = 'none';
+        document.getElementById('ceReqModal').style.display = 'flex';
+    }
+
+    function editCeReq(id) {
+        const req = CE_REQS.find(r => r.id === id);
+        if (!req) return;
+        document.getElementById('ceReqEditId').value = id;
+        document.getElementById('ceReqTitle').textContent = 'Edit CE Requirement';
+        document.getElementById('ceReqSubmitBtn').textContent = 'Save Changes';
+        document.getElementById('ceReqLicType').value = req.license_type;
+        document.getElementById('ceReqHours').value = req.hours_required;
+        document.getElementById('ceReqPeriod').value = req.period_months;
+        document.getElementById('ceReqProvider').value = req.provider_requirements || '';
+        document.getElementById('ceReqNotes').value = req.notes || '';
+        document.getElementById('ceReqError').style.display = 'none';
+        document.getElementById('ceReqModal').style.display = 'flex';
+    }
+
+    function closeCeReqModal() {
+        document.getElementById('ceReqModal').style.display = 'none';
+    }
+
+    async function saveCeReq(e) {
+        e.preventDefault();
+        const editId = document.getElementById('ceReqEditId').value;
+        const data = {
+            state_code: STATE_CODE,
+            license_type: document.getElementById('ceReqLicType').value,
+            hours_required: parseFloat(document.getElementById('ceReqHours').value),
+            period_months: parseInt(document.getElementById('ceReqPeriod').value),
+            provider_requirements: document.getElementById('ceReqProvider').value || null,
+            notes: document.getElementById('ceReqNotes').value || null,
+        };
+        try {
+            const url = editId ? `${API}/ce-requirements/${editId}` : `${API}/ce-requirements`;
+            const method = editId ? 'PUT' : 'POST';
+            const res = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+            window.location.reload();
+        } catch (err) {
+            const el = document.getElementById('ceReqError');
+            el.textContent = err.message;
+            el.style.display = 'block';
+        }
+        return false;
+    }
+
+    async function deleteCeReq(id) {
+        if (!confirm('Delete this CE requirement?')) return;
+        try {
+            const res = await fetch(`${API}/ce-requirements/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+            window.location.reload();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    // ── Coverage Gaps ────────────────────────────────────────────────────
+    async function checkGaps() {
+        try {
+            const res = await fetch(`${API}/coverage-gaps`);
+            const gaps = await res.json();
+            const stateGaps = gaps.filter(g => g.project_state === STATE_CODE);
+            if (stateGaps.length) {
+                const msg = stateGaps.map(g => g.project_scope).join(', ');
+                document.getElementById('gapsMessage').textContent =
+                    `Active projects require coverage in: ${msg} — but no active licenses cover these scopes in ${STATE_CODE}.`;
+                document.getElementById('gapsAlert').style.display = 'block';
+            }
+        } catch (e) { /* silent */ }
+    }
+
+    checkGaps();
+</script>
+{% endblock %}

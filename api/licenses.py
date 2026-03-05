@@ -11,18 +11,52 @@ from flask import Blueprint, jsonify, request, render_template, session
 from qms.core import get_db
 from qms.auth.decorators import module_required
 from qms.licenses.db import (
+    create_ce_credit,
+    create_ce_requirement,
     create_license,
+    create_scope_category,
+    delete_ce_credit,
+    delete_ce_requirement,
     delete_license,
+    get_ce_summary,
     get_expiring_licenses,
     get_license,
+    get_license_board,
+    get_license_scopes,
     get_license_stats,
     get_renewal_timeline,
+    get_scope_coverage_gaps,
+    get_state_license_summary,
     get_state_map_data,
+    list_ce_credits,
+    list_ce_requirements,
     list_licenses,
+    list_licenses_for_state,
+    list_scope_categories,
+    set_license_scopes,
+    update_ce_credit,
+    update_ce_requirement,
     update_license,
+    upsert_license_board,
 )
 
 bp = Blueprint("licenses", __name__, url_prefix="/licenses")
+
+_STATE_NAMES = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
+    "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
+    "FL": "Florida", "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho",
+    "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas",
+    "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+    "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi",
+    "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada",
+    "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York",
+    "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma",
+    "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
+    "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah",
+    "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
+    "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -39,6 +73,67 @@ def licenses_page():
 @module_required("licenses", min_role="editor")
 def import_page():
     return render_template("licenses/import.html")
+
+
+@bp.route("/state/<state_code>")
+@module_required("licenses")
+def state_detail_page(state_code):
+    state_code = state_code.upper()
+    state_name = _STATE_NAMES.get(state_code)
+    if not state_name:
+        return "State not found", 404
+    with get_db(readonly=True) as conn:
+        board = get_license_board(conn, state_code)
+        stats = get_state_license_summary(conn, state_code)
+        licenses_list = list_licenses_for_state(conn, state_code)
+        ce_reqs = list_ce_requirements(conn, state_code=state_code)
+        scopes = list_scope_categories(conn)
+        # Attach scopes to each license
+        for lic in licenses_list:
+            lic["scopes"] = get_license_scopes(conn, lic["id"])
+    return render_template(
+        "licenses/state_detail.html",
+        state_code=state_code,
+        state_name=state_name,
+        board=board,
+        stats=stats,
+        licenses=licenses_list,
+        ce_reqs=ce_reqs,
+        scopes=scopes,
+    )
+
+
+@bp.route("/<license_id>")
+@module_required("licenses")
+def license_detail_page(license_id):
+    with get_db(readonly=True) as conn:
+        lic = get_license(conn, license_id)
+        if not lic:
+            return "License not found", 404
+        scopes = get_license_scopes(conn, license_id)
+        all_scopes = list_scope_categories(conn)
+        ce_summary = get_ce_summary(conn, license_id)
+        credits = list_ce_credits(conn, license_id=license_id)
+        # Get qualifying party name
+        qp_name = None
+        if lic.get("employee_id"):
+            emp = conn.execute(
+                "SELECT first_name || ' ' || last_name AS name FROM employees WHERE id = ?",
+                (lic["employee_id"],),
+            ).fetchone()
+            if emp:
+                qp_name = emp["name"]
+    state_name = _STATE_NAMES.get(lic["state_code"], lic["state_code"])
+    return render_template(
+        "licenses/license_detail.html",
+        license=lic,
+        state_name=state_name,
+        qualifying_party_name=qp_name,
+        scopes=scopes,
+        all_scopes=all_scopes,
+        ce_summary=ce_summary,
+        credits=credits,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -152,6 +247,197 @@ def api_renewal_timeline():
     with get_db(readonly=True) as conn:
         data = get_renewal_timeline(conn)
     return jsonify(data)
+
+
+# ---------------------------------------------------------------------------
+# Board API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/boards/<state_code>", methods=["GET"])
+@module_required("licenses")
+def api_get_board(state_code):
+    with get_db(readonly=True) as conn:
+        board = get_license_board(conn, state_code.upper())
+    if not board:
+        return jsonify({"error": "Board not found"}), 404
+    return jsonify(board)
+
+
+@bp.route("/api/boards/<state_code>", methods=["PUT"])
+@module_required("licenses", min_role="admin")
+def api_update_board(state_code):
+    data = request.get_json(force=True)
+    user = session.get("user", {})
+    data["updated_by"] = user.get("id", user.get("email", "unknown"))
+    with get_db() as conn:
+        result = upsert_license_board(conn, state_code.upper(), **data)
+    return jsonify(result)
+
+
+# ---------------------------------------------------------------------------
+# Scope Categories API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/scope-categories", methods=["GET"])
+@module_required("licenses")
+def api_list_scopes():
+    with get_db(readonly=True) as conn:
+        scopes = list_scope_categories(conn)
+    return jsonify(scopes)
+
+
+@bp.route("/api/scope-categories", methods=["POST"])
+@module_required("licenses", min_role="admin")
+def api_create_scope():
+    data = request.get_json(force=True)
+    name = data.get("name", "").strip()
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+    with get_db() as conn:
+        result = create_scope_category(conn, name)
+    return jsonify(result), 201
+
+
+# ---------------------------------------------------------------------------
+# License Scopes API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/licenses/<license_id>/scopes", methods=["GET"])
+@module_required("licenses")
+def api_get_license_scopes(license_id):
+    with get_db(readonly=True) as conn:
+        scopes = get_license_scopes(conn, license_id)
+    return jsonify(scopes)
+
+
+@bp.route("/api/licenses/<license_id>/scopes", methods=["PUT"])
+@module_required("licenses", min_role="editor")
+def api_set_license_scopes(license_id):
+    data = request.get_json(force=True)
+    scope_ids = data.get("scope_ids", [])
+    with get_db() as conn:
+        result = set_license_scopes(conn, license_id, scope_ids)
+    return jsonify(result)
+
+
+# ---------------------------------------------------------------------------
+# CE Requirements API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/ce-requirements", methods=["GET"])
+@module_required("licenses")
+def api_list_ce_requirements():
+    with get_db(readonly=True) as conn:
+        reqs = list_ce_requirements(conn, state_code=request.args.get("state_code"))
+    return jsonify(reqs)
+
+
+@bp.route("/api/ce-requirements", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_create_ce_requirement():
+    data = request.get_json(force=True)
+    required = ["state_code", "license_type", "hours_required", "period_months"]
+    missing = [f for f in required if not data.get(f)]
+    if missing:
+        return jsonify({"error": f"Missing: {', '.join(missing)}"}), 400
+    user = session.get("user", {})
+    data["created_by"] = user.get("id", user.get("email", "unknown"))
+    with get_db() as conn:
+        result = create_ce_requirement(conn, **data)
+    return jsonify(result), 201
+
+
+@bp.route("/api/ce-requirements/<req_id>", methods=["PUT"])
+@module_required("licenses", min_role="editor")
+def api_update_ce_requirement(req_id):
+    data = request.get_json(force=True)
+    with get_db() as conn:
+        result = update_ce_requirement(conn, req_id, **data)
+    if not result:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(result)
+
+
+@bp.route("/api/ce-requirements/<req_id>", methods=["DELETE"])
+@module_required("licenses", min_role="admin")
+def api_delete_ce_requirement(req_id):
+    with get_db() as conn:
+        deleted = delete_ce_requirement(conn, req_id)
+    if not deleted:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# CE Credits API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/ce-credits", methods=["GET"])
+@module_required("licenses")
+def api_list_ce_credits():
+    with get_db(readonly=True) as conn:
+        credits = list_ce_credits(
+            conn,
+            license_id=request.args.get("license_id"),
+            employee_id=request.args.get("employee_id"),
+        )
+    return jsonify(credits)
+
+
+@bp.route("/api/ce-credits", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_create_ce_credit():
+    data = request.get_json(force=True)
+    required = ["employee_id", "license_id", "course_name", "hours", "completion_date"]
+    missing = [f for f in required if not data.get(f)]
+    if missing:
+        return jsonify({"error": f"Missing: {', '.join(missing)}"}), 400
+    user = session.get("user", {})
+    data["created_by"] = user.get("id", user.get("email", "unknown"))
+    with get_db() as conn:
+        result = create_ce_credit(conn, **data)
+    return jsonify(result), 201
+
+
+@bp.route("/api/ce-credits/<credit_id>", methods=["PUT"])
+@module_required("licenses", min_role="editor")
+def api_update_ce_credit(credit_id):
+    data = request.get_json(force=True)
+    with get_db() as conn:
+        result = update_ce_credit(conn, credit_id, **data)
+    if not result:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(result)
+
+
+@bp.route("/api/ce-credits/<credit_id>", methods=["DELETE"])
+@module_required("licenses", min_role="admin")
+def api_delete_ce_credit(credit_id):
+    with get_db() as conn:
+        deleted = delete_ce_credit(conn, credit_id)
+    if not deleted:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# CE Summary + Coverage Gaps API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/ce-summary/<license_id>", methods=["GET"])
+@module_required("licenses")
+def api_ce_summary(license_id):
+    with get_db(readonly=True) as conn:
+        summary = get_ce_summary(conn, license_id)
+    return jsonify(summary)
+
+
+@bp.route("/api/coverage-gaps", methods=["GET"])
+@module_required("licenses")
+def api_coverage_gaps():
+    with get_db(readonly=True) as conn:
+        gaps = get_scope_coverage_gaps(conn)
+    return jsonify(gaps)
 
 
 # ---------------------------------------------------------------------------

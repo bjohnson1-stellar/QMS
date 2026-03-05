@@ -76,6 +76,14 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Licenses Phase 2 — Drill-Down Navigation, Scope Mapping, CE Tracking",
+          "desc": "State detail pages with board info and CE requirements. License detail pages with scope tags and CE credit progress tracking. 5 new schema tables (boards, scope_categories, license_scope_map, ce_requirements, ce_credits). Drill-down navigation: Map → State → License. Employee → Qualifying Party terminology. Scope-to-license compliance gap detection. ~20 new DB functions, ~15 new API routes, 2 new templates.",
+          "module": "licenses",
+          "priority": "medium",
+          "tags": ["ui", "licenses", "compliance", "ce-tracking", "drill-down", "scopes"],
+          "completed": "2026-03-05"
+        },
+        {
           "title": "License Schema — Business Entity + Employee Model",
           "desc": "Added business_entity column to state_licenses, separating company identity from employee link. Migration backfills from holder_name. Updated import specs, API, modal form, table, stats cards, and renewal timeline.",
           "module": "licenses",

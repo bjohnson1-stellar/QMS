@@ -6,7 +6,7 @@
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
     <div>
         <h1>State Licenses</h1>
-        <p class="subtitle">Company contractor and employee professional licenses</p>
+        <p class="subtitle">Company contractor and qualifying party professional licenses</p>
     </div>
     <div style="display:flex;gap:8px;">
         {% if current_user and (current_user.role == 'admin' or
@@ -33,7 +33,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-value" id="statWithEmployee">-</div>
-        <div class="stat-label">With Employee</div>
+        <div class="stat-label">With Qualifying Party</div>
     </div>
 </div>
 
@@ -52,10 +52,7 @@
         <svg id="stateMap" viewBox="0 0 959 593" style="width:100%;height:auto;"></svg>
         <div id="mapTooltip" style="display:none;position:absolute;background:var(--color-surface);border:1px solid var(--color-border-light);border-radius:6px;padding:8px 12px;font-size:0.8rem;pointer-events:none;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>
     </div>
-    <div id="mapFilter" style="display:none;margin-top:12px;padding:8px 12px;background:var(--color-surface-alt);border-radius:6px;display:none;align-items:center;gap:8px;font-size:0.85rem;">
-        <span>Filtered to: <strong id="mapFilterState"></strong></span>
-        <button class="btn-sm btn-secondary" onclick="clearMapFilter()" style="margin-left:auto;">Clear Filter</button>
-    </div>
+
 </div>
 
 <!-- Expiration Alerts -->
@@ -122,7 +119,7 @@
                     <input type="text" id="fBusinessEntity" required placeholder="Company or business name">
                 </div>
                 <div class="form-group">
-                    <label>Employee</label>
+                    <label>Qualifying Party</label>
                     <select id="fEmployee">
                         <option value="">— None —</option>
                     </select>
@@ -216,7 +213,6 @@
     let licenses = [];
     let employees = [];
     let currentEditId = null;
-    let mapFilterState = null;
     let renewalChart = null;
 
     const US_STATES = [
@@ -276,7 +272,7 @@
     function populateEmployees(emps) {
         employees = emps;
         const sel = document.getElementById('fEmployee');
-        sel.innerHTML = '<option value="">Select Employee...</option>' +
+        sel.innerHTML = '<option value="">Select Qualifying Party...</option>' +
             emps.map(e => `<option value="${e.id}" data-name="${e.first_name} ${e.last_name}">${e.last_name}, ${e.first_name}${e.employee_number ? ' (' + e.employee_number + ')' : ''}${e.position ? ' — ' + e.position : ''}</option>`).join('');
     }
 
@@ -339,27 +335,8 @@
     }
 
     function filterByState(code) {
-        mapFilterState = code;
-        document.getElementById('filterState').value = code;
-        document.getElementById('mapFilter').style.display = 'flex';
-        document.getElementById('mapFilterState').textContent = (STATE_NAMES[code] || code) + ' (' + code + ')';
-        renderTable();
-
-        // Highlight selected state
-        document.querySelectorAll('#stateMap path').forEach(p => {
-            p.style.opacity = p.dataset.state === code ? '1' : '0.3';
-        });
+        window.location.href = '/licenses/state/' + code;
     }
-
-    window.clearMapFilter = function() {
-        mapFilterState = null;
-        document.getElementById('filterState').value = '';
-        document.getElementById('mapFilter').style.display = 'none';
-        renderTable();
-        document.querySelectorAll('#stateMap path').forEach(p => {
-            p.style.opacity = '1';
-        });
-    };
 
     // ── Expiration Alerts ─────────────────────────────────────────────────
 
@@ -485,9 +462,8 @@
         }
 
         let html = `<table><thead><tr>
-            <th>State</th><th>License Type</th><th>License #</th><th>Business Entity</th>
-            <th>Employee</th><th>Issued</th><th>Expiration</th><th>Reciprocal</th>
-            <th>Assoc.</th><th>Disassoc.</th><th>Status</th><th></th>
+            <th>State</th><th>License Type</th><th>License #</th>
+            <th>Qualifying Party</th><th>Expiration</th><th>Status</th>
         </tr></thead><tbody>`;
 
         for (const l of filtered) {
@@ -495,22 +471,13 @@
             const empName = getEmployeeName(l.employee_id);
             const expWarn = expiryWarning(l);
 
-            html += `<tr>
+            html += `<tr onclick="window.location='/licenses/${l.id}'" style="cursor:pointer;">
                 <td><strong>${l.state_code}</strong></td>
                 <td>${esc(l.license_type)}</td>
                 <td>${esc(l.license_number)}</td>
-                <td>${esc(l.business_entity || l.holder_name)}</td>
                 <td>${empName ? esc(empName) : '<span style="color:var(--color-text-muted);">—</span>'}</td>
-                <td>${l.issued_date || '—'}</td>
                 <td>${l.expiration_date || 'No Expiry'}${expWarn}</td>
-                <td>${l.reciprocal_state ? '<span style="font-size:0.85rem;">' + l.reciprocal_state + '</span>' : '<span style="color:var(--color-text-muted);">—</span>'}</td>
-                <td>${l.association_date || '<span style="color:var(--color-text-muted);">—</span>'}</td>
-                <td>${l.disassociation_date || '<span style="color:var(--color-text-muted);">—</span>'}</td>
                 <td>${badge}</td>
-                <td style="white-space:nowrap;">
-                    <button class="btn-sm" onclick="editLicense('${l.id}')">Edit</button>
-                    <button class="btn-sm btn-danger" onclick="deleteLicense('${l.id}')">Delete</button>
-                </td>
             </tr>`;
         }
         html += '</tbody></table>';
