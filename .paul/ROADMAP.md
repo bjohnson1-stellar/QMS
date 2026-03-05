@@ -16,7 +16,7 @@ Phases: 0 of 8 complete
 
 | Phase | Name | Plans | Status | Completed |
 |-------|------|-------|--------|-----------|
-| 6 | Foundation Hardening | TBD | Not started | - |
+| 6 | Foundation Hardening | 1+ | Planning | - |
 | 7 | Renewal Workflow & Events | TBD | Not started | - |
 | 8 | Notifications & Task Management | TBD | Not started | - |
 | 9 | Document Management & Activity Log | TBD | Not started | - |
