@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS state_licenses (
     issued_date     TEXT,                  -- ISO 8601
     expiration_date TEXT,                  -- ISO 8601 (NULL = no expiry)
     reciprocal_state TEXT,                 -- 2-letter code of reciprocal state (NULL = none)
+    association_date TEXT,                 -- ISO 8601 — when holder became associated
+    disassociation_date TEXT,              -- ISO 8601 — when holder disassociated
     status          TEXT NOT NULL DEFAULT 'active'
                     CHECK (status IN ('active', 'expired', 'pending', 'revoked', 'disassociation')),
     notes           TEXT,

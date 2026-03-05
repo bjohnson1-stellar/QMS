@@ -107,6 +107,19 @@ LICENSE_COLUMNS = [
                  "reciprocity", "reciprocal from"],
     ),
     ColumnDef(
+        name="association_date", label="Association Date", type="date",
+        aliases=["association", "association date", "association_date",
+                 "date associated", "date_associated",
+                 "assoc date", "assoc_date"],
+    ),
+    ColumnDef(
+        name="disassociation_date", label="Disassociation Date", type="date",
+        aliases=["disassociation", "disassociation date", "disassociation_date",
+                 "date disassociated", "date_disassociated",
+                 "dissociation date", "dissociation_date",
+                 "disassoc date", "disassoc_date"],
+    ),
+    ColumnDef(
         name="status", label="Status", type="text",
         aliases=["license status", "lic status", "license_status"],
     ),
@@ -200,7 +213,7 @@ def match_license(
 _COMPARE_FIELDS = [
     "holder_name", "holder_type", "license_type", "license_number",
     "state_code", "issued_date", "expiration_date", "reciprocal_state",
-    "status", "notes",
+    "association_date", "disassociation_date", "status", "notes",
 ]
 
 
@@ -308,6 +321,8 @@ def execute_license_action(
             issued_date=data.get("issued_date"),
             expiration_date=data.get("expiration_date"),
             reciprocal_state=data.get("reciprocal_state"),
+            association_date=data.get("association_date"),
+            disassociation_date=data.get("disassociation_date"),
             status=data.get("status", "active"),
             notes=data.get("notes"),
             created_by=executed_by,

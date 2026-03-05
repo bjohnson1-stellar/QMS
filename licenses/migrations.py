@@ -15,4 +15,10 @@ def run_license_migrations(conn: sqlite3.Connection):
     if "reciprocal_state" not in cols:
         conn.execute("ALTER TABLE state_licenses ADD COLUMN reciprocal_state TEXT")
 
+    if "association_date" not in cols:
+        conn.execute("ALTER TABLE state_licenses ADD COLUMN association_date TEXT")
+
+    if "disassociation_date" not in cols:
+        conn.execute("ALTER TABLE state_licenses ADD COLUMN disassociation_date TEXT")
+
     conn.commit()
