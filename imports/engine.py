@@ -120,7 +120,7 @@ def auto_map_columns(
     used_fields: set = set()
 
     for idx, header in enumerate(headers):
-        h = header.lower().strip()
+        h = header.lower().strip().rstrip(":;.,")
         if not h:
             continue
 

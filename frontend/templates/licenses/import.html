@@ -357,8 +357,10 @@
             if (sel.value) mapping[sel.dataset.col] = sel.value;
         });
 
-        document.getElementById('planLoading').style.display = '';
-        goToStep(3);
+        // Disable button and show inline spinner while waiting
+        const btn = document.getElementById('btnGeneratePlan');
+        btn.disabled = true;
+        btn.textContent = 'Generating…';
 
         fetch(`/licenses/api/import/${sessionId}/plan`, {
             method: 'POST',
@@ -367,18 +369,21 @@
         })
             .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
             .then(({ ok, data }) => {
-                document.getElementById('planLoading').style.display = 'none';
+                btn.disabled = false;
+                btn.textContent = 'Generate Action Plan';
                 if (!ok) {
-                    goToStep(2);
                     showError('mappingError', data.error || data.details?.join(', ') || 'Plan generation failed');
                     return;
                 }
+                document.getElementById('planLoading').style.display = '';
+                goToStep(3);
+                document.getElementById('planLoading').style.display = 'none';
                 planData = data;
                 buildPlanReview(data);
             })
             .catch(err => {
-                document.getElementById('planLoading').style.display = 'none';
-                goToStep(2);
+                btn.disabled = false;
+                btn.textContent = 'Generate Action Plan';
                 showError('mappingError', 'Network error: ' + err.message);
             });
     };
