@@ -143,3 +143,16 @@ CREATE TABLE IF NOT EXISTS corrective_actions (
 
 CREATE INDEX IF NOT EXISTS idx_ca_issue ON corrective_actions(issue_id);
 CREATE INDEX IF NOT EXISTS idx_ca_status ON corrective_actions(status);
+
+-- Mobile capture processing log (tracks processed photos/voice notes)
+CREATE TABLE IF NOT EXISTS capture_log (
+    id INTEGER PRIMARY KEY,
+    filename TEXT NOT NULL,
+    filepath TEXT NOT NULL,
+    file_hash TEXT,
+    status TEXT DEFAULT 'processed' CHECK (status IN ('processed', 'failed', 'skipped')),
+    issue_id INTEGER REFERENCES quality_issues(id),
+    error_message TEXT,
+    processed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(filepath)
+);

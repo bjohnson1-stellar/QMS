@@ -450,6 +450,23 @@ procore:
   #     observation_types: ["Safety", "Quality", "Commissioning"]
 
 # =============================================================================
+# MOBILE CAPTURE (Phone → OneDrive → AI → Quality Issues)
+# =============================================================================
+
+mobile_capture:
+  enabled: true
+  source_folder: "C:/Users/bjohnson1/OneDrive - Stellar Group Incorporated/QMS-Capture"
+  attachment_dir: "data/quality-issues/captures"
+  default_project: null             # Project number string, e.g. "07645"
+  model: "sonnet"                   # Model for photo analysis (haiku/sonnet/opus)
+  delete_after_process: false       # Move to processed subfolder instead
+  supported_extensions:
+    - ".jpg"
+    - ".jpeg"
+    - ".png"
+    - ".heic"
+
+# =============================================================================
 # QUALITY ISSUES
 # =============================================================================
 

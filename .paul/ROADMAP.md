@@ -17,7 +17,7 @@ Phases: 3 of 5 complete
 | 1 | Quality Issues Foundation | 1 | Complete | 2026-02-25 |
 | 2 | Procore Bulk Import | 3 | Complete | 2026-02-26 |
 | 3 | Quality Intelligence Dashboard | 2 | Complete | 2026-02-27 |
-| 4 | Mobile Capture Pipeline | TBD | Not started | - |
+| 4 | Mobile Capture Pipeline | 1+ | Planning | - |
 | 5 | Procore Push | TBD | Not started | - |
 
 ## Phase Details
@@ -89,7 +89,8 @@ Phases: 3 of 5 complete
 - Brandon's personal workflow integration
 
 **Plans:**
-- [ ] TBD during Phase 4 planning
+- [ ] 04-01: Photo processing engine — Claude vision + CLI capture command (Planning)
+- [ ] 04-02: Voice transcription + review UI (TBD)
 
 ### Phase 5: Procore Push
 

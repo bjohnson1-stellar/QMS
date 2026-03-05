@@ -5,6 +5,8 @@ Usage:
     qms quality import-csv "path/to/observations.csv" --project 07645
     qms quality import-csv "path/to/observations.csv" --project 07645 --dry-run
     qms quality summary
+    qms quality capture --folder /path/to/photos --project 07645
+    qms quality capture --dry-run
 """
 
 import typer
@@ -244,6 +246,68 @@ def summary() -> None:
         ).fetchall()
         for r in rows:
             typer.echo(f"  {r['source']:15s} {r['cnt']:>5d}")
+
+
+@app.command("capture")
+def capture_cmd(
+    folder: str = typer.Option(None, help="Override source folder path"),
+    project: str = typer.Option(None, help="Project number to assign issues to (e.g. 07645)"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Analyze without creating issues"),
+) -> None:
+    """Process mobile captures — analyze photos with AI and create quality issues."""
+    from pathlib import Path
+    from qms.quality.mobile_capture import process_captures
+
+    project_id = None
+    if project:
+        with get_db() as conn:
+            row = conn.execute(
+                "SELECT id, name FROM projects WHERE number = ?", (project,)
+            ).fetchone()
+            if not row:
+                typer.echo(f"Error: Project '{project}' not found in database.", err=True)
+                raise typer.Exit(1)
+            project_id = row["id"]
+            typer.echo(f"Project: {project} ({row['name']})")
+
+    folder_path = Path(folder) if folder else None
+
+    if dry_run:
+        typer.echo("DRY RUN — analyzing without creating issues")
+
+    typer.echo("Processing mobile captures...")
+    typer.echo("---")
+
+    result = process_captures(
+        folder=folder_path,
+        project_id=project_id,
+        dry_run=dry_run,
+    )
+
+    typer.echo(f"Folder: {result['folder']}")
+    typer.echo(f"Processed: {result['processed']}")
+    typer.echo(f"Failed:    {result['failed']}")
+    typer.echo(f"Skipped:   {result['skipped']}")
+
+    if result["issues_created"]:
+        typer.echo()
+        typer.echo("Issues created:")
+        for item in result["issues_created"]:
+            if "issue_id" in item:
+                typer.echo(f"  #{item['issue_id']}: {item['title']} ({item['file']})")
+            else:
+                analysis = item.get("analysis", {})
+                typer.echo(
+                    f"  [DRY RUN] {analysis.get('title', '?')} "
+                    f"({analysis.get('trade', '?')}, {analysis.get('severity', '?')}) "
+                    f"← {item['file']}"
+                )
+
+    if result["errors"]:
+        typer.echo()
+        typer.echo("Errors:")
+        for err in result["errors"]:
+            typer.echo(f"  {err['file']}: {err['error']}")
 
 
 @app.command("index")
