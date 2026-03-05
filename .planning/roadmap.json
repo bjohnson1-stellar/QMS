@@ -84,11 +84,11 @@
           "completed": "2026-03-05"
         },
         {
-          "title": "State Licenses Module",
-          "desc": "Company contractor and employee professional license tracking. Schema with expiry view, CRUD API, single-page UI with stats cards, filters, employee picker. Registered as web module with nav icon and sub-nav.",
+          "title": "State Licenses Module — Phase 1 Expansion",
+          "desc": "Bulk CSV import via shared import engine (10 columns, 2-level match), US state SVG map with click-to-filter, expiration alerts (30/60/90 day bands), Chart.js renewal timeline. Builds on base CRUD module.",
           "module": "licenses",
           "priority": "medium",
-          "tags": ["ui", "licenses", "compliance", "module"],
+          "tags": ["ui", "licenses", "compliance", "import", "dashboard", "map"],
           "completed": "2026-03-05"
         },
         {

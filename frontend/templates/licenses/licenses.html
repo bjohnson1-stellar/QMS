@@ -8,7 +8,13 @@
         <h1>State Licenses</h1>
         <p class="subtitle">Company contractor and employee professional licenses</p>
     </div>
-    <button onclick="openModal()">+ Add License</button>
+    <div style="display:flex;gap:8px;">
+        {% if current_user and (current_user.role == 'admin' or
+              current_user.modules.get('licenses') in ('admin', 'editor')) %}
+        <a href="{{ url_for('licenses.import_page') }}" class="btn-secondary" style="text-decoration:none;">Import CSV</a>
+        {% endif %}
+        <button onclick="openModal()">+ Add License</button>
+    </div>
 </div>
 
 <!-- Stats Cards -->
@@ -32,6 +38,75 @@
     <div class="stat-card">
         <div class="stat-value" id="statEmployee">-</div>
         <div class="stat-label">Employee</div>
+    </div>
+</div>
+
+<!-- US State Map -->
+<div class="card" style="margin-bottom:20px;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="margin:0;border:none;padding:0;">License Coverage Map</h3>
+        <div id="mapLegend" style="display:flex;gap:16px;font-size:0.8rem;color:var(--color-text-secondary);">
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#238636;vertical-align:middle;margin-right:4px;"></span>All Active</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#d29922;vertical-align:middle;margin-right:4px;"></span>Expiring</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#da3633;vertical-align:middle;margin-right:4px;"></span>Has Expired</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:var(--color-border-light, #d0d7de);vertical-align:middle;margin-right:4px;"></span>No Licenses</span>
+        </div>
+    </div>
+    <div id="stateMapContainer" style="position:relative;max-width:800px;margin:0 auto;">
+        <svg id="stateMap" viewBox="0 0 960 600" style="width:100%;height:auto;"></svg>
+        <div id="mapTooltip" style="display:none;position:absolute;background:var(--color-bg-secondary, #fff);border:1px solid var(--color-border-light);border-radius:6px;padding:8px 12px;font-size:0.8rem;pointer-events:none;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>
+    </div>
+    <div id="mapFilter" style="display:none;margin-top:12px;padding:8px 12px;background:var(--color-bg-tertiary, #f6f8fa);border-radius:6px;display:none;align-items:center;gap:8px;font-size:0.85rem;">
+        <span>Filtered to: <strong id="mapFilterState"></strong></span>
+        <button class="btn-sm btn-secondary" onclick="clearMapFilter()" style="margin-left:auto;">Clear Filter</button>
+    </div>
+</div>
+
+<!-- Expiration Alerts -->
+<div id="expirationSection" style="margin-bottom:20px;">
+    <h3 style="margin-bottom:12px;">Expiration Alerts</h3>
+    <div id="expirationGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
+        <div class="card" style="padding:16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:#da3633;"></span>
+                <strong style="color:#da3633;">Critical</strong>
+                <span style="color:var(--color-text-muted);font-size:0.8rem;margin-left:auto;" id="criticalCount">0</span>
+            </div>
+            <div id="criticalList" style="display:flex;flex-direction:column;gap:8px;">
+                <p style="color:var(--color-text-muted);font-size:0.85rem;text-align:center;margin:0;">No critical licenses</p>
+            </div>
+        </div>
+        <div class="card" style="padding:16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:#d29922;"></span>
+                <strong style="color:#d29922;">Warning</strong>
+                <span style="color:var(--color-text-muted);font-size:0.8rem;margin-left:auto;" id="warningCount">0</span>
+            </div>
+            <div id="warningList" style="display:flex;flex-direction:column;gap:8px;">
+                <p style="color:var(--color-text-muted);font-size:0.85rem;text-align:center;margin:0;">No warnings</p>
+            </div>
+        </div>
+        <div class="card" style="padding:16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:#2f81f7;"></span>
+                <strong style="color:#2f81f7;">Upcoming</strong>
+                <span style="color:var(--color-text-muted);font-size:0.8rem;margin-left:auto;" id="upcomingCount">0</span>
+            </div>
+            <div id="upcomingList" style="display:flex;flex-direction:column;gap:8px;">
+                <p style="color:var(--color-text-muted);font-size:0.85rem;text-align:center;margin:0;">No upcoming renewals</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Renewal Timeline -->
+<div class="card" style="margin-bottom:20px;padding:20px;">
+    <h3 style="margin:0 0 16px;border:none;padding:0;">Renewal Timeline</h3>
+    <div id="timelineContainer" style="position:relative;height:260px;">
+        <canvas id="renewalChart"></canvas>
+        <div id="timelineFallback" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);font-size:0.9rem;">
+            No upcoming renewals in the next 12 months
+        </div>
     </div>
 </div>
 
@@ -135,11 +210,14 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
     const API = '/licenses/api';
     let licenses = [];
     let employees = [];
     let currentEditId = null;
+    let mapFilterState = null;
+    let renewalChart = null;
 
     const US_STATES = [
         ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],
@@ -157,24 +235,86 @@
         ['WI','Wisconsin'],['WY','Wyoming'],['DC','District of Columbia']
     ];
 
+    // State name lookup
+    const STATE_NAMES = Object.fromEntries(US_STATES);
+
+    // ── US State SVG Paths (simplified Albers projection) ─────────────────
+    const STATE_PATHS = {
+        AL: "M628,466 L627,402 L625,395 L669,390 L672,417 L677,462 L673,471 L662,484 L655,478 L651,484 L628,466Z",
+        AK: "M161,485 L183,485 L183,493 L193,493 L193,485 L230,485 L230,513 L161,513Z",
+        AZ: "M205,410 L200,480 L207,491 L260,491 L265,447 L268,404 L243,398 L205,410Z",
+        AR: "M574,418 L569,460 L627,466 L625,395 L574,401 L574,418Z",
+        CA: "M120,310 L112,352 L102,400 L118,425 L137,462 L153,478 L170,490 L196,491 L205,410 L193,350 L180,315 L160,290 L140,280 L120,310Z",
+        CO: "M296,310 L290,377 L380,385 L386,316 L296,310Z",
+        CT: "M844,215 L845,197 L818,190 L814,210 L844,215Z",
+        DE: "M793,306 L801,295 L803,280 L790,276 L785,298 L793,306Z",
+        FL: "M672,462 L677,462 L740,456 L755,472 L755,492 L741,531 L723,553 L709,556 L701,545 L692,527 L681,508 L669,498 L662,484 L672,462Z",
+        GA: "M669,390 L715,385 L740,456 L672,462 L669,390Z",
+        HI: "M260,515 L280,510 L283,520 L278,525 L265,525 L260,515Z",
+        ID: "M222,140 L206,230 L218,258 L253,260 L272,205 L265,156 L242,130 L222,140Z",
+        IL: "M588,248 L580,260 L575,296 L570,335 L578,367 L606,369 L612,345 L616,290 L616,265 L608,248 L588,248Z",
+        IN: "M616,265 L616,290 L612,345 L652,340 L655,285 L645,260 L616,265Z",
+        IA: "M517,235 L510,275 L505,295 L565,300 L575,296 L580,260 L558,238 L517,235Z",
+        KS: "M395,345 L390,395 L504,401 L510,350 L395,345Z",
+        KY: "M612,345 L606,369 L622,392 L674,375 L720,343 L710,328 L692,328 L658,338 L652,340 L612,345Z",
+        LA: "M569,460 L574,510 L590,530 L620,520 L637,510 L637,484 L627,466 L569,460Z",
+        ME: "M862,100 L860,128 L852,155 L870,160 L878,145 L882,118 L875,100 L862,100Z",
+        MD: "M785,298 L790,276 L770,272 L754,280 L740,290 L760,306 L780,310 L793,306 L785,298Z",
+        MA: "M852,195 L845,197 L835,188 L832,180 L860,178 L868,185 L858,195 L852,195Z",
+        MI: "M618,168 L610,195 L605,215 L612,240 L640,250 L660,228 L660,195 L640,168 L618,168Z M580,165 L600,155 L610,165 L605,190 L580,195 L570,180 L580,165Z",
+        MN: "M490,118 L485,190 L510,210 L555,215 L562,170 L558,128 L530,118 L490,118Z",
+        MS: "M610,420 L608,470 L614,495 L637,484 L637,510 L620,520 L590,530 L574,510 L569,460 L574,418 L574,401 L610,398 L610,420Z",
+        MO: "M510,310 L504,370 L504,401 L555,408 L574,401 L574,418 L574,401 L575,366 L565,355 L565,300 L510,310Z",
+        MT: "M263,110 L242,130 L265,156 L272,205 L370,210 L385,140 L343,120 L263,110Z",
+        NE: "M385,270 L380,315 L395,345 L510,350 L510,310 L505,295 L510,275 L450,268 L385,270Z",
+        NV: "M175,250 L160,290 L180,315 L193,350 L205,410 L243,398 L253,310 L240,260 L218,258 L175,250Z",
+        NH: "M852,155 L844,148 L840,118 L842,100 L862,100 L860,128 L852,155Z",
+        NJ: "M803,245 L798,265 L803,280 L801,295 L810,300 L815,275 L810,250 L803,245Z",
+        NM: "M265,404 L260,491 L350,497 L356,410 L265,404Z",
+        NY: "M770,165 L755,200 L762,225 L788,238 L803,245 L810,250 L815,228 L832,210 L835,188 L818,190 L810,175 L794,175 L770,165Z",
+        NC: "M688,370 L720,343 L757,350 L790,345 L794,360 L760,375 L730,385 L715,385 L688,370Z",
+        ND: "M403,118 L395,185 L485,190 L490,118 L403,118Z",
+        OH: "M655,260 L645,260 L655,285 L652,340 L695,326 L710,288 L695,260 L655,260Z",
+        OK: "M390,395 L386,430 L395,448 L504,445 L504,401 L390,395Z",
+        OR: "M120,160 L110,218 L120,248 L175,250 L218,258 L222,140 L175,130 L120,160Z",
+        PA: "M710,245 L710,288 L762,280 L790,276 L803,280 L803,245 L788,238 L762,225 L710,245Z",
+        RI: "M852,200 L848,205 L852,210 L858,205 L852,200Z",
+        SC: "M715,385 L730,385 L760,375 L752,410 L728,418 L712,408 L715,385Z",
+        SD: "M395,185 L385,255 L385,270 L450,268 L510,275 L510,210 L485,190 L395,185Z",
+        TN: "M622,370 L622,392 L674,375 L688,370 L720,380 L720,343 L674,375 L622,392 L606,369 L622,370Z",
+        TX: "M356,410 L350,497 L365,530 L395,560 L435,573 L475,567 L508,540 L528,510 L540,475 L540,448 L504,445 L504,401 L390,395 L386,430 L356,410Z",
+        UT: "M253,260 L240,260 L253,310 L243,398 L296,404 L296,310 L290,260 L253,260Z",
+        VT: "M840,118 L832,150 L844,148 L852,155 L852,132 L840,118Z",
+        VA: "M720,310 L720,343 L757,350 L790,345 L794,335 L770,320 L748,318 L735,325 L720,310Z",
+        WA: "M140,80 L120,120 L120,160 L175,130 L222,140 L230,100 L205,80 L140,80Z",
+        WV: "M710,288 L695,326 L710,328 L720,310 L735,325 L748,318 L748,295 L730,280 L710,288Z",
+        WI: "M555,145 L540,168 L530,198 L535,225 L555,238 L562,210 L588,225 L608,218 L610,195 L605,185 L588,175 L575,155 L555,145Z",
+        WY: "M282,200 L272,260 L290,260 L296,310 L380,315 L385,255 L385,210 L370,210 L282,200Z",
+        DC: "M775,300 L778,303 L780,300 L775,300Z"
+    };
+
     // ── Init ─────────────────────────────────────────────────────────────
 
     async function loadAll() {
-        // Populate state dropdowns
         const stateOpts = US_STATES.map(([c,n]) => `<option value="${c}">${c} — ${n}</option>`).join('');
         document.getElementById('fState').innerHTML = '<option value="">Select State...</option>' + stateOpts;
         document.getElementById('filterState').innerHTML = '<option value="">All States</option>' + stateOpts;
 
-        // Load data in parallel
-        const [licRes, statRes, empRes] = await Promise.all([
+        const [licRes, statRes, empRes, mapRes, expRes, timeRes] = await Promise.all([
             fetch(API + '/licenses').then(r => r.json()),
             fetch(API + '/licenses/stats').then(r => r.json()),
-            fetch(API + '/employees/lookup').then(r => r.json()).catch(() => [])
+            fetch(API + '/employees/lookup').then(r => r.json()).catch(() => []),
+            fetch(API + '/map-data').then(r => r.json()).catch(() => []),
+            fetch(API + '/expiring').then(r => r.json()).catch(() => ({critical:[],warning:[],upcoming:[]})),
+            fetch(API + '/renewal-timeline').then(r => r.json()).catch(() => []),
         ]);
 
         licenses = licRes;
         updateStats(statRes);
         populateEmployees(empRes);
+        renderStateMap(mapRes);
+        renderExpirationAlerts(expRes);
+        renderRenewalTimeline(timeRes);
         renderTable();
     }
 
@@ -193,7 +333,197 @@
             emps.map(e => `<option value="${e.id}" data-name="${e.first_name} ${e.last_name}">${e.last_name}, ${e.first_name}${e.employee_number ? ' (' + e.employee_number + ')' : ''}${e.position ? ' — ' + e.position : ''}</option>`).join('');
     }
 
-    // ── Render ────────────────────────────────────────────────────────────
+    // ── State Map ─────────────────────────────────────────────────────────
+
+    function renderStateMap(mapData) {
+        const svg = document.getElementById('stateMap');
+        const dataByState = {};
+        mapData.forEach(d => { dataByState[d.state_code] = d; });
+
+        const grayColor = getComputedStyle(document.documentElement).getPropertyValue('--color-border-light').trim() || '#d0d7de';
+        const strokeColor = getComputedStyle(document.documentElement).getPropertyValue('--color-bg-primary').trim() || '#fff';
+
+        let html = '';
+        for (const [code, path] of Object.entries(STATE_PATHS)) {
+            const d = dataByState[code];
+            let fill = grayColor;
+            if (d) {
+                if (d.expired > 0) fill = '#da3633';
+                else if (d.expiring_90 > 0) fill = '#d29922';
+                else if (d.active > 0) fill = '#238636';
+            }
+            const name = STATE_NAMES[code] || code;
+            html += `<path d="${path}" fill="${fill}" stroke="${strokeColor}" stroke-width="1.5"
+                           data-state="${code}" data-name="${name}"
+                           style="cursor:pointer;transition:opacity 0.15s;"
+                           onmouseenter="showMapTooltip(event,'${code}')"
+                           onmouseleave="hideMapTooltip()"
+                           onclick="filterByState('${code}')"/>`;
+        }
+        svg.innerHTML = html;
+
+        // Store for tooltip lookup
+        window._mapDataByState = dataByState;
+    }
+
+    function showMapTooltip(evt, code) {
+        const tip = document.getElementById('mapTooltip');
+        const d = window._mapDataByState[code];
+        const name = STATE_NAMES[code] || code;
+        if (d) {
+            tip.innerHTML = `<strong>${name}</strong><br>
+                Total: ${d.total} | Active: ${d.active}<br>
+                Expiring: ${d.expiring_90} | Expired: ${d.expired}`;
+        } else {
+            tip.innerHTML = `<strong>${name}</strong><br>No licenses`;
+        }
+        tip.style.display = 'block';
+
+        const container = document.getElementById('stateMapContainer');
+        const rect = container.getBoundingClientRect();
+        const x = evt.clientX - rect.left + 12;
+        const y = evt.clientY - rect.top - 10;
+        tip.style.left = Math.min(x, rect.width - 180) + 'px';
+        tip.style.top = y + 'px';
+    }
+
+    function hideMapTooltip() {
+        document.getElementById('mapTooltip').style.display = 'none';
+    }
+
+    function filterByState(code) {
+        mapFilterState = code;
+        document.getElementById('filterState').value = code;
+        document.getElementById('mapFilter').style.display = 'flex';
+        document.getElementById('mapFilterState').textContent = (STATE_NAMES[code] || code) + ' (' + code + ')';
+        renderTable();
+
+        // Highlight selected state
+        document.querySelectorAll('#stateMap path').forEach(p => {
+            p.style.opacity = p.dataset.state === code ? '1' : '0.3';
+        });
+    }
+
+    window.clearMapFilter = function() {
+        mapFilterState = null;
+        document.getElementById('filterState').value = '';
+        document.getElementById('mapFilter').style.display = 'none';
+        renderTable();
+        document.querySelectorAll('#stateMap path').forEach(p => {
+            p.style.opacity = '1';
+        });
+    };
+
+    // ── Expiration Alerts ─────────────────────────────────────────────────
+
+    function renderExpirationAlerts(data) {
+        renderAlertBand('critical', '#da3633', data.critical || []);
+        renderAlertBand('warning', '#d29922', data.warning || []);
+        renderAlertBand('upcoming', '#2f81f7', data.upcoming || []);
+    }
+
+    function renderAlertBand(band, color, items) {
+        const countEl = document.getElementById(band + 'Count');
+        const listEl = document.getElementById(band + 'List');
+        countEl.textContent = items.length;
+
+        if (!items.length) {
+            const msgs = { critical: 'No critical licenses', warning: 'No warnings', upcoming: 'No upcoming renewals' };
+            listEl.innerHTML = `<p style="color:var(--color-text-muted);font-size:0.85rem;text-align:center;margin:0;">${msgs[band]}</p>`;
+            return;
+        }
+
+        listEl.innerHTML = items.slice(0, 8).map(l => {
+            const days = l.days_until_expiry;
+            const badge = days < 0
+                ? `<span style="background:#da3633;color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;">${Math.abs(days)}d ago</span>`
+                : `<span style="background:${color};color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;">${days}d</span>`;
+            return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-left:3px solid ${color};background:var(--color-bg-tertiary, #f6f8fa);border-radius:0 4px 4px 0;font-size:0.82rem;">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(l.holder_name)}</div>
+                    <div style="color:var(--color-text-muted);font-size:0.75rem;">${l.state_code} | ${esc(l.license_type)} | #${esc(l.license_number)}</div>
+                </div>
+                ${badge}
+            </div>`;
+        }).join('');
+
+        if (items.length > 8) {
+            listEl.innerHTML += `<p style="color:var(--color-text-muted);font-size:0.8rem;text-align:center;margin:4px 0 0;">+${items.length - 8} more</p>`;
+        }
+    }
+
+    // ── Renewal Timeline ──────────────────────────────────────────────────
+
+    function renderRenewalTimeline(data) {
+        const canvas = document.getElementById('renewalChart');
+        const fallback = document.getElementById('timelineFallback');
+
+        if (!data.length) {
+            canvas.style.display = 'none';
+            fallback.style.display = 'flex';
+            return;
+        }
+
+        canvas.style.display = '';
+        fallback.style.display = 'none';
+
+        const labels = data.map(d => {
+            const [y, m] = d.month.split('-');
+            return new Date(y, m - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        });
+
+        const isDark = document.documentElement.dataset.theme === 'dark';
+        const textColor = isDark ? '#adbac7' : '#57606a';
+        const gridColor = isDark ? 'rgba(173,186,199,0.1)' : 'rgba(0,0,0,0.06)';
+
+        if (renewalChart) renewalChart.destroy();
+
+        renewalChart = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Company',
+                        data: data.map(d => d.company),
+                        backgroundColor: isDark ? '#388bfd' : '#1f6feb',
+                        borderRadius: 3,
+                    },
+                    {
+                        label: 'Employee',
+                        data: data.map(d => d.employee),
+                        backgroundColor: isDark ? '#56d364' : '#238636',
+                        borderRadius: 3,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: textColor, boxWidth: 12, padding: 16 },
+                    },
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        ticks: { color: textColor },
+                        grid: { display: false },
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: { color: textColor, precision: 0 },
+                        grid: { color: gridColor },
+                    },
+                },
+            },
+        });
+    }
+
+    // ── Render Table ──────────────────────────────────────────────────────
 
     function renderTable() {
         const search = document.getElementById('filterSearch').value.toLowerCase();
@@ -260,8 +590,8 @@
 
     function expiryWarning(l) {
         if (l.days_until_expiry === null || l.days_until_expiry === undefined) return '';
-        if (l.days_until_expiry < 0) return ' <span style="color:var(--color-danger,#da3633);font-size:12px;">⚠ Expired</span>';
-        if (l.days_until_expiry <= 30) return ` <span style="color:var(--color-danger,#da3633);font-size:12px;">⚠ ${l.days_until_expiry}d</span>`;
+        if (l.days_until_expiry < 0) return ' <span style="color:var(--color-danger,#da3633);font-size:12px;">Expired</span>';
+        if (l.days_until_expiry <= 30) return ` <span style="color:var(--color-danger,#da3633);font-size:12px;">${l.days_until_expiry}d</span>`;
         if (l.days_until_expiry <= 90) return ` <span style="color:var(--color-warning,#d29922);font-size:12px;">${l.days_until_expiry}d</span>`;
         return '';
     }

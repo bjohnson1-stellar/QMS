@@ -167,6 +167,11 @@
         {% elif ns.module == 'licenses' %}
         <a href="{{ url_for('licenses.licenses_page') }}"
            class="{{ 'active' if request.endpoint == 'licenses.licenses_page' }}">All Licenses</a>
+        {% if current_user and (current_user.role == 'admin' or
+              current_user.modules.get('licenses') in ('admin', 'editor')) %}
+        <a href="{{ url_for('licenses.import_page') }}"
+           class="{{ 'active' if request.endpoint == 'licenses.import_page' }}">Import</a>
+        {% endif %}
         {% endif %}
     </div>
 

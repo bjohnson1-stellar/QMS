@@ -169,3 +169,85 @@ def get_license_stats(conn: sqlite3.Connection) -> Dict[str, int]:
         FROM state_licenses
     """).fetchone()
     return dict(row)
+
+
+# ---------------------------------------------------------------------------
+# Dashboard queries
+# ---------------------------------------------------------------------------
+
+def get_expiring_licenses(conn: sqlite3.Connection) -> Dict[str, List[Dict[str, Any]]]:
+    """Active licenses grouped by urgency band: critical (≤30d), warning (31-60d), upcoming (61-90d).
+
+    Also includes recently expired (within -30d) in the critical band.
+    """
+    rows = conn.execute("""
+        SELECT sl.*,
+               CAST(julianday(sl.expiration_date) - julianday('now') AS INTEGER)
+                   AS days_until_expiry
+        FROM state_licenses sl
+        WHERE sl.expiration_date IS NOT NULL
+          AND julianday(sl.expiration_date) - julianday('now') BETWEEN -30 AND 90
+          AND sl.status IN ('active', 'expired')
+        ORDER BY sl.expiration_date ASC
+    """).fetchall()
+
+    bands: Dict[str, List[Dict[str, Any]]] = {
+        "critical": [],
+        "warning": [],
+        "upcoming": [],
+    }
+    for r in rows:
+        d = dict(r)
+        days = d["days_until_expiry"]
+        if days <= 30:
+            bands["critical"].append(d)
+        elif days <= 60:
+            bands["warning"].append(d)
+        else:
+            bands["upcoming"].append(d)
+
+    return bands
+
+
+def get_state_map_data(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
+    """Per-state aggregation for the SVG map.
+
+    Returns list of {state_code, total, active, expiring_90, expired}.
+    """
+    rows = conn.execute("""
+        SELECT
+            state_code,
+            COUNT(*) AS total,
+            SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
+            SUM(CASE WHEN status = 'active'
+                      AND expiration_date IS NOT NULL
+                      AND julianday(expiration_date) - julianday('now') <= 90
+                      AND julianday(expiration_date) - julianday('now') > 0
+                 THEN 1 ELSE 0 END) AS expiring_90,
+            SUM(CASE WHEN status = 'expired' THEN 1 ELSE 0 END) AS expired
+        FROM state_licenses
+        GROUP BY state_code
+        ORDER BY state_code
+    """).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_renewal_timeline(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
+    """Monthly renewal counts for the next 12 months.
+
+    Returns list of {month, company, employee} sorted chronologically.
+    """
+    rows = conn.execute("""
+        SELECT
+            strftime('%%Y-%%m', expiration_date) AS month,
+            SUM(CASE WHEN holder_type = 'company' THEN 1 ELSE 0 END) AS company,
+            SUM(CASE WHEN holder_type = 'employee' THEN 1 ELSE 0 END) AS employee
+        FROM state_licenses
+        WHERE expiration_date IS NOT NULL
+          AND expiration_date >= date('now')
+          AND expiration_date < date('now', '+12 months')
+          AND status = 'active'
+        GROUP BY strftime('%%Y-%%m', expiration_date)
+        ORDER BY month
+    """).fetchall()
+    return [dict(r) for r in rows]
