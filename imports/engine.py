@@ -314,6 +314,10 @@ def generate_action_plan(
     for record in records:
         row_idx = record.get("_row_index", 0)
 
+        # Normalize record (module-specific cleanup)
+        if spec.normalize_fn:
+            spec.normalize_fn(record)
+
         # Match against existing data
         existing, match_method = None, None
         if spec.match_fn:

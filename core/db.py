@@ -141,3 +141,11 @@ def migrate_all():
         logger.info("Blog migrations applied")
     except Exception as exc:
         logger.warning("Blog migration step failed (non-fatal): %s", exc)
+
+    try:
+        from qms.licenses.migrations import run_license_migrations
+        with get_db() as lic_conn:
+            run_license_migrations(lic_conn)
+        logger.info("License migrations applied")
+    except Exception as exc:
+        logger.warning("License migration step failed (non-fatal): %s", exc)

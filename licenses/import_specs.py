@@ -13,6 +13,45 @@ from qms.imports.specs import ActionItem, ColumnDef, ImportSpec
 
 
 # ---------------------------------------------------------------------------
+# State name → 2-letter code mapping
+# ---------------------------------------------------------------------------
+
+_STATE_NAME_TO_CODE = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
+    "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
+    "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID",
+    "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS",
+    "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD",
+    "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS",
+    "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV",
+    "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+    "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK",
+    "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC",
+    "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT",
+    "vermont": "VT", "virginia": "VA", "washington": "WA", "west virginia": "WV",
+    "wisconsin": "WI", "wyoming": "WY", "district of columbia": "DC",
+    # Common misspellings
+    "virgina": "VA", "tenessee": "TN", "misssissippi": "MS", "conneticut": "CT",
+}
+
+
+def _normalize_state(value: str) -> str:
+    """Convert full state name or abbreviation to 2-letter code."""
+    if not value:
+        return value
+    cleaned = value.strip()
+    # Already a 2-letter code?
+    if len(cleaned) == 2:
+        return cleaned.upper()
+    # Try full name lookup
+    code = _STATE_NAME_TO_CODE.get(cleaned.lower())
+    if code:
+        return code
+    # Return as-is (will still import, just won't be normalized)
+    return cleaned
+
+
+# ---------------------------------------------------------------------------
 # Column definitions (10 fields)
 # ---------------------------------------------------------------------------
 
@@ -36,7 +75,8 @@ LICENSE_COLUMNS = [
     ColumnDef(
         name="holder_name", label="Holder Name", type="text", required=True,
         aliases=["name", "holder", "company", "company name", "company_name",
-                 "licensee", "holder_name", "entity name", "entity"],
+                 "licensee", "holder_name", "entity name", "entity",
+                 "business entity name", "business_entity_name", "business entity"],
     ),
     ColumnDef(
         name="holder_type", label="Holder Type", type="text",
@@ -51,13 +91,20 @@ LICENSE_COLUMNS = [
     ColumnDef(
         name="issued_date", label="Issued Date", type="date",
         aliases=["issued", "issue date", "issue_date", "date issued",
-                 "date_issued", "effective date", "effective_date"],
+                 "date_issued", "effective date", "effective_date",
+                 "first issued", "first_issued", "original issue date"],
     ),
     ColumnDef(
         name="expiration_date", label="Expiration Date", type="date",
         aliases=["expiration", "expires", "expiry", "expiry date",
                  "expiry_date", "exp date", "exp_date", "date expires",
-                 "renewal date", "renewal_date"],
+                 "renewal date", "renewal_date", "renewed through",
+                 "renewed_through", "renewal through"],
+    ),
+    ColumnDef(
+        name="reciprocal_state", label="Reciprocal State", type="text",
+        aliases=["reciprocal", "reciprocal state", "reciprocal_state",
+                 "reciprocity", "reciprocal from"],
     ),
     ColumnDef(
         name="status", label="Status", type="text",
@@ -68,6 +115,40 @@ LICENSE_COLUMNS = [
         aliases=["comments", "remarks", "comment", "remark", "description"],
     ),
 ]
+
+
+# ---------------------------------------------------------------------------
+# Normalize function — clean up record before matching
+# ---------------------------------------------------------------------------
+
+def normalize_license_record(record: Dict[str, Any]) -> None:
+    """In-place normalization: state names → codes, status cleanup."""
+    # Normalize state_code (full name → 2-letter abbreviation)
+    if record.get("state_code"):
+        record["state_code"] = _normalize_state(record["state_code"])
+
+    # Normalize reciprocal_state the same way
+    if record.get("reciprocal_state"):
+        record["reciprocal_state"] = _normalize_state(record["reciprocal_state"])
+
+    # Normalize status values
+    status = record.get("status")
+    if status:
+        status_lower = status.strip().lower()
+        status_map = {
+            "active": "active",
+            "expired": "expired",
+            "pending": "pending",
+            "revoked": "revoked",
+            "disassociation": "disassociation",
+            "inactive": "expired",
+            "lapsed": "expired",
+        }
+        record["status"] = status_map.get(status_lower, status.strip())
+
+    # Default holder_type if not set
+    if not record.get("holder_type"):
+        record["holder_type"] = "company"
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +199,8 @@ def match_license(
 
 _COMPARE_FIELDS = [
     "holder_name", "holder_type", "license_type", "license_number",
-    "state_code", "issued_date", "expiration_date", "status", "notes",
+    "state_code", "issued_date", "expiration_date", "reciprocal_state",
+    "status", "notes",
 ]
 
 
@@ -225,6 +307,7 @@ def execute_license_action(
             holder_name=data["holder_name"],
             issued_date=data.get("issued_date"),
             expiration_date=data.get("expiration_date"),
+            reciprocal_state=data.get("reciprocal_state"),
             status=data.get("status", "active"),
             notes=data.get("notes"),
             created_by=executed_by,
@@ -261,6 +344,7 @@ def get_license_import_spec() -> ImportSpec:
         module="licenses",
         target_table="state_licenses",
         columns=LICENSE_COLUMNS,
+        normalize_fn=normalize_license_record,
         match_fn=match_license,
         categorize_fn=categorize_license,
         detect_missing_fn=None,  # No separation detection for licenses

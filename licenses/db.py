@@ -92,8 +92,8 @@ def create_license(conn: sqlite3.Connection, **fields) -> Dict[str, Any]:
         """INSERT INTO state_licenses
            (id, holder_type, employee_id, state_code, license_type,
             license_number, holder_name, issued_date, expiration_date,
-            status, notes, created_at, updated_at, created_by)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            reciprocal_state, status, notes, created_at, updated_at, created_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             license_id,
             fields["holder_type"],
@@ -104,6 +104,7 @@ def create_license(conn: sqlite3.Connection, **fields) -> Dict[str, Any]:
             fields["holder_name"],
             fields.get("issued_date"),
             fields.get("expiration_date"),
+            fields.get("reciprocal_state"),
             fields.get("status", "active"),
             fields.get("notes"),
             now,
@@ -122,7 +123,7 @@ def update_license(
     allowed = {
         "holder_type", "employee_id", "state_code", "license_type",
         "license_number", "holder_name", "issued_date", "expiration_date",
-        "status", "notes",
+        "reciprocal_state", "status", "notes",
     }
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:

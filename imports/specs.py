@@ -105,6 +105,7 @@ class ImportSpec:
     columns: List[ColumnDef] = field(default_factory=list)
 
     # Module provides these callbacks:
+    normalize_fn: Optional[Callable] = None   # (record) -> record  (in-place cleanup before match)
     match_fn: Optional[Callable] = None       # (conn, record) -> (existing_dict, match_method) | (None, None)
     categorize_fn: Optional[Callable] = None  # (record, existing, match_method) -> ActionItem
     detect_missing_fn: Optional[Callable] = None  # (conn, import_ids) -> list of ActionItems

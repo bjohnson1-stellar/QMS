@@ -161,12 +161,19 @@
                     <input type="date" id="fExpirationDate">
                 </div>
                 <div class="form-group">
+                    <label>Reciprocal State</label>
+                    <select id="fReciprocalState">
+                        <option value="">None</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Status</label>
                     <select id="fStatus">
                         <option value="active">Active</option>
                         <option value="pending">Pending</option>
                         <option value="expired">Expired</option>
                         <option value="revoked">Revoked</option>
+                        <option value="disassociation">Disassociation</option>
                     </select>
                 </div>
                 <div class="form-group" style="grid-column:1/-1;">
@@ -298,6 +305,7 @@
     async function loadAll() {
         const stateOpts = US_STATES.map(([c,n]) => `<option value="${c}">${c} — ${n}</option>`).join('');
         document.getElementById('fState').innerHTML = '<option value="">Select State...</option>' + stateOpts;
+        document.getElementById('fReciprocalState').innerHTML = '<option value="">None</option>' + stateOpts;
         document.getElementById('filterState').innerHTML = '<option value="">All States</option>' + stateOpts;
 
         const [licRes, statRes, empRes, mapRes, expRes, timeRes] = await Promise.all([
@@ -549,7 +557,7 @@
 
         let html = `<table><thead><tr>
             <th>State</th><th>License Type</th><th>License #</th><th>Holder</th>
-            <th>Type</th><th>Issued</th><th>Expiration</th><th>Status</th><th></th>
+            <th>Type</th><th>Issued</th><th>Expiration</th><th>Reciprocal</th><th>Status</th><th></th>
         </tr></thead><tbody>`;
 
         for (const l of filtered) {
@@ -567,6 +575,7 @@
                 <td>${typeBadge}</td>
                 <td>${l.issued_date || '—'}</td>
                 <td>${l.expiration_date || 'No Expiry'}${expWarn}</td>
+                <td>${l.reciprocal_state ? '<span style="font-size:0.85rem;">' + l.reciprocal_state + '</span>' : '<span style="color:var(--color-text-muted);">—</span>'}</td>
                 <td>${badge}</td>
                 <td style="white-space:nowrap;">
                     <button class="btn-sm" onclick="editLicense('${l.id}')">Edit</button>
@@ -617,6 +626,7 @@
             document.getElementById('fLicenseNumber').value = l.license_number;
             document.getElementById('fIssuedDate').value = l.issued_date || '';
             document.getElementById('fExpirationDate').value = l.expiration_date || '';
+            document.getElementById('fReciprocalState').value = l.reciprocal_state || '';
             document.getElementById('fStatus').value = l.status;
             document.getElementById('fNotes').value = l.notes || '';
             if (l.employee_id) document.getElementById('fEmployee').value = l.employee_id;
@@ -663,6 +673,7 @@
             license_number: document.getElementById('fLicenseNumber').value,
             issued_date: document.getElementById('fIssuedDate').value || null,
             expiration_date: document.getElementById('fExpirationDate').value || null,
+            reciprocal_state: document.getElementById('fReciprocalState').value || null,
             status: document.getElementById('fStatus').value,
             notes: document.getElementById('fNotes').value || null
         };
