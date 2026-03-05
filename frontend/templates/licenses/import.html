@@ -466,7 +466,7 @@
     function getName(item) {
         const r = item.record || {};
         const e = item.existing || {};
-        return r.holder_name || e.holder_name || '(unknown)';
+        return r.business_entity || r.holder_name || e.business_entity || e.holder_name || '(unknown)';
     }
 
     function getDetails(type, item) {

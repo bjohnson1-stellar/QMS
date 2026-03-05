@@ -21,4 +21,12 @@ def run_license_migrations(conn: sqlite3.Connection):
     if "disassociation_date" not in cols:
         conn.execute("ALTER TABLE state_licenses ADD COLUMN disassociation_date TEXT")
 
+    if "business_entity" not in cols:
+        conn.execute("ALTER TABLE state_licenses ADD COLUMN business_entity TEXT")
+        # Backfill from holder_name for existing rows
+        conn.execute(
+            "UPDATE state_licenses SET business_entity = holder_name "
+            "WHERE business_entity IS NULL"
+        )
+
     conn.commit()

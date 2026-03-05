@@ -1,10 +1,11 @@
 -- State Licenses — company and employee license tracking
--- FK: employees.id (optional, only for holder_type='employee')
+-- FK: employees.id (optional employee link)
 
 CREATE TABLE IF NOT EXISTS state_licenses (
     id              TEXT PRIMARY KEY,
-    holder_type     TEXT NOT NULL CHECK (holder_type IN ('company', 'employee')),
+    holder_type     TEXT,                 -- legacy; nullable for backward compat
     employee_id     TEXT,
+    business_entity TEXT,                 -- company / business entity name
     state_code      TEXT NOT NULL,        -- 2-letter state abbreviation
     license_type    TEXT NOT NULL,         -- e.g. 'Contractor', 'Journeyman Plumber'
     license_number  TEXT NOT NULL,

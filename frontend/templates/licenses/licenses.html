@@ -18,7 +18,7 @@
 </div>
 
 <!-- Stats Cards -->
-<div class="stats-grid" id="statsGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:15px;margin-bottom:20px;">
+<div class="stats-grid" id="statsGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px;">
     <div class="stat-card">
         <div class="stat-value" id="statTotal">-</div>
         <div class="stat-label">Total Licenses</div>
@@ -32,12 +32,8 @@
         <div class="stat-label">Expiring (90 days)</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value" id="statCompany">-</div>
-        <div class="stat-label">Company</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" id="statEmployee">-</div>
-        <div class="stat-label">Employee</div>
+        <div class="stat-value" id="statWithEmployee">-</div>
+        <div class="stat-label">With Employee</div>
     </div>
 </div>
 
@@ -122,21 +118,14 @@
         <form id="licenseForm" onsubmit="return saveLicense(event)">
             <div class="modal-form-grid">
                 <div class="form-group">
-                    <label>Holder Type *</label>
-                    <select id="fHolderType" required onchange="toggleEmployeePicker()">
-                        <option value="company">Company</option>
-                        <option value="employee">Employee</option>
-                    </select>
-                </div>
-                <div class="form-group" id="employeePickerGroup" style="display:none;">
-                    <label>Employee *</label>
-                    <select id="fEmployee" onchange="autoFillHolder()">
-                        <option value="">Select Employee...</option>
-                    </select>
+                    <label>Business Entity *</label>
+                    <input type="text" id="fBusinessEntity" required placeholder="Company or business name">
                 </div>
                 <div class="form-group">
-                    <label>Holder Name *</label>
-                    <input type="text" id="fHolderName" required placeholder="Company or person name">
+                    <label>Employee</label>
+                    <select id="fEmployee">
+                        <option value="">— None —</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>State *</label>
@@ -204,11 +193,6 @@
 <div class="card">
     <div class="filter-bar">
         <input type="text" id="filterSearch" placeholder="Search licenses..." oninput="renderTable()">
-        <select id="filterHolderType" onchange="renderTable()">
-            <option value="">All Types</option>
-            <option value="company">Company</option>
-            <option value="employee">Employee</option>
-        </select>
         <select id="filterState" onchange="renderTable()">
             <option value="">All States</option>
         </select>
@@ -286,8 +270,7 @@
         document.getElementById('statTotal').textContent = s.total || 0;
         document.getElementById('statActive').textContent = s.active || 0;
         document.getElementById('statExpiring').textContent = s.expiring_90 || 0;
-        document.getElementById('statCompany').textContent = s.company || 0;
-        document.getElementById('statEmployee').textContent = s.employee || 0;
+        document.getElementById('statWithEmployee').textContent = s.with_employee || 0;
     }
 
     function populateEmployees(emps) {
@@ -404,7 +387,7 @@
                 : `<span style="background:${color};color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;">${days}d</span>`;
             return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-left:3px solid ${color};background:var(--color-surface-alt);border-radius:0 4px 4px 0;font-size:0.82rem;">
                 <div style="flex:1;min-width:0;">
-                    <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(l.holder_name)}</div>
+                    <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(l.business_entity || l.holder_name)}</div>
                     <div style="color:var(--color-text-muted);font-size:0.75rem;">${l.state_code} | ${esc(l.license_type)} | #${esc(l.license_number)}</div>
                 </div>
                 ${badge}
@@ -448,15 +431,9 @@
                 labels,
                 datasets: [
                     {
-                        label: 'Company',
-                        data: data.map(d => d.company),
+                        label: 'Renewals',
+                        data: data.map(d => d.total),
                         backgroundColor: isDark ? '#388bfd' : '#1f6feb',
-                        borderRadius: 3,
-                    },
-                    {
-                        label: 'Employee',
-                        data: data.map(d => d.employee),
-                        backgroundColor: isDark ? '#56d364' : '#238636',
                         borderRadius: 3,
                     },
                 ],
@@ -472,12 +449,10 @@
                 },
                 scales: {
                     x: {
-                        stacked: true,
                         ticks: { color: textColor },
                         grid: { display: false },
                     },
                     y: {
-                        stacked: true,
                         beginAtZero: true,
                         ticks: { color: textColor, precision: 0 },
                         grid: { color: gridColor },
@@ -491,16 +466,14 @@
 
     function renderTable() {
         const search = document.getElementById('filterSearch').value.toLowerCase();
-        const holderType = document.getElementById('filterHolderType').value;
         const state = document.getElementById('filterState').value;
         const status = document.getElementById('filterStatus').value;
 
         let filtered = licenses.filter(l => {
-            if (holderType && l.holder_type !== holderType) return false;
             if (state && l.state_code !== state) return false;
             if (status && l.status !== status) return false;
             if (search) {
-                const haystack = [l.holder_name, l.license_number, l.license_type, l.state_code, l.notes || ''].join(' ').toLowerCase();
+                const haystack = [l.business_entity, l.holder_name, l.license_number, l.license_type, l.state_code, l.notes || ''].join(' ').toLowerCase();
                 if (!haystack.includes(search)) return false;
             }
             return true;
@@ -512,24 +485,22 @@
         }
 
         let html = `<table><thead><tr>
-            <th>State</th><th>License Type</th><th>License #</th><th>Holder</th>
-            <th>Type</th><th>Issued</th><th>Expiration</th><th>Reciprocal</th>
+            <th>State</th><th>License Type</th><th>License #</th><th>Business Entity</th>
+            <th>Employee</th><th>Issued</th><th>Expiration</th><th>Reciprocal</th>
             <th>Assoc.</th><th>Disassoc.</th><th>Status</th><th></th>
         </tr></thead><tbody>`;
 
         for (const l of filtered) {
             const badge = statusBadge(l.status);
-            const typeBadge = l.holder_type === 'company'
-                ? '<span class="badge" style="background:var(--color-accent, #1f6feb);color:#fff;font-size:11px;">Company</span>'
-                : '<span class="badge" style="background:var(--color-text-muted, #666);color:#fff;font-size:11px;">Employee</span>';
+            const empName = getEmployeeName(l.employee_id);
             const expWarn = expiryWarning(l);
 
             html += `<tr>
                 <td><strong>${l.state_code}</strong></td>
                 <td>${esc(l.license_type)}</td>
                 <td>${esc(l.license_number)}</td>
-                <td>${esc(l.holder_name)}</td>
-                <td>${typeBadge}</td>
+                <td>${esc(l.business_entity || l.holder_name)}</td>
+                <td>${empName ? esc(empName) : '<span style="color:var(--color-text-muted);">—</span>'}</td>
                 <td>${l.issued_date || '—'}</td>
                 <td>${l.expiration_date || 'No Expiry'}${expWarn}</td>
                 <td>${l.reciprocal_state ? '<span style="font-size:0.85rem;">' + l.reciprocal_state + '</span>' : '<span style="color:var(--color-text-muted);">—</span>'}</td>
@@ -544,6 +515,12 @@
         }
         html += '</tbody></table>';
         document.getElementById('licensesTable').innerHTML = html;
+    }
+
+    function getEmployeeName(empId) {
+        if (!empId) return null;
+        const emp = employees.find(e => e.id === empId);
+        return emp ? emp.first_name + ' ' + emp.last_name : null;
     }
 
     function statusBadge(status) {
@@ -578,8 +555,7 @@
         if (id) {
             const l = licenses.find(x => x.id === id);
             if (!l) return;
-            document.getElementById('fHolderType').value = l.holder_type;
-            document.getElementById('fHolderName').value = l.holder_name;
+            document.getElementById('fBusinessEntity').value = l.business_entity || l.holder_name || '';
             document.getElementById('fState').value = l.state_code;
             document.getElementById('fLicenseType').value = l.license_type;
             document.getElementById('fLicenseNumber').value = l.license_number;
@@ -590,12 +566,9 @@
             document.getElementById('fDisassociationDate').value = l.disassociation_date || '';
             document.getElementById('fStatus').value = l.status;
             document.getElementById('fNotes').value = l.notes || '';
-            if (l.employee_id) document.getElementById('fEmployee').value = l.employee_id;
-            toggleEmployeePicker();
+            document.getElementById('fEmployee').value = l.employee_id || '';
         } else {
             document.getElementById('licenseForm').reset();
-            document.getElementById('fHolderType').value = 'company';
-            toggleEmployeePicker();
         }
         document.getElementById('licenseModal').style.display = 'flex';
     }
@@ -607,28 +580,13 @@
 
     function editLicense(id) { openModal(id); }
 
-    function toggleEmployeePicker() {
-        const isEmployee = document.getElementById('fHolderType').value === 'employee';
-        document.getElementById('employeePickerGroup').style.display = isEmployee ? '' : 'none';
-        if (isEmployee) document.getElementById('fEmployee').required = true;
-        else { document.getElementById('fEmployee').required = false; document.getElementById('fEmployee').value = ''; }
-    }
-
-    function autoFillHolder() {
-        const sel = document.getElementById('fEmployee');
-        const opt = sel.options[sel.selectedIndex];
-        if (opt && opt.dataset.name) {
-            document.getElementById('fHolderName').value = opt.dataset.name;
-        }
-    }
-
     // ── CRUD ──────────────────────────────────────────────────────────────
 
     async function saveLicense(e) {
         e.preventDefault();
         const data = {
-            holder_type: document.getElementById('fHolderType').value,
-            holder_name: document.getElementById('fHolderName').value,
+            business_entity: document.getElementById('fBusinessEntity').value,
+            employee_id: document.getElementById('fEmployee').value || null,
             state_code: document.getElementById('fState').value,
             license_type: document.getElementById('fLicenseType').value,
             license_number: document.getElementById('fLicenseNumber').value,
@@ -640,9 +598,6 @@
             status: document.getElementById('fStatus').value,
             notes: document.getElementById('fNotes').value || null
         };
-        if (data.holder_type === 'employee') {
-            data.employee_id = document.getElementById('fEmployee').value || null;
-        }
 
         const url = currentEditId ? `${API}/licenses/${currentEditId}` : `${API}/licenses`;
         const method = currentEditId ? 'PUT' : 'POST';

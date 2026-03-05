@@ -76,6 +76,14 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "License Schema — Business Entity + Employee Model",
+          "desc": "Added business_entity column to state_licenses, separating company identity from employee link. Migration backfills from holder_name. Updated import specs, API, modal form, table, stats cards, and renewal timeline.",
+          "module": "licenses",
+          "priority": "medium",
+          "tags": ["schema", "licenses", "refactor"],
+          "completed": "2026-03-05"
+        },
+        {
           "title": "Mobile Capture Photo Pipeline (Phase 4, Plan 01)",
           "desc": "Claude vision photo analysis pipeline — scan OneDrive folder for construction photos, analyze with AI, create structured quality issues with attached images. CLI command with dry-run, folder override, project assignment. capture_log dedup table. 17 tests.",
           "module": "quality",

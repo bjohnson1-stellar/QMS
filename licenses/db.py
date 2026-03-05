@@ -41,11 +41,12 @@ def list_licenses(
         params.append(status)
     if search:
         clauses.append(
-            "(sl.holder_name LIKE ? OR sl.license_number LIKE ? "
+            "(sl.holder_name LIKE ? OR sl.business_entity LIKE ? "
+            "OR sl.license_number LIKE ? "
             "OR sl.license_type LIKE ? OR sl.state_code LIKE ?)"
         )
         term = f"%{search}%"
-        params.extend([term, term, term, term])
+        params.extend([term, term, term, term, term])
 
     where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
 
@@ -90,19 +91,21 @@ def create_license(conn: sqlite3.Connection, **fields) -> Dict[str, Any]:
 
     conn.execute(
         """INSERT INTO state_licenses
-           (id, holder_type, employee_id, state_code, license_type,
-            license_number, holder_name, issued_date, expiration_date,
-            reciprocal_state, association_date, disassociation_date,
-            status, notes, created_at, updated_at, created_by)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           (id, holder_type, employee_id, business_entity, state_code,
+            license_type, license_number, holder_name, issued_date,
+            expiration_date, reciprocal_state, association_date,
+            disassociation_date, status, notes, created_at, updated_at,
+            created_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             license_id,
-            fields["holder_type"],
+            fields.get("holder_type"),
             fields.get("employee_id"),
+            fields.get("business_entity"),
             fields["state_code"],
             fields["license_type"],
             fields["license_number"],
-            fields["holder_name"],
+            fields.get("holder_name") or fields.get("business_entity", ""),
             fields.get("issued_date"),
             fields.get("expiration_date"),
             fields.get("reciprocal_state"),
@@ -124,10 +127,10 @@ def update_license(
 ) -> Optional[Dict[str, Any]]:
     """Partial update — only provided fields are changed."""
     allowed = {
-        "holder_type", "employee_id", "state_code", "license_type",
-        "license_number", "holder_name", "issued_date", "expiration_date",
-        "reciprocal_state", "association_date", "disassociation_date",
-        "status", "notes",
+        "holder_type", "employee_id", "business_entity", "state_code",
+        "license_type", "license_number", "holder_name", "issued_date",
+        "expiration_date", "reciprocal_state", "association_date",
+        "disassociation_date", "status", "notes",
     }
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
@@ -169,8 +172,7 @@ def get_license_stats(conn: sqlite3.Connection) -> Dict[str, int]:
                       AND julianday(expiration_date) - julianday('now') <= 90
                       AND julianday(expiration_date) - julianday('now') > 0
                  THEN 1 ELSE 0 END) AS expiring_90,
-            SUM(CASE WHEN holder_type = 'company' THEN 1 ELSE 0 END) AS company,
-            SUM(CASE WHEN holder_type = 'employee' THEN 1 ELSE 0 END) AS employee
+            SUM(CASE WHEN employee_id IS NOT NULL THEN 1 ELSE 0 END) AS with_employee
         FROM state_licenses
     """).fetchone()
     return dict(row)
@@ -240,13 +242,14 @@ def get_state_map_data(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
 def get_renewal_timeline(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
     """Monthly renewal counts for the next 12 months.
 
-    Returns list of {month, company, employee} sorted chronologically.
+    Returns list of {month, with_employee, without_employee} sorted chronologically.
     """
     rows = conn.execute("""
         SELECT
             strftime('%%Y-%%m', expiration_date) AS month,
-            SUM(CASE WHEN holder_type = 'company' THEN 1 ELSE 0 END) AS company,
-            SUM(CASE WHEN holder_type = 'employee' THEN 1 ELSE 0 END) AS employee
+            SUM(CASE WHEN employee_id IS NOT NULL THEN 1 ELSE 0 END) AS with_employee,
+            SUM(CASE WHEN employee_id IS NULL THEN 1 ELSE 0 END) AS without_employee,
+            COUNT(*) AS total
         FROM state_licenses
         WHERE expiration_date IS NOT NULL
           AND expiration_date >= date('now')

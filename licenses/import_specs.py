@@ -57,6 +57,12 @@ def _normalize_state(value: str) -> str:
 
 LICENSE_COLUMNS = [
     ColumnDef(
+        name="business_entity", label="Business Entity", type="text", required=True,
+        aliases=["business entity name", "business_entity_name", "business entity",
+                 "company", "company name", "company_name", "entity name", "entity",
+                 "holder", "licensee", "holder_name", "name"],
+    ),
+    ColumnDef(
         name="state_code", label="State", type="text", required=True,
         aliases=["state", "st", "state abbreviation", "state_abbreviation",
                  "license state", "license_state"],
@@ -73,14 +79,8 @@ LICENSE_COLUMNS = [
                  "certificate number"],
     ),
     ColumnDef(
-        name="holder_name", label="Holder Name", type="text", required=True,
-        aliases=["name", "holder", "company", "company name", "company_name",
-                 "licensee", "holder_name", "entity name", "entity",
-                 "business entity name", "business_entity_name", "business entity"],
-    ),
-    ColumnDef(
-        name="holder_type", label="Holder Type", type="text",
-        aliases=["type of holder", "holder_type", "entity type", "entity_type"],
+        name="holder_name", label="Holder Name", type="text",
+        aliases=["holder name"],
     ),
     ColumnDef(
         name="employee_id", label="Employee", type="fk_lookup",
@@ -159,9 +159,9 @@ def normalize_license_record(record: Dict[str, Any]) -> None:
         }
         record["status"] = status_map.get(status_lower, status.strip())
 
-    # Default holder_type if not set
-    if not record.get("holder_type"):
-        record["holder_type"] = "company"
+    # Auto-populate holder_name from business_entity if not provided
+    if not record.get("holder_name") and record.get("business_entity"):
+        record["holder_name"] = record["business_entity"]
 
 
 # ---------------------------------------------------------------------------
@@ -211,7 +211,7 @@ def match_license(
 # ---------------------------------------------------------------------------
 
 _COMPARE_FIELDS = [
-    "holder_name", "holder_type", "license_type", "license_number",
+    "business_entity", "holder_name", "license_type", "license_number",
     "state_code", "issued_date", "expiration_date", "reciprocal_state",
     "association_date", "disassociation_date", "status", "notes",
 ]
@@ -304,20 +304,15 @@ def execute_license_action(
     data = item.record_data
     action = item.action_type
 
-    # Default holder_type if not provided
-    holder_type = data.get("holder_type", "company")
-    if holder_type not in ("company", "employee"):
-        holder_type = "company"
-
     if action == "insert":
         create_license(
             conn,
-            holder_type=holder_type,
+            business_entity=data.get("business_entity"),
             employee_id=data.get("employee_id"),
             state_code=data["state_code"],
             license_type=data["license_type"],
             license_number=data["license_number"],
-            holder_name=data["holder_name"],
+            holder_name=data.get("holder_name") or data.get("business_entity", ""),
             issued_date=data.get("issued_date"),
             expiration_date=data.get("expiration_date"),
             reciprocal_state=data.get("reciprocal_state"),

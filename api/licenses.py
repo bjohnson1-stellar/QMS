@@ -71,10 +71,14 @@ def api_license_stats():
 @module_required("licenses", min_role="editor")
 def api_create_license():
     data = request.get_json(force=True)
-    required = ["holder_type", "state_code", "license_type", "license_number", "holder_name"]
+    required = ["business_entity", "state_code", "license_type", "license_number"]
     missing = [f for f in required if not data.get(f)]
     if missing:
         return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
+
+    # Auto-populate holder_name from business_entity for backward compat
+    if not data.get("holder_name"):
+        data["holder_name"] = data.get("business_entity", "")
 
     user = session.get("user", {})
     data["created_by"] = user.get("id", user.get("email", "unknown"))
