@@ -1,106 +1,89 @@
-# QMS — Procore Observation Integration
+# QMS — Quality Management System
 
 ## What This Is
 
-Bidirectional Procore observation integration for the QMS platform. Two tracks: (1) Brandon's personal mobile capture pipeline — photos and voice notes saved to OneDrive from phone, processed by AI into structured observations and pushed to Procore. (2) Team-wide Procore observation import — pull existing and historical observations from Procore into QMS for centralized tracking and reporting.
+Modular Python platform for construction quality management. Two active milestones: (1) Procore quality intelligence — aggregating siloed quality data into unified analytics with mobile capture. (2) License compliance platform — Harbor-like multi-state license management with renewal workflows, CE tracking, regulatory intelligence, and document management.
 
 ## Core Value
 
-All quality data from siloed Procore projects unified in one database — enabling cross-project pattern analysis, trend detection, and data-driven quality decisions. Plus a mobile capture pipeline for field observations and bidirectional sync with Procore.
+Centralized quality and compliance management for MEP contractors — replacing manual spreadsheets, siloed Procore data, and expensive SaaS tools (Harbor ~$540/yr) with an integrated, self-hosted platform.
 
 ## Current State
 
 | Attribute | Value |
 |-----------|-------|
-| Version | 0.1.0-alpha |
+| Version | 0.2.0-alpha |
 | Status | In Progress |
-| Last Updated | 2026-02-27 (Phase 3 complete) |
+| Last Updated | 2026-03-05 (v0.2 milestone created) |
 
 **Production URL:** http://L004470-CAD:5000
+
+## Milestones
+
+### v0.2 License Compliance Platform (Current)
+Expand the licenses module from basic CRUD + CE tracking into a comprehensive Harbor-like compliance management system. 8 phases covering foundation hardening through integrations.
+
+**Pre-PAUL work already completed:**
+- Phase 1 (pre-tracked): Base CRUD, SVG map, CSV import, renewal timeline
+- Phase 2 (pre-tracked): Drill-down navigation, scope mapping, CE tracking, board data for 51 states
+- Phase 3 (pre-tracked): CE seed data, period-aware summary, certificate upload, CSV exports, compliance dashboard
+
+### v0.1 Quality Intelligence Platform (80% complete)
+Bidirectional Procore observation integration. Two tracks: personal mobile capture pipeline and team-wide Procore observation import.
 
 ## Requirements
 
 ### Validated (Shipped)
+- [x] Quality issues foundation (8 tables, audit trail, normalization) — v0.1 Phase 1
+- [x] Procore CSV bulk import with dedup, vector indexing — v0.1 Phase 2
+- [x] Quality intelligence dashboard with Chart.js analytics, semantic search — v0.1 Phase 3
+- [x] Mobile photo capture pipeline with Claude vision — v0.1 Phase 4 (partial)
+- [x] License CRUD with US state SVG map, CSV import — Licenses Phase 1
+- [x] Drill-down navigation, scope mapping, CE tracking — Licenses Phase 2
+- [x] CE seed data, compliance dashboard, certificate upload, CSV exports — Licenses Phase 3
 
-- [x] CSV project import from Procore Company Home export — `projects/procore_io.py`
-- [x] Unified quality issues schema (8 tables, all issue types) — Phase 1
-- [x] Root cause taxonomy and normalization config — Phase 1
-- [x] Audit trail and issue linking infrastructure — Phase 1
-- [x] CSV import engine with header auto-mapping, normalization, dedup — Phase 2
-- [x] Batch import with project-from-filename resolution — Phase 2
-- [x] Attachment URL capture during import — Phase 2
-- [x] Quality issues vector indexing for semantic search — Phase 2
-- [x] Pipeline classifier for observation CSV auto-detection — Phase 2
-- [x] Quality intelligence dashboard with Chart.js analytics, browse page, semantic search — Phase 3
+### Active (v0.2 — In Progress)
+- [ ] Foundation hardening (security, N+1 queries, audit trail, pagination)
+- [ ] Renewal workflow with event tracking and fee history
+- [ ] Notification system (expiration warnings, CE deadlines, Teams webhook)
+- [ ] Document management (certificates, applications, correspondence)
+- [ ] Entity registration tracking (SoS, DBE, minority certs)
+- [ ] Regulatory intelligence database (state requirements, fee schedules)
+- [ ] Advanced CE management (providers, courses, cross-state mapping)
+- [ ] Integrations (primary source verification, calendar, cross-module)
 
-### Active (In Progress)
-
-- [ ] Track 1: OneDrive → AI processing → structured observation → Procore push
-
-### Planned (Next)
-
-- [ ] Drawing zip import from Procore exports
-
-### Out of Scope
-
-- Procore real-time API sync (future milestone)
-- Procore RFI or submittal integration
+### Paused (v0.1 remaining)
+- [ ] Voice transcription + review UI (Phase 4 Plan 02)
+- [ ] Procore push (Phase 5)
 
 ## Target Users
 
-**Primary (Track 1):** Brandon Johnson
-- Field visits with mobile phone
-- Captures photos + voice notes to OneDrive
-- Needs zero-effort observation creation in Procore
-
-**Primary (Track 2):** All QMS users
-- Need historical and ongoing Procore observations in QMS
-- Centralized reporting across projects
+**Primary:** Brandon Johnson (admin, field quality oversight)
+**Secondary:** SIS QMS users with license management responsibilities
 
 ## Context
 
 **Business Context:**
-SIS field teams use Procore for project management. Quality observations created during site visits currently require manual double-entry — once in the field notes and again in Procore. Historical observations in Procore are not visible in QMS reporting.
+SIS manages professional and business licenses across multiple states for MEP contracting. Currently tracked in spreadsheets. Harbor Compliance offers similar functionality at ~$540/yr but is a general-purpose SaaS — QMS can provide tighter integration with welding certs, workforce data, and project assignments.
 
 **Technical Context:**
-- Existing CSV import: `projects/procore_io.py`
-- Config: `config.yaml` → `procore:` section with per-project URL mappings
-- Chrome MCP tools available for browser automation
-- OneDrive folder accessible from this machine
-- AI transcription available via Claude API
-
-## Constraints
-
-### Technical Constraints
-- Must work with existing QMS Flask architecture and SQLite database
-- OneDrive folder is local sync (not API-based)
-- Procore API access status unknown — may require browser automation
-
-### Business Constraints
-- Track 1 is a personal workflow (Brandon only)
-- Track 2 must be accessible to any QMS user with project access
+- Existing licenses module: `licenses/` package with schema, db, migrations
+- 10 schema tables (state_licenses, ce_requirements, ce_credits, boards, scopes, etc.)
+- Flask blueprint at `/licenses/` with full CRUD + compliance dashboard
+- Certificate file storage at `data/certificates/`
+- Welding notification pattern available for cloning (notification_rules + notifications tables)
+- WeasyPrint PDF pipeline available from quality manual module
 
 ## Key Decisions
 
 | Decision | Rationale | Date | Status |
 |----------|-----------|------|--------|
-| Two-track approach | Personal mobile pipeline vs team-wide import serve different audiences | 2026-02-25 | Active |
-| OneDrive as bridge | Already in use on mobile, local sync avoids API complexity | 2026-02-25 | Active |
-| Wide schema (all issue types) | quality_issues supports observations, NCRs, CARs, deficiencies, punch — not just observations | 2026-02-25 | Active |
-| Audit trail from day one | Cannot be retrofitted — captures all history from initial import | 2026-02-25 | Active |
-| Normalization config in YAML | Trade/status/type aliases in config.yaml for import-time normalization | 2026-02-25 | Active |
-| Manual CSV export from Procore | No API/browser automation needed for now; can add later | 2026-02-26 | Active |
-| Data-source-agnostic import engine | CSV in → quality_issues out, regardless of extraction method | 2026-02-26 | Active |
-| Attachment URL-only recording | Capture URLs now, download files later (Phase 4) | 2026-02-26 | Active |
-| Chart.js via CDN for analytics | No build step, matches QMS inline-script convention | 2026-02-27 | Active |
-| vectordb-first search with SQL fallback | Graceful degradation when vectordb unavailable | 2026-02-27 | Active |
-
-## Success Metrics
-
-| Metric | Target | Current | Status |
-|--------|--------|---------|--------|
-| Observation creation time (Track 1) | < 2 min from photo to Procore | Manual entry ~10 min | Not started |
-| Historical observations imported | 100% of existing Procore observations | 0 | Not started |
+| Harbor feature parity as target | Comprehensive compliance management, not just license tracking | 2026-03-05 | Active |
+| Foundation hardening first | Security + perf fixes before new features (architecture audit findings) | 2026-03-05 | Active |
+| Clone welding notification pattern | Proven pattern reduces risk | 2026-03-05 | Active |
+| Self-hosted over SaaS | Integration with existing QMS modules, no recurring cost | 2026-03-05 | Active |
+| Two-track approach (v0.1) | Personal mobile pipeline vs team-wide import | 2026-02-25 | Active |
+| OneDrive as mobile bridge (v0.1) | No API integration needed | 2026-02-25 | Active |
 
 ## Tech Stack
 
@@ -108,16 +91,10 @@ SIS field teams use Procore for project management. Quality observations created
 |-------|------------|-------|
 | Framework | Flask (existing QMS) | |
 | Database | SQLite (quality.db) | |
-| AI Processing | Claude API | Voice transcription + photo analysis |
-| Browser Automation | Chrome MCP (Playwright) | Procore form filling |
-| Mobile Bridge | OneDrive local sync | Photos + voice notes |
-
-## Specialized Flows
-
-See: .paul/SPECIAL-FLOWS.md
-
-Quick Reference:
-- /frontend-design → Web UI pages and components
+| Charts | Chart.js via CDN | |
+| PDF Export | WeasyPrint | |
+| AI Processing | Claude API | Photo analysis, future voice transcription |
+| File Storage | Local filesystem (`data/`) | Certificates, documents |
 
 ## Links
 
@@ -125,8 +102,9 @@ Quick Reference:
 |----------|-----|
 | Repository | https://github.com/bjohnson1-stellar/QMS.git |
 | Production | http://L004470-CAD:5000 |
-| Planning Doc | .planning/procore-integration.md |
+| Harbor Reference | https://www.harborcompliance.com |
+| Architecture | .planning/architecture.md |
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-02-27 after Phase 3*
+*Last updated: 2026-03-05 — v0.2 License Compliance milestone created*
