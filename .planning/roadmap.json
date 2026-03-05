@@ -25,6 +25,13 @@
           "module": "welding",
           "priority": "high",
           "tags": ["extraction", "welding", "batch"]
+        },
+        {
+          "title": "v0.2 License Compliance: Phase 7 — Renewal Workflow & Events",
+          "desc": "Transform static expiration dates into active renewal workflow. license_events table, event types (issued/renewed/amended/suspended/revoked/expired/reinstated), fee tracking, auto-expire job, renewal initiation workflow, event timeline on detail page.",
+          "module": "licenses",
+          "priority": "high",
+          "tags": ["licenses", "compliance", "renewal", "events", "workflow"]
         }
       ]
     },
@@ -75,6 +82,14 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "v0.2 Phase 6 — Foundation Hardening (3 plans)",
+          "desc": "N+1 query fixes + audit trail, server-side pagination + input validation, API rate limiting (60/min per IP) + CSRF hardening (PUT/DELETE/PATCH + Origin validation). Completes security foundation for v0.2 License Compliance Platform.",
+          "module": "licenses",
+          "priority": "high",
+          "tags": ["licenses", "security", "performance", "pagination", "validation", "rate-limiting", "csrf"],
+          "completed": "2026-03-05"
+        },
         {
           "title": "Licenses Phase 3 — CE Workflow, Reporting & Compliance Dashboard",
           "desc": "Period-aware CE tracking (renewal window scoping), seed CE requirements for 9 key states, certificate file upload/download, CSV exports (licenses + CE compliance), compliance dashboard with health score cards, action items queue, and Chart.js horizontal stacked bar chart for CE progress by state. 3 new db functions, 5 new API routes, multipart file upload support.",
