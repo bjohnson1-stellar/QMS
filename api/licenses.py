@@ -260,20 +260,28 @@ def api_import_plan(session_id):
         save_action_plan(conn, plan)
         update_session_status(conn, session_id, "review", column_mapping=mapping)
 
+        # Read back saved rows to get actual DB IDs for round-trip
+        saved_rows = conn.execute(
+            "SELECT id, row_index, action_type, record_data, existing_data, "
+            "match_method, changes, reason FROM import_actions "
+            "WHERE session_id = ? ORDER BY id",
+            (session_id,),
+        ).fetchall()
+
     categories = {}
-    for action_type, items in plan.by_category.items():
-        categories[action_type] = [
-            {
-                "id": i,
-                "row_index": item.row_index,
-                "record": item.record_data,
-                "existing": item.existing_data,
-                "changes": item.changes,
-                "match_method": item.match_method,
-                "reason": item.reason,
-            }
-            for i, item in enumerate(items)
-        ]
+    for row in saved_rows:
+        atype = row["action_type"]
+        if atype not in categories:
+            categories[atype] = []
+        categories[atype].append({
+            "id": row["id"],
+            "row_index": row["row_index"],
+            "record": json.loads(row["record_data"]),
+            "existing": json.loads(row["existing_data"]) if row["existing_data"] else None,
+            "changes": json.loads(row["changes"]) if row["changes"] else None,
+            "match_method": row["match_method"],
+            "reason": row["reason"],
+        })
 
     return jsonify({
         "session_id": session_id,
