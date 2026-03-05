@@ -9,6 +9,13 @@
         <p class="subtitle">Company contractor and qualifying party professional licenses</p>
     </div>
     <div style="display:flex;gap:8px;">
+        <div class="dropdown" style="position:relative;">
+            <button class="btn-secondary" onclick="toggleExportMenu()" style="cursor:pointer;">Export</button>
+            <div id="exportMenu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--color-surface);border:1px solid var(--color-border-light);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:20;min-width:180px;">
+                <a href="{{ url_for('licenses.export_licenses_csv') }}" style="display:block;padding:8px 14px;color:var(--color-text);text-decoration:none;font-size:0.85rem;">Licenses CSV</a>
+                <a href="{{ url_for('licenses.export_ce_compliance_csv') }}" style="display:block;padding:8px 14px;color:var(--color-text);text-decoration:none;font-size:0.85rem;border-top:1px solid var(--color-border-light);">CE Compliance CSV</a>
+            </div>
+        </div>
         {% if current_user and (current_user.role == 'admin' or
               current_user.modules.get('licenses') in ('admin', 'editor')) %}
         <a href="{{ url_for('licenses.import_page') }}" class="btn-secondary" style="text-decoration:none;">Import CSV</a>
@@ -34,6 +41,50 @@
     <div class="stat-card">
         <div class="stat-value" id="statWithEmployee">-</div>
         <div class="stat-label">With Qualifying Party</div>
+    </div>
+</div>
+
+<!-- Compliance Dashboard -->
+<div id="complianceDashboard" style="margin-bottom:20px;">
+    <!-- Health Score Cards -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:15px;">
+        <div class="stat-card" style="border-left:4px solid #238636;">
+            <div class="stat-value" id="ceCompliant" style="color:#238636;">-</div>
+            <div class="stat-label">CE Compliant</div>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #d29922;">
+            <div class="stat-value" id="ceAtRisk" style="color:#d29922;">-</div>
+            <div class="stat-label">CE At Risk</div>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #da3633;">
+            <div class="stat-value" id="ceNonCompliant" style="color:#da3633;">-</div>
+            <div class="stat-label">CE Non-Compliant</div>
+        </div>
+    </div>
+
+    <!-- Action Items + CE Chart (two-column) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+        <!-- Action Items -->
+        <div class="card" style="padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;cursor:pointer;" onclick="toggleActionItems()">
+                <h3 style="margin:0;border:none;padding:0;">Action Items</h3>
+                <span id="actionToggle" style="color:var(--color-text-muted);font-size:0.8rem;">▼</span>
+            </div>
+            <div id="actionItemsList">
+                <p style="color:var(--color-text-muted);font-size:0.85rem;text-align:center;margin:0;">Loading...</p>
+            </div>
+        </div>
+
+        <!-- CE Progress by State -->
+        <div class="card" style="padding:16px;">
+            <h3 style="margin:0 0 12px;border:none;padding:0;">CE Progress by State</h3>
+            <div id="ceChartContainer" style="position:relative;height:220px;">
+                <canvas id="ceStateChart"></canvas>
+                <div id="ceChartFallback" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);font-size:0.9rem;">
+                    No CE requirements defined yet
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -214,6 +265,7 @@
     let employees = [];
     let currentEditId = null;
     let renewalChart = null;
+    let ceStateChart = null;
 
     const US_STATES = [
         ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],
@@ -244,18 +296,20 @@
         document.getElementById('fReciprocalState').innerHTML = '<option value="">None</option>' + stateOpts;
         document.getElementById('filterState').innerHTML = '<option value="">All States</option>' + stateOpts;
 
-        const [licRes, statRes, empRes, mapRes, expRes, timeRes] = await Promise.all([
+        const [licRes, statRes, empRes, mapRes, expRes, timeRes, dashRes] = await Promise.all([
             fetch(API + '/licenses').then(r => r.json()),
             fetch(API + '/licenses/stats').then(r => r.json()),
             fetch(API + '/employees/lookup').then(r => r.json()).catch(() => []),
             fetch(API + '/map-data').then(r => r.json()).catch(() => []),
             fetch(API + '/expiring').then(r => r.json()).catch(() => ({critical:[],warning:[],upcoming:[]})),
             fetch(API + '/renewal-timeline').then(r => r.json()).catch(() => []),
+            fetch(API + '/compliance-dashboard').then(r => r.json()).catch(() => ({health:{compliant:0,at_risk:0,non_compliant:0},action_items:[],ce_by_state:[]})),
         ]);
 
         licenses = licRes;
         updateStats(statRes);
         populateEmployees(empRes);
+        renderComplianceDashboard(dashRes);
         renderStateMap(mapRes);
         renderExpirationAlerts(expRes);
         renderRenewalTimeline(timeRes);
@@ -433,6 +487,140 @@
                         beginAtZero: true,
                         ticks: { color: textColor, precision: 0 },
                         grid: { color: gridColor },
+                    },
+                },
+            },
+        });
+    }
+
+    // ── Compliance Dashboard ────────────────────────────────────────────
+
+    function renderComplianceDashboard(data) {
+        const h = data.health || {};
+        document.getElementById('ceCompliant').textContent = h.compliant || 0;
+        document.getElementById('ceAtRisk').textContent = h.at_risk || 0;
+        document.getElementById('ceNonCompliant').textContent = h.non_compliant || 0;
+
+        // Hide dashboard if no CE data at all
+        const total = (h.compliant || 0) + (h.at_risk || 0) + (h.non_compliant || 0);
+        if (total === 0) {
+            document.getElementById('complianceDashboard').style.display = 'none';
+            return;
+        }
+
+        renderActionItems(data.action_items || []);
+        renderCeStateChart(data.ce_by_state || []);
+    }
+
+    function renderActionItems(items) {
+        const el = document.getElementById('actionItemsList');
+        if (!items.length) {
+            el.innerHTML = '<p style="color:var(--color-text-muted);font-size:0.85rem;text-align:center;margin:0;">All clear — no action items</p>';
+            return;
+        }
+
+        const icons = { expiring: '⏰', ce_low: '📚', coverage_gap: '⚠️' };
+        const colors = { expiring: '#d29922', ce_low: '#da3633', coverage_gap: '#6e7681' };
+
+        el.innerHTML = items.slice(0, 10).map(item => {
+            const icon = icons[item.type] || '•';
+            const color = colors[item.type] || 'var(--color-text-muted)';
+            return `<a href="${item.link}" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-left:3px solid ${color};background:var(--color-surface-alt);border-radius:0 4px 4px 0;font-size:0.82rem;margin-bottom:6px;text-decoration:none;color:var(--color-text);">
+                <span>${icon}</span>
+                <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(item.message)}</span>
+            </a>`;
+        }).join('');
+
+        if (items.length > 10) {
+            el.innerHTML += `<p style="color:var(--color-text-muted);font-size:0.8rem;text-align:center;margin:4px 0 0;">+${items.length - 10} more</p>`;
+        }
+    }
+
+    function toggleActionItems() {
+        const list = document.getElementById('actionItemsList');
+        const toggle = document.getElementById('actionToggle');
+        if (list.style.display === 'none') {
+            list.style.display = '';
+            toggle.textContent = '▼';
+        } else {
+            list.style.display = 'none';
+            toggle.textContent = '▶';
+        }
+    }
+
+    function toggleExportMenu() {
+        const menu = document.getElementById('exportMenu');
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Close export menu on outside click
+    document.addEventListener('click', function(e) {
+        const menu = document.getElementById('exportMenu');
+        if (menu && !e.target.closest('.dropdown')) menu.style.display = 'none';
+    });
+
+    function renderCeStateChart(data) {
+        const canvas = document.getElementById('ceStateChart');
+        const fallback = document.getElementById('ceChartFallback');
+
+        if (!data.length) {
+            canvas.style.display = 'none';
+            fallback.style.display = 'flex';
+            return;
+        }
+
+        canvas.style.display = '';
+        fallback.style.display = 'none';
+
+        const isDark = document.documentElement.dataset.theme === 'dark';
+        const textColor = isDark ? '#adbac7' : '#57606a';
+        const gridColor = isDark ? 'rgba(173,186,199,0.1)' : 'rgba(0,0,0,0.06)';
+
+        if (ceStateChart) ceStateChart.destroy();
+
+        ceStateChart = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.state),
+                datasets: [
+                    {
+                        label: 'Compliant',
+                        data: data.map(d => d.compliant),
+                        backgroundColor: '#238636',
+                    },
+                    {
+                        label: 'At Risk',
+                        data: data.map(d => d.at_risk),
+                        backgroundColor: '#d29922',
+                    },
+                    {
+                        label: 'Non-Compliant',
+                        data: data.map(d => d.non_compliant),
+                        backgroundColor: '#da3633',
+                    },
+                ],
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: textColor, boxWidth: 10, padding: 12, font: { size: 11 } },
+                    },
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: { color: textColor, precision: 0 },
+                        grid: { color: gridColor },
+                    },
+                    y: {
+                        stacked: true,
+                        ticks: { color: textColor },
+                        grid: { display: false },
                     },
                 },
             },

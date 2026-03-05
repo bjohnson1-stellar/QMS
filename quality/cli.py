@@ -285,9 +285,11 @@ def capture_cmd(
     )
 
     typer.echo(f"Folder: {result['folder']}")
-    typer.echo(f"Processed: {result['processed']}")
-    typer.echo(f"Failed:    {result['failed']}")
-    typer.echo(f"Skipped:   {result['skipped']}")
+    typer.echo(f"Processed:   {result['processed']}")
+    if result.get("transcribed"):
+        typer.echo(f"Transcribed: {result['transcribed']}")
+    typer.echo(f"Failed:      {result['failed']}")
+    typer.echo(f"Skipped:     {result['skipped']}")
 
     if result["issues_created"]:
         typer.echo()

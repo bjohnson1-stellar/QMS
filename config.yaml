@@ -460,11 +460,16 @@ mobile_capture:
   default_project: null             # Project number string, e.g. "07645"
   model: "sonnet"                   # Model for photo analysis (haiku/sonnet/opus)
   delete_after_process: false       # Move to processed subfolder instead
+  whisper_model: "whisper-1"           # OpenAI Whisper model for audio transcription
   supported_extensions:
     - ".jpg"
     - ".jpeg"
     - ".png"
     - ".heic"
+    - ".m4a"
+    - ".mp3"
+    - ".wav"
+    - ".ogg"
 
 # =============================================================================
 # QUALITY ISSUES

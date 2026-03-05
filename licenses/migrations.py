@@ -42,6 +42,9 @@ def run_license_migrations(conn: sqlite3.Connection):
     _seed_license_boards(conn)
     _seed_scope_categories(conn)
 
+    # Phase 3 seed data
+    _seed_ce_requirements(conn)
+
     conn.commit()
 
 
@@ -429,3 +432,33 @@ def _seed_scope_categories(conn: sqlite3.Connection):
         "INSERT INTO scope_categories (id, name, sort_order) VALUES (?, ?, ?)",
         [(_gen_id(), name, order) for name, order in scopes],
     )
+
+
+def _seed_ce_requirements(conn: sqlite3.Connection):
+    """Seed researched CE hour requirements for key MEP contractor states.
+
+    Uses INSERT OR IGNORE with UNIQUE(state_code, license_type) so
+    re-running migration doesn't duplicate rows.
+    """
+    # (state_code, license_type, hours_required, period_months, notes)
+    requirements = [
+        ("FL", "Mechanical Contractor", 14, 24,
+         "1hr workplace safety, 1hr workers comp, 1hr business"),
+        ("FL", "Plumbing Contractor", 14, 24,
+         "1hr workplace safety, 1hr workers comp, 1hr business"),
+        ("TX", "Master Plumber", 8, 12, "Annual renewal"),
+        ("TX", "Journeyman Plumber", 8, 12, "Annual renewal"),
+        ("GA", "Conditioned Air Contractor", 6, 24, None),
+        ("AL", "Master Plumber", 6, 12, None),
+        ("NC", "Plumbing/Heating/Fire Sprinkler", 8, 12, None),
+        ("SC", "Mechanical Contractor", 4, 24, None),
+        ("LA", "Master Plumber", 6, 12, None),
+    ]
+    for state, lic_type, hours, period, notes in requirements:
+        conn.execute(
+            """INSERT OR IGNORE INTO ce_requirements
+                   (id, state_code, license_type, hours_required, period_months,
+                    notes, created_at, updated_at, created_by)
+               VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 'system')""",
+            (_gen_id(), state, lic_type, hours, period, notes),
+        )

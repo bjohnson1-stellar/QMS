@@ -5,6 +5,8 @@ Thin delivery layer: all schema lives in quality/schema.sql,
 normalization in quality/db.py, import logic in quality/import_engine.py.
 """
 
+import json
+
 from flask import Blueprint, jsonify, render_template, request, session
 
 from qms.core import get_db
@@ -122,6 +124,11 @@ def dashboard():
 @bp.route("/browse")
 def browse():
     return render_template("quality/browse.html")
+
+
+@bp.route("/captures")
+def captures():
+    return render_template("quality/captures.html")
 
 
 # ---------------------------------------------------------------------------
@@ -269,3 +276,107 @@ def api_issues():
             params,
         ).fetchall()
     return jsonify([dict(r) for r in rows])
+
+
+# ---------------------------------------------------------------------------
+# JSON API — mobile captures
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/captures")
+def api_captures():
+    """Return mobile-captured issues with capture_log and attachment info."""
+    bu_ids = _user_bu_ids()
+    frag, params = _bu_filter(bu_ids)
+
+    days = request.args.get("days", 30, type=int)
+
+    with get_db(readonly=True) as conn:
+        rows = conn.execute(
+            f"""
+            SELECT qi.id, qi.title, qi.type, qi.status, qi.severity,
+                   qi.trade, qi.location, qi.description, qi.created_at,
+                   qi.metadata,
+                   cl.filename AS source_file, cl.processed_at,
+                   a.filepath AS attachment_path, a.file_type,
+                   p.number AS project_number, p.name AS project_name
+            FROM quality_issues qi
+            JOIN capture_log cl ON cl.issue_id = qi.id
+            LEFT JOIN quality_issue_attachments a ON a.issue_id = qi.id
+            LEFT JOIN projects p ON p.id = qi.project_id
+            WHERE qi.source = 'mobile'
+              AND qi.created_at >= datetime('now', '-' || ? || ' days')
+              {frag}
+            ORDER BY qi.created_at DESC
+            """,
+            [days] + params,
+        ).fetchall()
+
+    results = []
+    for r in rows:
+        item = dict(r)
+        # Parse metadata to extract transcript and recommended_action
+        if item.get("metadata"):
+            try:
+                meta = json.loads(item["metadata"])
+                item["transcript"] = meta.get("transcript", "")
+                item["recommended_action"] = meta.get("recommended_action", "")
+            except (json.JSONDecodeError, TypeError):
+                item["transcript"] = ""
+                item["recommended_action"] = ""
+        else:
+            item["transcript"] = ""
+            item["recommended_action"] = ""
+        del item["metadata"]
+        results.append(item)
+
+    return jsonify(results)
+
+
+@bp.route("/api/captures/<int:issue_id>", methods=["PUT"])
+def api_captures_update(issue_id):
+    """Update a mobile-captured issue (inline edit from review page)."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "No JSON body"}), 400
+
+    allowed = {"title", "trade", "severity", "description", "location"}
+    updates = {k: v for k, v in data.items() if k in allowed}
+    if not updates:
+        return jsonify({"error": "No valid fields to update"}), 400
+
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    values = list(updates.values())
+
+    with get_db() as conn:
+        # Verify issue exists and is mobile-sourced
+        row = conn.execute(
+            "SELECT id FROM quality_issues WHERE id = ? AND source = 'mobile'",
+            (issue_id,),
+        ).fetchone()
+        if not row:
+            return jsonify({"error": "Issue not found or not a mobile capture"}), 404
+
+        conn.execute(
+            f"UPDATE quality_issues SET {set_clause} WHERE id = ?",
+            values + [issue_id],
+        )
+
+        # Log changes to history
+        user = session.get("user", {})
+        for field, new_val in updates.items():
+            conn.execute(
+                """INSERT INTO quality_issue_history
+                   (issue_id, field_name, new_value, changed_by)
+                   VALUES (?, ?, ?, ?)""",
+                (issue_id, field, str(new_val), user.get("email", "system")),
+            )
+
+        # Return updated issue
+        updated = conn.execute(
+            """SELECT id, title, type, status, severity, trade, location, description
+               FROM quality_issues WHERE id = ?""",
+            (issue_id,),
+        ).fetchone()
+
+    return jsonify(dict(updated))

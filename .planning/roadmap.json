@@ -76,6 +76,14 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "Licenses Phase 3 — CE Workflow, Reporting & Compliance Dashboard",
+          "desc": "Period-aware CE tracking (renewal window scoping), seed CE requirements for 9 key states, certificate file upload/download, CSV exports (licenses + CE compliance), compliance dashboard with health score cards, action items queue, and Chart.js horizontal stacked bar chart for CE progress by state. 3 new db functions, 5 new API routes, multipart file upload support.",
+          "module": "licenses",
+          "priority": "medium",
+          "tags": ["licenses", "compliance", "ce-tracking", "dashboard", "export", "upload"],
+          "completed": "2026-03-05"
+        },
+        {
           "title": "Licenses Phase 2 — Drill-Down Navigation, Scope Mapping, CE Tracking",
           "desc": "State detail pages with board info and CE requirements. License detail pages with scope tags and CE credit progress tracking. 5 new schema tables (boards, scope_categories, license_scope_map, ce_requirements, ce_credits). Drill-down navigation: Map → State → License. Employee → Qualifying Party terminology. Scope-to-license compliance gap detection. ~20 new DB functions, ~15 new API routes, 2 new templates.",
           "module": "licenses",

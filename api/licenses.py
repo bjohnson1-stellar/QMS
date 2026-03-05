@@ -4,9 +4,14 @@ Licenses Blueprint — Flask routes for state license tracking.
 Thin delivery layer: business logic lives in licenses.db.
 """
 
+import csv
+import io
 import json
 
-from flask import Blueprint, current_app, jsonify, request, render_template, session
+from flask import (
+    Blueprint, Response, current_app, jsonify, request,
+    render_template, send_file, session,
+)
 
 from qms.core import get_db
 from qms.auth.decorators import module_required
@@ -18,7 +23,10 @@ from qms.licenses.db import (
     delete_ce_credit,
     delete_ce_requirement,
     delete_license,
+    get_ce_compliance_report,
     get_ce_summary,
+    get_certificate_path,
+    get_compliance_dashboard_data,
     get_expiring_licenses,
     get_license,
     get_license_board,
@@ -33,6 +41,7 @@ from qms.licenses.db import (
     list_licenses,
     list_licenses_for_state,
     list_scope_categories,
+    save_certificate_file,
     set_license_scopes,
     update_ce_credit,
     update_ce_requirement,
@@ -398,11 +407,28 @@ def api_list_ce_credits():
 @bp.route("/api/ce-credits", methods=["POST"])
 @module_required("licenses", min_role="editor")
 def api_create_ce_credit():
-    data = request.get_json(force=True)
+    # Support both JSON and multipart (when certificate file attached)
+    if request.content_type and "multipart" in request.content_type:
+        data = dict(request.form)
+        if "hours" in data:
+            data["hours"] = float(data["hours"])
+    else:
+        data = request.get_json(force=True)
+
     required = ["employee_id", "license_id", "course_name", "hours", "completion_date"]
     missing = [f for f in required if not data.get(f)]
     if missing:
         return jsonify({"error": f"Missing: {', '.join(missing)}"}), 400
+
+    # Handle certificate file upload
+    if "certificate" in request.files:
+        f = request.files["certificate"]
+        if f.filename:
+            rel_path = save_certificate_file(
+                data["license_id"], f.filename, f.read()
+            )
+            data["certificate_file"] = rel_path
+
     user = session.get("user", {})
     data["created_by"] = user.get("id", user.get("email", "unknown"))
     with get_db() as conn:
@@ -413,7 +439,29 @@ def api_create_ce_credit():
 @bp.route("/api/ce-credits/<credit_id>", methods=["PUT"])
 @module_required("licenses", min_role="editor")
 def api_update_ce_credit(credit_id):
-    data = request.get_json(force=True)
+    if request.content_type and "multipart" in request.content_type:
+        data = dict(request.form)
+        if "hours" in data:
+            data["hours"] = float(data["hours"])
+    else:
+        data = request.get_json(force=True)
+
+    # Handle certificate file upload
+    if "certificate" in request.files:
+        f = request.files["certificate"]
+        if f.filename:
+            # Need license_id to determine storage path
+            with get_db(readonly=True) as conn:
+                existing = conn.execute(
+                    "SELECT license_id FROM ce_credits WHERE id = ?",
+                    (credit_id,),
+                ).fetchone()
+            if existing:
+                rel_path = save_certificate_file(
+                    existing["license_id"], f.filename, f.read()
+                )
+                data["certificate_file"] = rel_path
+
     with get_db() as conn:
         result = update_ce_credit(conn, credit_id, **data)
     if not result:
@@ -500,6 +548,115 @@ def api_delete_credentials(license_id):
     if not deleted:
         return jsonify({"error": "Not found"}), 404
     return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# Certificate Download
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/ce-credits/<credit_id>/certificate", methods=["GET"])
+@module_required("licenses")
+def api_download_certificate(credit_id):
+    with get_db(readonly=True) as conn:
+        full_path = get_certificate_path(conn, credit_id)
+    if not full_path:
+        return jsonify({"error": "Certificate not found"}), 404
+    import os
+    return send_file(
+        full_path,
+        as_attachment=True,
+        download_name=os.path.basename(full_path),
+    )
+
+
+# ---------------------------------------------------------------------------
+# CSV Exports
+# ---------------------------------------------------------------------------
+
+@bp.route("/export/licenses.csv", methods=["GET"])
+@module_required("licenses")
+def export_licenses_csv():
+    """Export all licenses as CSV."""
+    with get_db(readonly=True) as conn:
+        rows = list_licenses(conn)
+        # Attach scopes to each
+        for r in rows:
+            scopes = get_license_scopes(conn, r["id"])
+            r["scopes"] = ", ".join(s["name"] for s in scopes)
+            # Qualifying party name
+            if r.get("employee_id"):
+                emp = conn.execute(
+                    "SELECT first_name || ' ' || last_name AS name "
+                    "FROM employees WHERE id = ?",
+                    (r["employee_id"],),
+                ).fetchone()
+                r["qualifying_party"] = emp["name"] if emp else ""
+            else:
+                r["qualifying_party"] = ""
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([
+        "State", "License Type", "License #", "Business Entity",
+        "Qualifying Party", "Scopes", "Status", "Expiration",
+        "Issued", "Notes",
+    ])
+    for r in rows:
+        writer.writerow([
+            r["state_code"], r["license_type"], r["license_number"],
+            r.get("business_entity") or r.get("holder_name", ""),
+            r["qualifying_party"], r["scopes"], r["status"],
+            r.get("expiration_date", ""), r.get("issued_date", ""),
+            r.get("notes", ""),
+        ])
+
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=licenses.csv"},
+    )
+
+
+@bp.route("/export/ce-compliance.csv", methods=["GET"])
+@module_required("licenses")
+def export_ce_compliance_csv():
+    """Export CE compliance report as CSV."""
+    with get_db(readonly=True) as conn:
+        report = get_ce_compliance_report(conn)
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([
+        "State", "License Type", "License #", "Qualifying Party",
+        "Hours Required", "Hours Earned", "% Complete",
+        "Period (months)", "Status", "Expiration",
+    ])
+    for r in report:
+        writer.writerow([
+            r["state_code"], r["license_type"], r["license_number"],
+            r.get("qualifying_party", ""),
+            r["hours_required"], r["hours_earned"], r["pct_complete"],
+            r["period_months"], r["ce_status"],
+            r.get("expiration_date", ""),
+        ])
+
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=ce-compliance.csv"},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Compliance Dashboard API
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/compliance-dashboard", methods=["GET"])
+@module_required("licenses")
+def api_compliance_dashboard():
+    with get_db(readonly=True) as conn:
+        data = get_compliance_dashboard_data(conn)
+    return jsonify(data)
 
 
 # ---------------------------------------------------------------------------

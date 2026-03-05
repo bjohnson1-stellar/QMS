@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Mobile Captures - {{ theme.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Mobile Captures</h1>
+    <p class="subtitle">Review and edit AI-analyzed field observations from photos and voice notes</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value" id="statTotal">-</div>
+        <div class="stat-label">Total Captures</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statImages">-</div>
+        <div class="stat-label">Photos</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statAudio">-</div>
+        <div class="stat-label">Voice Notes</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statToday">-</div>
+        <div class="stat-label">Today</div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <select id="filterDays" style="padding: 0.5rem; border: 1px solid var(--color-border, #ddd); border-radius: 4px; background: var(--color-bg, #fff); color: var(--color-text, #333);">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="365">Last year</option>
+        </select>
+        <select id="filterFileType" style="padding: 0.5rem; border: 1px solid var(--color-border, #ddd); border-radius: 4px; background: var(--color-bg, #fff); color: var(--color-text, #333);">
+            <option value="">All Types</option>
+            <option value="image">Photos</option>
+            <option value="audio">Voice Notes</option>
+        </select>
+        <button id="refreshBtn" style="padding: 0.5rem 1rem; border: 1px solid var(--color-border, #ddd); border-radius: 4px; background: var(--color-bg, #fff); color: var(--color-text, #333); cursor: pointer;">Refresh</button>
+    </div>
+</div>
+
+<div class="card">
+    <div id="resultCount" style="font-size: 0.85rem; color: var(--color-text-muted, #777); margin-bottom: 0.75rem;"></div>
+    <table id="capturesTable">
+        <thead>
+            <tr>
+                <th style="width: 40px;"></th>
+                <th>Title</th>
+                <th>Trade</th>
+                <th>Severity</th>
+                <th>Location</th>
+                <th>File</th>
+                <th>Date</th>
+                <th style="width: 60px;"></th>
+            </tr>
+        </thead>
+        <tbody id="capturesBody"></tbody>
+    </table>
+    <div id="emptyState" class="empty-state" style="display:none;">
+        No mobile captures yet. Use <code>qms quality capture</code> to process photos and voice notes from your OneDrive folder.
+    </div>
+    <div id="loadingState" class="empty-state">Loading captures...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var filterDays = document.getElementById('filterDays');
+    var filterFileType = document.getElementById('filterFileType');
+    var refreshBtn = document.getElementById('refreshBtn');
+    var tbody = document.getElementById('capturesBody');
+    var emptyState = document.getElementById('emptyState');
+    var loadingState = document.getElementById('loadingState');
+    var table = document.getElementById('capturesTable');
+    var resultCount = document.getElementById('resultCount');
+
+    var allCaptures = [];
+    var editingId = null;
+
+    function severityHtml(sev) {
+        if (sev === 'critical') return '<span style="color: var(--color-warning); font-weight: 600;">critical</span>';
+        if (sev === 'high') return '<span style="font-weight: 600;">high</span>';
+        return sev || '-';
+    }
+
+    function typeIcon(fileType) {
+        if (fileType === 'audio') return '<span title="Voice Note" style="font-size:1.2em;">&#127908;</span>';
+        return '<span title="Photo" style="font-size:1.2em;">&#128247;</span>';
+    }
+
+    function renderRows(captures) {
+        loadingState.style.display = 'none';
+        allCaptures = captures || [];
+
+        // Apply client-side file type filter
+        var ftFilter = filterFileType.value;
+        var filtered = allCaptures;
+        if (ftFilter) {
+            filtered = allCaptures.filter(function(c) { return c.file_type === ftFilter; });
+        }
+
+        // Update stats
+        var images = allCaptures.filter(function(c) { return c.file_type === 'image'; }).length;
+        var audio = allCaptures.filter(function(c) { return c.file_type === 'audio'; }).length;
+        var today = new Date().toISOString().substring(0, 10);
+        var todayCount = allCaptures.filter(function(c) {
+            return (c.created_at || '').substring(0, 10) === today;
+        }).length;
+
+        document.getElementById('statTotal').textContent = allCaptures.length;
+        document.getElementById('statImages').textContent = images;
+        document.getElementById('statAudio').textContent = audio;
+        document.getElementById('statToday').textContent = todayCount;
+
+        if (!filtered || filtered.length === 0) {
+            table.style.display = 'none';
+            emptyState.style.display = 'block';
+            resultCount.textContent = '0 captures found';
+            return;
+        }
+        table.style.display = '';
+        emptyState.style.display = 'none';
+        resultCount.textContent = filtered.length + ' capture' + (filtered.length !== 1 ? 's' : '') + ' found';
+
+        var html = '';
+        for (var i = 0; i < filtered.length; i++) {
+            var c = filtered[i];
+            html += '<tr data-id="' + c.id + '">';
+            html += '<td style="text-align:center;">' + typeIcon(c.file_type) + '</td>';
+            html += '<td><strong>' + (c.title || '(untitled)') + '</strong>';
+            if (c.transcript) html += '<br><small style="color:var(--color-text-muted);">&#128172; ' + c.transcript.substring(0, 80) + (c.transcript.length > 80 ? '...' : '') + '</small>';
+            html += '</td>';
+            html += '<td>' + (c.trade || '-') + '</td>';
+            html += '<td>' + severityHtml(c.severity) + '</td>';
+            html += '<td>' + (c.location || '-') + '</td>';
+            html += '<td><small>' + (c.source_file || '-') + '</small></td>';
+            html += '<td>' + (c.created_at || '').substring(0, 10) + '</td>';
+            html += '<td><button class="edit-btn" data-id="' + c.id + '" style="padding:0.25rem 0.5rem; border:1px solid var(--color-border,#ddd); border-radius:4px; background:var(--color-bg,#fff); color:var(--color-text,#333); cursor:pointer; font-size:0.8rem;">Edit</button></td>';
+            html += '</tr>';
+
+            // Inline edit row (hidden by default)
+            html += '<tr class="edit-row" id="edit-' + c.id + '" style="display:none;">';
+            html += '<td colspan="8" style="padding: 1rem; background: var(--color-bg-alt, #f8f9fa);">';
+            html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">';
+            html += '<div><label style="font-size:0.8rem; font-weight:600;">Title</label><input type="text" class="edit-title" value="' + (c.title || '').replace(/"/g, '&quot;') + '" style="width:100%; padding:0.4rem; border:1px solid var(--color-border,#ddd); border-radius:4px; background:var(--color-bg,#fff); color:var(--color-text,#333);"></div>';
+            html += '<div><label style="font-size:0.8rem; font-weight:600;">Trade</label><input type="text" class="edit-trade" value="' + (c.trade || '').replace(/"/g, '&quot;') + '" style="width:100%; padding:0.4rem; border:1px solid var(--color-border,#ddd); border-radius:4px; background:var(--color-bg,#fff); color:var(--color-text,#333);"></div>';
+            html += '<div><label style="font-size:0.8rem; font-weight:600;">Severity</label><select class="edit-severity" style="width:100%; padding:0.4rem; border:1px solid var(--color-border,#ddd); border-radius:4px; background:var(--color-bg,#fff); color:var(--color-text,#333);">';
+            ['low','medium','high','critical'].forEach(function(s) {
+                html += '<option value="' + s + '"' + (c.severity === s ? ' selected' : '') + '>' + s + '</option>';
+            });
+            html += '</select></div>';
+            html += '<div><label style="font-size:0.8rem; font-weight:600;">Location</label><input type="text" class="edit-location" value="' + (c.location || '').replace(/"/g, '&quot;') + '" style="width:100%; padding:0.4rem; border:1px solid var(--color-border,#ddd); border-radius:4px; background:var(--color-bg,#fff); color:var(--color-text,#333);"></div>';
+            html += '</div>';
+            html += '<div style="margin-bottom:0.75rem;"><label style="font-size:0.8rem; font-weight:600;">Description</label><textarea class="edit-description" rows="3" style="width:100%; padding:0.4rem; border:1px solid var(--color-border,#ddd); border-radius:4px; background:var(--color-bg,#fff); color:var(--color-text,#333); resize:vertical;">' + (c.description || '') + '</textarea></div>';
+            if (c.recommended_action) {
+                html += '<div style="margin-bottom:0.75rem; font-size:0.85rem;"><strong>Recommended Action:</strong> ' + c.recommended_action + '</div>';
+            }
+            html += '<div style="display:flex; gap:0.5rem;">';
+            html += '<button class="save-btn" data-id="' + c.id + '" style="padding:0.4rem 1rem; border:none; border-radius:4px; background:var(--color-nav-bg, #1a1a2e); color:#fff; cursor:pointer; font-size:0.85rem;">Save</button>';
+            html += '<button class="cancel-btn" data-id="' + c.id + '" style="padding:0.4rem 1rem; border:1px solid var(--color-border,#ddd); border-radius:4px; background:var(--color-bg,#fff); color:var(--color-text,#333); cursor:pointer; font-size:0.85rem;">Cancel</button>';
+            html += '</div></td></tr>';
+        }
+        tbody.innerHTML = html;
+
+        // Bind edit buttons
+        tbody.querySelectorAll('.edit-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = this.getAttribute('data-id');
+                toggleEdit(id);
+            });
+        });
+        tbody.querySelectorAll('.cancel-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = this.getAttribute('data-id');
+                toggleEdit(id);
+            });
+        });
+        tbody.querySelectorAll('.save-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = this.getAttribute('data-id');
+                saveEdit(id);
+            });
+        });
+    }
+
+    function toggleEdit(id) {
+        var editRow = document.getElementById('edit-' + id);
+        if (!editRow) return;
+        if (editRow.style.display === 'none') {
+            // Close any open edit
+            if (editingId && editingId !== id) {
+                var prev = document.getElementById('edit-' + editingId);
+                if (prev) prev.style.display = 'none';
+            }
+            editRow.style.display = '';
+            editingId = id;
+        } else {
+            editRow.style.display = 'none';
+            editingId = null;
+        }
+    }
+
+    function saveEdit(id) {
+        var editRow = document.getElementById('edit-' + id);
+        if (!editRow) return;
+
+        var data = {
+            title: editRow.querySelector('.edit-title').value,
+            trade: editRow.querySelector('.edit-trade').value,
+            severity: editRow.querySelector('.edit-severity').value,
+            location: editRow.querySelector('.edit-location').value,
+            description: editRow.querySelector('.edit-description').value
+        };
+
+        fetch('/quality/api/captures/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+            if (result.error) {
+                alert('Error: ' + result.error);
+                return;
+            }
+            editRow.style.display = 'none';
+            editingId = null;
+            loadCaptures();
+        })
+        .catch(function(err) {
+            alert('Save failed: ' + err);
+        });
+    }
+
+    function loadCaptures() {
+        var days = filterDays.value;
+        var url = '/quality/api/captures?days=' + days;
+
+        loadingState.style.display = 'block';
+        table.style.display = 'none';
+        emptyState.style.display = 'none';
+
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(renderRows)
+            .catch(function() {
+                loadingState.style.display = 'none';
+                emptyState.style.display = 'block';
+                emptyState.textContent = 'Error loading captures.';
+            });
+    }
+
+    filterDays.addEventListener('change', loadCaptures);
+    filterFileType.addEventListener('change', function() { renderRows(allCaptures); });
+    refreshBtn.addEventListener('click', loadCaptures);
+
+    loadCaptures();
+})();
+</script>
+{% endblock %}

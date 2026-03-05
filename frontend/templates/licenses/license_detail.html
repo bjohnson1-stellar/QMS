@@ -204,6 +204,7 @@
                 <th>Provider</th>
                 <th>Hours</th>
                 <th>Completion Date</th>
+                <th>Certificate</th>
                 <th>Status</th>
                 <th></th>
             </tr>
@@ -215,6 +216,15 @@
                 <td>{{ c.provider or '—' }}</td>
                 <td>{{ c.hours }}</td>
                 <td>{{ c.completion_date }}</td>
+                <td>
+                    {% if c.certificate_file %}
+                    <a href="{{ url_for('licenses.api_download_certificate', credit_id=c.id) }}"
+                       style="color:var(--color-primary);font-size:0.8rem;"
+                       title="{{ c.certificate_file.split('/')[-1] }}">Download</a>
+                    {% else %}
+                    <span style="color:var(--color-text-muted);font-size:0.8rem;">—</span>
+                    {% endif %}
+                </td>
                 <td>
                     {% set cs_colors = {'approved':'#238636','pending':'#d29922','rejected':'#da3633'} %}
                     <span class="badge" style="font-size:11px;background:{{ cs_colors.get(c.status, '#6e7681') }};color:#fff;">{{ c.status }}</span>
@@ -380,7 +390,7 @@
             <button class="modal-close" onclick="closeCreditModal()">&times;</button>
         </div>
         <div class="error-message" id="creditError"></div>
-        <form onsubmit="return saveCredit(event)">
+        <form onsubmit="return saveCredit(event)" enctype="multipart/form-data">
             <input type="hidden" id="creditEditId">
             <div style="display:flex;flex-direction:column;gap:12px;">
                 <div class="form-group">
@@ -398,6 +408,11 @@
                 <div class="form-group">
                     <label>Completion Date *</label>
                     <input type="date" id="cDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Certificate</label>
+                    <input type="file" id="cCertificate" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    <div id="cCertExisting" style="display:none;font-size:0.8rem;color:var(--color-text-muted);margin-top:4px;"></div>
                 </div>
                 <div class="form-group">
                     <label>Status</label>
@@ -562,6 +577,14 @@
         document.getElementById('cDate').value = c.completion_date;
         document.getElementById('cStatus').value = c.status;
         document.getElementById('cNotes').value = c.notes || '';
+        document.getElementById('cCertificate').value = '';
+        const certInfo = document.getElementById('cCertExisting');
+        if (c.certificate_file) {
+            certInfo.textContent = 'Current: ' + c.certificate_file.split('/').pop();
+            certInfo.style.display = 'block';
+        } else {
+            certInfo.style.display = 'none';
+        }
         document.getElementById('creditError').style.display = 'none';
         document.getElementById('creditModal').style.display = 'flex';
     }
@@ -571,20 +594,42 @@
     async function saveCredit(e) {
         e.preventDefault();
         const editId = document.getElementById('creditEditId').value;
-        const data = {
-            employee_id: EMP_ID,
-            license_id: LIC_ID,
-            course_name: document.getElementById('cCourse').value,
-            provider: document.getElementById('cProvider').value || null,
-            hours: parseFloat(document.getElementById('cHours').value),
-            completion_date: document.getElementById('cDate').value,
-            status: document.getElementById('cStatus').value,
-            notes: document.getElementById('cNotes').value || null,
-        };
+        const fileInput = document.getElementById('cCertificate');
+        const hasFile = fileInput.files && fileInput.files.length > 0;
+
+        const url = editId ? `${API}/ce-credits/${editId}` : `${API}/ce-credits`;
+        const method = editId ? 'PUT' : 'POST';
+
+        let fetchOpts;
+        if (hasFile) {
+            // Use FormData for multipart upload
+            const fd = new FormData();
+            fd.append('employee_id', EMP_ID);
+            fd.append('license_id', LIC_ID);
+            fd.append('course_name', document.getElementById('cCourse').value);
+            fd.append('provider', document.getElementById('cProvider').value || '');
+            fd.append('hours', document.getElementById('cHours').value);
+            fd.append('completion_date', document.getElementById('cDate').value);
+            fd.append('status', document.getElementById('cStatus').value);
+            fd.append('notes', document.getElementById('cNotes').value || '');
+            fd.append('certificate', fileInput.files[0]);
+            fetchOpts = { method, body: fd };
+        } else {
+            const data = {
+                employee_id: EMP_ID,
+                license_id: LIC_ID,
+                course_name: document.getElementById('cCourse').value,
+                provider: document.getElementById('cProvider').value || null,
+                hours: parseFloat(document.getElementById('cHours').value),
+                completion_date: document.getElementById('cDate').value,
+                status: document.getElementById('cStatus').value,
+                notes: document.getElementById('cNotes').value || null,
+            };
+            fetchOpts = { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) };
+        }
+
         try {
-            const url = editId ? `${API}/ce-credits/${editId}` : `${API}/ce-credits`;
-            const method = editId ? 'PUT' : 'POST';
-            const res = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            const res = await fetch(url, fetchOpts);
             if (!res.ok) throw new Error((await res.json()).error || 'Failed');
             window.location.reload();
         } catch (err) {

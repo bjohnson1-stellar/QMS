@@ -526,8 +526,12 @@ def delete_ce_credit(conn: sqlite3.Connection, credit_id: str) -> bool:
 def get_ce_summary(
     conn: sqlite3.Connection, license_id: str
 ) -> Dict[str, Any]:
-    """CE progress summary for a license: hours earned vs required."""
-    # Get the license to find state_code + license_type
+    """CE progress summary for a license: hours earned vs required.
+
+    Period-aware: only counts credits within the current renewal window
+    (expiration_date - period_months → expiration_date).  Falls back to
+    counting all credits if no expiration date is set.
+    """
     lic = get_license(conn, license_id)
     if not lic:
         return {"hours_earned": 0, "hours_required": 0, "period_months": 0, "pct_complete": 0}
@@ -542,12 +546,22 @@ def get_ce_summary(
     hours_required = req["hours_required"] if req else 0
     period_months = req["period_months"] if req else 0
 
-    # Sum approved credits
-    row = conn.execute(
-        "SELECT COALESCE(SUM(hours), 0) AS total FROM ce_credits "
-        "WHERE license_id = ? AND status = 'approved'",
-        (license_id,),
-    ).fetchone()
+    # Sum approved credits — scoped to renewal period when possible
+    if lic.get("expiration_date") and period_months > 0:
+        row = conn.execute(
+            """SELECT COALESCE(SUM(hours), 0) AS total FROM ce_credits
+               WHERE license_id = ? AND status = 'approved'
+                 AND completion_date >= date(?, '-' || ? || ' months')
+                 AND completion_date <= ?""",
+            (license_id, lic["expiration_date"], period_months,
+             lic["expiration_date"]),
+        ).fetchone()
+    else:
+        row = conn.execute(
+            "SELECT COALESCE(SUM(hours), 0) AS total FROM ce_credits "
+            "WHERE license_id = ? AND status = 'approved'",
+            (license_id,),
+        ).fetchone()
     hours_earned = row["total"]
 
     pct = round((hours_earned / hours_required * 100), 1) if hours_required > 0 else 0
@@ -557,6 +571,154 @@ def get_ce_summary(
         "hours_required": hours_required,
         "period_months": period_months,
         "pct_complete": min(pct, 100),
+    }
+
+
+def get_ce_compliance_report(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
+    """All licenses with CE requirements — progress and compliance status.
+
+    Status logic:
+    - compliant: ≥100% hours
+    - at_risk:   50-99% hours AND within 90 days of expiration
+    - non_compliant: <50% hours OR overdue (past expiration)
+    """
+    rows = conn.execute("""
+        SELECT sl.id, sl.state_code, sl.license_type, sl.license_number,
+               sl.expiration_date, sl.status AS license_status,
+               sl.business_entity, sl.holder_name, sl.employee_id,
+               e.first_name || ' ' || e.last_name AS qualifying_party,
+               cr.hours_required, cr.period_months
+        FROM state_licenses sl
+        JOIN ce_requirements cr
+            ON cr.state_code = sl.state_code AND cr.license_type = sl.license_type
+        LEFT JOIN employees e ON e.id = sl.employee_id
+        WHERE sl.status IN ('active', 'expired')
+        ORDER BY sl.state_code, sl.license_type
+    """).fetchall()
+
+    results = []
+    for r in rows:
+        d = dict(r)
+        exp = d["expiration_date"]
+        period = d["period_months"]
+
+        # Sum period-scoped credits
+        if exp and period:
+            earned_row = conn.execute(
+                """SELECT COALESCE(SUM(hours), 0) AS total FROM ce_credits
+                   WHERE license_id = ? AND status = 'approved'
+                     AND completion_date >= date(?, '-' || ? || ' months')
+                     AND completion_date <= ?""",
+                (d["id"], exp, period, exp),
+            ).fetchone()
+        else:
+            earned_row = conn.execute(
+                "SELECT COALESCE(SUM(hours), 0) AS total FROM ce_credits "
+                "WHERE license_id = ? AND status = 'approved'",
+                (d["id"],),
+            ).fetchone()
+
+        earned = earned_row["total"]
+        req = d["hours_required"]
+        pct = round(earned / req * 100, 1) if req > 0 else 0
+
+        # Days until expiry
+        days_row = conn.execute(
+            "SELECT CAST(julianday(?) - julianday('now') AS INTEGER) AS d",
+            (exp,),
+        ).fetchone() if exp else None
+        days_left = days_row["d"] if days_row else None
+
+        # Determine status
+        if pct >= 100:
+            ce_status = "compliant"
+        elif days_left is not None and days_left < 0:
+            ce_status = "non_compliant"
+        elif pct < 50:
+            ce_status = "non_compliant"
+        elif days_left is not None and days_left <= 90:
+            ce_status = "at_risk"
+        else:
+            ce_status = "compliant" if pct >= 100 else "at_risk"
+
+        d["hours_earned"] = earned
+        d["pct_complete"] = min(pct, 100)
+        d["days_until_expiry"] = days_left
+        d["ce_status"] = ce_status
+        results.append(d)
+
+    return results
+
+
+def get_compliance_dashboard_data(conn: sqlite3.Connection) -> Dict[str, Any]:
+    """Aggregate compliance data for the main licenses page dashboard.
+
+    Returns {health, action_items, ce_by_state}.
+    """
+    report = get_ce_compliance_report(conn)
+
+    # Health counts
+    health = {"compliant": 0, "at_risk": 0, "non_compliant": 0}
+    for r in report:
+        health[r["ce_status"]] += 1
+
+    # CE by state
+    state_map: Dict[str, Dict[str, int]] = {}
+    for r in report:
+        st = r["state_code"]
+        if st not in state_map:
+            state_map[st] = {"compliant": 0, "at_risk": 0, "non_compliant": 0}
+        state_map[st][r["ce_status"]] += 1
+    ce_by_state = [
+        {"state": st, **counts}
+        for st, counts in sorted(state_map.items())
+    ]
+
+    # Action items
+    action_items: List[Dict[str, Any]] = []
+
+    # 1) Licenses expiring within 90 days
+    expiring = conn.execute("""
+        SELECT id, state_code, license_type, license_number, business_entity,
+               CAST(julianday(expiration_date) - julianday('now') AS INTEGER) AS days_left
+        FROM state_licenses
+        WHERE status = 'active'
+          AND expiration_date IS NOT NULL
+          AND julianday(expiration_date) - julianday('now') BETWEEN 0 AND 90
+        ORDER BY expiration_date
+    """).fetchall()
+    for row in expiring:
+        d = dict(row)
+        action_items.append({
+            "type": "expiring",
+            "message": f"{d['state_code']} {d['license_type']} #{d['license_number']} expires in {d['days_left']} days",
+            "link": f"/licenses/{d['id']}",
+        })
+
+    # 2) CE credits below 50% with upcoming renewal
+    for r in report:
+        if r["pct_complete"] < 50 and r["hours_required"] > 0:
+            days = r.get("days_until_expiry")
+            if days is not None and 0 < days <= 180:
+                action_items.append({
+                    "type": "ce_low",
+                    "message": f"{r['state_code']} {r['license_type']} — only {r['pct_complete']}% CE hours ({r['hours_earned']}/{r['hours_required']})",
+                    "link": f"/licenses/{r['id']}",
+                })
+
+    # 3) Coverage gaps
+    gaps = get_scope_coverage_gaps(conn)
+    for g in gaps:
+        action_items.append({
+            "type": "coverage_gap",
+            "message": f"No active {g['project_scope']} license in {g['project_state']}",
+            "link": f"/licenses/state/{g['project_state']}",
+        })
+
+    return {
+        "health": health,
+        "action_items": action_items,
+        "ce_by_state": ce_by_state,
     }
 
 
@@ -621,8 +783,9 @@ def get_scope_coverage_gaps(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
                pa.scope_name AS project_scope
         FROM project_allocations pa
         JOIN projects p ON pa.project_id = p.id
-        WHERE pa.status = 'active' AND p.state IS NOT NULL
+        WHERE p.state IS NOT NULL
           AND pa.scope_name IS NOT NULL
+          AND pa.stage NOT IN ('closed', 'cancelled')
         EXCEPT
         SELECT sl.state_code AS project_state,
                sc.name AS project_scope
@@ -725,6 +888,55 @@ def delete_portal_credential(
     )
     conn.commit()
     return cur.rowcount > 0
+
+
+# ---------------------------------------------------------------------------
+# Certificate File Storage
+# ---------------------------------------------------------------------------
+
+def save_certificate_file(
+    license_id: str, filename: str, file_data: bytes
+) -> str:
+    """Save a CE certificate file to data/certificates/<license_id>/.
+
+    Returns the relative path (for storing in ce_credits.certificate_file).
+    """
+    import os
+    from qms.core.config import QMS_PATHS
+
+    base = os.path.join(QMS_PATHS.data_dir, "certificates", license_id)
+    os.makedirs(base, exist_ok=True)
+
+    # Sanitise filename
+    safe_name = "".join(
+        c if c.isalnum() or c in "._- " else "_" for c in filename
+    ).strip()
+    if not safe_name:
+        safe_name = f"certificate_{generate_uuid()[:8]}"
+
+    path = os.path.join(base, safe_name)
+    with open(path, "wb") as f:
+        f.write(file_data)
+
+    return f"certificates/{license_id}/{safe_name}"
+
+
+def get_certificate_path(
+    conn: sqlite3.Connection, credit_id: str
+) -> Optional[str]:
+    """Resolve full filesystem path for a CE credit's certificate file."""
+    import os
+    from qms.core.config import QMS_PATHS
+
+    row = conn.execute(
+        "SELECT certificate_file FROM ce_credits WHERE id = ?",
+        (credit_id,),
+    ).fetchone()
+    if not row or not row["certificate_file"]:
+        return None
+
+    full = os.path.join(QMS_PATHS.data_dir, row["certificate_file"])
+    return full if os.path.isfile(full) else None
 
 
 def get_renewal_timeline(conn: sqlite3.Connection) -> List[Dict[str, Any]]:

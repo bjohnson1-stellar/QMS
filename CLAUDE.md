@@ -14,7 +14,7 @@ cd D:\qms
 git add -A -- ':!data'
 git commit -m "description of changes
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+
 git push origin main
 ```
 
