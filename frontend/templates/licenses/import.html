@@ -271,7 +271,7 @@
 
         // Row 1: Mapping dropdowns
         html += '<tr>';
-        html += `<td style="${cellBase}background:var(--color-bg-tertiary, #f6f8fa);font-weight:600;color:var(--color-text-secondary);position:sticky;left:0;z-index:2;min-width:36px;text-align:center;border-right:2px solid var(--color-border-light);">
+        html += `<td style="${cellBase}background:var(--color-surface-alt);font-weight:600;color:var(--color-text-secondary);position:sticky;left:0;z-index:2;min-width:36px;text-align:center;border-right:2px solid var(--color-border-light);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5;vertical-align:middle;">
                 <path d="M12 5v14M5 12h14"/>
             </svg>
@@ -279,11 +279,11 @@
         for (let i = 0; i < numCols; i++) {
             const mapped = data.mapping[String(i)] || '';
             const bgColor = mapped
-                ? 'background:color-mix(in srgb, var(--color-success) 8%, var(--color-bg-tertiary, #f6f8fa))'
-                : 'background:var(--color-bg-tertiary, #f6f8fa)';
+                ? 'background:color-mix(in srgb, var(--color-success) 8%, var(--color-surface-alt))'
+                : 'background:var(--color-surface-alt)';
             html += `<td style="${cellBase}${bgColor};vertical-align:middle;" class="map-cell" data-col="${i}">
                 <select class="col-map-select" data-col="${i}" onchange="updateMapColumn(this)"
-                        style="width:100%;min-width:130px;font-size:0.8rem;padding:4px 6px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-bg-primary, #fff);color:var(--color-text-primary);">
+                        style="width:100%;min-width:130px;font-size:0.8rem;padding:4px 6px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);">
                     <option value="">— skip —</option>
                     ${options}
                 </select>
@@ -293,11 +293,11 @@
 
         // Row 2: File headers (original column names)
         html += '<tr>';
-        html += `<td style="${cellBase}background:var(--color-bg-secondary, #f6f8fa);font-weight:700;color:var(--color-text-secondary);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;position:sticky;left:0;z-index:2;border-right:2px solid var(--color-border-light);text-align:center;">
+        html += `<td style="${cellBase}background:var(--color-surface-alt);font-weight:700;color:var(--color-text-secondary);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;position:sticky;left:0;z-index:2;border-right:2px solid var(--color-border-light);text-align:center;">
             #
         </td>`;
         for (let i = 0; i < numCols; i++) {
-            html += `<td style="${cellBase}background:var(--color-bg-secondary, #f6f8fa);font-weight:700;font-size:0.78rem;color:var(--color-text-primary);">
+            html += `<td style="${cellBase}background:var(--color-surface-alt);font-weight:700;font-size:0.78rem;color:var(--color-text);">
                 ${esc(data.headers[i])}
             </td>`;
         }
@@ -306,9 +306,9 @@
         // Rows 3+: Sample data rows
         for (let r = 0; r < sampleRows.length; r++) {
             const row = sampleRows[r];
-            const stripe = r % 2 === 1 ? 'background:var(--color-bg-tertiary, #fafbfc);' : '';
+            const stripe = r % 2 === 1 ? 'background:var(--color-surface-alt);' : '';
             html += '<tr>';
-            html += `<td style="${cellBase}${stripe}position:sticky;left:0;z-index:2;border-right:2px solid var(--color-border-light);color:var(--color-text-muted);font-size:0.75rem;text-align:center;background:var(--color-bg-primary, #fff);">
+            html += `<td style="${cellBase}${stripe}position:sticky;left:0;z-index:2;border-right:2px solid var(--color-border-light);color:var(--color-text-muted);font-size:0.75rem;text-align:center;background:var(--color-surface);">
                 ${r + 1}
             </td>`;
             for (let c = 0; c < numCols; c++) {
@@ -343,9 +343,9 @@
         // Update the background tint of the mapping cell
         const cell = sel.closest('.map-cell');
         if (sel.value) {
-            cell.style.background = 'color-mix(in srgb, var(--color-success) 8%, var(--color-bg-tertiary, #f6f8fa))';
+            cell.style.background = 'color-mix(in srgb, var(--color-success) 8%, var(--color-surface-alt))';
         } else {
-            cell.style.background = 'var(--color-bg-tertiary, #f6f8fa)';
+            cell.style.background = 'var(--color-surface-alt)';
         }
     };
 

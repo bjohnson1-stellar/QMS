@@ -53,10 +53,10 @@
         </div>
     </div>
     <div id="stateMapContainer" style="position:relative;max-width:800px;margin:0 auto;">
-        <svg id="stateMap" viewBox="0 0 960 600" style="width:100%;height:auto;"></svg>
-        <div id="mapTooltip" style="display:none;position:absolute;background:var(--color-bg-secondary, #fff);border:1px solid var(--color-border-light);border-radius:6px;padding:8px 12px;font-size:0.8rem;pointer-events:none;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>
+        <svg id="stateMap" viewBox="0 0 959 593" style="width:100%;height:auto;"></svg>
+        <div id="mapTooltip" style="display:none;position:absolute;background:var(--color-surface);border:1px solid var(--color-border-light);border-radius:6px;padding:8px 12px;font-size:0.8rem;pointer-events:none;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>
     </div>
-    <div id="mapFilter" style="display:none;margin-top:12px;padding:8px 12px;background:var(--color-bg-tertiary, #f6f8fa);border-radius:6px;display:none;align-items:center;gap:8px;font-size:0.85rem;">
+    <div id="mapFilter" style="display:none;margin-top:12px;padding:8px 12px;background:var(--color-surface-alt);border-radius:6px;display:none;align-items:center;gap:8px;font-size:0.85rem;">
         <span>Filtered to: <strong id="mapFilterState"></strong></span>
         <button class="btn-sm btn-secondary" onclick="clearMapFilter()" style="margin-left:auto;">Clear Filter</button>
     </div>
@@ -226,6 +226,7 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="{{ url_for('static', filename='us-map-paths.js') }}"></script>
 <script>
     const API = '/licenses/api';
     let licenses = [];
@@ -253,60 +254,7 @@
     // State name lookup
     const STATE_NAMES = Object.fromEntries(US_STATES);
 
-    // ── US State SVG Paths (simplified Albers projection) ─────────────────
-    const STATE_PATHS = {
-        AL: "M628,466 L627,402 L625,395 L669,390 L672,417 L677,462 L673,471 L662,484 L655,478 L651,484 L628,466Z",
-        AK: "M161,485 L183,485 L183,493 L193,493 L193,485 L230,485 L230,513 L161,513Z",
-        AZ: "M205,410 L200,480 L207,491 L260,491 L265,447 L268,404 L243,398 L205,410Z",
-        AR: "M574,418 L569,460 L627,466 L625,395 L574,401 L574,418Z",
-        CA: "M120,310 L112,352 L102,400 L118,425 L137,462 L153,478 L170,490 L196,491 L205,410 L193,350 L180,315 L160,290 L140,280 L120,310Z",
-        CO: "M296,310 L290,377 L380,385 L386,316 L296,310Z",
-        CT: "M844,215 L845,197 L818,190 L814,210 L844,215Z",
-        DE: "M793,306 L801,295 L803,280 L790,276 L785,298 L793,306Z",
-        FL: "M672,462 L677,462 L740,456 L755,472 L755,492 L741,531 L723,553 L709,556 L701,545 L692,527 L681,508 L669,498 L662,484 L672,462Z",
-        GA: "M669,390 L715,385 L740,456 L672,462 L669,390Z",
-        HI: "M260,515 L280,510 L283,520 L278,525 L265,525 L260,515Z",
-        ID: "M222,140 L206,230 L218,258 L253,260 L272,205 L265,156 L242,130 L222,140Z",
-        IL: "M588,248 L580,260 L575,296 L570,335 L578,367 L606,369 L612,345 L616,290 L616,265 L608,248 L588,248Z",
-        IN: "M616,265 L616,290 L612,345 L652,340 L655,285 L645,260 L616,265Z",
-        IA: "M517,235 L510,275 L505,295 L565,300 L575,296 L580,260 L558,238 L517,235Z",
-        KS: "M395,345 L390,395 L504,401 L510,350 L395,345Z",
-        KY: "M612,345 L606,369 L622,392 L674,375 L720,343 L710,328 L692,328 L658,338 L652,340 L612,345Z",
-        LA: "M569,460 L574,510 L590,530 L620,520 L637,510 L637,484 L627,466 L569,460Z",
-        ME: "M862,100 L860,128 L852,155 L870,160 L878,145 L882,118 L875,100 L862,100Z",
-        MD: "M785,298 L790,276 L770,272 L754,280 L740,290 L760,306 L780,310 L793,306 L785,298Z",
-        MA: "M852,195 L845,197 L835,188 L832,180 L860,178 L868,185 L858,195 L852,195Z",
-        MI: "M618,168 L610,195 L605,215 L612,240 L640,250 L660,228 L660,195 L640,168 L618,168Z M580,165 L600,155 L610,165 L605,190 L580,195 L570,180 L580,165Z",
-        MN: "M490,118 L485,190 L510,210 L555,215 L562,170 L558,128 L530,118 L490,118Z",
-        MS: "M610,420 L608,470 L614,495 L637,484 L637,510 L620,520 L590,530 L574,510 L569,460 L574,418 L574,401 L610,398 L610,420Z",
-        MO: "M510,310 L504,370 L504,401 L555,408 L574,401 L574,418 L574,401 L575,366 L565,355 L565,300 L510,310Z",
-        MT: "M263,110 L242,130 L265,156 L272,205 L370,210 L385,140 L343,120 L263,110Z",
-        NE: "M385,270 L380,315 L395,345 L510,350 L510,310 L505,295 L510,275 L450,268 L385,270Z",
-        NV: "M175,250 L160,290 L180,315 L193,350 L205,410 L243,398 L253,310 L240,260 L218,258 L175,250Z",
-        NH: "M852,155 L844,148 L840,118 L842,100 L862,100 L860,128 L852,155Z",
-        NJ: "M803,245 L798,265 L803,280 L801,295 L810,300 L815,275 L810,250 L803,245Z",
-        NM: "M265,404 L260,491 L350,497 L356,410 L265,404Z",
-        NY: "M770,165 L755,200 L762,225 L788,238 L803,245 L810,250 L815,228 L832,210 L835,188 L818,190 L810,175 L794,175 L770,165Z",
-        NC: "M688,370 L720,343 L757,350 L790,345 L794,360 L760,375 L730,385 L715,385 L688,370Z",
-        ND: "M403,118 L395,185 L485,190 L490,118 L403,118Z",
-        OH: "M655,260 L645,260 L655,285 L652,340 L695,326 L710,288 L695,260 L655,260Z",
-        OK: "M390,395 L386,430 L395,448 L504,445 L504,401 L390,395Z",
-        OR: "M120,160 L110,218 L120,248 L175,250 L218,258 L222,140 L175,130 L120,160Z",
-        PA: "M710,245 L710,288 L762,280 L790,276 L803,280 L803,245 L788,238 L762,225 L710,245Z",
-        RI: "M852,200 L848,205 L852,210 L858,205 L852,200Z",
-        SC: "M715,385 L730,385 L760,375 L752,410 L728,418 L712,408 L715,385Z",
-        SD: "M395,185 L385,255 L385,270 L450,268 L510,275 L510,210 L485,190 L395,185Z",
-        TN: "M622,370 L622,392 L674,375 L688,370 L720,380 L720,343 L674,375 L622,392 L606,369 L622,370Z",
-        TX: "M356,410 L350,497 L365,530 L395,560 L435,573 L475,567 L508,540 L528,510 L540,475 L540,448 L504,445 L504,401 L390,395 L386,430 L356,410Z",
-        UT: "M253,260 L240,260 L253,310 L243,398 L296,404 L296,310 L290,260 L253,260Z",
-        VT: "M840,118 L832,150 L844,148 L852,155 L852,132 L840,118Z",
-        VA: "M720,310 L720,343 L757,350 L790,345 L794,335 L770,320 L748,318 L735,325 L720,310Z",
-        WA: "M140,80 L120,120 L120,160 L175,130 L222,140 L230,100 L205,80 L140,80Z",
-        WV: "M710,288 L695,326 L710,328 L720,310 L735,325 L748,318 L748,295 L730,280 L710,288Z",
-        WI: "M555,145 L540,168 L530,198 L535,225 L555,238 L562,210 L588,225 L608,218 L610,195 L605,185 L588,175 L575,155 L555,145Z",
-        WY: "M282,200 L272,260 L290,260 L296,310 L380,315 L385,255 L385,210 L370,210 L282,200Z",
-        DC: "M775,300 L778,303 L780,300 L775,300Z"
-    };
+    // State paths loaded from static/us-map-paths.js (US_MAP_PATHS, US_MAP_VIEWBOX)
 
     // ── Init ─────────────────────────────────────────────────────────────
 
@@ -357,10 +305,10 @@
         mapData.forEach(d => { dataByState[d.state_code] = d; });
 
         const grayColor = getComputedStyle(document.documentElement).getPropertyValue('--color-border-light').trim() || '#d0d7de';
-        const strokeColor = getComputedStyle(document.documentElement).getPropertyValue('--color-bg-primary').trim() || '#fff';
+        const strokeColor = getComputedStyle(document.documentElement).getPropertyValue('--color-surface').trim() || '#fff';
 
         let html = '';
-        for (const [code, path] of Object.entries(STATE_PATHS)) {
+        for (const [code, path] of Object.entries(US_MAP_PATHS)) {
             const d = dataByState[code];
             let fill = grayColor;
             if (d) {
@@ -454,7 +402,7 @@
             const badge = days < 0
                 ? `<span style="background:#da3633;color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;">${Math.abs(days)}d ago</span>`
                 : `<span style="background:${color};color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;">${days}d</span>`;
-            return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-left:3px solid ${color};background:var(--color-bg-tertiary, #f6f8fa);border-radius:0 4px 4px 0;font-size:0.82rem;">
+            return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-left:3px solid ${color};background:var(--color-surface-alt);border-radius:0 4px 4px 0;font-size:0.82rem;">
                 <div style="flex:1;min-width:0;">
                     <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(l.holder_name)}</div>
                     <div style="color:var(--color-text-muted);font-size:0.75rem;">${l.state_code} | ${esc(l.license_type)} | #${esc(l.license_number)}</div>
