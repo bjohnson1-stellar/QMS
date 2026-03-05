@@ -84,10 +84,14 @@ def login_page():
     client_ip = request.remote_addr or "unknown"
     wait = limiter.check(client_ip, email)
     if wait:
-        return render_template(
-            "auth/login.html",
-            error=f"Too many failed attempts. Try again in {wait} seconds.",
-        )
+        error_msg = f"Too many failed attempts. Try again in {wait} seconds."
+        content_type = request.content_type or ""
+        if "application/json" in content_type:
+            resp = jsonify({"error": error_msg})
+            resp.status_code = 429
+            resp.headers["Retry-After"] = str(wait)
+            return resp
+        return render_template("auth/login.html", error=error_msg), 429
 
     from qms.core.db import get_db
     from qms.auth.db import authenticate, get_user_modules, get_user_business_units, log_auth_event

@@ -123,13 +123,20 @@ def create_app() -> Flask:
 
     @app.before_request
     def check_csrf():
-        """Validate CSRF token on POST requests from HTML forms."""
-        if request.method != "POST":
+        """Validate CSRF on state-changing requests (POST/PUT/DELETE/PATCH)."""
+        if request.method not in ("POST", "PUT", "DELETE", "PATCH"):
             return None
-        # Skip CSRF for JSON API requests (protected by SameSite cookies)
         content_type = request.content_type or ""
+        # JSON API requests: validate Origin header as defense-in-depth
+        # (SameSite=Lax cookies are the primary CSRF defense for JSON)
         if "application/json" in content_type:
+            origin = request.headers.get("Origin")
+            if origin:
+                allowed = {request.host_url.rstrip("/"), f"http://{request.host}"}
+                if origin not in allowed:
+                    abort(403, "Origin mismatch.")
             return None
+        # HTML form submissions: validate CSRF token
         # Auth login needs CSRF but may not have a session yet — skip if
         # there's no nonce (first visit). The token won't validate anyway
         # because there's nothing to compare against.
@@ -139,6 +146,28 @@ def create_app() -> Flask:
         expected = _generate_csrf_token()
         if not hmac.compare_digest(token, expected):
             abort(400, "CSRF validation failed.")
+
+    # ── API rate limiting (before_request) ───────────────────────────────
+    from qms.auth.rate_limit import api_limiter
+
+    @app.before_request
+    def check_api_rate_limit():
+        """Throttle mutation requests (POST/PUT/DELETE/PATCH) per IP."""
+        if request.method not in ("POST", "PUT", "DELETE", "PATCH"):
+            return None
+        # Login has its own rate limiter; static files are never mutations
+        if request.endpoint and (
+            request.endpoint.startswith("auth.")
+            or request.endpoint == "static"
+        ):
+            return None
+        ip = request.remote_addr or "unknown"
+        wait = api_limiter.check_and_record(ip)
+        if wait:
+            resp = jsonify({"error": f"Rate limit exceeded. Try again in {wait} seconds."})
+            resp.status_code = 429
+            resp.headers["Retry-After"] = str(wait)
+            return resp
 
     # ── Auth gate (before_request) ───────────────────────────────────────
 
