@@ -41,9 +41,9 @@ Bidirectional Procore observation integration. Two tracks: personal mobile captu
 - [x] License CRUD with US state SVG map, CSV import — Licenses Phase 1
 - [x] Drill-down navigation, scope mapping, CE tracking — Licenses Phase 2
 - [x] CE seed data, compliance dashboard, certificate upload, CSV exports — Licenses Phase 3
+- [x] Foundation hardening (N+1 fixes, audit trail, pagination, validation, rate limiting, CSRF) — v0.2 Phase 6
 
 ### Active (v0.2 — In Progress)
-- [ ] Foundation hardening (security, N+1 queries, audit trail, pagination)
 - [ ] Renewal workflow with event tracking and fee history
 - [ ] Notification system (expiration warnings, CE deadlines, Teams webhook)
 - [ ] Document management (certificates, applications, correspondence)
@@ -79,7 +79,10 @@ SIS manages professional and business licenses across multiple states for MEP co
 | Decision | Rationale | Date | Status |
 |----------|-----------|------|--------|
 | Harbor feature parity as target | Comprehensive compliance management, not just license tracking | 2026-03-05 | Active |
-| Foundation hardening first | Security + perf fixes before new features (architecture audit findings) | 2026-03-05 | Active |
+| Foundation hardening first | Security + perf fixes before new features (architecture audit findings) | 2026-03-05 | Shipped |
+| API-layer validation, not DB-layer | Clean boundary: API validates input, DB trusts internal calls | 2026-03-05 | Active |
+| In-memory rate limiting (no Redis) | LAN deployment, 1-5 users, restarts clear state acceptably | 2026-03-05 | Active |
+| Pagination dict response pattern | {items, total, page, per_page, pages} for all future list endpoints | 2026-03-05 | Active |
 | Clone welding notification pattern | Proven pattern reduces risk | 2026-03-05 | Active |
 | Self-hosted over SaaS | Integration with existing QMS modules, no recurring cost | 2026-03-05 | Active |
 | Two-track approach (v0.1) | Personal mobile pipeline vs team-wide import | 2026-02-25 | Active |
@@ -107,4 +110,4 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-05 — v0.2 License Compliance milestone created*
+*Last updated: 2026-03-05 — Phase 6 Foundation Hardening complete*
