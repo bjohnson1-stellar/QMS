@@ -22,7 +22,7 @@
     <div class="stepper-connector"></div>
     <div class="stepper-step" data-step="3">
         <span class="stepper-num">3</span>
-        <span class="stepper-label">Review Plan</span>
+        <span class="stepper-label">Review</span>
     </div>
     <div class="stepper-connector"></div>
     <div class="stepper-step" data-step="4">
@@ -86,7 +86,7 @@
         </div>
         <div style="display:flex;gap:8px;">
             <button class="btn-secondary" onclick="goToStep(1)">Back</button>
-            <button id="btnGeneratePlan" onclick="generatePlan()">Generate Action Plan</button>
+            <button id="btnGeneratePlan" onclick="generatePlan()">Preview Changes</button>
         </div>
     </div>
 
@@ -102,13 +102,13 @@
     </div>
 </div>
 
-<!-- Step 3: Review Action Plan -->
+<!-- Step 3: Review Import Preview -->
 <div class="import-step" id="step3" style="display:none;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <h2 style="margin:0;border:none;padding:0;">Action Plan</h2>
+        <h2 style="margin:0;border:none;padding:0;">Import Preview</h2>
         <div style="display:flex;gap:8px;">
             <button class="btn-secondary" onclick="goToStep(2)">Back</button>
-            <button id="btnExecute" onclick="executeImport()">Apply Approved Changes</button>
+            <button id="btnExecute" onclick="executeImport()">Confirm Import</button>
         </div>
     </div>
 
@@ -360,7 +360,7 @@
         // Disable button and show inline spinner while waiting
         const btn = document.getElementById('btnGeneratePlan');
         btn.disabled = true;
-        btn.textContent = 'Generating…';
+        btn.textContent = 'Reviewing…';
 
         fetch(`/licenses/api/import/${sessionId}/plan`, {
             method: 'POST',
@@ -370,7 +370,7 @@
             .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
             .then(({ ok, data }) => {
                 btn.disabled = false;
-                btn.textContent = 'Generate Action Plan';
+                btn.textContent = 'Preview Changes';
                 if (!ok) {
                     showError('mappingError', data.error || data.details?.join(', ') || 'Plan generation failed');
                     return;
@@ -383,13 +383,13 @@
             })
             .catch(err => {
                 btn.disabled = false;
-                btn.textContent = 'Generate Action Plan';
+                btn.textContent = 'Preview Changes';
                 showError('mappingError', 'Network error: ' + err.message);
             });
     };
 
     // -----------------------------------------------------------------------
-    // Step 3: Review Action Plan
+    // Step 3: Review Import Preview
     // -----------------------------------------------------------------------
     const categoryMeta = {
         flag:   { label: 'Needs Review', color: 'var(--color-warning)',     icon: '&#9888;' },
@@ -540,7 +540,7 @@
             .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
             .then(({ ok, data }) => {
                 document.getElementById('btnExecute').disabled = false;
-                document.getElementById('btnExecute').textContent = 'Apply Approved Changes';
+                document.getElementById('btnExecute').textContent = 'Confirm Import';
                 if (!ok) {
                     showError('executeError', data.error || 'Execution failed');
                     return;
@@ -550,7 +550,7 @@
             })
             .catch(err => {
                 document.getElementById('btnExecute').disabled = false;
-                document.getElementById('btnExecute').textContent = 'Apply Approved Changes';
+                document.getElementById('btnExecute').textContent = 'Confirm Import';
                 showError('executeError', 'Network error: ' + err.message);
             });
     };
