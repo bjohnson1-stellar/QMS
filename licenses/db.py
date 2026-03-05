@@ -7,6 +7,7 @@ Handles company contractor licenses and employee professional licenses.
 import base64
 import hashlib
 import json
+import math
 import sqlite3
 import uuid
 from datetime import datetime
@@ -54,8 +55,14 @@ def list_licenses(
     state_code: Optional[str] = None,
     status: Optional[str] = None,
     search: Optional[str] = None,
-) -> List[Dict[str, Any]]:
-    """List licenses with optional filters. Includes days_until_expiry."""
+    page: int = 0,
+    per_page: int = 0,
+) -> Dict[str, Any]:
+    """List licenses with optional filters, pagination, and days_until_expiry.
+
+    Returns {items: [...], total, page, per_page, pages}.
+    When per_page=0 (default), returns all rows with pages=1.
+    """
     clauses = []
     params: list = []
 
@@ -79,6 +86,11 @@ def list_licenses(
 
     where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
 
+    # Get total count (same WHERE, no LIMIT)
+    total = conn.execute(
+        f"SELECT COUNT(*) FROM state_licenses sl{where}", params
+    ).fetchone()[0]
+
     sql = f"""
         SELECT sl.*,
                CASE
@@ -90,8 +102,27 @@ def list_licenses(
         {where}
         ORDER BY sl.expiration_date ASC NULLS LAST, sl.holder_name
     """
+
+    # Apply pagination if per_page > 0
+    per_page = min(per_page, 200) if per_page > 0 else 0
+    if per_page > 0:
+        page = max(page, 1)
+        offset = (page - 1) * per_page
+        sql += " LIMIT ? OFFSET ?"
+        params.extend([per_page, offset])
+        pages = math.ceil(total / per_page) if per_page else 1
+    else:
+        page = 1
+        pages = 1
+
     rows = conn.execute(sql, params).fetchall()
-    return [dict(r) for r in rows]
+    return {
+        "items": [dict(r) for r in rows],
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": pages,
+    }
 
 
 def get_license(conn: sqlite3.Connection, license_id: str) -> Optional[Dict[str, Any]]:

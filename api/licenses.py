@@ -7,6 +7,7 @@ Thin delivery layer: business logic lives in licenses.db.
 import csv
 import io
 import json
+from datetime import datetime as _dt
 
 from flask import (
     Blueprint, Response, current_app, jsonify, request,
@@ -70,6 +71,117 @@ _STATE_NAMES = {
     "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
     "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia",
 }
+
+_VALID_HOLDER_TYPES = {"company", "employee"}
+_VALID_STATUSES = {"active", "expired", "suspended", "pending"}
+_DATE_FIELDS = {"expiration_date", "issued_date", "association_date", "disassociation_date"}
+
+
+def _validate_date(value: str, field_name: str) -> str | None:
+    """Return error string if value is not a valid YYYY-MM-DD date, else None."""
+    try:
+        _dt.strptime(value, "%Y-%m-%d")
+        return None
+    except (ValueError, TypeError):
+        return f"Invalid date format for {field_name}: expected YYYY-MM-DD"
+
+
+def _validate_license_fields(data: dict, require_all: bool = False) -> list[str]:
+    """Validate license create/update fields. Returns list of error strings."""
+    errors: list[str] = []
+
+    if require_all:
+        for f in ("business_entity", "state_code", "license_type", "license_number"):
+            if not data.get(f):
+                errors.append(f"Missing required field: {f}")
+
+    if "state_code" in data and data["state_code"]:
+        sc = str(data["state_code"]).strip().upper()
+        data["state_code"] = sc
+        if sc not in _STATE_NAMES:
+            errors.append(f"Invalid state code: {sc}")
+
+    if "holder_type" in data and data["holder_type"]:
+        if data["holder_type"] not in _VALID_HOLDER_TYPES:
+            errors.append(f"Invalid holder_type: must be one of {sorted(_VALID_HOLDER_TYPES)}")
+
+    if "status" in data and data["status"]:
+        if data["status"] not in _VALID_STATUSES:
+            errors.append(f"Invalid status: must be one of {sorted(_VALID_STATUSES)}")
+
+    for df in _DATE_FIELDS:
+        if df in data and data[df]:
+            err = _validate_date(data[df], df)
+            if err:
+                errors.append(err)
+
+    if "license_number" in data and data.get("license_number"):
+        data["license_number"] = str(data["license_number"]).strip()
+        if len(data["license_number"]) > 100:
+            errors.append("license_number exceeds 100 characters")
+
+    if "license_type" in data and data.get("license_type"):
+        data["license_type"] = str(data["license_type"]).strip()
+        if len(data["license_type"]) > 100:
+            errors.append("license_type exceeds 100 characters")
+
+    return errors
+
+
+def _validate_ce_credit_fields(data: dict) -> list[str]:
+    """Validate CE credit create/update fields. Returns list of error strings."""
+    errors: list[str] = []
+
+    if "hours" in data and data.get("hours") is not None:
+        try:
+            h = float(data["hours"])
+            if h < 0:
+                errors.append("hours must be a positive number")
+            elif h > 999:
+                errors.append("hours exceeds maximum of 999")
+        except (ValueError, TypeError):
+            errors.append("hours must be a number")
+
+    if "completion_date" in data and data.get("completion_date"):
+        err = _validate_date(data["completion_date"], "completion_date")
+        if err:
+            errors.append(err)
+
+    if "course_name" in data and data.get("course_name"):
+        data["course_name"] = str(data["course_name"]).strip()
+        if len(data["course_name"]) > 200:
+            errors.append("course_name exceeds 200 characters")
+
+    return errors
+
+
+def _validate_ce_requirement_fields(data: dict) -> list[str]:
+    """Validate CE requirement create/update fields. Returns list of error strings."""
+    errors: list[str] = []
+
+    if "state_code" in data and data.get("state_code"):
+        sc = str(data["state_code"]).strip().upper()
+        data["state_code"] = sc
+        if sc not in _STATE_NAMES:
+            errors.append(f"Invalid state code: {sc}")
+
+    if "hours_required" in data and data.get("hours_required") is not None:
+        try:
+            h = float(data["hours_required"])
+            if h <= 0:
+                errors.append("hours_required must be a positive number")
+        except (ValueError, TypeError):
+            errors.append("hours_required must be a number")
+
+    if "period_months" in data and data.get("period_months") is not None:
+        try:
+            p = int(data["period_months"])
+            if p <= 0:
+                errors.append("period_months must be a positive integer")
+        except (ValueError, TypeError):
+            errors.append("period_months must be a positive integer")
+
+    return errors
 
 
 # ---------------------------------------------------------------------------
@@ -166,15 +278,24 @@ def license_detail_page(license_id):
 @bp.route("/api/licenses", methods=["GET"])
 @module_required("licenses")
 def api_list_licenses():
+    # Parse pagination params (0 = no limit, backward compat)
+    try:
+        page = int(request.args.get("page", 0))
+        per_page = int(request.args.get("per_page", 0))
+    except (ValueError, TypeError):
+        page, per_page = 0, 0
+
     with get_db(readonly=True) as conn:
-        rows = list_licenses(
+        result = list_licenses(
             conn,
             holder_type=request.args.get("holder_type"),
             state_code=request.args.get("state_code"),
             status=request.args.get("status"),
             search=request.args.get("search"),
+            page=page,
+            per_page=per_page,
         )
-    return jsonify(rows)
+    return jsonify(result)
 
 
 @bp.route("/api/licenses/stats", methods=["GET"])
@@ -189,10 +310,9 @@ def api_license_stats():
 @module_required("licenses", min_role="editor")
 def api_create_license():
     data = request.get_json(force=True)
-    required = ["business_entity", "state_code", "license_type", "license_number"]
-    missing = [f for f in required if not data.get(f)]
-    if missing:
-        return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
+    errors = _validate_license_fields(data, require_all=True)
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
 
     # Auto-populate holder_name from business_entity for backward compat
     if not data.get("holder_name"):
@@ -210,6 +330,9 @@ def api_create_license():
 @module_required("licenses", min_role="editor")
 def api_update_license(license_id):
     data = request.get_json(force=True)
+    errors = _validate_license_fields(data)
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
     user = session.get("user", {})
     data["changed_by"] = user.get("id", user.get("email", "unknown"))
     with get_db() as conn:
@@ -367,6 +490,9 @@ def api_create_ce_requirement():
     missing = [f for f in required if not data.get(f)]
     if missing:
         return jsonify({"error": f"Missing: {', '.join(missing)}"}), 400
+    errors = _validate_ce_requirement_fields(data)
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
     user = session.get("user", {})
     data["created_by"] = user.get("id", user.get("email", "unknown"))
     with get_db() as conn:
@@ -378,6 +504,9 @@ def api_create_ce_requirement():
 @module_required("licenses", min_role="editor")
 def api_update_ce_requirement(req_id):
     data = request.get_json(force=True)
+    errors = _validate_ce_requirement_fields(data)
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
     user = session.get("user", {})
     data["changed_by"] = user.get("id", user.get("email", "unknown"))
     with get_db() as conn:
@@ -430,6 +559,9 @@ def api_create_ce_credit():
     missing = [f for f in required if not data.get(f)]
     if missing:
         return jsonify({"error": f"Missing: {', '.join(missing)}"}), 400
+    errors = _validate_ce_credit_fields(data)
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
 
     # Handle certificate file upload
     if "certificate" in request.files:
@@ -456,6 +588,10 @@ def api_update_ce_credit(credit_id):
             data["hours"] = float(data["hours"])
     else:
         data = request.get_json(force=True)
+
+    errors = _validate_ce_credit_fields(data)
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
 
     # Handle certificate file upload
     if "certificate" in request.files:
@@ -593,7 +729,7 @@ def api_download_certificate(credit_id):
 def export_licenses_csv():
     """Export all licenses as CSV."""
     with get_db(readonly=True) as conn:
-        rows = list_licenses(conn)
+        rows = list_licenses(conn)["items"]  # Unpaginated (per_page=0)
 
         # Batch-load scopes (single query instead of N+1)
         license_ids = [r["id"] for r in rows]
