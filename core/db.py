@@ -71,6 +71,7 @@ SCHEMA_ORDER = [
     "core",
     "imports",
     "workforce",
+    "licenses",
     "projects",
     "quality",
     "timetracker",

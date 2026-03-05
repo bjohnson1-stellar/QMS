@@ -1,0 +1,382 @@
+{% extends "base.html" %}
+
+{% block title %}Licenses - QMS{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1>State Licenses</h1>
+        <p class="subtitle">Company contractor and employee professional licenses</p>
+    </div>
+    <button onclick="openModal()">+ Add License</button>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid" id="statsGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:15px;margin-bottom:20px;">
+    <div class="stat-card">
+        <div class="stat-value" id="statTotal">-</div>
+        <div class="stat-label">Total Licenses</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statActive">-</div>
+        <div class="stat-label">Active</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statExpiring" style="color:var(--color-warning, #d29922);">-</div>
+        <div class="stat-label">Expiring (90 days)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statCompany">-</div>
+        <div class="stat-label">Company</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statEmployee">-</div>
+        <div class="stat-label">Employee</div>
+    </div>
+</div>
+
+<!-- License Modal -->
+<div id="licenseModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle" style="margin:0;border:none;padding:0;">Add New License</h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="success-message" id="modalSuccess"></div>
+        <div class="error-message" id="modalError"></div>
+        <form id="licenseForm" onsubmit="return saveLicense(event)">
+            <div class="modal-form-grid">
+                <div class="form-group">
+                    <label>Holder Type *</label>
+                    <select id="fHolderType" required onchange="toggleEmployeePicker()">
+                        <option value="company">Company</option>
+                        <option value="employee">Employee</option>
+                    </select>
+                </div>
+                <div class="form-group" id="employeePickerGroup" style="display:none;">
+                    <label>Employee *</label>
+                    <select id="fEmployee" onchange="autoFillHolder()">
+                        <option value="">Select Employee...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Holder Name *</label>
+                    <input type="text" id="fHolderName" required placeholder="Company or person name">
+                </div>
+                <div class="form-group">
+                    <label>State *</label>
+                    <select id="fState" required>
+                        <option value="">Select State...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>License Type *</label>
+                    <input type="text" id="fLicenseType" required placeholder="e.g. Contractor, Journeyman Plumber">
+                </div>
+                <div class="form-group">
+                    <label>License Number *</label>
+                    <input type="text" id="fLicenseNumber" required placeholder="License #">
+                </div>
+                <div class="form-group">
+                    <label>Issued Date</label>
+                    <input type="date" id="fIssuedDate">
+                </div>
+                <div class="form-group">
+                    <label>Expiration Date</label>
+                    <input type="date" id="fExpirationDate">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="fStatus">
+                        <option value="active">Active</option>
+                        <option value="pending">Pending</option>
+                        <option value="expired">Expired</option>
+                        <option value="revoked">Revoked</option>
+                    </select>
+                </div>
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label>Notes</label>
+                    <textarea id="fNotes" rows="2"></textarea>
+                </div>
+            </div>
+            <div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--color-border-light);display:flex;gap:10px;">
+                <button type="submit" id="submitBtn">Add License</button>
+                <button type="button" class="secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="success-message" id="pageSuccess"></div>
+<div class="error-message" id="pageError"></div>
+
+<!-- Filter bar + table -->
+<div class="card">
+    <div class="filter-bar">
+        <input type="text" id="filterSearch" placeholder="Search licenses..." oninput="renderTable()">
+        <select id="filterHolderType" onchange="renderTable()">
+            <option value="">All Types</option>
+            <option value="company">Company</option>
+            <option value="employee">Employee</option>
+        </select>
+        <select id="filterState" onchange="renderTable()">
+            <option value="">All States</option>
+        </select>
+        <select id="filterStatus" onchange="renderTable()">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="pending">Pending</option>
+            <option value="revoked">Revoked</option>
+        </select>
+    </div>
+    <div id="licensesTable"><div class="loading">Loading licenses...</div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API = '/licenses/api';
+    let licenses = [];
+    let employees = [];
+    let currentEditId = null;
+
+    const US_STATES = [
+        ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],
+        ['CA','California'],['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],
+        ['FL','Florida'],['GA','Georgia'],['HI','Hawaii'],['ID','Idaho'],
+        ['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],['KS','Kansas'],
+        ['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],
+        ['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],
+        ['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],
+        ['NH','New Hampshire'],['NJ','New Jersey'],['NM','New Mexico'],['NY','New York'],
+        ['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],['OK','Oklahoma'],
+        ['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],
+        ['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],
+        ['VT','Vermont'],['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],
+        ['WI','Wisconsin'],['WY','Wyoming'],['DC','District of Columbia']
+    ];
+
+    // ── Init ─────────────────────────────────────────────────────────────
+
+    async function loadAll() {
+        // Populate state dropdowns
+        const stateOpts = US_STATES.map(([c,n]) => `<option value="${c}">${c} — ${n}</option>`).join('');
+        document.getElementById('fState').innerHTML = '<option value="">Select State...</option>' + stateOpts;
+        document.getElementById('filterState').innerHTML = '<option value="">All States</option>' + stateOpts;
+
+        // Load data in parallel
+        const [licRes, statRes, empRes] = await Promise.all([
+            fetch(API + '/licenses').then(r => r.json()),
+            fetch(API + '/licenses/stats').then(r => r.json()),
+            fetch(API + '/employees/lookup').then(r => r.json()).catch(() => [])
+        ]);
+
+        licenses = licRes;
+        updateStats(statRes);
+        populateEmployees(empRes);
+        renderTable();
+    }
+
+    function updateStats(s) {
+        document.getElementById('statTotal').textContent = s.total || 0;
+        document.getElementById('statActive').textContent = s.active || 0;
+        document.getElementById('statExpiring').textContent = s.expiring_90 || 0;
+        document.getElementById('statCompany').textContent = s.company || 0;
+        document.getElementById('statEmployee').textContent = s.employee || 0;
+    }
+
+    function populateEmployees(emps) {
+        employees = emps;
+        const sel = document.getElementById('fEmployee');
+        sel.innerHTML = '<option value="">Select Employee...</option>' +
+            emps.map(e => `<option value="${e.id}" data-name="${e.first_name} ${e.last_name}">${e.last_name}, ${e.first_name}${e.employee_number ? ' (' + e.employee_number + ')' : ''}${e.position ? ' — ' + e.position : ''}</option>`).join('');
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────
+
+    function renderTable() {
+        const search = document.getElementById('filterSearch').value.toLowerCase();
+        const holderType = document.getElementById('filterHolderType').value;
+        const state = document.getElementById('filterState').value;
+        const status = document.getElementById('filterStatus').value;
+
+        let filtered = licenses.filter(l => {
+            if (holderType && l.holder_type !== holderType) return false;
+            if (state && l.state_code !== state) return false;
+            if (status && l.status !== status) return false;
+            if (search) {
+                const haystack = [l.holder_name, l.license_number, l.license_type, l.state_code, l.notes || ''].join(' ').toLowerCase();
+                if (!haystack.includes(search)) return false;
+            }
+            return true;
+        });
+
+        if (!filtered.length) {
+            document.getElementById('licensesTable').innerHTML = '<p style="padding:20px;text-align:center;color:var(--color-text-muted);">No licenses found.</p>';
+            return;
+        }
+
+        let html = `<table><thead><tr>
+            <th>State</th><th>License Type</th><th>License #</th><th>Holder</th>
+            <th>Type</th><th>Issued</th><th>Expiration</th><th>Status</th><th></th>
+        </tr></thead><tbody>`;
+
+        for (const l of filtered) {
+            const badge = statusBadge(l.status);
+            const typeBadge = l.holder_type === 'company'
+                ? '<span class="badge" style="background:var(--color-accent, #1f6feb);color:#fff;font-size:11px;">Company</span>'
+                : '<span class="badge" style="background:var(--color-text-muted, #666);color:#fff;font-size:11px;">Employee</span>';
+            const expWarn = expiryWarning(l);
+
+            html += `<tr>
+                <td><strong>${l.state_code}</strong></td>
+                <td>${esc(l.license_type)}</td>
+                <td>${esc(l.license_number)}</td>
+                <td>${esc(l.holder_name)}</td>
+                <td>${typeBadge}</td>
+                <td>${l.issued_date || '—'}</td>
+                <td>${l.expiration_date || 'No Expiry'}${expWarn}</td>
+                <td>${badge}</td>
+                <td style="white-space:nowrap;">
+                    <button class="btn-sm" onclick="editLicense('${l.id}')">Edit</button>
+                    <button class="btn-sm btn-danger" onclick="deleteLicense('${l.id}')">Delete</button>
+                </td>
+            </tr>`;
+        }
+        html += '</tbody></table>';
+        document.getElementById('licensesTable').innerHTML = html;
+    }
+
+    function statusBadge(status) {
+        const colors = {
+            active: 'background:#238636;color:#fff;',
+            expired: 'background:#da3633;color:#fff;',
+            pending: 'background:#d29922;color:#fff;',
+            revoked: 'background:#6e7681;color:#fff;'
+        };
+        return `<span class="badge" style="${colors[status] || ''};font-size:11px;">${status}</span>`;
+    }
+
+    function expiryWarning(l) {
+        if (l.days_until_expiry === null || l.days_until_expiry === undefined) return '';
+        if (l.days_until_expiry < 0) return ' <span style="color:var(--color-danger,#da3633);font-size:12px;">⚠ Expired</span>';
+        if (l.days_until_expiry <= 30) return ` <span style="color:var(--color-danger,#da3633);font-size:12px;">⚠ ${l.days_until_expiry}d</span>`;
+        if (l.days_until_expiry <= 90) return ` <span style="color:var(--color-warning,#d29922);font-size:12px;">${l.days_until_expiry}d</span>`;
+        return '';
+    }
+
+    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    // ── Modal ─────────────────────────────────────────────────────────────
+
+    function openModal(id) {
+        currentEditId = id || null;
+        document.getElementById('modalTitle').textContent = id ? 'Edit License' : 'Add New License';
+        document.getElementById('submitBtn').textContent = id ? 'Save Changes' : 'Add License';
+        document.getElementById('modalSuccess').style.display = 'none';
+        document.getElementById('modalError').style.display = 'none';
+
+        if (id) {
+            const l = licenses.find(x => x.id === id);
+            if (!l) return;
+            document.getElementById('fHolderType').value = l.holder_type;
+            document.getElementById('fHolderName').value = l.holder_name;
+            document.getElementById('fState').value = l.state_code;
+            document.getElementById('fLicenseType').value = l.license_type;
+            document.getElementById('fLicenseNumber').value = l.license_number;
+            document.getElementById('fIssuedDate').value = l.issued_date || '';
+            document.getElementById('fExpirationDate').value = l.expiration_date || '';
+            document.getElementById('fStatus').value = l.status;
+            document.getElementById('fNotes').value = l.notes || '';
+            if (l.employee_id) document.getElementById('fEmployee').value = l.employee_id;
+            toggleEmployeePicker();
+        } else {
+            document.getElementById('licenseForm').reset();
+            document.getElementById('fHolderType').value = 'company';
+            toggleEmployeePicker();
+        }
+        document.getElementById('licenseModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('licenseModal').style.display = 'none';
+        currentEditId = null;
+    }
+
+    function editLicense(id) { openModal(id); }
+
+    function toggleEmployeePicker() {
+        const isEmployee = document.getElementById('fHolderType').value === 'employee';
+        document.getElementById('employeePickerGroup').style.display = isEmployee ? '' : 'none';
+        if (isEmployee) document.getElementById('fEmployee').required = true;
+        else { document.getElementById('fEmployee').required = false; document.getElementById('fEmployee').value = ''; }
+    }
+
+    function autoFillHolder() {
+        const sel = document.getElementById('fEmployee');
+        const opt = sel.options[sel.selectedIndex];
+        if (opt && opt.dataset.name) {
+            document.getElementById('fHolderName').value = opt.dataset.name;
+        }
+    }
+
+    // ── CRUD ──────────────────────────────────────────────────────────────
+
+    async function saveLicense(e) {
+        e.preventDefault();
+        const data = {
+            holder_type: document.getElementById('fHolderType').value,
+            holder_name: document.getElementById('fHolderName').value,
+            state_code: document.getElementById('fState').value,
+            license_type: document.getElementById('fLicenseType').value,
+            license_number: document.getElementById('fLicenseNumber').value,
+            issued_date: document.getElementById('fIssuedDate').value || null,
+            expiration_date: document.getElementById('fExpirationDate').value || null,
+            status: document.getElementById('fStatus').value,
+            notes: document.getElementById('fNotes').value || null
+        };
+        if (data.holder_type === 'employee') {
+            data.employee_id = document.getElementById('fEmployee').value || null;
+        }
+
+        const url = currentEditId ? `${API}/licenses/${currentEditId}` : `${API}/licenses`;
+        const method = currentEditId ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error || 'Failed to save');
+
+            closeModal();
+            showMessage('pageSuccess', currentEditId ? 'License updated' : 'License added');
+            await loadAll();
+        } catch (err) {
+            showMessage('modalError', err.message);
+        }
+        return false;
+    }
+
+    async function deleteLicense(id) {
+        if (!confirm('Delete this license record?')) return;
+        try {
+            const res = await fetch(`${API}/licenses/${id}`, { method: 'DELETE' });
+            if (!res.ok) { const r = await res.json(); throw new Error(r.error || 'Failed'); }
+            showMessage('pageSuccess', 'License deleted');
+            await loadAll();
+        } catch (err) {
+            showMessage('pageError', err.message);
+        }
+    }
+
+    function showMessage(elId, msg) {
+        const el = document.getElementById(elId);
+        el.textContent = msg;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    // ── Boot ──────────────────────────────────────────────────────────────
+    loadAll();
+</script>
+{% endblock %}

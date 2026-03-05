@@ -214,6 +214,9 @@ def create_app() -> Flask:
     from qms.api.timetracker import bp as timetracker_bp
     app.register_blueprint(timetracker_bp)
 
+    from qms.api.licenses import bp as licenses_bp
+    app.register_blueprint(licenses_bp)
+
     # Root route — landing page
     @app.route("/")
     def index():

@@ -69,6 +69,14 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "State Licenses Module",
+          "desc": "Company contractor and employee professional license tracking. Schema with expiry view, CRUD API, single-page UI with stats cards, filters, employee picker. Registered as web module with nav icon and sub-nav.",
+          "module": "licenses",
+          "priority": "medium",
+          "tags": ["ui", "licenses", "compliance", "module"],
+          "completed": "2026-03-05"
+        },
+        {
           "title": "Quality Intelligence Dashboard (Phase 3)",
           "desc": "Chart.js analytics (by type/status/trade), filterable browse page with semantic search (vectordb + SQL LIKE fallback), 4 new API endpoints, sub-nav integration. Completes Phase 3 of Quality Intelligence Platform milestone.",
           "module": "quality",

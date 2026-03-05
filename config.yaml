@@ -528,6 +528,9 @@ web_modules:
     label: "Time Tracker"
     default_endpoint: "timetracker.projections_page"
     admin_only: true
+  licenses:
+    label: "Licenses"
+    default_endpoint: "licenses.licenses_page"
 
 # =============================================================================
 # AUTHENTICATION (Local email + password)

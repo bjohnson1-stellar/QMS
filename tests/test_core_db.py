@@ -20,7 +20,7 @@ def test_execute_query_returns_rows(mock_db):
 
 
 def test_schema_order_length():
-    assert len(SCHEMA_ORDER) == 14
+    assert len(SCHEMA_ORDER) == 15
 
 
 def test_schema_order_starts_with_auth():
