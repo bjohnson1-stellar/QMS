@@ -99,7 +99,7 @@ def create_license(conn: sqlite3.Connection, **fields) -> Dict[str, Any]:
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             license_id,
-            fields.get("holder_type"),
+            fields.get("holder_type") or "company",
             fields.get("employee_id"),
             fields.get("business_entity"),
             fields["state_code"],
