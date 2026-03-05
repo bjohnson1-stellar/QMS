@@ -4,10 +4,14 @@ State Licenses CRUD — pure Python, no Flask dependency.
 Handles company contractor licenses and employee professional licenses.
 """
 
+import base64
+import hashlib
 import sqlite3
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
+from cryptography.fernet import Fernet, InvalidToken
 
 
 def generate_uuid() -> str:
@@ -261,11 +265,13 @@ def upsert_license_board(
     now = datetime.utcnow().isoformat()
     conn.execute(
         """INSERT INTO state_license_boards
-               (state_code, board_name, website_url, phone, notes, updated_at, updated_by)
-           VALUES (?, ?, ?, ?, ?, ?, ?)
+               (state_code, board_name, website_url, lookup_url, phone, notes,
+                updated_at, updated_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(state_code) DO UPDATE SET
                board_name = excluded.board_name,
                website_url = excluded.website_url,
+               lookup_url = excluded.lookup_url,
                phone = excluded.phone,
                notes = excluded.notes,
                updated_at = excluded.updated_at,
@@ -274,6 +280,7 @@ def upsert_license_board(
             state_code,
             fields.get("board_name", ""),
             fields.get("website_url"),
+            fields.get("lookup_url"),
             fields.get("phone"),
             fields.get("notes"),
             now,
@@ -625,6 +632,99 @@ def get_scope_coverage_gaps(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
         WHERE sl.status = 'active'
     """).fetchall()
     return [dict(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# Portal Credential Encryption
+# ---------------------------------------------------------------------------
+
+def _get_fernet(secret_key: str) -> Fernet:
+    """Derive a Fernet key from the app secret key via PBKDF2."""
+    dk = hashlib.pbkdf2_hmac("sha256", secret_key.encode(), b"qms-license-creds", 100_000)
+    return Fernet(base64.urlsafe_b64encode(dk[:32]))
+
+
+def _encrypt(secret_key: str, plaintext: str) -> str:
+    """Encrypt a string and return base64 token."""
+    return _get_fernet(secret_key).encrypt(plaintext.encode()).decode()
+
+
+def _decrypt(secret_key: str, token: str) -> str:
+    """Decrypt a Fernet token back to plaintext."""
+    try:
+        return _get_fernet(secret_key).decrypt(token.encode()).decode()
+    except InvalidToken:
+        return "••••••••"
+
+
+# ---------------------------------------------------------------------------
+# Portal Credentials CRUD
+# ---------------------------------------------------------------------------
+
+def get_portal_credential(
+    conn: sqlite3.Connection, license_id: str, user_id: str, secret_key: str
+) -> Optional[Dict[str, Any]]:
+    """Get a user's portal credentials for a license (decrypted)."""
+    row = conn.execute(
+        "SELECT * FROM license_portal_credentials WHERE license_id = ? AND user_id = ?",
+        (license_id, user_id),
+    ).fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    d["password"] = _decrypt(secret_key, d.pop("password_enc"))
+    return d
+
+
+def upsert_portal_credential(
+    conn: sqlite3.Connection,
+    license_id: str,
+    user_id: str,
+    secret_key: str,
+    **fields,
+) -> Dict[str, Any]:
+    """Create or update portal credentials for a user+license."""
+    now = datetime.utcnow().isoformat()
+    cred_id = generate_uuid()
+    encrypted_pw = _encrypt(secret_key, fields["password"])
+
+    conn.execute(
+        """INSERT INTO license_portal_credentials
+               (id, license_id, user_id, portal_url, username, password_enc, notes,
+                created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(license_id, user_id) DO UPDATE SET
+               portal_url = excluded.portal_url,
+               username = excluded.username,
+               password_enc = excluded.password_enc,
+               notes = excluded.notes,
+               updated_at = excluded.updated_at""",
+        (
+            cred_id,
+            license_id,
+            user_id,
+            fields.get("portal_url"),
+            fields["username"],
+            encrypted_pw,
+            fields.get("notes"),
+            now,
+            now,
+        ),
+    )
+    conn.commit()
+    return get_portal_credential(conn, license_id, user_id, secret_key)
+
+
+def delete_portal_credential(
+    conn: sqlite3.Connection, license_id: str, user_id: str
+) -> bool:
+    """Delete a user's portal credentials for a license."""
+    cur = conn.execute(
+        "DELETE FROM license_portal_credentials WHERE license_id = ? AND user_id = ?",
+        (license_id, user_id),
+    )
+    conn.commit()
+    return cur.rowcount > 0
 
 
 def get_renewal_timeline(conn: sqlite3.Connection) -> List[Dict[str, Any]]:

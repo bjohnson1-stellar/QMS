@@ -111,6 +111,55 @@
     </div>
 </div>
 
+<!-- Portal Credentials -->
+<div class="card" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="margin:0;border:none;padding:0;">Portal Credentials</h3>
+        {% if portal_cred %}
+        <div style="display:flex;gap:8px;">
+            <button class="btn-sm" onclick="openCredModal(true)">Edit</button>
+            <button class="btn-sm btn-danger" onclick="deleteCred()">Remove</button>
+        </div>
+        {% else %}
+        <button class="btn-sm" onclick="openCredModal(false)">+ Save Credentials</button>
+        {% endif %}
+    </div>
+    {% if portal_cred %}
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:0.9rem;">
+        <div>
+            <div style="color:var(--color-text-muted);font-size:0.8rem;">Portal URL</div>
+            <div>
+                {% if portal_cred.portal_url %}
+                <a href="{{ portal_cred.portal_url }}" target="_blank" rel="noopener" style="color:var(--color-primary);">Open Portal</a>
+                {% else %}—{% endif %}
+            </div>
+        </div>
+        <div>
+            <div style="color:var(--color-text-muted);font-size:0.8rem;">Username</div>
+            <div style="font-family:monospace;">{{ portal_cred.username }}</div>
+        </div>
+        <div>
+            <div style="color:var(--color-text-muted);font-size:0.8rem;">Password</div>
+            <div>
+                <span id="pwMasked" style="font-family:monospace;">••••••••</span>
+                <span id="pwRevealed" style="display:none;font-family:monospace;">{{ portal_cred.password }}</span>
+                <button class="btn-sm" onclick="togglePw()" style="margin-left:8px;font-size:11px;" id="pwToggle">Show</button>
+            </div>
+        </div>
+        {% if portal_cred.notes %}
+        <div style="grid-column:1/-1;">
+            <div style="color:var(--color-text-muted);font-size:0.8rem;">Notes</div>
+            <div>{{ portal_cred.notes }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <p style="color:var(--color-text-muted);margin:0;font-size:0.85rem;">
+        Save your login credentials for this license's state portal. Credentials are encrypted and visible only to you.
+    </p>
+    {% endif %}
+</div>
+
 <!-- CE Credits Section -->
 <div class="card" style="padding:20px;margin-bottom:20px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -280,6 +329,44 @@
             <div style="padding-top:15px;border-top:1px solid var(--color-border-light);display:flex;gap:10px;">
                 <button type="submit">Save Scopes</button>
                 <button type="button" class="secondary" onclick="closeScopeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Portal Credential Modal -->
+<div id="credModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:450px;">
+        <div class="modal-header">
+            <h2 id="credTitle" style="margin:0;border:none;padding:0;">Save Portal Credentials</h2>
+            <button class="modal-close" onclick="closeCredModal()">&times;</button>
+        </div>
+        <div class="error-message" id="credError"></div>
+        <form onsubmit="return saveCred(event)">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="form-group">
+                    <label>Portal URL</label>
+                    <input type="url" id="credUrl" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Username *</label>
+                    <input type="text" id="credUser" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" id="credPass" required autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="credNotes" rows="2" placeholder="e.g., company shared account, MFA required"></textarea>
+                </div>
+            </div>
+            <p style="font-size:0.8rem;color:var(--color-text-muted);margin:12px 0 0;">
+                Encrypted at rest. Only you can view these credentials.
+            </p>
+            <div style="margin-top:16px;padding-top:15px;border-top:1px solid var(--color-border-light);display:flex;gap:10px;">
+                <button type="submit">Save Credentials</button>
+                <button type="button" class="secondary" onclick="closeCredModal()">Cancel</button>
             </div>
         </form>
     </div>
@@ -512,6 +599,77 @@
         if (!confirm('Delete this CE credit?')) return;
         try {
             const res = await fetch(`${API}/ce-credits/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+            window.location.reload();
+        } catch (err) { alert(err.message); }
+    }
+
+    // ── Portal Credentials ───────────────────────────────────────────────
+    function togglePw() {
+        const masked = document.getElementById('pwMasked');
+        const revealed = document.getElementById('pwRevealed');
+        const btn = document.getElementById('pwToggle');
+        if (revealed.style.display === 'none') {
+            revealed.style.display = 'inline';
+            masked.style.display = 'none';
+            btn.textContent = 'Hide';
+        } else {
+            revealed.style.display = 'none';
+            masked.style.display = 'inline';
+            btn.textContent = 'Show';
+        }
+    }
+
+    function openCredModal(isEdit) {
+        document.getElementById('credTitle').textContent = isEdit ? 'Edit Portal Credentials' : 'Save Portal Credentials';
+        document.getElementById('credError').style.display = 'none';
+        if (isEdit) {
+            // Pre-fill from page data
+            {% if portal_cred %}
+            document.getElementById('credUrl').value = '{{ portal_cred.portal_url or "" }}';
+            document.getElementById('credUser').value = '{{ portal_cred.username }}';
+            document.getElementById('credPass').value = '{{ portal_cred.password }}';
+            document.getElementById('credNotes').value = '{{ portal_cred.notes or "" }}';
+            {% endif %}
+        } else {
+            document.getElementById('credUrl').value = '';
+            document.getElementById('credUser').value = '';
+            document.getElementById('credPass').value = '';
+            document.getElementById('credNotes').value = '';
+        }
+        document.getElementById('credModal').style.display = 'flex';
+    }
+
+    function closeCredModal() { document.getElementById('credModal').style.display = 'none'; }
+
+    async function saveCred(e) {
+        e.preventDefault();
+        const data = {
+            portal_url: document.getElementById('credUrl').value || null,
+            username: document.getElementById('credUser').value,
+            password: document.getElementById('credPass').value,
+            notes: document.getElementById('credNotes').value || null,
+        };
+        try {
+            const res = await fetch(`${API}/licenses/${LIC_ID}/credentials`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+            window.location.reload();
+        } catch (err) {
+            const el = document.getElementById('credError');
+            el.textContent = err.message;
+            el.style.display = 'block';
+        }
+        return false;
+    }
+
+    async function deleteCred() {
+        if (!confirm('Remove your saved credentials for this license?')) return;
+        try {
+            const res = await fetch(`${API}/licenses/${LIC_ID}/credentials`, { method: 'DELETE' });
             if (!res.ok) throw new Error((await res.json()).error || 'Failed');
             window.location.reload();
         } catch (err) { alert(err.message); }

@@ -6,7 +6,7 @@ Thin delivery layer: business logic lives in licenses.db.
 
 import json
 
-from flask import Blueprint, jsonify, request, render_template, session
+from flask import Blueprint, current_app, jsonify, request, render_template, session
 
 from qms.core import get_db
 from qms.auth.decorators import module_required
@@ -38,6 +38,9 @@ from qms.licenses.db import (
     update_ce_requirement,
     update_license,
     upsert_license_board,
+    delete_portal_credential,
+    get_portal_credential,
+    upsert_portal_credential,
 )
 
 bp = Blueprint("licenses", __name__, url_prefix="/licenses")
@@ -123,6 +126,13 @@ def license_detail_page(license_id):
             ).fetchone()
             if emp:
                 qp_name = emp["name"]
+        # Get current user's portal credentials
+        user = session.get("user", {})
+        user_id = user.get("id", user.get("email", ""))
+        portal_cred = None
+        if user_id:
+            secret = current_app.config.get("SECRET_KEY", "")
+            portal_cred = get_portal_credential(conn, license_id, user_id, secret)
     state_name = _STATE_NAMES.get(lic["state_code"], lic["state_code"])
     return render_template(
         "licenses/license_detail.html",
@@ -133,6 +143,7 @@ def license_detail_page(license_id):
         all_scopes=all_scopes,
         ce_summary=ce_summary,
         credits=credits,
+        portal_cred=portal_cred,
     )
 
 
@@ -438,6 +449,57 @@ def api_coverage_gaps():
     with get_db(readonly=True) as conn:
         gaps = get_scope_coverage_gaps(conn)
     return jsonify(gaps)
+
+
+# ---------------------------------------------------------------------------
+# Portal Credentials API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/licenses/<license_id>/credentials", methods=["GET"])
+@module_required("licenses")
+def api_get_credentials(license_id):
+    user = session.get("user", {})
+    user_id = user.get("id", user.get("email"))
+    if not user_id:
+        return jsonify({"error": "Not authenticated"}), 401
+    secret = current_app.config.get("SECRET_KEY", "")
+    with get_db(readonly=True) as conn:
+        cred = get_portal_credential(conn, license_id, user_id, secret)
+    if not cred:
+        return jsonify(None)
+    return jsonify(cred)
+
+
+@bp.route("/api/licenses/<license_id>/credentials", methods=["PUT"])
+@module_required("licenses")
+def api_upsert_credentials(license_id):
+    data = request.get_json(force=True)
+    if not data.get("username") or not data.get("password"):
+        return jsonify({"error": "Username and password are required"}), 400
+    user = session.get("user", {})
+    user_id = user.get("id", user.get("email"))
+    if not user_id:
+        return jsonify({"error": "Not authenticated"}), 401
+    secret = current_app.config.get("SECRET_KEY", "")
+    with get_db() as conn:
+        result = upsert_portal_credential(
+            conn, license_id, user_id, secret, **data
+        )
+    return jsonify(result)
+
+
+@bp.route("/api/licenses/<license_id>/credentials", methods=["DELETE"])
+@module_required("licenses")
+def api_delete_credentials(license_id):
+    user = session.get("user", {})
+    user_id = user.get("id", user.get("email"))
+    if not user_id:
+        return jsonify({"error": "Not authenticated"}), 401
+    with get_db() as conn:
+        deleted = delete_portal_credential(conn, license_id, user_id)
+    if not deleted:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify({"ok": True})
 
 
 # ---------------------------------------------------------------------------

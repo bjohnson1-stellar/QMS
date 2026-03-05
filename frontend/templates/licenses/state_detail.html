@@ -59,13 +59,23 @@
             </div>
         </div>
         <div>
+            <div style="color:var(--color-text-muted);font-size:0.8rem;">License Lookup</div>
+            <div id="boardLookup">
+                {% if board.lookup_url %}
+                <a href="{{ board.lookup_url }}" target="_blank" rel="noopener" style="color:var(--color-primary);">Verify / Search Licenses</a>
+                {% else %}—{% endif %}
+            </div>
+        </div>
+        <div>
             <div style="color:var(--color-text-muted);font-size:0.8rem;">Phone</div>
             <div id="boardPhone">{{ board.phone or '—' }}</div>
         </div>
-        <div>
+        {% if board.notes %}
+        <div style="grid-column:1/-1;">
             <div style="color:var(--color-text-muted);font-size:0.8rem;">Notes</div>
-            <div id="boardNotes">{{ board.notes or '—' }}</div>
+            <div id="boardNotes">{{ board.notes }}</div>
         </div>
+        {% endif %}
     </div>
     {% else %}
     <p style="color:var(--color-text-muted);margin:0;">No board information available.</p>
@@ -196,6 +206,10 @@
                     <input type="url" id="bUrl">
                 </div>
                 <div class="form-group">
+                    <label>License Lookup URL</label>
+                    <input type="url" id="bLookup">
+                </div>
+                <div class="form-group">
                     <label>Phone</label>
                     <input type="text" id="bPhone">
                 </div>
@@ -264,6 +278,8 @@
         document.getElementById('bName').value = document.getElementById('boardName')?.textContent?.trim() || '';
         const urlEl = document.getElementById('boardUrl')?.querySelector('a');
         document.getElementById('bUrl').value = urlEl ? urlEl.href : '';
+        const lookupEl = document.getElementById('boardLookup')?.querySelector('a');
+        document.getElementById('bLookup').value = lookupEl ? lookupEl.href : '';
         document.getElementById('bPhone').value = document.getElementById('boardPhone')?.textContent?.trim() || '';
         const notes = document.getElementById('boardNotes')?.textContent?.trim();
         document.getElementById('bNotes').value = (notes === '—') ? '' : (notes || '');
@@ -279,6 +295,7 @@
         const data = {
             board_name: document.getElementById('bName').value,
             website_url: document.getElementById('bUrl').value || null,
+            lookup_url: document.getElementById('bLookup').value || null,
             phone: document.getElementById('bPhone').value || null,
             notes: document.getElementById('bNotes').value || null,
         };

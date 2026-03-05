@@ -37,7 +37,8 @@ CREATE INDEX IF NOT EXISTS idx_state_licenses_expiration
 CREATE TABLE IF NOT EXISTS state_license_boards (
     state_code  TEXT PRIMARY KEY,   -- 2-letter
     board_name  TEXT NOT NULL,
-    website_url TEXT,
+    website_url TEXT,               -- main portal
+    lookup_url  TEXT,               -- license verification/search URL
     phone       TEXT,
     notes       TEXT,
     updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
@@ -98,6 +99,23 @@ CREATE TABLE IF NOT EXISTS ce_credits (
 CREATE INDEX IF NOT EXISTS idx_ce_credits_license ON ce_credits(license_id);
 CREATE INDEX IF NOT EXISTS idx_ce_credits_employee ON ce_credits(employee_id);
 CREATE INDEX IF NOT EXISTS idx_ce_requirements_state ON ce_requirements(state_code);
+
+-- Per-user portal credentials for license management
+CREATE TABLE IF NOT EXISTS license_portal_credentials (
+    id          TEXT PRIMARY KEY,
+    license_id  TEXT NOT NULL,
+    user_id     TEXT NOT NULL,
+    portal_url  TEXT,                -- override per-license portal URL
+    username    TEXT NOT NULL,
+    password_enc TEXT NOT NULL,       -- Fernet-encrypted password
+    notes       TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(license_id, user_id),
+    FOREIGN KEY (license_id) REFERENCES state_licenses(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_portal_creds_user ON license_portal_credentials(user_id);
 
 -- Pre-computed expiry view for dashboard queries
 CREATE VIEW IF NOT EXISTS v_expiring_licenses AS

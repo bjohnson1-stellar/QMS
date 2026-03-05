@@ -107,7 +107,7 @@ Single SQLite database at `data/quality.db`.
 
 | Fact | Value |
 |------|-------|
-| Tables | 268 (including FTS virtual tables) |
+| Tables | 269 (including FTS virtual tables) |
 | Schema files | 14 (`core`, `auth`, `imports`, `workforce`, `projects`, `timetracker`, `qualitydocs`, `references`, `welding`, `pipeline`, `engineering`, `automation`, `blog`, `licenses`) |
 | FK chain | Controlled by `SCHEMA_ORDER` in `core/db.py` |
 | Shared table | `business_units` — used by projects, welding, pipeline |
