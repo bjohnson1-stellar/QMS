@@ -5,22 +5,22 @@
 See: .paul/PROJECT.md (updated 2026-02-27 after Phase 3)
 
 **Core value:** All quality data from siloed Procore projects unified in one database — enabling cross-project pattern analysis, trend detection, and data-driven quality decisions.
-**Current focus:** Phase 4 — Mobile Capture Pipeline (Plan 04-01: Photo Processing Engine)
+**Current focus:** Phase 4 — Mobile Capture Pipeline (Plan 04-01 complete, 04-02 TBD)
 
 ## Current Position
 
 Milestone: v0.1 Quality Intelligence Platform
-Phase: 4 of 5 (Mobile Capture Pipeline) — Planning
-Plan: 04-01 created, awaiting approval
-Status: PLAN created, ready for APPLY
-Last activity: 2026-02-27 — Created .paul/phases/04-mobile-capture-pipeline/04-01-PLAN.md
+Phase: 4 of 5 (Mobile Capture Pipeline) — In Progress
+Plan: 04-01 complete, 04-02 TBD
+Status: Loop closed — ready for next PLAN
+Last activity: 2026-03-05 — Plan 04-01 UNIFY complete
 
 Progress:
-- Milestone: [███████░░░] 70%
+- Milestone: [████████░░] 80%
 - Phase 1: [██████████] 100% Complete
 - Phase 2: [██████████] 100% Complete
 - Phase 3: [██████████] 100% Complete
-- Phase 4: [░░░░░░░░░░] 0%
+- Phase 4: [█████░░░░░] 50% (1/2 plans)
 - Phase 5: [░░░░░░░░░░] 0%
 
 ## Loop Position
@@ -28,7 +28,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ○        ○     [Plan created, awaiting approval]
+  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
 ```
 
 ## Execution Log
@@ -84,6 +84,17 @@ PLAN ──▶ APPLY ──▶ UNIFY
 - Deviations: Auto-fixed orphaned code block in api/quality.py after edit
 - Summary: `.paul/phases/03-quality-intelligence-dashboard/03-02-SUMMARY.md`
 
+### Phase 4: Mobile Capture Pipeline — IN PROGRESS
+
+**Plan 04-01 Results:**
+- Task 1: Create mobile capture processing module — PASS (scan, analyze_photo, create_issue, process_captures)
+- Task 2: CLI command + config integration — PASS (`qms quality capture` with --dry-run, --folder, --project)
+- Task 3 (Checkpoint): Human verification — SKIPPED (no test photos available)
+- Task 4: Tests + verification — PASS (17 new tests, 551 total)
+- Deviations: 3 auto-fixed (import mocking, type normalization, config None fallback)
+- Commit: `5503781`
+- Summary: `.paul/phases/04-mobile-capture-pipeline/04-01-SUMMARY.md`
+
 ## Accumulated Context
 
 ### Decisions
@@ -105,9 +116,12 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | _bu_filter() helper pattern | Phase 3 | Reusable SQL fragment builder for BU filtering |
 | Chart.js via CDN | Phase 3 | No build step, matches QMS inline-script convention |
 | vectordb-first search with SQL fallback | Phase 3 | Graceful degradation when vectordb unavailable |
+| Module-level anthropic import | Phase 4 | try/except at module level enables test mocking |
+| Skip normalize_type for valid values | Phase 4 | Prevents "observation" → "other" data loss |
+| Photos first, voice notes later | Phase 4 | Clear path with Claude vision; transcription needs service decision |
 
 ### Git State
-Last commit: `470def4`
+Last commit: `5503781`
 Branch: main
 Feature branches merged: none
 
@@ -119,13 +133,15 @@ None.
 |---------|--------|-----------------|
 | Procore API access unknown | Affects future automation | Decided: manual CSV for now, investigate API later |
 | 0 quality issues on production | Dashboard shows empty state only | Import CSVs to populate |
+| OneDrive capture folder not created | Must create QMS-Capture folder before first use | Manual one-time setup |
+| Voice transcription service undecided | Blocks Plan 04-02 | Need to evaluate Whisper vs other options |
 
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped at: Plan 04-01 created, awaiting approval
-Next action: Review and approve plan, then run /paul:apply .paul/phases/04-mobile-capture-pipeline/04-01-PLAN.md
-Resume file: .paul/phases/04-mobile-capture-pipeline/04-01-PLAN.md
+Last session: 2026-03-05
+Stopped at: Plan 04-01 UNIFY complete
+Next action: Plan 04-02 (voice transcription + review UI) or skip to Phase 5
+Resume file: .paul/phases/04-mobile-capture-pipeline/04-01-SUMMARY.md
 
 ---
 *STATE.md — Updated after every significant action*

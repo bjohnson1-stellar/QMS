@@ -6,6 +6,13 @@
       "icon": "&#9881;",
       "items": [
         {
+          "title": "Mobile Capture: Voice Transcription + Review UI",
+          "desc": "Add voice note transcription (Whisper or similar) and web review page for mobile captures. Plan 04-02 of Quality Intelligence Platform milestone.",
+          "module": "quality",
+          "priority": "medium",
+          "tags": ["mobile", "quality", "voice", "transcription", "ui"]
+        },
+        {
           "title": "Procore Drawing Zip Import",
           "desc": "Extract PDFs from Procore zip exports and route to project discipline folders. Handle revision superseding.",
           "module": "pipeline",
@@ -68,6 +75,14 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "Mobile Capture Photo Pipeline (Phase 4, Plan 01)",
+          "desc": "Claude vision photo analysis pipeline — scan OneDrive folder for construction photos, analyze with AI, create structured quality issues with attached images. CLI command with dry-run, folder override, project assignment. capture_log dedup table. 17 tests.",
+          "module": "quality",
+          "priority": "high",
+          "tags": ["mobile", "quality", "claude-vision", "ai", "onedrive"],
+          "completed": "2026-03-05"
+        },
         {
           "title": "State Licenses Module",
           "desc": "Company contractor and employee professional license tracking. Schema with expiry view, CRUD API, single-page UI with stats cards, filters, employee picker. Registered as web module with nav icon and sub-nav.",

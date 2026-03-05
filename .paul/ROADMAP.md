@@ -89,7 +89,7 @@ Phases: 3 of 5 complete
 - Brandon's personal workflow integration
 
 **Plans:**
-- [ ] 04-01: Photo processing engine — Claude vision + CLI capture command (Planning)
+- [x] 04-01: Photo processing engine — Claude vision + CLI capture command — Complete (2026-03-05)
 - [ ] 04-02: Voice transcription + review UI (TBD)
 
 ### Phase 5: Procore Push
