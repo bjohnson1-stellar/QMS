@@ -16,6 +16,7 @@ from flask import (
 from qms.core import get_db
 from qms.auth.decorators import module_required
 from qms.licenses.db import (
+    batch_get_license_scopes,
     create_ce_credit,
     create_ce_requirement,
     create_license,
@@ -100,9 +101,11 @@ def state_detail_page(state_code):
         licenses_list = list_licenses_for_state(conn, state_code)
         ce_reqs = list_ce_requirements(conn, state_code=state_code)
         scopes = list_scope_categories(conn)
-        # Attach scopes to each license
+        # Batch-load scopes for all licenses (single query instead of N+1)
+        license_ids = [lic["id"] for lic in licenses_list]
+        scopes_map = batch_get_license_scopes(conn, license_ids)
         for lic in licenses_list:
-            lic["scopes"] = get_license_scopes(conn, lic["id"])
+            lic["scopes"] = scopes_map.get(lic["id"], [])
     return render_template(
         "licenses/state_detail.html",
         state_code=state_code,
@@ -207,6 +210,8 @@ def api_create_license():
 @module_required("licenses", min_role="editor")
 def api_update_license(license_id):
     data = request.get_json(force=True)
+    user = session.get("user", {})
+    data["changed_by"] = user.get("id", user.get("email", "unknown"))
     with get_db() as conn:
         result = update_license(conn, license_id, **data)
     if not result:
@@ -217,8 +222,10 @@ def api_update_license(license_id):
 @bp.route("/api/licenses/<license_id>", methods=["DELETE"])
 @module_required("licenses", min_role="admin")
 def api_delete_license(license_id):
+    user = session.get("user", {})
+    changed_by = user.get("id", user.get("email", "unknown"))
     with get_db() as conn:
-        deleted = delete_license(conn, license_id)
+        deleted = delete_license(conn, license_id, changed_by=changed_by)
     if not deleted:
         return jsonify({"error": "License not found"}), 404
     return jsonify({"ok": True})
@@ -371,6 +378,8 @@ def api_create_ce_requirement():
 @module_required("licenses", min_role="editor")
 def api_update_ce_requirement(req_id):
     data = request.get_json(force=True)
+    user = session.get("user", {})
+    data["changed_by"] = user.get("id", user.get("email", "unknown"))
     with get_db() as conn:
         result = update_ce_requirement(conn, req_id, **data)
     if not result:
@@ -381,8 +390,10 @@ def api_update_ce_requirement(req_id):
 @bp.route("/api/ce-requirements/<req_id>", methods=["DELETE"])
 @module_required("licenses", min_role="admin")
 def api_delete_ce_requirement(req_id):
+    user = session.get("user", {})
+    changed_by = user.get("id", user.get("email", "unknown"))
     with get_db() as conn:
-        deleted = delete_ce_requirement(conn, req_id)
+        deleted = delete_ce_requirement(conn, req_id, changed_by=changed_by)
     if not deleted:
         return jsonify({"error": "Not found"}), 404
     return jsonify({"ok": True})
@@ -462,6 +473,8 @@ def api_update_ce_credit(credit_id):
                 )
                 data["certificate_file"] = rel_path
 
+    user = session.get("user", {})
+    data["changed_by"] = user.get("id", user.get("email", "unknown"))
     with get_db() as conn:
         result = update_ce_credit(conn, credit_id, **data)
     if not result:
@@ -472,8 +485,10 @@ def api_update_ce_credit(credit_id):
 @bp.route("/api/ce-credits/<credit_id>", methods=["DELETE"])
 @module_required("licenses", min_role="admin")
 def api_delete_ce_credit(credit_id):
+    user = session.get("user", {})
+    changed_by = user.get("id", user.get("email", "unknown"))
     with get_db() as conn:
-        deleted = delete_ce_credit(conn, credit_id)
+        deleted = delete_ce_credit(conn, credit_id, changed_by=changed_by)
     if not deleted:
         return jsonify({"error": "Not found"}), 404
     return jsonify({"ok": True})
@@ -579,20 +594,28 @@ def export_licenses_csv():
     """Export all licenses as CSV."""
     with get_db(readonly=True) as conn:
         rows = list_licenses(conn)
-        # Attach scopes to each
+
+        # Batch-load scopes (single query instead of N+1)
+        license_ids = [r["id"] for r in rows]
+        scopes_map = batch_get_license_scopes(conn, license_ids)
         for r in rows:
-            scopes = get_license_scopes(conn, r["id"])
-            r["scopes"] = ", ".join(s["name"] for s in scopes)
-            # Qualifying party name
-            if r.get("employee_id"):
-                emp = conn.execute(
-                    "SELECT first_name || ' ' || last_name AS name "
-                    "FROM employees WHERE id = ?",
-                    (r["employee_id"],),
-                ).fetchone()
-                r["qualifying_party"] = emp["name"] if emp else ""
-            else:
-                r["qualifying_party"] = ""
+            r["scopes"] = ", ".join(
+                s["name"] for s in scopes_map.get(r["id"], [])
+            )
+
+        # Batch-load employee names (single query instead of N+1)
+        emp_ids = [r["employee_id"] for r in rows if r.get("employee_id")]
+        emp_map: dict = {}
+        if emp_ids:
+            ph = ",".join("?" for _ in emp_ids)
+            emp_rows = conn.execute(
+                f"SELECT id, first_name || ' ' || last_name AS name "
+                f"FROM employees WHERE id IN ({ph})",
+                emp_ids,
+            ).fetchall()
+            emp_map = {e["id"]: e["name"] for e in emp_rows}
+        for r in rows:
+            r["qualifying_party"] = emp_map.get(r.get("employee_id", ""), "")
 
     buf = io.StringIO()
     writer = csv.writer(buf)

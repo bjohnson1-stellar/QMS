@@ -6,6 +6,7 @@ Handles company contractor licenses and employee professional licenses.
 
 import base64
 import hashlib
+import json
 import sqlite3
 import uuid
 from datetime import datetime
@@ -16,6 +17,30 @@ from cryptography.fernet import Fernet, InvalidToken
 
 def generate_uuid() -> str:
     return str(uuid.uuid4())
+
+
+def _audit(
+    conn: sqlite3.Connection,
+    entity_type: str,
+    entity_id: str,
+    action: str,
+    old_values: Optional[Dict] = None,
+    new_values: Optional[Dict] = None,
+    changed_by: str = "system",
+) -> None:
+    """Insert an audit_log row for a license module mutation."""
+    conn.execute(
+        """INSERT INTO audit_log (entity_type, entity_id, action, changed_by, old_values, new_values)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (
+            entity_type,
+            entity_id,
+            action,
+            changed_by,
+            json.dumps(old_values) if old_values else None,
+            json.dumps(new_values) if new_values else None,
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -122,6 +147,8 @@ def create_license(conn: sqlite3.Connection, **fields) -> Dict[str, Any]:
             fields.get("created_by"),
         ),
     )
+    _audit(conn, "license", license_id, "created",
+           new_values=fields, changed_by=fields.get("created_by", "system"))
     conn.commit()
     return get_license(conn, license_id)
 
@@ -140,6 +167,12 @@ def update_license(
     if not updates:
         return get_license(conn, license_id)
 
+    # Capture old values before mutation
+    old = get_license(conn, license_id)
+    if not old:
+        return None
+    old_snapshot = {k: old[k] for k in updates if k in old}
+
     updates["updated_at"] = datetime.utcnow().isoformat()
     set_clause = ", ".join(f"{k} = ?" for k in updates)
     params = list(updates.values()) + [license_id]
@@ -147,15 +180,22 @@ def update_license(
     conn.execute(
         f"UPDATE state_licenses SET {set_clause} WHERE id = ?", params
     )
+    _audit(conn, "license", license_id, "updated",
+           old_values=old_snapshot, new_values={k: v for k, v in updates.items() if k != "updated_at"},
+           changed_by=fields.get("changed_by", "system"))
     conn.commit()
     return get_license(conn, license_id)
 
 
-def delete_license(conn: sqlite3.Connection, license_id: str) -> bool:
+def delete_license(conn: sqlite3.Connection, license_id: str, changed_by: str = "system") -> bool:
     """Hard delete a license. Returns True if a row was deleted."""
+    old = get_license(conn, license_id)
     cursor = conn.execute(
         "DELETE FROM state_licenses WHERE id = ?", (license_id,)
     )
+    if cursor.rowcount > 0 and old:
+        _audit(conn, "license", license_id, "deleted",
+               old_values=old, changed_by=changed_by)
     conn.commit()
     return cursor.rowcount > 0
 
@@ -322,6 +362,33 @@ def create_scope_category(
     return dict(row)
 
 
+def batch_get_license_scopes(
+    conn: sqlite3.Connection, license_ids: List[str]
+) -> Dict[str, List[Dict[str, Any]]]:
+    """Get scope categories for multiple licenses in a single query.
+
+    Returns {license_id: [scope_dicts]} — empty list for licenses with no scopes.
+    """
+    if not license_ids:
+        return {}
+    result: Dict[str, List[Dict[str, Any]]] = {lid: [] for lid in license_ids}
+    placeholders = ",".join("?" for _ in license_ids)
+    rows = conn.execute(
+        f"""SELECT lsm.license_id, sc.id, sc.name, sc.description, sc.sort_order
+            FROM license_scope_map lsm
+            JOIN scope_categories sc ON lsm.scope_id = sc.id
+            WHERE lsm.license_id IN ({placeholders})
+            ORDER BY sc.sort_order, sc.name""",
+        license_ids,
+    ).fetchall()
+    for r in rows:
+        result[r["license_id"]].append({
+            "id": r["id"], "name": r["name"],
+            "description": r["description"], "sort_order": r["sort_order"],
+        })
+    return result
+
+
 def get_license_scopes(
     conn: sqlite3.Connection, license_id: str
 ) -> List[Dict[str, Any]]:
@@ -393,6 +460,8 @@ def create_ce_requirement(conn: sqlite3.Connection, **fields) -> Dict[str, Any]:
             fields.get("created_by"),
         ),
     )
+    _audit(conn, "ce_requirement", req_id, "created",
+           new_values=fields, changed_by=fields.get("created_by", "system"))
     conn.commit()
     row = conn.execute(
         "SELECT * FROM ce_requirements WHERE id = ?", (req_id,)
@@ -415,10 +484,21 @@ def update_ce_requirement(
         ).fetchone()
         return dict(row) if row else None
 
+    # Capture old values before mutation
+    old_row = conn.execute(
+        "SELECT * FROM ce_requirements WHERE id = ?", (req_id,)
+    ).fetchone()
+    if not old_row:
+        return None
+    old_snapshot = {k: dict(old_row)[k] for k in updates if k in dict(old_row)}
+
     updates["updated_at"] = datetime.utcnow().isoformat()
     set_clause = ", ".join(f"{k} = ?" for k in updates)
     params = list(updates.values()) + [req_id]
     conn.execute(f"UPDATE ce_requirements SET {set_clause} WHERE id = ?", params)
+    _audit(conn, "ce_requirement", req_id, "updated",
+           old_values=old_snapshot, new_values={k: v for k, v in updates.items() if k != "updated_at"},
+           changed_by=fields.get("changed_by", "system"))
     conn.commit()
     row = conn.execute(
         "SELECT * FROM ce_requirements WHERE id = ?", (req_id,)
@@ -426,9 +506,13 @@ def update_ce_requirement(
     return dict(row) if row else None
 
 
-def delete_ce_requirement(conn: sqlite3.Connection, req_id: str) -> bool:
+def delete_ce_requirement(conn: sqlite3.Connection, req_id: str, changed_by: str = "system") -> bool:
     """Hard delete a CE requirement."""
+    old_row = conn.execute("SELECT * FROM ce_requirements WHERE id = ?", (req_id,)).fetchone()
     cur = conn.execute("DELETE FROM ce_requirements WHERE id = ?", (req_id,))
+    if cur.rowcount > 0 and old_row:
+        _audit(conn, "ce_requirement", req_id, "deleted",
+               old_values=dict(old_row), changed_by=changed_by)
     conn.commit()
     return cur.rowcount > 0
 
@@ -483,6 +567,8 @@ def create_ce_credit(conn: sqlite3.Connection, **fields) -> Dict[str, Any]:
             fields.get("created_by"),
         ),
     )
+    _audit(conn, "ce_credit", credit_id, "created",
+           new_values=fields, changed_by=fields.get("created_by", "system"))
     conn.commit()
     row = conn.execute(
         "SELECT * FROM ce_credits WHERE id = ?", (credit_id,)
@@ -505,10 +591,21 @@ def update_ce_credit(
         ).fetchone()
         return dict(row) if row else None
 
+    # Capture old values before mutation
+    old_row = conn.execute(
+        "SELECT * FROM ce_credits WHERE id = ?", (credit_id,)
+    ).fetchone()
+    if not old_row:
+        return None
+    old_snapshot = {k: dict(old_row)[k] for k in updates if k in dict(old_row)}
+
     updates["updated_at"] = datetime.utcnow().isoformat()
     set_clause = ", ".join(f"{k} = ?" for k in updates)
     params = list(updates.values()) + [credit_id]
     conn.execute(f"UPDATE ce_credits SET {set_clause} WHERE id = ?", params)
+    _audit(conn, "ce_credit", credit_id, "updated",
+           old_values=old_snapshot, new_values={k: v for k, v in updates.items() if k != "updated_at"},
+           changed_by=fields.get("changed_by", "system"))
     conn.commit()
     row = conn.execute(
         "SELECT * FROM ce_credits WHERE id = ?", (credit_id,)
@@ -516,9 +613,13 @@ def update_ce_credit(
     return dict(row) if row else None
 
 
-def delete_ce_credit(conn: sqlite3.Connection, credit_id: str) -> bool:
+def delete_ce_credit(conn: sqlite3.Connection, credit_id: str, changed_by: str = "system") -> bool:
     """Hard delete a CE credit."""
+    old_row = conn.execute("SELECT * FROM ce_credits WHERE id = ?", (credit_id,)).fetchone()
     cur = conn.execute("DELETE FROM ce_credits WHERE id = ?", (credit_id,))
+    if cur.rowcount > 0 and old_row:
+        _audit(conn, "ce_credit", credit_id, "deleted",
+               old_values=dict(old_row), changed_by=changed_by)
     conn.commit()
     return cur.rowcount > 0
 
@@ -596,29 +697,67 @@ def get_ce_compliance_report(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
         ORDER BY sl.state_code, sl.license_type
     """).fetchall()
 
+    # Batch-load all approved CE credits grouped by license_id
+    # We need two maps: one for period-scoped, one for all-time (fallback)
+    license_ids = [dict(r)["id"] for r in rows]
+    # Re-fetch rows as dicts (cursor consumed above)
+    rows_list = [dict(r) for r in rows]
+
+    # All-time approved credits per license
+    if license_ids:
+        ph = ",".join("?" for _ in license_ids)
+        alltime_rows = conn.execute(
+            f"""SELECT license_id, COALESCE(SUM(hours), 0) AS total
+                FROM ce_credits WHERE status='approved'
+                AND license_id IN ({ph}) GROUP BY license_id""",
+            license_ids,
+        ).fetchall()
+        alltime_map = {r["license_id"]: r["total"] for r in alltime_rows}
+    else:
+        alltime_map = {}
+
+    # Period-scoped credits: build per-license using their specific windows
+    # Group licenses by (expiration_date, period_months) to batch where possible
+    period_map: Dict[str, float] = {}
+    need_period: List[Dict[str, Any]] = []
+    for d in rows_list:
+        if d["expiration_date"] and d["period_months"]:
+            need_period.append(d)
+
+    # For period-scoped, we still need per-window queries, but we can batch
+    # licenses sharing the same (expiration_date, period_months) window
+    from collections import defaultdict
+    window_groups: Dict[tuple, List[str]] = defaultdict(list)
+    for d in need_period:
+        key = (d["expiration_date"], d["period_months"])
+        window_groups[key].append(d["id"])
+
+    for (exp, period), ids in window_groups.items():
+        ph = ",".join("?" for _ in ids)
+        period_rows = conn.execute(
+            f"""SELECT license_id, COALESCE(SUM(hours), 0) AS total
+                FROM ce_credits
+                WHERE status='approved'
+                  AND completion_date >= date(?, '-' || ? || ' months')
+                  AND completion_date <= ?
+                  AND license_id IN ({ph})
+                GROUP BY license_id""",
+            [exp, period, exp] + ids,
+        ).fetchall()
+        for pr in period_rows:
+            period_map[pr["license_id"]] = pr["total"]
+
     results = []
-    for r in rows:
-        d = dict(r)
+    for d in rows_list:
         exp = d["expiration_date"]
         period = d["period_months"]
 
-        # Sum period-scoped credits
+        # Use period-scoped credits if available, else all-time
         if exp and period:
-            earned_row = conn.execute(
-                """SELECT COALESCE(SUM(hours), 0) AS total FROM ce_credits
-                   WHERE license_id = ? AND status = 'approved'
-                     AND completion_date >= date(?, '-' || ? || ' months')
-                     AND completion_date <= ?""",
-                (d["id"], exp, period, exp),
-            ).fetchone()
+            earned = period_map.get(d["id"], 0)
         else:
-            earned_row = conn.execute(
-                "SELECT COALESCE(SUM(hours), 0) AS total FROM ce_credits "
-                "WHERE license_id = ? AND status = 'approved'",
-                (d["id"],),
-            ).fetchone()
+            earned = alltime_map.get(d["id"], 0)
 
-        earned = earned_row["total"]
         req = d["hours_required"]
         pct = round(earned / req * 100, 1) if req > 0 else 0
 
