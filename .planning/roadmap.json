@@ -20,11 +20,11 @@
           "tags": ["extraction", "welding", "batch"]
         },
         {
-          "title": "v0.2 License Compliance: Phase 8 — Notifications & Task Management",
-          "desc": "Proactive alerts for expiring licenses, CE deadlines, and renewal tasks. Clone welding notification pattern. license_notification_rules + license_notifications tables, CLI generator, Teams webhook integration, task queue UI.",
+          "title": "v0.2 License Compliance: Phase 9 — Document Management & Activity Log",
+          "desc": "Attach documents to licenses (certificates, applications, correspondence). Timestamped activity notes. Activity feed combining events + notes + document uploads on detail page.",
           "module": "licenses",
           "priority": "high",
-          "tags": ["licenses", "compliance", "notifications", "teams", "tasks"]
+          "tags": ["licenses", "compliance", "documents", "activity-log"]
         }
       ]
     },
@@ -75,6 +75,14 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "v0.2 Phase 8 — Notifications & Task Management (2 plans)",
+          "desc": "Rule-driven notification engine with 3 generators (expiration, CE deadline, renewal), CLI with 6 ops, 5 notification API endpoints, Teams webhook for critical alerts (Adaptive Card format), task queue UI panel on licenses dashboard with acknowledge/resolve actions.",
+          "module": "licenses",
+          "priority": "high",
+          "tags": ["licenses", "compliance", "notifications", "teams", "webhook", "api", "ui"],
+          "completed": "2026-03-06"
+        },
         {
           "title": "v0.2 Phase 7 — Renewal Workflow & Events (2 plans)",
           "desc": "license_events table with 7 event types, fee tracking, auto-expire CLI, renewal API endpoint, event timeline UI on detail page, renewal modal, add-event modal. 25 tests.",
