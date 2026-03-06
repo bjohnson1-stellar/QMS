@@ -5,25 +5,25 @@
 See: .paul/PROJECT.md
 
 **Core value:** Unified quality management platform — quality intelligence from Procore data (v0.1) + Harbor-like multi-state license compliance management (v0.2).
-**Current focus:** v0.2 Phase 12 — Advanced CE & Multi-Credential
+**Current focus:** v0.2 Phase 13 — Integrations & Automation
 
 ## Current Position
 
 Milestone: v0.2 License Compliance Platform
-Phase: 12 of 13 (Advanced CE & Multi-Credential) — In Progress
-Plan: 12-01 complete, 12-02 not yet planned
-Status: Ready for next PLAN (12-02)
-Last activity: 2026-03-06 — Plan 12-01 unified (CE catalog backend complete)
+Phase: 13 of 13 (Integrations & Automation) — Not started
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-03-06 — Phase 12 complete, transitioned to Phase 13
 
 Progress:
-- v0.2 License Compliance Platform: [████████░░] 80%
+- v0.2 License Compliance Platform: [█████████░] 88%
   - Phase 6: Foundation Hardening [██████████] 100% (3/3 plans complete)
   - Phase 7: Renewal Workflow & Events [██████████] 100% (2/2 plans complete)
   - Phase 8: Notifications & Task Management [██████████] 100% (2/2 plans complete)
   - Phase 9: Document Management & Activity Log [██████████] 100% (2/2 plans complete)
   - Phase 10: Entity Registration Tracking [██████████] 100% (2/2 plans complete)
   - Phase 11: Regulatory Intelligence Database [██████████] 100% (2/2 plans complete)
-  - Phase 12: Advanced CE & Multi-Credential [█████░░░░░] 50% (1/2 plans complete)
+  - Phase 12: Advanced CE & Multi-Credential [██████████] 100% (2/2 plans complete)
   - Phase 13: Integrations & Automation [░░░░░░░░░░] 0%
 
 Previous milestone (v0.1 Quality Intelligence Platform):
@@ -57,6 +57,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 11-01 | Complete | Regulatory intelligence backend: schema, CRUD, scoring, gap analysis, seed CLI | 2026-03-06 |
 | 11-02 | Complete | Regulatory intelligence UI: compliance gauge, requirements CRUD, compliance overview | 2026-03-06 |
 | 12-01 | Complete | CE provider & course catalog backend | 2026-03-06 |
+| 12-02 | Complete | CE catalog UI + employee credential portfolio | 2026-03-06 |
 
 **Pre-milestone work (completed before PAUL tracking):**
 - Licenses Phase 1: Base CRUD module, US state SVG map, CSV import, renewal timeline
@@ -97,6 +98,8 @@ Full execution log: see git history and `.paul/phases/01-*/` through `.paul/phas
 | Entity hierarchy via recursive CTE | v0.2 Phase 10 | WITH RECURSIVE for tree traversal |
 | AJAX compliance overview on licenses page | v0.2 Phase 11 | Avoids slowing page load with gap analysis queries |
 | CSS conic-gradient gauge (no Chart.js) | v0.2 Phase 11 | Lightweight score display, no extra dependency |
+| Master-detail layout for credentials | v0.2 Phase 12 | Compact UX, AJAX detail loading |
+| Catalog course auto-fill on credit entry | v0.2 Phase 12 | Optional, non-breaking enhancement |
 
 ### Git State
 Last commit: `e884fe5` (Phase 11 complete — regulatory intelligence)
@@ -116,9 +119,9 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Plan 12-01 complete, ready to plan 12-02
-Next action: /paul:plan for Phase 12 Plan 02 (CE Catalog UI + Employee Portfolio)
-Resume file: .paul/phases/12-advanced-ce-multi-credential/12-01-SUMMARY.md
+Stopped at: Phase 12 complete, ready to plan Phase 13
+Next action: /paul:plan for Phase 13 (Integrations & Automation)
+Resume file: .paul/ROADMAP.md
 
 ---
 *STATE.md — Updated after every significant action*

@@ -1,0 +1,587 @@
+{% extends "base.html" %}
+
+{% block title %}CE Catalog - QMS{% endblock %}
+
+{% block content %}
+{% set is_editor = current_user and (current_user.role == 'admin' or current_user.modules.get('licenses') in ('admin', 'editor')) %}
+{% set is_admin = current_user and current_user.role == 'admin' %}
+
+<!-- Breadcrumb -->
+<div style="margin-bottom:16px;font-size:0.85rem;color:var(--color-text-muted);">
+    <a href="{{ url_for('licenses.licenses_page') }}" style="color:var(--color-primary);text-decoration:none;">Licenses</a>
+    <span style="margin:0 6px;">/</span>
+    <span>CE Catalog</span>
+</div>
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1 style="margin:0;">CE Catalog</h1>
+        <p class="subtitle">Continuing education providers and course catalog</p>
+    </div>
+    <div style="display:flex;gap:8px;">
+        <a href="{{ url_for('licenses.credentials_page') }}" class="btn-secondary" style="text-decoration:none;">Credentials</a>
+        {% if is_editor %}
+        <button onclick="openProviderModal()">+ Add Provider</button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px;">
+    <div class="stat-card">
+        <div class="stat-value" id="statProviders">-</div>
+        <div class="stat-label">Providers</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statCourses">-</div>
+        <div class="stat-label">Courses</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statTotalHours">-</div>
+        <div class="stat-label">Total Hours Available</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statStates">-</div>
+        <div class="stat-label">States Covered</div>
+    </div>
+</div>
+
+<!-- Providers Section -->
+<div class="card" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="margin:0;border:none;padding:0;">Providers</h3>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="providerSearch" placeholder="Search providers..." style="padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;font-size:0.85rem;min-width:200px;background:var(--color-surface);color:var(--color-text);">
+            <label style="font-size:0.8rem;color:var(--color-text-muted);display:flex;align-items:center;gap:4px;">
+                <input type="checkbox" id="showInactiveProviders"> Inactive
+            </label>
+        </div>
+    </div>
+    <div id="providerGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
+        <p style="color:var(--color-text-muted);text-align:center;grid-column:1/-1;font-size:0.85rem;">Loading providers...</p>
+    </div>
+</div>
+
+<!-- Courses Section -->
+<div class="card" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="margin:0;border:none;padding:0;">Courses</h3>
+        {% if is_editor %}
+        <button class="btn-sm" onclick="openCourseModal()">+ Add Course</button>
+        {% endif %}
+    </div>
+
+    <!-- Course Filters -->
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+        <input type="text" id="courseSearch" placeholder="Search courses..." style="flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;font-size:0.85rem;background:var(--color-surface);color:var(--color-text);">
+        <select id="courseFilterProvider" style="padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;font-size:0.85rem;background:var(--color-surface);color:var(--color-text);">
+            <option value="">All Providers</option>
+        </select>
+        <select id="courseFilterState" style="padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;font-size:0.85rem;background:var(--color-surface);color:var(--color-text);">
+            <option value="">All States</option>
+        </select>
+        <select id="courseFilterFormat" style="padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;font-size:0.85rem;background:var(--color-surface);color:var(--color-text);">
+            <option value="">All Formats</option>
+            <option value="online">Online</option>
+            <option value="classroom">Classroom</option>
+            <option value="self_study">Self Study</option>
+            <option value="webinar">Webinar</option>
+            <option value="conference">Conference</option>
+            <option value="other">Other</option>
+        </select>
+        <label style="font-size:0.8rem;color:var(--color-text-muted);display:flex;align-items:center;gap:4px;">
+            <input type="checkbox" id="showInactiveCourses"> Inactive
+        </label>
+    </div>
+
+    <table class="data-table" style="width:100%;border-collapse:collapse;">
+        <thead>
+            <tr>
+                <th style="padding:10px 14px;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);text-align:left;border-bottom:2px solid var(--color-border-light);">Title</th>
+                <th style="padding:10px 14px;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);text-align:left;border-bottom:2px solid var(--color-border-light);">Provider</th>
+                <th style="padding:10px 14px;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);text-align:center;border-bottom:2px solid var(--color-border-light);">Hours</th>
+                <th style="padding:10px 14px;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);text-align:left;border-bottom:2px solid var(--color-border-light);">Format</th>
+                <th style="padding:10px 14px;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);text-align:left;border-bottom:2px solid var(--color-border-light);">States Accepted</th>
+                <th style="padding:10px 14px;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);text-align:right;border-bottom:2px solid var(--color-border-light);"></th>
+            </tr>
+        </thead>
+        <tbody id="courseTableBody">
+            <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--color-text-muted);font-size:0.85rem;">Loading courses...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Provider Modal -->
+<div id="providerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;justify-content:center;align-items:center;">
+    <div class="modal-content" style="background:var(--color-surface);border-radius:8px;padding:24px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3 id="providerModalTitle" style="margin:0;border:none;padding:0;">Add Provider</h3>
+            <button onclick="closeProviderModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--color-text-muted);">&times;</button>
+        </div>
+        <div id="providerError" style="display:none;padding:8px 12px;background:#da363320;color:#da3633;border-radius:4px;margin-bottom:12px;font-size:0.85rem;"></div>
+        <form id="providerForm" onsubmit="submitProvider(event)">
+            <input type="hidden" id="providerEditId" value="">
+            <div style="display:grid;gap:12px;">
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Name *</label>
+                    <input type="text" id="provName" required style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Accreditation Body</label>
+                        <input type="text" id="provAccredBody" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Accreditation #</label>
+                        <input type="text" id="provAccredNum" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Website</label>
+                    <input type="url" id="provWebsite" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Email</label>
+                        <input type="email" id="provEmail" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Phone</label>
+                        <input type="tel" id="provPhone" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Notes</label>
+                    <textarea id="provNotes" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;resize:vertical;"></textarea>
+                </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+                <button type="button" class="btn-secondary" onclick="closeProviderModal()">Cancel</button>
+                <button type="submit" id="providerSubmitBtn">Save Provider</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Course Modal -->
+<div id="courseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;justify-content:center;align-items:center;">
+    <div class="modal-content" style="background:var(--color-surface);border-radius:8px;padding:24px;max-width:560px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3 id="courseModalTitle" style="margin:0;border:none;padding:0;">Add Course</h3>
+            <button onclick="closeCourseModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--color-text-muted);">&times;</button>
+        </div>
+        <div id="courseError" style="display:none;padding:8px 12px;background:#da363320;color:#da3633;border-radius:4px;margin-bottom:12px;font-size:0.85rem;"></div>
+        <form id="courseForm" onsubmit="submitCourse(event)">
+            <input type="hidden" id="courseEditId" value="">
+            <div style="display:grid;gap:12px;">
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Title *</label>
+                    <input type="text" id="crsTitle" required style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Provider</label>
+                        <select id="crsProvider" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                            <option value="">-- None --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Hours *</label>
+                        <input type="number" id="crsHours" required step="0.5" min="0" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Format</label>
+                        <select id="crsFormat" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                            <option value="">-- Select --</option>
+                            <option value="online">Online</option>
+                            <option value="classroom">Classroom</option>
+                            <option value="self_study">Self Study</option>
+                            <option value="webinar">Webinar</option>
+                            <option value="conference">Conference</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">URL</label>
+                        <input type="url" id="crsUrl" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Description</label>
+                    <textarea id="crsDescription" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;resize:vertical;"></textarea>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">States Accepted <span style="font-weight:400;">(comma-separated codes, e.g. FL, GA, TX)</span></label>
+                    <input type="text" id="crsStates" placeholder="FL, GA, TX" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">License Types <span style="font-weight:400;">(comma-separated)</span></label>
+                    <input type="text" id="crsLicenseTypes" placeholder="General Contractor, Electrician" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Notes</label>
+                    <textarea id="crsNotes" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;resize:vertical;"></textarea>
+                </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+                <button type="button" class="btn-secondary" onclick="closeCourseModal()">Cancel</button>
+                <button type="submit" id="courseSubmitBtn">Save Course</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const API = '{{ url_for("licenses.licenses_page") }}'.replace(/\/$/, '');
+const IS_EDITOR = {{ 'true' if is_editor else 'false' }};
+const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
+
+let allProviders = [];
+let allCourses = [];
+let searchTimeout = null;
+
+// ── Load data ────────────────────────────────────────────────────────────
+
+async function loadProviders() {
+    const active = document.getElementById('showInactiveProviders').checked ? 'false' : 'true';
+    const search = document.getElementById('providerSearch').value.trim();
+    let url = `${API}/api/ce-providers?active=${active}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    const res = await fetch(url);
+    allProviders = await res.json();
+    renderProviders();
+    populateProviderDropdowns();
+    updateStats();
+}
+
+async function loadCourses() {
+    const active = document.getElementById('showInactiveCourses').checked ? 'false' : 'true';
+    const providerId = document.getElementById('courseFilterProvider').value;
+    const stateCode = document.getElementById('courseFilterState').value;
+    let url = `${API}/api/ce-courses?active=${active}`;
+    if (providerId) url += `&provider_id=${providerId}`;
+    if (stateCode) url += `&state_code=${stateCode}`;
+    const search = document.getElementById('courseSearch').value.trim();
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    const res = await fetch(url);
+    allCourses = await res.json();
+    renderCourses();
+    updateStats();
+}
+
+function updateStats() {
+    document.getElementById('statProviders').textContent = allProviders.length;
+    document.getElementById('statCourses').textContent = allCourses.length;
+    const totalHours = allCourses.reduce((s, c) => s + (parseFloat(c.hours) || 0), 0);
+    document.getElementById('statTotalHours').textContent = totalHours.toFixed(1);
+    const stateSet = new Set();
+    allCourses.forEach(c => {
+        let sa = c.states_accepted;
+        if (typeof sa === 'string') { try { sa = JSON.parse(sa); } catch(e) { sa = []; } }
+        if (Array.isArray(sa)) sa.forEach(s => stateSet.add(s));
+    });
+    document.getElementById('statStates').textContent = stateSet.size;
+}
+
+// ── Render providers ─────────────────────────────────────────────────────
+
+function renderProviders() {
+    const grid = document.getElementById('providerGrid');
+    if (!allProviders.length) {
+        grid.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;grid-column:1/-1;font-size:0.85rem;">No providers found. Add one to get started.</p>';
+        return;
+    }
+    grid.innerHTML = allProviders.map(p => {
+        const inactive = p.is_active === 0 ? ' style="opacity:0.5;"' : '';
+        const badge = p.is_active === 0 ? '<span style="font-size:10px;background:#6e7681;color:#fff;padding:1px 6px;border-radius:3px;margin-left:6px;">Inactive</span>' : '';
+        return `
+        <div class="card" ${inactive} style="padding:14px;cursor:pointer;" onclick="filterByProvider('${p.id}')">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div>
+                    <div style="font-weight:600;font-size:0.95rem;">${esc(p.name)}${badge}</div>
+                    ${p.accreditation_body ? `<div style="font-size:0.8rem;color:var(--color-text-muted);margin-top:2px;">${esc(p.accreditation_body)}</div>` : ''}
+                </div>
+                ${IS_EDITOR ? `
+                <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">
+                    <button class="btn-sm" onclick="editProvider('${p.id}')" style="font-size:0.75rem;">Edit</button>
+                    ${IS_ADMIN && p.is_active !== 0 ? `<button class="btn-sm btn-danger" onclick="deactivateProvider('${p.id}')" style="font-size:0.75rem;">Deactivate</button>` : ''}
+                </div>` : ''}
+            </div>
+            <div style="display:flex;gap:16px;margin-top:10px;font-size:0.8rem;color:var(--color-text-muted);">
+                ${p.website ? `<a href="${esc(p.website)}" target="_blank" style="color:var(--color-primary);" onclick="event.stopPropagation()">Website</a>` : ''}
+                ${p.contact_email ? `<span>${esc(p.contact_email)}</span>` : ''}
+                ${p.contact_phone ? `<span>${esc(p.contact_phone)}</span>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function filterByProvider(pid) {
+    document.getElementById('courseFilterProvider').value = pid;
+    loadCourses();
+}
+
+// ── Render courses ───────────────────────────────────────────────────────
+
+function renderCourses() {
+    const tbody = document.getElementById('courseTableBody');
+    const formatFilter = document.getElementById('courseFilterFormat').value;
+    let filtered = allCourses;
+    if (formatFilter) {
+        filtered = filtered.filter(c => c.format === formatFilter);
+    }
+    if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--color-text-muted);font-size:0.85rem;">No courses found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = filtered.map(c => {
+        let states = c.states_accepted;
+        if (typeof states === 'string') { try { states = JSON.parse(states); } catch(e) { states = []; } }
+        if (!Array.isArray(states)) states = [];
+        const stateBadges = states.slice(0, 8).map(s =>
+            `<span style="display:inline-block;font-size:10px;background:var(--color-primary);color:#fff;padding:1px 5px;border-radius:3px;margin:1px 2px;">${esc(s)}</span>`
+        ).join('') + (states.length > 8 ? `<span style="font-size:10px;color:var(--color-text-muted);margin-left:4px;">+${states.length - 8}</span>` : '');
+        const fmtLabel = c.format ? c.format.replace(/_/g, ' ') : '—';
+        const inactiveStyle = c.is_active === 0 ? 'opacity:0.5;' : '';
+        const provName = c.provider_name || '—';
+        return `
+        <tr style="${inactiveStyle}">
+            <td style="padding:10px 14px;border-bottom:1px solid var(--color-border-light);">
+                <div style="font-weight:500;">${esc(c.title)}</div>
+                ${c.description ? `<div style="font-size:0.8rem;color:var(--color-text-muted);margin-top:2px;">${esc(c.description).substring(0, 80)}${c.description.length > 80 ? '...' : ''}</div>` : ''}
+                ${c.is_active === 0 ? '<span style="font-size:10px;background:#6e7681;color:#fff;padding:1px 6px;border-radius:3px;">Inactive</span>' : ''}
+            </td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--color-border-light);font-size:0.85rem;">${esc(provName)}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--color-border-light);text-align:center;font-weight:600;">${c.hours}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--color-border-light);font-size:0.85rem;text-transform:capitalize;">${esc(fmtLabel)}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--color-border-light);">${stateBadges || '<span style="color:var(--color-text-muted);font-size:0.8rem;">—</span>'}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--color-border-light);text-align:right;white-space:nowrap;">
+                ${IS_EDITOR ? `<button class="btn-sm" onclick="editCourse('${c.id}')" style="font-size:0.75rem;">Edit</button>` : ''}
+                ${IS_ADMIN && c.is_active !== 0 ? `<button class="btn-sm btn-danger" onclick="deactivateCourse('${c.id}')" style="font-size:0.75rem;margin-left:4px;">Deactivate</button>` : ''}
+                ${c.url ? `<a href="${esc(c.url)}" target="_blank" style="font-size:0.75rem;color:var(--color-primary);margin-left:8px;">Link</a>` : ''}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// ── Provider dropdowns ───────────────────────────────────────────────────
+
+function populateProviderDropdowns() {
+    const selects = [document.getElementById('courseFilterProvider'), document.getElementById('crsProvider')];
+    selects.forEach(sel => {
+        const val = sel.value;
+        const firstOpt = sel.options[0].outerHTML;
+        sel.innerHTML = firstOpt;
+        allProviders.filter(p => p.is_active !== 0).forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name;
+            sel.appendChild(opt);
+        });
+        sel.value = val;
+    });
+}
+
+// ── Populate state filter ────────────────────────────────────────────────
+
+function populateStateFilter() {
+    const stateSet = new Set();
+    allCourses.forEach(c => {
+        let sa = c.states_accepted;
+        if (typeof sa === 'string') { try { sa = JSON.parse(sa); } catch(e) { sa = []; } }
+        if (Array.isArray(sa)) sa.forEach(s => stateSet.add(s));
+    });
+    const sel = document.getElementById('courseFilterState');
+    const val = sel.value;
+    sel.innerHTML = '<option value="">All States</option>';
+    [...stateSet].sort().forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        sel.appendChild(opt);
+    });
+    sel.value = val;
+}
+
+// ── Provider Modal ───────────────────────────────────────────────────────
+
+function openProviderModal(p = null) {
+    document.getElementById('providerEditId').value = p ? p.id : '';
+    document.getElementById('providerModalTitle').textContent = p ? 'Edit Provider' : 'Add Provider';
+    document.getElementById('providerSubmitBtn').textContent = p ? 'Update Provider' : 'Save Provider';
+    document.getElementById('provName').value = p ? p.name : '';
+    document.getElementById('provAccredBody').value = p ? (p.accreditation_body || '') : '';
+    document.getElementById('provAccredNum').value = p ? (p.accreditation_number || '') : '';
+    document.getElementById('provWebsite').value = p ? (p.website || '') : '';
+    document.getElementById('provEmail').value = p ? (p.contact_email || '') : '';
+    document.getElementById('provPhone').value = p ? (p.contact_phone || '') : '';
+    document.getElementById('provNotes').value = p ? (p.notes || '') : '';
+    document.getElementById('providerError').style.display = 'none';
+    document.getElementById('providerModal').style.display = 'flex';
+}
+
+function closeProviderModal() {
+    document.getElementById('providerModal').style.display = 'none';
+}
+
+async function submitProvider(e) {
+    e.preventDefault();
+    const editId = document.getElementById('providerEditId').value;
+    const data = {
+        name: document.getElementById('provName').value.trim(),
+        accreditation_body: document.getElementById('provAccredBody').value.trim() || null,
+        accreditation_number: document.getElementById('provAccredNum').value.trim() || null,
+        website: document.getElementById('provWebsite').value.trim() || null,
+        contact_email: document.getElementById('provEmail').value.trim() || null,
+        contact_phone: document.getElementById('provPhone').value.trim() || null,
+        notes: document.getElementById('provNotes').value.trim() || null,
+    };
+    const url = editId ? `${API}/api/ce-providers/${editId}` : `${API}/api/ce-providers`;
+    const method = editId ? 'PUT' : 'POST';
+    try {
+        const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        if (!res.ok) {
+            const err = await res.json();
+            document.getElementById('providerError').textContent = err.error || 'Failed';
+            document.getElementById('providerError').style.display = 'block';
+            return;
+        }
+        closeProviderModal();
+        loadProviders();
+    } catch(err) {
+        document.getElementById('providerError').textContent = err.message;
+        document.getElementById('providerError').style.display = 'block';
+    }
+}
+
+async function editProvider(pid) {
+    const res = await fetch(`${API}/api/ce-providers/${pid}`);
+    if (!res.ok) return;
+    const p = await res.json();
+    openProviderModal(p);
+}
+
+async function deactivateProvider(pid) {
+    if (!confirm('Deactivate this provider? Courses will remain but provider will be hidden.')) return;
+    await fetch(`${API}/api/ce-providers/${pid}`, { method: 'DELETE' });
+    loadProviders();
+}
+
+// ── Course Modal ─────────────────────────────────────────────────────────
+
+function openCourseModal(c = null) {
+    document.getElementById('courseEditId').value = c ? c.id : '';
+    document.getElementById('courseModalTitle').textContent = c ? 'Edit Course' : 'Add Course';
+    document.getElementById('courseSubmitBtn').textContent = c ? 'Update Course' : 'Save Course';
+    document.getElementById('crsTitle').value = c ? c.title : '';
+    document.getElementById('crsProvider').value = c ? (c.provider_id || '') : '';
+    document.getElementById('crsHours').value = c ? c.hours : '';
+    document.getElementById('crsFormat').value = c ? (c.format || '') : '';
+    document.getElementById('crsUrl').value = c ? (c.url || '') : '';
+    document.getElementById('crsDescription').value = c ? (c.description || '') : '';
+    document.getElementById('crsNotes').value = c ? (c.notes || '') : '';
+    // Parse states and license types
+    let states = c ? c.states_accepted : null;
+    if (typeof states === 'string') { try { states = JSON.parse(states); } catch(e) { states = []; } }
+    document.getElementById('crsStates').value = Array.isArray(states) ? states.join(', ') : '';
+    let ltypes = c ? c.license_types : null;
+    if (typeof ltypes === 'string') { try { ltypes = JSON.parse(ltypes); } catch(e) { ltypes = []; } }
+    document.getElementById('crsLicenseTypes').value = Array.isArray(ltypes) ? ltypes.join(', ') : '';
+    document.getElementById('courseError').style.display = 'none';
+    document.getElementById('courseModal').style.display = 'flex';
+}
+
+function closeCourseModal() {
+    document.getElementById('courseModal').style.display = 'none';
+}
+
+async function submitCourse(e) {
+    e.preventDefault();
+    const editId = document.getElementById('courseEditId').value;
+    const statesStr = document.getElementById('crsStates').value.trim();
+    const statesArr = statesStr ? statesStr.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) : [];
+    const ltStr = document.getElementById('crsLicenseTypes').value.trim();
+    const ltArr = ltStr ? ltStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const data = {
+        title: document.getElementById('crsTitle').value.trim(),
+        provider_id: document.getElementById('crsProvider').value || null,
+        hours: parseFloat(document.getElementById('crsHours').value),
+        format: document.getElementById('crsFormat').value || null,
+        url: document.getElementById('crsUrl').value.trim() || null,
+        description: document.getElementById('crsDescription').value.trim() || null,
+        notes: document.getElementById('crsNotes').value.trim() || null,
+        states_accepted: statesArr.length ? statesArr : null,
+        license_types: ltArr.length ? ltArr : null,
+    };
+    const url = editId ? `${API}/api/ce-courses/${editId}` : `${API}/api/ce-courses`;
+    const method = editId ? 'PUT' : 'POST';
+    try {
+        const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        if (!res.ok) {
+            const err = await res.json();
+            document.getElementById('courseError').textContent = err.error || 'Failed';
+            document.getElementById('courseError').style.display = 'block';
+            return;
+        }
+        closeCourseModal();
+        loadCourses();
+    } catch(err) {
+        document.getElementById('courseError').textContent = err.message;
+        document.getElementById('courseError').style.display = 'block';
+    }
+}
+
+async function editCourse(cid) {
+    const res = await fetch(`${API}/api/ce-courses/${cid}`);
+    if (!res.ok) return;
+    const c = await res.json();
+    openCourseModal(c);
+}
+
+async function deactivateCourse(cid) {
+    if (!confirm('Deactivate this course?')) return;
+    await fetch(`${API}/api/ce-courses/${cid}`, { method: 'DELETE' });
+    loadCourses();
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+// ── Event listeners ──────────────────────────────────────────────────────
+
+document.getElementById('providerSearch').addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(loadProviders, 300);
+});
+document.getElementById('showInactiveProviders').addEventListener('change', loadProviders);
+
+document.getElementById('courseSearch').addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(loadCourses, 300);
+});
+document.getElementById('courseFilterProvider').addEventListener('change', loadCourses);
+document.getElementById('courseFilterState').addEventListener('change', loadCourses);
+document.getElementById('courseFilterFormat').addEventListener('change', renderCourses);
+document.getElementById('showInactiveCourses').addEventListener('change', loadCourses);
+
+// Close modals on backdrop click
+document.getElementById('providerModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeProviderModal(); });
+document.getElementById('courseModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeCourseModal(); });
+
+// ── Init ─────────────────────────────────────────────────────────────────
+
+(async function init() {
+    await loadProviders();
+    await loadCourses();
+    populateStateFilter();
+})();
+</script>
+{% endblock %}

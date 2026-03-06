@@ -112,6 +112,8 @@ from qms.licenses.db import (
     link_credit_to_course,
     unlink_credit_from_course,
     get_credit_courses,
+    list_employees_with_licenses,
+    get_employee_portfolio,
     VALID_COURSE_FORMATS,
 )
 
@@ -259,6 +261,18 @@ def licenses_page():
 @module_required("licenses", min_role="editor")
 def import_page():
     return render_template("licenses/import.html")
+
+
+@bp.route("/ce-catalog")
+@module_required("licenses")
+def ce_catalog_page():
+    return render_template("licenses/ce_catalog.html")
+
+
+@bp.route("/credentials")
+@module_required("licenses")
+def credentials_page():
+    return render_template("licenses/credential_portfolio.html")
 
 
 @bp.route("/entities")
@@ -2128,3 +2142,23 @@ def api_unlink_credit_from_course(credit_id, course_id):
     if not removed:
         return jsonify({"error": "Link not found"}), 404
     return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# Employee Credential Portfolio API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/credentials/employees", methods=["GET"])
+@module_required("licenses")
+def api_list_credential_employees():
+    with get_db(readonly=True) as conn:
+        employees = list_employees_with_licenses(conn)
+    return jsonify(employees)
+
+
+@bp.route("/api/credentials/<employee_id>", methods=["GET"])
+@module_required("licenses")
+def api_get_employee_portfolio(employee_id):
+    with get_db(readonly=True) as conn:
+        portfolio = get_employee_portfolio(conn, employee_id)
+    return jsonify(portfolio)

@@ -2618,6 +2618,54 @@ def list_ce_courses(
     return results
 
 
+# ---------------------------------------------------------------------------
+# Employee Credential Portfolio
+# ---------------------------------------------------------------------------
+
+
+def list_employees_with_licenses(
+    conn: sqlite3.Connection,
+) -> List[Dict[str, Any]]:
+    """Return employees who hold at least one license, with summary counts."""
+    rows = conn.execute(
+        """SELECT e.id, e.first_name, e.last_name, e.employee_number,
+                  COUNT(sl.id) AS license_count,
+                  SUM(CASE WHEN sl.status = 'active' THEN 1 ELSE 0 END) AS active_count,
+                  SUM(CASE WHEN sl.status = 'expired' THEN 1 ELSE 0 END) AS expired_count
+           FROM employees e
+           JOIN state_licenses sl ON sl.employee_id = e.id
+           GROUP BY e.id
+           ORDER BY e.last_name, e.first_name"""
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_employee_portfolio(
+    conn: sqlite3.Connection, employee_id: str
+) -> List[Dict[str, Any]]:
+    """Return all licenses for an employee with CE progress per license."""
+    rows = conn.execute(
+        """SELECT sl.*,
+                  COALESCE(cr_sum.hours_earned, 0) AS hours_earned,
+                  ce_req.hours_required,
+                  ce_req.period_months
+           FROM state_licenses sl
+           LEFT JOIN (
+               SELECT license_id, SUM(hours) AS hours_earned
+               FROM ce_credits
+               WHERE status = 'approved'
+               GROUP BY license_id
+           ) cr_sum ON cr_sum.license_id = sl.id
+           LEFT JOIN ce_requirements ce_req
+               ON ce_req.state_code = sl.state_code
+              AND ce_req.license_type = sl.license_type
+           WHERE sl.employee_id = ?
+           ORDER BY sl.expiration_date ASC NULLS LAST""",
+        (employee_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def get_ce_course(
     conn: sqlite3.Connection, course_id: str
 ) -> Optional[Dict[str, Any]]:
