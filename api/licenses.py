@@ -16,6 +16,13 @@ from flask import (
 
 from qms.core import get_db
 from qms.auth.decorators import module_required
+from qms.licenses.notifications import (
+    acknowledge_notification,
+    generate_all_notifications,
+    get_notification_summary,
+    list_active_notifications,
+    resolve_notification,
+)
 from qms.licenses.db import (
     batch_get_license_scopes,
     create_ce_credit,
@@ -1205,3 +1212,74 @@ def api_renew_license(license_id):
     if not result:
         return jsonify({"error": "License not found"}), 404
     return jsonify(result)
+
+
+# ---------------------------------------------------------------------------
+# Notification API routes
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/api/notifications")
+@module_required("licenses")
+def api_notifications():
+    """List active notifications with summary data."""
+    ntype = request.args.get("type")
+    priority = request.args.get("priority")
+    limit = min(int(request.args.get("limit", 50)), 200)
+
+    with get_db() as conn:
+        notifications = list_active_notifications(conn, limit=limit)
+        summary = get_notification_summary(conn)
+
+    # Client-side filtering for optional query params
+    if ntype:
+        notifications = [n for n in notifications if n.get("notification_type") == ntype]
+    if priority:
+        notifications = [n for n in notifications if n.get("priority") == priority]
+
+    return jsonify({"notifications": notifications, "summary": summary})
+
+
+@bp.route("/api/notifications/summary")
+@module_required("licenses")
+def api_notification_summary():
+    """Get notification summary counts only."""
+    with get_db() as conn:
+        summary = get_notification_summary(conn)
+    return jsonify(summary)
+
+
+@bp.route("/api/notifications/<int:notification_id>/acknowledge", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_acknowledge_notification(notification_id):
+    """Mark a notification as acknowledged."""
+    user = _get_user_id()
+    with get_db() as conn:
+        ok = acknowledge_notification(conn, notification_id, acknowledged_by=user)
+    if not ok:
+        return jsonify({"error": "Notification not found or already acknowledged"}), 404
+    return jsonify({"status": "acknowledged", "id": notification_id})
+
+
+@bp.route("/api/notifications/<int:notification_id>/resolve", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_resolve_notification(notification_id):
+    """Mark a notification as resolved."""
+    user = _get_user_id()
+    with get_db() as conn:
+        ok = resolve_notification(conn, notification_id, resolved_by=user)
+    if not ok:
+        return jsonify({"error": "Notification not found or already resolved"}), 404
+    return jsonify({"status": "resolved", "id": notification_id})
+
+
+@bp.route("/api/notifications/generate", methods=["POST"])
+@module_required("licenses", min_role="admin")
+def api_generate_notifications():
+    """Generate notifications (admin only). Optionally send Teams webhook."""
+    data = request.get_json(silent=True) or {}
+    send_webhook = bool(data.get("send_webhook", False))
+
+    with get_db() as conn:
+        stats = generate_all_notifications(conn, send_webhook=send_webhook)
+    return jsonify(stats)

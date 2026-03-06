@@ -12,11 +12,14 @@ Notification Types:
     - renewal_reminder: License needs renewal action (14 days)
 """
 
+import json
 import sqlite3
+import urllib.error
+import urllib.request
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
-from qms.core import get_db, get_logger
+from qms.core import get_db, get_config, get_logger
 
 logger = get_logger("qms.licenses.notifications")
 
@@ -353,15 +356,19 @@ def generate_renewal_reminder_notifications(conn: sqlite3.Connection) -> Dict[st
     return stats
 
 
-def generate_all_notifications(conn: sqlite3.Connection) -> Dict[str, Any]:
+def generate_all_notifications(
+    conn: sqlite3.Connection,
+    send_webhook: bool = False,
+) -> Dict[str, Any]:
     """
     Generate all notification types and refresh countdowns.
 
     Args:
         conn: Database connection (caller manages transaction)
+        send_webhook: If True, send Teams webhook for urgent/high notifications
 
     Returns:
-        Dict with per-type and total counts
+        Dict with per-type and total counts (+ webhook result if sent)
     """
     update_days_until_due(conn)
 
@@ -369,7 +376,7 @@ def generate_all_notifications(conn: sqlite3.Connection) -> Dict[str, Any]:
     ce_stats = generate_ce_deadline_notifications(conn)
     renewal_stats = generate_renewal_reminder_notifications(conn)
 
-    total_stats = {
+    total_stats: Dict[str, Any] = {
         "expiration_created": exp_stats["created"],
         "ce_created": ce_stats["created"],
         "renewal_created": renewal_stats["created"],
@@ -385,7 +392,119 @@ def generate_all_notifications(conn: sqlite3.Connection) -> Dict[str, Any]:
         total_stats["total_created"],
         total_stats["total_skipped"],
     )
+
+    if send_webhook and total_stats["total_created"] > 0:
+        # Send webhook for urgent/high priority active notifications
+        urgent_high = conn.execute(
+            """SELECT id, notification_type, priority, title, due_date, days_until_due
+               FROM license_notifications
+               WHERE status = 'active' AND priority IN ('urgent', 'high')
+               ORDER BY due_date LIMIT 10"""
+        ).fetchall()
+        if urgent_high:
+            total_stats["webhook"] = send_teams_webhook(
+                [dict(r) for r in urgent_high]
+            )
+
     return total_stats
+
+
+# ---------------------------------------------------------------------------
+# Teams webhook
+# ---------------------------------------------------------------------------
+
+_PRIORITY_COLORS = {
+    "urgent": "#da3633",
+    "high": "#d29922",
+    "normal": "#238636",
+}
+
+
+def send_teams_webhook(notifications: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    POST a formatted card to a Teams incoming webhook URL.
+
+    Reads URL from config.yaml → licenses.teams_webhook_url.
+    If URL is empty or missing, silently skips.  All HTTP errors are caught
+    and logged — never raises.
+
+    Args:
+        notifications: list of notification dicts (from list_active_notifications
+                       or freshly created rows).  Max 10 shown per message.
+
+    Returns:
+        {"sent": N, "skipped": True/False, "error": str|None}
+    """
+    cfg = get_config()
+    webhook_url = (cfg.get("licenses") or {}).get("teams_webhook_url", "")
+
+    if not webhook_url:
+        return {"sent": 0, "skipped": True, "error": None}
+
+    if not notifications:
+        return {"sent": 0, "skipped": False, "error": None}
+
+    # Build Adaptive Card payload (Teams webhook format)
+    items = notifications[:10]
+    facts = []
+    for n in items:
+        color = _PRIORITY_COLORS.get(n.get("priority", "normal"), "#238636")
+        priority_label = (n.get("priority") or "normal").upper()
+        days = n.get("days_until_due")
+        days_str = f" ({days}d)" if days is not None else ""
+        facts.append({
+            "name": f"[{priority_label}] {n.get('title', 'Notification')}",
+            "value": f"Due: {n.get('due_date', 'N/A')}{days_str}",
+        })
+
+    card = {
+        "type": "message",
+        "attachments": [{
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": {
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "type": "AdaptiveCard",
+                "version": "1.2",
+                "body": [
+                    {
+                        "type": "TextBlock",
+                        "size": "Medium",
+                        "weight": "Bolder",
+                        "text": f"License Alerts ({len(items)} notification{'s' if len(items) != 1 else ''})",
+                    },
+                    {
+                        "type": "FactSet",
+                        "facts": facts,
+                    },
+                ],
+            },
+        }],
+    }
+
+    if len(notifications) > 10:
+        card["attachments"][0]["content"]["body"].append({
+            "type": "TextBlock",
+            "text": f"...and {len(notifications) - 10} more. View all in QMS.",
+            "isSubtle": True,
+            "size": "Small",
+        })
+
+    payload = json.dumps(card).encode("utf-8")
+    req = urllib.request.Request(
+        webhook_url,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            resp.read()
+        logger.info("Teams webhook sent: %d notifications", len(items))
+        return {"sent": len(items), "skipped": False, "error": None}
+    except (urllib.error.URLError, urllib.error.HTTPError, OSError) as exc:
+        logger.warning("Teams webhook failed: %s", exc)
+        return {"sent": 0, "skipped": False, "error": str(exc)}
 
 
 # ---------------------------------------------------------------------------

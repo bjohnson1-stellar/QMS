@@ -43,9 +43,9 @@ Bidirectional Procore observation integration. Two tracks: personal mobile captu
 - [x] CE seed data, compliance dashboard, certificate upload, CSV exports — Licenses Phase 3
 - [x] Foundation hardening (N+1 fixes, audit trail, pagination, validation, rate limiting, CSRF) — v0.2 Phase 6
 - [x] Renewal workflow with event tracking, fee history, auto-expire CLI, timeline UI — v0.2 Phase 7
+- [x] Notification system (rule-driven alerts, CLI, API, dashboard UI, Teams webhook) — v0.2 Phase 8
 
 ### Active (v0.2 — In Progress)
-- [ ] Notification system (expiration warnings, CE deadlines, Teams webhook)
 - [ ] Document management (certificates, applications, correspondence)
 - [ ] Entity registration tracking (SoS, DBE, minority certs)
 - [ ] Regulatory intelligence database (state requirements, fee schedules)
@@ -111,4 +111,4 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-06 after Phase 7*
+*Last updated: 2026-03-06 after Phase 8*
