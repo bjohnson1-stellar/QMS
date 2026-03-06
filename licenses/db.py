@@ -405,7 +405,7 @@ def batch_get_license_scopes(
     result: Dict[str, List[Dict[str, Any]]] = {lid: [] for lid in license_ids}
     placeholders = ",".join("?" for _ in license_ids)
     rows = conn.execute(
-        f"""SELECT lsm.license_id, sc.id, sc.name, sc.description, sc.sort_order
+        f"""SELECT lsm.license_id, sc.id, sc.name, sc.sort_order
             FROM license_scope_map lsm
             JOIN scope_categories sc ON lsm.scope_id = sc.id
             WHERE lsm.license_id IN ({placeholders})
@@ -415,7 +415,7 @@ def batch_get_license_scopes(
     for r in rows:
         result[r["license_id"]].append({
             "id": r["id"], "name": r["name"],
-            "description": r["description"], "sort_order": r["sort_order"],
+            "sort_order": r["sort_order"],
         })
     return result
 
