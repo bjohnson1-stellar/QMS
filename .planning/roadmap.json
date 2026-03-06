@@ -6,13 +6,6 @@
       "icon": "&#9881;",
       "items": [
         {
-          "title": "Mobile Capture: Voice Transcription + Review UI",
-          "desc": "Add voice note transcription (Whisper or similar) and web review page for mobile captures. Plan 04-02 of Quality Intelligence Platform milestone.",
-          "module": "quality",
-          "priority": "medium",
-          "tags": ["mobile", "quality", "voice", "transcription", "ui"]
-        },
-        {
           "title": "Procore Drawing Zip Import",
           "desc": "Extract PDFs from Procore zip exports and route to project discipline folders. Handle revision superseding.",
           "module": "pipeline",
@@ -82,6 +75,14 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "v0.1 Phase 4 Plan 02 — Voice Transcription + Capture Review UI",
+          "desc": "OpenAI Whisper voice transcription, Claude transcript analysis, capture review page at /quality/captures with inline editing. Completes phone-to-database pipeline (photos + voice notes). 9 new tests (26 total capture tests).",
+          "module": "quality",
+          "priority": "high",
+          "tags": ["mobile", "quality", "voice", "transcription", "whisper", "ui", "review"],
+          "completed": "2026-03-05"
+        },
         {
           "title": "v0.2 Phase 6 — Foundation Hardening (3 plans)",
           "desc": "N+1 query fixes + audit trail, server-side pagination + input validation, API rate limiting (60/min per IP) + CSRF hardening (PUT/DELETE/PATCH + Origin validation). Completes security foundation for v0.2 License Compliance Platform.",

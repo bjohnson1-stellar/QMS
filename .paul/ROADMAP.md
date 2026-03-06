@@ -138,7 +138,7 @@ Phases: 1 of 8 complete
 ## Previous Milestone
 
 **v0.1 Quality Intelligence Platform** (v0.1.0)
-Status: In progress (4 of 5 phases complete)
+Status: In progress (4.5 of 5 phases — Phase 4 complete, Phase 5 not started)
 
 ### Phases
 
@@ -147,7 +147,7 @@ Status: In progress (4 of 5 phases complete)
 | 1 | Quality Issues Foundation | 1 | Complete | 2026-02-25 |
 | 2 | Procore Bulk Import | 3 | Complete | 2026-02-26 |
 | 3 | Quality Intelligence Dashboard | 2 | Complete | 2026-02-27 |
-| 4 | Mobile Capture Pipeline | 1+ | In progress | - |
+| 4 | Mobile Capture Pipeline | 2 | Complete | 2026-03-05 |
 | 5 | Procore Push | TBD | Not started | - |
 
 ### Phase Details
@@ -186,7 +186,7 @@ Status: In progress (4 of 5 phases complete)
 
 **Plans:**
 - [x] 04-01: Photo processing engine — Claude vision + CLI capture command — Complete (2026-03-05)
-- [ ] 04-02: Voice transcription + review UI (TBD)
+- [x] 04-02: Voice transcription + capture review UI — Complete (2026-03-05)
 
 #### Phase 5: Procore Push
 

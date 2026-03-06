@@ -37,7 +37,7 @@ Bidirectional Procore observation integration. Two tracks: personal mobile captu
 - [x] Quality issues foundation (8 tables, audit trail, normalization) — v0.1 Phase 1
 - [x] Procore CSV bulk import with dedup, vector indexing — v0.1 Phase 2
 - [x] Quality intelligence dashboard with Chart.js analytics, semantic search — v0.1 Phase 3
-- [x] Mobile photo capture pipeline with Claude vision — v0.1 Phase 4 (partial)
+- [x] Mobile capture pipeline — photo analysis (Claude vision) + voice transcription (Whisper) + review UI — v0.1 Phase 4
 - [x] License CRUD with US state SVG map, CSV import — Licenses Phase 1
 - [x] Drill-down navigation, scope mapping, CE tracking — Licenses Phase 2
 - [x] CE seed data, compliance dashboard, certificate upload, CSV exports — Licenses Phase 3
@@ -53,7 +53,6 @@ Bidirectional Procore observation integration. Two tracks: personal mobile captu
 - [ ] Integrations (primary source verification, calendar, cross-module)
 
 ### Paused (v0.1 remaining)
-- [ ] Voice transcription + review UI (Phase 4 Plan 02)
 - [ ] Procore push (Phase 5)
 
 ## Target Users

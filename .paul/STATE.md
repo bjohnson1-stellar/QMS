@@ -27,7 +27,7 @@ Progress:
   - Phase 13: Integrations & Automation [░░░░░░░░░░] 0%
 
 Previous milestone (v0.1 Quality Intelligence Platform):
-- Milestone: [████████░░] 80% (4 of 5 phases, Phase 4 partial)
+- Milestone: [████████░░] 90% (4 of 5 phases complete, Phase 5 not started)
 
 ## Loop Position
 
@@ -59,7 +59,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 1: Quality Issues Foundation | Complete | `16933a0` | 2026-02-25 |
 | 2: Procore Bulk Import | Complete | `3bf6242` | 2026-02-26 |
 | 3: Quality Intelligence Dashboard | Complete | see summaries | 2026-02-27 |
-| 4: Mobile Capture Pipeline | In progress (1/2 plans) | `5503781` | 2026-03-05 |
+| 4: Mobile Capture Pipeline | Complete (2/2 plans) | `5a2d9a6` | 2026-03-05 |
 | 5: Procore Push | Not started | - | - |
 
 Full execution log: see git history and `.paul/phases/01-*/` through `.paul/phases/04-*/` summaries.
@@ -85,7 +85,6 @@ Branch: main
 ### Deferred Issues
 | Issue | Impact | Resolution Path |
 |-------|--------|-----------------|
-| v0.1 Phase 4 Plan 04-02 pending | Voice transcription + review UI still unplanned | Return to v0.1 when ready |
 | v0.1 Phase 5 not started | Procore push deferred | Can be done in parallel or after v0.2 |
 | CE requirement type matching | Seeded types don't exactly match existing license_type values | Data cleanup when relevant |
 
@@ -96,15 +95,15 @@ Branch: main
 
 ## Session Continuity
 
-Last session: 2026-03-05
-Stopped at: v0.1 Plan 04-02 APPLY complete, UNIFY pending
-Next action: /paul:unify for Plan 04-02 (.paul/phases/04-mobile-capture-pipeline/04-02-PLAN.md), then return to v0.2 Phase 7
-Resume file: .paul/HANDOFF-2026-03-05.md
+Last session: 2026-03-06
+Stopped at: v0.1 Phase 4 unified (04-02 complete), ready for v0.2 Phase 7
+Next action: /paul:plan for Phase 7 (Renewal Workflow & Events)
+Resume file: .paul/ROADMAP.md
 Resume context:
-- v0.1 Plan 04-02 executed: voice transcription + captures review page, 9 new tests (560 total)
-- UNIFY needed to create 04-02-SUMMARY.md and update roadmap
-- After UNIFY, return to v0.2 Phase 7 (Renewal Workflow & Events)
-- Code committed across two sessions: `2cd1fba` (code) + `5a2d9a6` (tests)
+- v0.1 Phase 4 complete: photo capture (04-01) + voice transcription + review UI (04-02)
+- v0.2 Phase 6 complete: N+1 fixes, audit trail, pagination, validation, rate limiting, CSRF
+- Phase 7 depends on Phase 6 (audit trail must exist for event logging)
+- Phase 7 scope: license_events table, event types, fee tracking, auto-expire, renewal workflow
 
 ---
 *STATE.md — Updated after every significant action*
