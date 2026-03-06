@@ -1109,6 +1109,171 @@ def get_certificate_path(
     return full if os.path.isfile(full) else None
 
 
+# ---------------------------------------------------------------------------
+# License Events
+# ---------------------------------------------------------------------------
+
+VALID_EVENT_TYPES = {"issued", "renewed", "amended", "suspended", "revoked", "expired", "reinstated"}
+VALID_FEE_TYPES = {"application", "renewal", "amendment", "late_fee", "other"}
+
+
+def create_event(
+    conn: sqlite3.Connection,
+    license_id: str,
+    event_type: str,
+    event_date: str,
+    notes: Optional[str] = None,
+    fee_amount: Optional[float] = None,
+    fee_type: Optional[str] = None,
+    created_by: str = "system",
+) -> Optional[Dict[str, Any]]:
+    """Record a license event (renewal, amendment, suspension, etc.).
+
+    Returns the new event dict, or None if license_id doesn't exist.
+    """
+    # Verify license exists
+    row = conn.execute("SELECT 1 FROM state_licenses WHERE id = ?", (license_id,)).fetchone()
+    if not row:
+        return None
+
+    event_id = generate_uuid()
+    conn.execute(
+        """INSERT INTO license_events
+               (id, license_id, event_type, event_date, notes, fee_amount, fee_type, created_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (event_id, license_id, event_type, event_date, notes, fee_amount, fee_type, created_by),
+    )
+    _audit(conn, "license_event", event_id, "created",
+           new_values={"license_id": license_id, "event_type": event_type,
+                       "event_date": event_date, "fee_amount": fee_amount,
+                       "fee_type": fee_type},
+           changed_by=created_by)
+    conn.commit()
+
+    return get_event(conn, event_id)
+
+
+def get_event(conn: sqlite3.Connection, event_id: str) -> Optional[Dict[str, Any]]:
+    """Fetch a single event by ID."""
+    row = conn.execute("SELECT * FROM license_events WHERE id = ?", (event_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def get_license_events(
+    conn: sqlite3.Connection, license_id: str, limit: int = 50
+) -> List[Dict[str, Any]]:
+    """List events for a license, newest first."""
+    rows = conn.execute(
+        """SELECT * FROM license_events
+           WHERE license_id = ?
+           ORDER BY event_date DESC, created_at DESC
+           LIMIT ?""",
+        (license_id, limit),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def auto_expire_licenses(
+    conn: sqlite3.Connection, dry_run: bool = False
+) -> Dict[str, Any]:
+    """Mark active licenses past their expiration_date as expired.
+
+    Creates an 'expired' event for each. Returns {expired_count, licenses}.
+    In dry_run mode, returns what WOULD expire without making changes.
+    """
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    rows = conn.execute(
+        """SELECT id, holder_name, license_number, state_code, expiration_date
+           FROM state_licenses
+           WHERE status = 'active'
+             AND expiration_date IS NOT NULL
+             AND expiration_date < ?""",
+        (today,),
+    ).fetchall()
+    licenses = [dict(r) for r in rows]
+
+    if dry_run or not licenses:
+        return {"expired_count": len(licenses), "licenses": licenses}
+
+    for lic in licenses:
+        conn.execute(
+            "UPDATE state_licenses SET status = 'expired', updated_at = ? WHERE id = ?",
+            (datetime.utcnow().isoformat(), lic["id"]),
+        )
+        _audit(conn, "license", lic["id"], "updated",
+               old_values={"status": "active"},
+               new_values={"status": "expired"},
+               changed_by="auto-expire")
+        # Create expired event
+        event_id = generate_uuid()
+        conn.execute(
+            """INSERT INTO license_events
+                   (id, license_id, event_type, event_date, notes, created_by)
+               VALUES (?, ?, 'expired', ?, 'Auto-expired: past expiration date', 'auto-expire')""",
+            (event_id, lic["id"], today),
+        )
+    conn.commit()
+    return {"expired_count": len(licenses), "licenses": licenses}
+
+
+def renew_license(
+    conn: sqlite3.Connection,
+    license_id: str,
+    new_expiration_date: str,
+    fee_amount: Optional[float] = None,
+    fee_type: Optional[str] = None,
+    notes: Optional[str] = None,
+    created_by: str = "system",
+) -> Optional[Dict[str, Any]]:
+    """Renew a license: update expiration_date, create 'renewed' event.
+
+    If the license was expired, also creates a 'reinstated' event and
+    sets status back to 'active'.
+    Returns the updated license dict, or None if not found.
+    """
+    current = get_license(conn, license_id)
+    if not current:
+        return None
+
+    now = datetime.utcnow().isoformat()
+
+    # If expired, reinstate first
+    if current["status"] == "expired":
+        conn.execute(
+            "UPDATE state_licenses SET status = 'active', updated_at = ? WHERE id = ?",
+            (now, license_id),
+        )
+        _audit(conn, "license", license_id, "updated",
+               old_values={"status": "expired"},
+               new_values={"status": "active"},
+               changed_by=created_by)
+        reinstate_id = generate_uuid()
+        conn.execute(
+            """INSERT INTO license_events
+                   (id, license_id, event_type, event_date, notes, created_by)
+               VALUES (?, ?, 'reinstated', ?, ?, ?)""",
+            (reinstate_id, license_id, new_expiration_date, "Reinstated during renewal", created_by),
+        )
+
+    # Update expiration date
+    old_exp = current.get("expiration_date")
+    conn.execute(
+        "UPDATE state_licenses SET expiration_date = ?, updated_at = ? WHERE id = ?",
+        (new_expiration_date, now, license_id),
+    )
+    _audit(conn, "license", license_id, "updated",
+           old_values={"expiration_date": old_exp},
+           new_values={"expiration_date": new_expiration_date},
+           changed_by=created_by)
+
+    # Create renewed event
+    create_event(conn, license_id, "renewed", new_expiration_date,
+                 notes=notes, fee_amount=fee_amount, fee_type=fee_type,
+                 created_by=created_by)
+
+    return get_license(conn, license_id)
+
+
 def get_renewal_timeline(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
     """Monthly renewal counts for the next 12 months.
 

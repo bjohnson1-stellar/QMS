@@ -96,6 +96,7 @@ def _register_modules():
         ("qms.reporting.cli", "report", "Reports & dashboards"),
         ("qms.vectordb.cli", "vectordb", "Vector search & embeddings"),
         ("qms.auth.cli", "auth", "User account management"),
+        ("qms.licenses.cli", "licenses", "License compliance management"),
     ]
 
     for module_path, name, help_text in module_registry:

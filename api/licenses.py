@@ -20,6 +20,7 @@ from qms.licenses.db import (
     batch_get_license_scopes,
     create_ce_credit,
     create_ce_requirement,
+    create_event,
     create_license,
     create_scope_category,
     delete_ce_credit,
@@ -32,6 +33,7 @@ from qms.licenses.db import (
     get_expiring_licenses,
     get_license,
     get_license_board,
+    get_license_events,
     get_license_scopes,
     get_license_stats,
     get_renewal_timeline,
@@ -43,6 +45,7 @@ from qms.licenses.db import (
     list_licenses,
     list_licenses_for_state,
     list_scope_categories,
+    renew_license,
     save_certificate_file,
     set_license_scopes,
     update_ce_credit,
@@ -52,6 +55,8 @@ from qms.licenses.db import (
     delete_portal_credential,
     get_portal_credential,
     upsert_portal_credential,
+    VALID_EVENT_TYPES,
+    VALID_FEE_TYPES,
 )
 
 bp = Blueprint("licenses", __name__, url_prefix="/licenses")
@@ -1066,3 +1071,135 @@ def api_import_cancel(session_id):
 
     clear_cache(session_id)
     return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# License Events API
+# ---------------------------------------------------------------------------
+
+def _validate_event_fields(data: dict) -> list[str]:
+    """Validate event create fields. Returns list of error strings."""
+    errors: list[str] = []
+
+    if not data.get("event_type"):
+        errors.append("Missing required field: event_type")
+    elif data["event_type"] not in VALID_EVENT_TYPES:
+        errors.append(f"Invalid event_type: must be one of {sorted(VALID_EVENT_TYPES)}")
+
+    if not data.get("event_date"):
+        errors.append("Missing required field: event_date")
+    else:
+        err = _validate_date(data["event_date"], "event_date")
+        if err:
+            errors.append(err)
+
+    if data.get("fee_amount") is not None:
+        try:
+            fa = float(data["fee_amount"])
+            if fa < 0:
+                errors.append("fee_amount must be a positive number")
+        except (ValueError, TypeError):
+            errors.append("fee_amount must be a number")
+
+    if data.get("fee_type") is not None and data["fee_type"] != "":
+        if data["fee_type"] not in VALID_FEE_TYPES:
+            errors.append(f"Invalid fee_type: must be one of {sorted(VALID_FEE_TYPES)}")
+
+    if data.get("notes") and len(str(data["notes"])) > 500:
+        errors.append("notes exceeds 500 characters")
+
+    return errors
+
+
+@bp.route("/api/licenses/<license_id>/events", methods=["GET"])
+@module_required("licenses")
+def api_get_events(license_id):
+    """List events for a license, newest first."""
+    with get_db(readonly=True) as conn:
+        lic = get_license(conn, license_id)
+        if not lic:
+            return jsonify({"error": "License not found"}), 404
+        events = get_license_events(conn, license_id)
+    return jsonify(events)
+
+
+@bp.route("/api/licenses/<license_id>/events", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_create_event(license_id):
+    """Create a new event for a license."""
+    data = request.get_json(silent=True) or {}
+    errors = _validate_event_fields(data)
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    fee_amount = float(data["fee_amount"]) if data.get("fee_amount") is not None else None
+    fee_type = data.get("fee_type") or None
+
+    with get_db() as conn:
+        event = create_event(
+            conn, license_id,
+            event_type=data["event_type"],
+            event_date=data["event_date"],
+            notes=data.get("notes"),
+            fee_amount=fee_amount,
+            fee_type=fee_type,
+            created_by=_get_user_id(),
+        )
+    if not event:
+        return jsonify({"error": "License not found"}), 404
+    return jsonify(event), 201
+
+
+@bp.route("/api/licenses/<license_id>/renew", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_renew_license(license_id):
+    """Renew a license: update expiration date and create renewal event."""
+    data = request.get_json(silent=True) or {}
+
+    errors: list[str] = []
+    if not data.get("new_expiration_date"):
+        errors.append("Missing required field: new_expiration_date")
+    else:
+        err = _validate_date(data["new_expiration_date"], "new_expiration_date")
+        if err:
+            errors.append(err)
+        else:
+            # Must be in the future
+            try:
+                exp = _dt.strptime(data["new_expiration_date"], "%Y-%m-%d")
+                if exp.date() <= _dt.utcnow().date():
+                    errors.append("new_expiration_date must be in the future")
+            except ValueError:
+                pass  # already caught by _validate_date
+
+    if data.get("fee_amount") is not None:
+        try:
+            fa = float(data["fee_amount"])
+            if fa < 0:
+                errors.append("fee_amount must be a positive number")
+        except (ValueError, TypeError):
+            errors.append("fee_amount must be a number")
+
+    if data.get("fee_type") and data["fee_type"] not in VALID_FEE_TYPES:
+        errors.append(f"Invalid fee_type: must be one of {sorted(VALID_FEE_TYPES)}")
+
+    if data.get("notes") and len(str(data["notes"])) > 500:
+        errors.append("notes exceeds 500 characters")
+
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    fee_amount = float(data["fee_amount"]) if data.get("fee_amount") is not None else None
+
+    with get_db() as conn:
+        result = renew_license(
+            conn, license_id,
+            new_expiration_date=data["new_expiration_date"],
+            fee_amount=fee_amount,
+            fee_type=data.get("fee_type") or None,
+            notes=data.get("notes"),
+            created_by=_get_user_id(),
+        )
+    if not result:
+        return jsonify({"error": "License not found"}), 404
+    return jsonify(result)

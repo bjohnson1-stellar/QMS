@@ -117,6 +117,25 @@ CREATE TABLE IF NOT EXISTS license_portal_credentials (
 
 CREATE INDEX IF NOT EXISTS idx_portal_creds_user ON license_portal_credentials(user_id);
 
+-- License event history (renewal, amendment, suspension, etc.)
+CREATE TABLE IF NOT EXISTS license_events (
+    id              TEXT PRIMARY KEY,
+    license_id      TEXT NOT NULL,
+    event_type      TEXT NOT NULL
+                    CHECK (event_type IN ('issued','renewed','amended','suspended','revoked','expired','reinstated')),
+    event_date      TEXT NOT NULL,        -- ISO 8601 (YYYY-MM-DD)
+    notes           TEXT,
+    fee_amount      REAL,
+    fee_type        TEXT
+                    CHECK (fee_type IS NULL OR fee_type IN ('application','renewal','amendment','late_fee','other')),
+    created_by      TEXT DEFAULT 'system',
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (license_id) REFERENCES state_licenses(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_license_events_license ON license_events(license_id);
+CREATE INDEX IF NOT EXISTS idx_license_events_type ON license_events(event_type);
+
 -- Pre-computed expiry view for dashboard queries
 CREATE VIEW IF NOT EXISTS v_expiring_licenses AS
 SELECT

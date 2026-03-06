@@ -45,6 +45,9 @@ def run_license_migrations(conn: sqlite3.Connection):
     # Phase 3 seed data
     _seed_ce_requirements(conn)
 
+    # Phase 7 — license events table
+    _create_license_events_table(conn)
+
     conn.commit()
 
 
@@ -432,6 +435,54 @@ def _seed_scope_categories(conn: sqlite3.Connection):
         "INSERT INTO scope_categories (id, name, sort_order) VALUES (?, ?, ?)",
         [(_gen_id(), name, order) for name, order in scopes],
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 7 — license events
+# ---------------------------------------------------------------------------
+
+def _create_license_events_table(conn: sqlite3.Connection):
+    """Create license_events table and backfill 'issued' events for existing licenses."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS license_events (
+            id              TEXT PRIMARY KEY,
+            license_id      TEXT NOT NULL,
+            event_type      TEXT NOT NULL
+                            CHECK (event_type IN ('issued','renewed','amended','suspended','revoked','expired','reinstated')),
+            event_date      TEXT NOT NULL,
+            notes           TEXT,
+            fee_amount      REAL,
+            fee_type        TEXT
+                            CHECK (fee_type IS NULL OR fee_type IN ('application','renewal','amendment','late_fee','other')),
+            created_by      TEXT DEFAULT 'system',
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (license_id) REFERENCES state_licenses(id) ON DELETE CASCADE
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_license_events_license ON license_events(license_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_license_events_type ON license_events(event_type)")
+
+    # Backfill 'issued' events for existing licenses that have an issued_date
+    # and don't already have an 'issued' event (idempotent on re-run)
+    conn.execute("""
+        INSERT INTO license_events (id, license_id, event_type, event_date, notes, created_by)
+        SELECT
+            lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' ||
+                  substr(hex(randomblob(2)),2) || '-' ||
+                  substr('89ab', abs(random()) % 4 + 1, 1) ||
+                  substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6))),
+            sl.id,
+            'issued',
+            sl.issued_date,
+            'Backfilled from existing license record',
+            'migration'
+        FROM state_licenses sl
+        WHERE sl.issued_date IS NOT NULL
+          AND NOT EXISTS (
+              SELECT 1 FROM license_events le
+              WHERE le.license_id = sl.id AND le.event_type = 'issued'
+          )
+    """)
 
 
 def _seed_ce_requirements(conn: sqlite3.Connection):
