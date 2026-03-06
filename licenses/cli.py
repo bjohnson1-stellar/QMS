@@ -140,3 +140,181 @@ def check_notifications(
                 f"{n['id']:>5}  {n['priority']:8}  "
                 f"{n['notification_type']:20}  {days:>4}  {n['title'][:40]}"
             )
+
+
+@app.command()
+def seed_requirements():
+    """Seed state regulatory requirements for SIS operating states.
+
+    Populates renewal, bond, insurance, and CE requirements with
+    realistic fee amounts. Idempotent — safe to run multiple times.
+    """
+    from qms.core import get_db
+    from qms.licenses.db import seed_state_requirements
+
+    # SIS operating states with common MEP contractor requirements
+    requirements = [
+        # Ohio — no state GC license; licenses electrical, HVAC, plumbing, refrigeration
+        {"state_code": "OH", "license_type": "Electrical Contractor",
+         "requirement_type": "renewal", "fee_amount": 100.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "Ohio CILB",
+         "description": "Annual electrical contractor license renewal"},
+        {"state_code": "OH", "license_type": "Electrical Contractor",
+         "requirement_type": "insurance", "fee_frequency": "annual",
+         "description": "General liability insurance required"},
+        {"state_code": "OH", "license_type": "HVAC Contractor",
+         "requirement_type": "renewal", "fee_amount": 100.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "Ohio CILB",
+         "description": "Annual HVAC contractor license renewal"},
+        {"state_code": "OH", "license_type": "Plumbing Contractor",
+         "requirement_type": "renewal", "fee_amount": 100.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "Ohio CILB",
+         "description": "Annual plumbing contractor license renewal"},
+
+        # Pennsylvania — state HIC registration only; trades are municipal
+        {"state_code": "PA", "license_type": "Home Improvement Contractor",
+         "requirement_type": "renewal", "fee_amount": 50.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "PA Attorney General",
+         "description": "Annual HIC registration renewal"},
+        {"state_code": "PA", "license_type": "Home Improvement Contractor",
+         "requirement_type": "insurance", "fee_frequency": "annual",
+         "description": "General liability insurance required ($50K minimum)"},
+
+        # West Virginia
+        {"state_code": "WV", "license_type": "Contractor",
+         "requirement_type": "renewal", "fee_amount": 150.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "WV Contractor Licensing Board",
+         "description": "Annual contractor license renewal"},
+        {"state_code": "WV", "license_type": "Contractor",
+         "requirement_type": "bond", "fee_frequency": "annual",
+         "description": "Surety bond required for contractor license"},
+        {"state_code": "WV", "license_type": "Contractor",
+         "requirement_type": "insurance", "fee_frequency": "annual",
+         "description": "General liability insurance required"},
+
+        # Kentucky — licenses electrical, plumbing, HVAC, boiler
+        {"state_code": "KY", "license_type": "Master Electrician",
+         "requirement_type": "renewal", "fee_amount": 50.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "KY DHBC",
+         "description": "Annual master electrician license renewal"},
+        {"state_code": "KY", "license_type": "Master Plumber",
+         "requirement_type": "renewal", "fee_amount": 50.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "KY DHBC",
+         "description": "Annual master plumber license renewal"},
+        {"state_code": "KY", "license_type": "HVAC Journeyman",
+         "requirement_type": "renewal", "fee_amount": 30.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "KY DHBC",
+         "description": "Annual HVAC journeyman license renewal"},
+
+        # Virginia — Class A/B/C contractors
+        {"state_code": "VA", "license_type": "Class A Contractor",
+         "requirement_type": "renewal", "fee_amount": 420.0, "fee_frequency": "biennial",
+         "renewal_period_months": 24, "authority_name": "VA DPOR",
+         "description": "Biennial Class A contractor license renewal"},
+        {"state_code": "VA", "license_type": "Class A Contractor",
+         "requirement_type": "insurance", "fee_frequency": "annual",
+         "description": "General liability insurance required"},
+        {"state_code": "VA", "license_type": "Class A Contractor",
+         "requirement_type": "bond", "fee_frequency": "biennial",
+         "description": "Surety bond required ($50K+ depending on classification)"},
+
+        # North Carolina
+        {"state_code": "NC", "license_type": "General Contractor",
+         "requirement_type": "renewal", "fee_amount": 275.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "NC LBGC",
+         "description": "Annual general contractor license renewal"},
+        {"state_code": "NC", "license_type": "Plumbing/Heating/Fire Sprinkler",
+         "requirement_type": "renewal", "fee_amount": 100.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "NC Board of Examiners",
+         "description": "Annual plumbing/heating license renewal"},
+        {"state_code": "NC", "license_type": "Plumbing/Heating/Fire Sprinkler",
+         "requirement_type": "ce_requirement",
+         "description": "8 hours CE annually",
+         "authority_name": "NC Board of Examiners"},
+
+        # South Carolina
+        {"state_code": "SC", "license_type": "Mechanical Contractor",
+         "requirement_type": "renewal", "fee_amount": 200.0, "fee_frequency": "biennial",
+         "renewal_period_months": 24, "authority_name": "SC LLR",
+         "description": "Biennial mechanical contractor license renewal"},
+        {"state_code": "SC", "license_type": "Mechanical Contractor",
+         "requirement_type": "ce_requirement",
+         "description": "4 hours CE per renewal period",
+         "authority_name": "SC LLR"},
+
+        # Georgia
+        {"state_code": "GA", "license_type": "Conditioned Air Contractor",
+         "requirement_type": "renewal", "fee_amount": 150.0, "fee_frequency": "biennial",
+         "renewal_period_months": 24, "authority_name": "GA SoS",
+         "description": "Biennial conditioned air contractor renewal"},
+        {"state_code": "GA", "license_type": "Conditioned Air Contractor",
+         "requirement_type": "ce_requirement",
+         "description": "6 hours CE per renewal period",
+         "authority_name": "GA Division of Conditioned Air Contractors"},
+        {"state_code": "GA", "license_type": "Master Plumber",
+         "requirement_type": "renewal", "fee_amount": 100.0, "fee_frequency": "biennial",
+         "renewal_period_months": 24, "authority_name": "GA SoS",
+         "description": "Biennial master plumber license renewal"},
+
+        # Florida
+        {"state_code": "FL", "license_type": "Mechanical Contractor",
+         "requirement_type": "renewal", "fee_amount": 299.0, "fee_frequency": "biennial",
+         "renewal_period_months": 24, "authority_name": "FL DBPR",
+         "description": "Biennial mechanical contractor license renewal"},
+        {"state_code": "FL", "license_type": "Mechanical Contractor",
+         "requirement_type": "ce_requirement",
+         "description": "14 hours CE per renewal period (1hr safety, 1hr workers comp, 1hr business)",
+         "authority_name": "FL DBPR"},
+        {"state_code": "FL", "license_type": "Mechanical Contractor",
+         "requirement_type": "insurance", "fee_frequency": "annual",
+         "description": "General liability and workers compensation insurance required"},
+        {"state_code": "FL", "license_type": "Plumbing Contractor",
+         "requirement_type": "renewal", "fee_amount": 299.0, "fee_frequency": "biennial",
+         "renewal_period_months": 24, "authority_name": "FL DBPR",
+         "description": "Biennial plumbing contractor license renewal"},
+        {"state_code": "FL", "license_type": "Plumbing Contractor",
+         "requirement_type": "ce_requirement",
+         "description": "14 hours CE per renewal period",
+         "authority_name": "FL DBPR"},
+
+        # Texas — TDLR for electricians/HVAC, separate board for plumbing
+        {"state_code": "TX", "license_type": "Master Plumber",
+         "requirement_type": "renewal", "fee_amount": 254.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "TSBPE",
+         "description": "Annual master plumber license renewal"},
+        {"state_code": "TX", "license_type": "Master Plumber",
+         "requirement_type": "ce_requirement",
+         "description": "8 hours CE annually",
+         "authority_name": "TSBPE"},
+        {"state_code": "TX", "license_type": "HVAC/Refrigeration Technician",
+         "requirement_type": "renewal", "fee_amount": 75.0, "fee_frequency": "annual",
+         "renewal_period_months": 12, "authority_name": "TDLR",
+         "description": "Annual HVAC/refrigeration technician renewal"},
+
+        # California — CSLB single board
+        {"state_code": "CA", "license_type": "C-20 HVAC",
+         "requirement_type": "renewal", "fee_amount": 450.0, "fee_frequency": "biennial",
+         "renewal_period_months": 24, "authority_name": "CSLB",
+         "description": "Biennial C-20 HVAC contractor renewal"},
+        {"state_code": "CA", "license_type": "C-20 HVAC",
+         "requirement_type": "bond", "fee_amount": 25000.0, "fee_frequency": "biennial",
+         "description": "Contractor license bond ($25,000)"},
+        {"state_code": "CA", "license_type": "C-36 Plumbing",
+         "requirement_type": "renewal", "fee_amount": 450.0, "fee_frequency": "biennial",
+         "renewal_period_months": 24, "authority_name": "CSLB",
+         "description": "Biennial C-36 plumbing contractor renewal"},
+        {"state_code": "CA", "license_type": "C-36 Plumbing",
+         "requirement_type": "bond", "fee_amount": 25000.0, "fee_frequency": "biennial",
+         "description": "Contractor license bond ($25,000)"},
+        {"state_code": "CA", "license_type": "C-10 Electrical",
+         "requirement_type": "renewal", "fee_amount": 450.0, "fee_frequency": "biennial",
+         "renewal_period_months": 24, "authority_name": "CSLB",
+         "description": "Biennial C-10 electrical contractor renewal"},
+    ]
+
+    with get_db() as conn:
+        count = seed_state_requirements(conn, requirements)
+
+    typer.echo(f"Seeded {count} state requirements across SIS operating states.")
+    if count == 0:
+        typer.echo("(All requirements already existed — no duplicates created.)")

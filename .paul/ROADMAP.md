@@ -21,7 +21,7 @@ Phases: 5 of 8 complete
 | 8 | Notifications & Task Management | 2 | Complete | 2026-03-06 |
 | 9 | Document Management & Activity Log | 2 | Complete | 2026-03-06 |
 | 10 | Entity Registration Tracking | 2 | Complete | 2026-03-06 |
-| 11 | Regulatory Intelligence Database | TBD | Not started | - |
+| 11 | Regulatory Intelligence Database | 2 | Planning | - |
 | 12 | Advanced CE & Multi-Credential | TBD | Not started | - |
 | 13 | Integrations & Automation | TBD | Not started | - |
 

@@ -1976,3 +1976,451 @@ def delete_registration(
                old_values=dict(old), changed_by=changed_by)
     conn.commit()
     return cursor.rowcount > 0
+
+
+# ---------------------------------------------------------------------------
+# Phase 11 — State Regulatory Requirements
+# ---------------------------------------------------------------------------
+
+def list_requirements(
+    conn: sqlite3.Connection,
+    *,
+    state_code: Optional[str] = None,
+    license_type: Optional[str] = None,
+    requirement_type: Optional[str] = None,
+    page: int = 0,
+    per_page: int = 0,
+) -> Dict[str, Any]:
+    """List state requirements with optional filters and pagination.
+
+    Returns {items, total, page, per_page, pages}.
+    """
+    clauses: List[str] = []
+    params: list = []
+
+    if state_code:
+        clauses.append("sr.state_code = ?")
+        params.append(state_code)
+    if license_type:
+        clauses.append("sr.license_type = ?")
+        params.append(license_type)
+    if requirement_type:
+        clauses.append("sr.requirement_type = ?")
+        params.append(requirement_type)
+
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+
+    total = conn.execute(
+        f"SELECT COUNT(*) FROM state_requirements sr{where}", params
+    ).fetchone()[0]
+
+    sql = f"""
+        SELECT sr.*
+        FROM state_requirements sr
+        {where}
+        ORDER BY sr.state_code, sr.license_type, sr.requirement_type
+    """
+
+    per_page = min(per_page, 200) if per_page > 0 else 0
+    if per_page > 0:
+        page = max(page, 1)
+        offset = (page - 1) * per_page
+        sql += " LIMIT ? OFFSET ?"
+        params.extend([per_page, offset])
+        pages = math.ceil(total / per_page) if per_page else 1
+    else:
+        page = 1
+        pages = 1
+
+    rows = conn.execute(sql, params).fetchall()
+    return {
+        "items": [dict(r) for r in rows],
+        "total": total,
+        "page": page,
+        "per_page": per_page or total,
+        "pages": pages,
+    }
+
+
+def get_requirement(
+    conn: sqlite3.Connection, requirement_id: str
+) -> Optional[Dict[str, Any]]:
+    """Get a single state requirement by ID."""
+    row = conn.execute(
+        "SELECT * FROM state_requirements WHERE id = ?", (requirement_id,)
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def create_requirement(
+    conn: sqlite3.Connection, data: Dict[str, Any], created_by: str = "system"
+) -> Dict[str, Any]:
+    """Create a state requirement. Returns the new record."""
+    req_id = generate_uuid()
+    now = datetime.utcnow().isoformat()
+    conn.execute(
+        """INSERT INTO state_requirements
+               (id, state_code, license_type, requirement_type, description,
+                fee_amount, fee_frequency, renewal_period_months,
+                authority_name, authority_url, effective_date, notes,
+                created_at, updated_at, created_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            req_id,
+            data["state_code"],
+            data["license_type"],
+            data["requirement_type"],
+            data.get("description"),
+            data.get("fee_amount"),
+            data.get("fee_frequency"),
+            data.get("renewal_period_months"),
+            data.get("authority_name"),
+            data.get("authority_url"),
+            data.get("effective_date"),
+            data.get("notes"),
+            now, now, created_by,
+        ),
+    )
+    _audit(conn, "state_requirement", req_id, "created",
+           new_values=data, changed_by=created_by)
+    conn.commit()
+    return get_requirement(conn, req_id)  # type: ignore
+
+
+def update_requirement(
+    conn: sqlite3.Connection,
+    requirement_id: str,
+    data: Dict[str, Any],
+    changed_by: str = "system",
+) -> Optional[Dict[str, Any]]:
+    """Update a state requirement. Returns updated record or None."""
+    old = get_requirement(conn, requirement_id)
+    if not old:
+        return None
+
+    allowed = {
+        "state_code", "license_type", "requirement_type", "description",
+        "fee_amount", "fee_frequency", "renewal_period_months",
+        "authority_name", "authority_url", "effective_date", "notes",
+    }
+    sets: List[str] = []
+    params: list = []
+    for key, val in data.items():
+        if key in allowed:
+            sets.append(f"{key} = ?")
+            params.append(val)
+    if not sets:
+        return old
+
+    sets.append("updated_at = ?")
+    params.append(datetime.utcnow().isoformat())
+    params.append(requirement_id)
+
+    conn.execute(
+        f"UPDATE state_requirements SET {', '.join(sets)} WHERE id = ?", params
+    )
+    _audit(conn, "state_requirement", requirement_id, "updated",
+           old_values=old, new_values=data, changed_by=changed_by)
+    conn.commit()
+    return get_requirement(conn, requirement_id)
+
+
+def delete_requirement(
+    conn: sqlite3.Connection, requirement_id: str, deleted_by: str = "system"
+) -> bool:
+    """Delete a state requirement."""
+    old = conn.execute(
+        "SELECT * FROM state_requirements WHERE id = ?", (requirement_id,)
+    ).fetchone()
+    cursor = conn.execute(
+        "DELETE FROM state_requirements WHERE id = ?", (requirement_id,)
+    )
+    if cursor.rowcount > 0 and old:
+        _audit(conn, "state_requirement", requirement_id, "deleted",
+               old_values=dict(old), changed_by=deleted_by)
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def get_requirements_for_license(
+    conn: sqlite3.Connection, state_code: str, license_type: str
+) -> List[Dict[str, Any]]:
+    """Get all requirements for a specific state/license_type combo."""
+    rows = conn.execute(
+        """SELECT * FROM state_requirements
+           WHERE state_code = ? AND license_type = ?
+           ORDER BY requirement_type""",
+        (state_code, license_type),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def calculate_compliance_score(
+    conn: sqlite3.Connection, license_id: str
+) -> Dict[str, Any]:
+    """Calculate compliance score for a single license.
+
+    Returns {score, total_requirements, met_count, met: [...], unmet: [...]}.
+    Each requirement is evaluated against available evidence.
+    """
+    lic = conn.execute(
+        "SELECT * FROM state_licenses WHERE id = ?", (license_id,)
+    ).fetchone()
+    if not lic:
+        return {"score": 0, "total_requirements": 0, "met_count": 0,
+                "met": [], "unmet": [], "error": "License not found"}
+
+    lic = dict(lic)
+    reqs = get_requirements_for_license(conn, lic["state_code"], lic["license_type"])
+
+    if not reqs:
+        return {"score": 100, "total_requirements": 0, "met_count": 0,
+                "met": [], "unmet": [], "license_id": license_id,
+                "state_code": lic["state_code"], "license_type": lic["license_type"]}
+
+    met: List[Dict[str, Any]] = []
+    unmet: List[Dict[str, Any]] = []
+
+    for req in reqs:
+        rt = req["requirement_type"]
+        entry = {
+            "requirement_id": req["id"],
+            "requirement_type": rt,
+            "description": req.get("description") or rt.replace("_", " ").title(),
+        }
+
+        if rt == "initial_application":
+            # Always met for existing licenses (they were issued)
+            entry["evidence"] = "License exists — application was approved"
+            met.append(entry)
+
+        elif rt == "renewal":
+            # Met if status is active and not expired
+            if lic["status"] == "active":
+                exp = lic.get("expiration_date")
+                if exp and exp >= datetime.utcnow().strftime("%Y-%m-%d"):
+                    entry["evidence"] = f"Active, expires {exp}"
+                    met.append(entry)
+                elif exp:
+                    entry["reason"] = f"Expired on {exp}"
+                    unmet.append(entry)
+                else:
+                    entry["evidence"] = "Active, no expiration"
+                    met.append(entry)
+            else:
+                entry["reason"] = f"Status is {lic['status']}"
+                unmet.append(entry)
+
+        elif rt == "ce_requirement":
+            # Met if CE credits >= required hours from ce_requirements table
+            ce_req = conn.execute(
+                """SELECT hours_required, period_months FROM ce_requirements
+                   WHERE state_code = ? AND license_type = ?""",
+                (lic["state_code"], lic["license_type"]),
+            ).fetchone()
+            if ce_req:
+                hours_req = ce_req[0]
+                earned = conn.execute(
+                    """SELECT COALESCE(SUM(hours), 0) FROM ce_credits
+                       WHERE license_id = ? AND status = 'approved'""",
+                    (license_id,),
+                ).fetchone()[0]
+                if earned >= hours_req:
+                    entry["evidence"] = f"{earned}/{hours_req} CE hours"
+                    met.append(entry)
+                else:
+                    entry["reason"] = f"Only {earned}/{hours_req} CE hours"
+                    unmet.append(entry)
+            else:
+                # No CE requirement defined in ce_requirements — assume met
+                entry["evidence"] = "No CE requirement defined for this state/type"
+                met.append(entry)
+
+        elif rt == "bond":
+            # Met if a bond document exists
+            bond_doc = conn.execute(
+                """SELECT id FROM license_documents
+                   WHERE license_id = ? AND doc_type = 'bond' LIMIT 1""",
+                (license_id,),
+            ).fetchone()
+            if bond_doc:
+                entry["evidence"] = "Bond document on file"
+                met.append(entry)
+            else:
+                entry["reason"] = "No bond document on file"
+                unmet.append(entry)
+
+        elif rt == "insurance":
+            # Met if an insurance document exists
+            ins_doc = conn.execute(
+                """SELECT id FROM license_documents
+                   WHERE license_id = ? AND doc_type = 'insurance' LIMIT 1""",
+                (license_id,),
+            ).fetchone()
+            if ins_doc:
+                entry["evidence"] = "Insurance document on file"
+                met.append(entry)
+            else:
+                entry["reason"] = "No insurance document on file"
+                unmet.append(entry)
+
+        elif rt in ("exam", "background_check", "fingerprinting"):
+            # Met if a document or event references it
+            doc = conn.execute(
+                """SELECT id FROM license_documents
+                   WHERE license_id = ? AND (
+                       doc_type = 'certificate' OR doc_type = 'other'
+                   ) LIMIT 1""",
+                (license_id,),
+            ).fetchone()
+            event = conn.execute(
+                """SELECT id FROM license_events
+                   WHERE license_id = ? AND notes LIKE ?
+                   LIMIT 1""",
+                (license_id, f"%{rt.replace('_', ' ')}%"),
+            ).fetchone()
+            if doc or event:
+                entry["evidence"] = "Supporting document or event on file"
+                met.append(entry)
+            else:
+                entry["reason"] = f"No {rt.replace('_', ' ')} record found"
+                unmet.append(entry)
+
+    total = len(reqs)
+    met_count = len(met)
+    score = round((met_count / total) * 100) if total > 0 else 100
+
+    return {
+        "license_id": license_id,
+        "state_code": lic["state_code"],
+        "license_type": lic["license_type"],
+        "holder_name": lic.get("holder_name", ""),
+        "score": score,
+        "total_requirements": total,
+        "met_count": met_count,
+        "met": met,
+        "unmet": unmet,
+    }
+
+
+def get_compliance_gap_analysis(
+    conn: sqlite3.Connection,
+) -> List[Dict[str, Any]]:
+    """Gap analysis across all active licenses with requirements defined.
+
+    Returns list of per-license compliance summaries.
+    Only includes licenses that have state_requirements entries.
+    """
+    # Get distinct state/license_type combos that have requirements
+    req_combos = conn.execute(
+        "SELECT DISTINCT state_code, license_type FROM state_requirements"
+    ).fetchall()
+    combo_set = {(r[0], r[1]) for r in req_combos}
+
+    if not combo_set:
+        return []
+
+    # Get all active licenses
+    licenses = conn.execute(
+        "SELECT id, state_code, license_type, holder_name FROM state_licenses WHERE status = 'active'"
+    ).fetchall()
+
+    results: List[Dict[str, Any]] = []
+    for lic in licenses:
+        lic = dict(lic)
+        if (lic["state_code"], lic["license_type"]) not in combo_set:
+            continue
+        score_data = calculate_compliance_score(conn, lic["id"])
+        results.append({
+            "license_id": lic["id"],
+            "state_code": lic["state_code"],
+            "license_type": lic["license_type"],
+            "holder_name": lic["holder_name"],
+            "score": score_data["score"],
+            "total_requirements": score_data["total_requirements"],
+            "met_count": score_data["met_count"],
+            "unmet_list": [u["requirement_type"] for u in score_data["unmet"]],
+        })
+
+    return sorted(results, key=lambda x: (x["score"], x["state_code"]))
+
+
+def get_compliance_summary_by_state(
+    conn: sqlite3.Connection,
+) -> Dict[str, Dict[str, Any]]:
+    """Compliance summary grouped by state.
+
+    Returns {state_code: {total_licenses, avg_score, fully_compliant, has_gaps}}.
+    """
+    gap_data = get_compliance_gap_analysis(conn)
+    state_map: Dict[str, Dict[str, Any]] = {}
+
+    for item in gap_data:
+        st = item["state_code"]
+        if st not in state_map:
+            state_map[st] = {
+                "total_licenses": 0,
+                "scores": [],
+                "fully_compliant": 0,
+                "has_gaps": 0,
+            }
+        state_map[st]["total_licenses"] += 1
+        state_map[st]["scores"].append(item["score"])
+        if item["score"] == 100:
+            state_map[st]["fully_compliant"] += 1
+        else:
+            state_map[st]["has_gaps"] += 1
+
+    # Compute averages
+    result: Dict[str, Dict[str, Any]] = {}
+    for st, data in sorted(state_map.items()):
+        scores = data.pop("scores")
+        data["avg_score"] = round(sum(scores) / len(scores)) if scores else 0
+        result[st] = data
+
+    return result
+
+
+def seed_state_requirements(
+    conn: sqlite3.Connection,
+    requirements_data: List[Dict[str, Any]],
+    created_by: str = "system",
+) -> int:
+    """Seed state requirements data. Uses INSERT OR IGNORE for idempotency.
+
+    Each item in requirements_data should have:
+      state_code, license_type, requirement_type, and optionally
+      description, fee_amount, fee_frequency, renewal_period_months,
+      authority_name, authority_url, notes.
+
+    Returns count of newly inserted rows.
+    """
+    count = 0
+    for req in requirements_data:
+        cursor = conn.execute(
+            """INSERT OR IGNORE INTO state_requirements
+                   (id, state_code, license_type, requirement_type, description,
+                    fee_amount, fee_frequency, renewal_period_months,
+                    authority_name, authority_url, effective_date, notes,
+                    created_at, updated_at, created_by)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                       datetime('now'), datetime('now'), ?)""",
+            (
+                generate_uuid(),
+                req["state_code"],
+                req["license_type"],
+                req["requirement_type"],
+                req.get("description"),
+                req.get("fee_amount"),
+                req.get("fee_frequency"),
+                req.get("renewal_period_months"),
+                req.get("authority_name"),
+                req.get("authority_url"),
+                req.get("effective_date"),
+                req.get("notes"),
+                created_by,
+            ),
+        )
+        count += cursor.rowcount
+    conn.commit()
+    return count

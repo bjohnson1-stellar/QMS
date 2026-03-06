@@ -25,6 +25,7 @@ from qms.licenses.notifications import (
 )
 from qms.licenses.db import (
     batch_get_license_scopes,
+    calculate_compliance_score,
     create_ce_credit,
     create_ce_requirement,
     create_document,
@@ -33,6 +34,7 @@ from qms.licenses.db import (
     create_license,
     create_note,
     create_registration,
+    create_requirement,
     create_scope_category,
     delete_ce_credit,
     delete_ce_requirement,
@@ -41,11 +43,14 @@ from qms.licenses.db import (
     delete_license,
     delete_note,
     delete_registration,
+    delete_requirement,
     get_activity_feed,
     get_ce_compliance_report,
     get_ce_summary,
     get_certificate_path,
     get_compliance_dashboard_data,
+    get_compliance_gap_analysis,
+    get_compliance_summary_by_state,
     get_document,
     get_document_path,
     get_entity,
@@ -59,6 +64,7 @@ from qms.licenses.db import (
     get_license_stats,
     get_registration,
     get_renewal_timeline,
+    get_requirement,
     get_scope_coverage_gaps,
     get_state_license_summary,
     get_state_map_data,
@@ -70,6 +76,7 @@ from qms.licenses.db import (
     list_licenses_for_state,
     list_notes,
     list_registrations,
+    list_requirements,
     list_scope_categories,
     renew_license,
     save_certificate_file,
@@ -80,6 +87,7 @@ from qms.licenses.db import (
     update_entity,
     update_license,
     update_registration,
+    update_requirement,
     upsert_license_board,
     delete_portal_credential,
     get_portal_credential,
@@ -1750,3 +1758,139 @@ def api_delete_registration(entity_id, reg_id):
     if not ok:
         return jsonify({"error": "Registration not found"}), 404
     return "", 204
+
+
+# ---------------------------------------------------------------------------
+# Phase 11 — State Requirements & Compliance
+# ---------------------------------------------------------------------------
+
+VALID_REQUIREMENT_TYPES = {
+    "initial_application", "renewal", "ce_requirement",
+    "bond", "insurance", "exam", "background_check", "fingerprinting",
+}
+VALID_FEE_FREQUENCIES = {
+    "one_time", "annual", "biennial", "triennial", "per_renewal",
+}
+
+
+@bp.route("/api/requirements", methods=["GET"])
+@module_required("licenses")
+def api_list_requirements():
+    """List state requirements with optional filters."""
+    with get_db() as conn:
+        result = list_requirements(
+            conn,
+            state_code=request.args.get("state_code"),
+            license_type=request.args.get("license_type"),
+            requirement_type=request.args.get("requirement_type"),
+            page=int(request.args.get("page", 0)),
+            per_page=int(request.args.get("per_page", 0)),
+        )
+    return jsonify(result)
+
+
+@bp.route("/api/requirements/<req_id>", methods=["GET"])
+@module_required("licenses")
+def api_get_requirement(req_id):
+    """Get a single state requirement."""
+    with get_db() as conn:
+        req = get_requirement(conn, req_id)
+    if not req:
+        return jsonify({"error": "Requirement not found"}), 404
+    return jsonify(req)
+
+
+@bp.route("/api/requirements", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_create_requirement():
+    """Create a state requirement."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "JSON body required"}), 400
+
+    # Validate required fields
+    missing = [f for f in ("state_code", "license_type", "requirement_type") if not data.get(f)]
+    if missing:
+        return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
+
+    if data["requirement_type"] not in VALID_REQUIREMENT_TYPES:
+        return jsonify({"error": f"Invalid requirement_type. Must be one of: {', '.join(sorted(VALID_REQUIREMENT_TYPES))}"}), 400
+
+    if data.get("fee_frequency") and data["fee_frequency"] not in VALID_FEE_FREQUENCIES:
+        return jsonify({"error": f"Invalid fee_frequency. Must be one of: {', '.join(sorted(VALID_FEE_FREQUENCIES))}"}), 400
+
+    if len(data.get("state_code", "")) != 2:
+        return jsonify({"error": "state_code must be a 2-letter abbreviation"}), 400
+
+    user = _get_user_id()
+    with get_db() as conn:
+        try:
+            req = create_requirement(conn, data, created_by=user)
+        except Exception as e:
+            if "UNIQUE constraint" in str(e):
+                return jsonify({"error": "Requirement already exists for this state/license_type/requirement_type"}), 409
+            raise
+    return jsonify(req), 201
+
+
+@bp.route("/api/requirements/<req_id>", methods=["PUT"])
+@module_required("licenses", min_role="editor")
+def api_update_requirement(req_id):
+    """Update a state requirement."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "JSON body required"}), 400
+
+    if data.get("requirement_type") and data["requirement_type"] not in VALID_REQUIREMENT_TYPES:
+        return jsonify({"error": f"Invalid requirement_type"}), 400
+
+    if data.get("fee_frequency") and data["fee_frequency"] not in VALID_FEE_FREQUENCIES:
+        return jsonify({"error": f"Invalid fee_frequency"}), 400
+
+    user = _get_user_id()
+    with get_db() as conn:
+        req = update_requirement(conn, req_id, data, changed_by=user)
+    if not req:
+        return jsonify({"error": "Requirement not found"}), 404
+    return jsonify(req)
+
+
+@bp.route("/api/requirements/<req_id>", methods=["DELETE"])
+@module_required("licenses", min_role="admin")
+def api_delete_requirement(req_id):
+    """Delete a state requirement (admin only)."""
+    user = _get_user_id()
+    with get_db() as conn:
+        ok = delete_requirement(conn, req_id, deleted_by=user)
+    if not ok:
+        return jsonify({"error": "Requirement not found"}), 404
+    return "", 204
+
+
+@bp.route("/api/licenses/<license_id>/compliance", methods=["GET"])
+@module_required("licenses")
+def api_license_compliance(license_id):
+    """Get compliance score for a single license."""
+    with get_db() as conn:
+        result = calculate_compliance_score(conn, license_id)
+    if result.get("error"):
+        return jsonify(result), 404
+    return jsonify(result)
+
+
+@bp.route("/api/compliance/gap-analysis", methods=["GET"])
+@module_required("licenses")
+def api_compliance_gap_analysis():
+    """Full gap analysis across all active licenses."""
+    with get_db() as conn:
+        results = get_compliance_gap_analysis(conn)
+    return jsonify({"items": results, "total": len(results)})
+
+
+@bp.route("/api/compliance/summary", methods=["GET"])
+@module_required("licenses")
+def api_compliance_summary():
+    """Compliance summary by state."""
+    with get_db() as conn:
+        summary = get_compliance_summary_by_state(conn)
+    return jsonify(summary)

@@ -265,6 +265,35 @@ CREATE INDEX IF NOT EXISTS idx_entity_registrations_state ON entity_registration
 CREATE INDEX IF NOT EXISTS idx_entity_registrations_status ON entity_registrations(status);
 CREATE INDEX IF NOT EXISTS idx_entity_registrations_expiration ON entity_registrations(expiration_date);
 
+-- State regulatory requirements (fee schedules, compliance rules per state/license type)
+CREATE TABLE IF NOT EXISTS state_requirements (
+    id                    TEXT PRIMARY KEY,
+    state_code            TEXT NOT NULL,        -- 2-letter state abbreviation
+    license_type          TEXT NOT NULL,        -- e.g. 'Contractor', 'Master Plumber'
+    requirement_type      TEXT NOT NULL
+                          CHECK (requirement_type IN (
+                              'initial_application','renewal','ce_requirement',
+                              'bond','insurance','exam','background_check','fingerprinting')),
+    description           TEXT,
+    fee_amount            REAL,
+    fee_frequency         TEXT
+                          CHECK (fee_frequency IS NULL OR fee_frequency IN (
+                              'one_time','annual','biennial','triennial','per_renewal')),
+    renewal_period_months INTEGER,              -- how often this requirement recurs
+    authority_name        TEXT,                 -- issuing/enforcing authority
+    authority_url         TEXT,                 -- link to authority website
+    effective_date        TEXT,                 -- when this requirement became effective
+    notes                 TEXT,
+    created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at            TEXT NOT NULL DEFAULT (datetime('now')),
+    created_by            TEXT,
+    UNIQUE(state_code, license_type, requirement_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_state_requirements_state ON state_requirements(state_code);
+CREATE INDEX IF NOT EXISTS idx_state_requirements_type ON state_requirements(requirement_type);
+CREATE INDEX IF NOT EXISTS idx_state_requirements_license_type ON state_requirements(license_type);
+
 -- Pre-computed expiry view for dashboard queries
 CREATE VIEW IF NOT EXISTS v_expiring_licenses AS
 SELECT

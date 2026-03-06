@@ -54,6 +54,9 @@ def run_license_migrations(conn: sqlite3.Connection):
     # Phase 10 — business entities + entity registrations
     _create_entity_tables(conn)
 
+    # Phase 11 — state regulatory requirements
+    _create_state_requirements_table(conn)
+
     conn.commit()
 
 
@@ -657,6 +660,44 @@ def _create_entity_tables(conn: sqlite3.Connection):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_registrations_state ON entity_registrations(state_code)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_registrations_status ON entity_registrations(status)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_registrations_expiration ON entity_registrations(expiration_date)")
+
+
+
+# ---------------------------------------------------------------------------
+# Phase 11 — state regulatory requirements
+# ---------------------------------------------------------------------------
+
+def _create_state_requirements_table(conn: sqlite3.Connection):
+    """Create state_requirements table for regulatory intelligence data."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS state_requirements (
+            id                    TEXT PRIMARY KEY,
+            state_code            TEXT NOT NULL,
+            license_type          TEXT NOT NULL,
+            requirement_type      TEXT NOT NULL
+                                  CHECK (requirement_type IN (
+                                      'initial_application','renewal','ce_requirement',
+                                      'bond','insurance','exam','background_check','fingerprinting')),
+            description           TEXT,
+            fee_amount            REAL,
+            fee_frequency         TEXT
+                                  CHECK (fee_frequency IS NULL OR fee_frequency IN (
+                                      'one_time','annual','biennial','triennial','per_renewal')),
+            renewal_period_months INTEGER,
+            authority_name        TEXT,
+            authority_url         TEXT,
+            effective_date        TEXT,
+            notes                 TEXT,
+            created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at            TEXT NOT NULL DEFAULT (datetime('now')),
+            created_by            TEXT,
+            UNIQUE(state_code, license_type, requirement_type)
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_state_requirements_state ON state_requirements(state_code)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_state_requirements_type ON state_requirements(requirement_type)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_state_requirements_license_type ON state_requirements(license_type)")
+
 
     # Add entity_id column to state_licenses if not present
     sl_cols = {r[1] for r in conn.execute("PRAGMA table_info(state_licenses)").fetchall()}
