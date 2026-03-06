@@ -174,6 +174,37 @@ CREATE INDEX IF NOT EXISTS idx_license_notifications_status ON license_notificat
 CREATE INDEX IF NOT EXISTS idx_license_notifications_type ON license_notifications(notification_type);
 CREATE INDEX IF NOT EXISTS idx_license_notifications_entity ON license_notifications(entity_type, entity_id);
 
+-- Documents attached to licenses (certificates, applications, bonds, etc.)
+CREATE TABLE IF NOT EXISTS license_documents (
+    id                TEXT PRIMARY KEY,
+    license_id        TEXT NOT NULL,
+    doc_type          TEXT NOT NULL
+                      CHECK (doc_type IN ('certificate','application','correspondence','receipt','bond','insurance','other')),
+    filename          TEXT NOT NULL,        -- sanitized filename on disk
+    original_filename TEXT NOT NULL,        -- user's original filename
+    file_size         INTEGER,             -- bytes
+    mime_type         TEXT,
+    description       TEXT,
+    uploaded_by       TEXT DEFAULT 'system',
+    uploaded_at       TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (license_id) REFERENCES state_licenses(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_license_documents_license ON license_documents(license_id);
+CREATE INDEX IF NOT EXISTS idx_license_documents_type ON license_documents(doc_type);
+
+-- Timestamped text notes per license
+CREATE TABLE IF NOT EXISTS license_notes (
+    id          TEXT PRIMARY KEY,
+    license_id  TEXT NOT NULL,
+    note_text   TEXT NOT NULL,
+    created_by  TEXT DEFAULT 'system',
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (license_id) REFERENCES state_licenses(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_license_notes_license ON license_notes(license_id);
+
 -- Pre-computed expiry view for dashboard queries
 CREATE VIEW IF NOT EXISTS v_expiring_licenses AS
 SELECT

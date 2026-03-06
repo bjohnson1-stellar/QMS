@@ -8,6 +8,8 @@ import base64
 import hashlib
 import json
 import math
+import mimetypes
+import os
 import sqlite3
 import uuid
 from datetime import datetime
@@ -1293,4 +1295,221 @@ def get_renewal_timeline(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
         GROUP BY strftime('%%Y-%%m', expiration_date)
         ORDER BY month
     """).fetchall()
+    return [dict(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# Documents
+# ---------------------------------------------------------------------------
+
+def save_document_file(
+    license_id: str, filename: str, file_data: bytes
+) -> str:
+    """Save a license document to data/license-documents/<license_id>/.
+
+    Returns the relative path (for storing in license_documents.filename).
+    """
+    from qms.core.config import QMS_PATHS
+
+    base = os.path.join(QMS_PATHS.data_dir, "license-documents", license_id)
+    os.makedirs(base, exist_ok=True)
+
+    # Sanitise filename
+    safe_name = "".join(
+        c if c.isalnum() or c in "._- " else "_" for c in filename
+    ).strip()
+    if not safe_name:
+        safe_name = f"document_{generate_uuid()[:8]}"
+
+    path = os.path.join(base, safe_name)
+    with open(path, "wb") as f:
+        f.write(file_data)
+
+    return f"license-documents/{license_id}/{safe_name}"
+
+
+def get_document_path(
+    conn: sqlite3.Connection, doc_id: str
+) -> Optional[str]:
+    """Resolve full filesystem path for a license document."""
+    from qms.core.config import QMS_PATHS
+
+    row = conn.execute(
+        "SELECT filename FROM license_documents WHERE id = ?",
+        (doc_id,),
+    ).fetchone()
+    if not row or not row["filename"]:
+        return None
+
+    full = os.path.join(QMS_PATHS.data_dir, row["filename"])
+    return full if os.path.isfile(full) else None
+
+
+def create_document(
+    conn: sqlite3.Connection,
+    license_id: str,
+    doc_type: str,
+    filename: str,
+    original_filename: str,
+    file_size: int = 0,
+    mime_type: Optional[str] = None,
+    description: Optional[str] = None,
+    uploaded_by: str = "system",
+) -> Dict[str, Any]:
+    """Create a license_documents record."""
+    doc_id = generate_uuid()
+    conn.execute(
+        """INSERT INTO license_documents
+           (id, license_id, doc_type, filename, original_filename,
+            file_size, mime_type, description, uploaded_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (doc_id, license_id, doc_type, filename, original_filename,
+         file_size, mime_type, description, uploaded_by),
+    )
+    _audit(conn, "license_documents", doc_id, "INSERT", changed_by=uploaded_by)
+    return get_document(conn, doc_id)
+
+
+def get_document(
+    conn: sqlite3.Connection, doc_id: str
+) -> Optional[Dict[str, Any]]:
+    """Fetch a single document by ID."""
+    row = conn.execute(
+        "SELECT * FROM license_documents WHERE id = ?", (doc_id,)
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def list_documents(
+    conn: sqlite3.Connection, license_id: str
+) -> List[Dict[str, Any]]:
+    """List all documents for a license, newest first."""
+    rows = conn.execute(
+        "SELECT * FROM license_documents WHERE license_id = ? ORDER BY uploaded_at DESC",
+        (license_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def delete_document(
+    conn: sqlite3.Connection, doc_id: str, deleted_by: str = "system"
+) -> bool:
+    """Delete a document record and its file on disk."""
+    from qms.core.config import QMS_PATHS
+
+    row = conn.execute(
+        "SELECT * FROM license_documents WHERE id = ?", (doc_id,)
+    ).fetchone()
+    if not row:
+        return False
+
+    # Remove file from disk
+    full_path = os.path.join(QMS_PATHS.data_dir, row["filename"])
+    if os.path.isfile(full_path):
+        os.remove(full_path)
+
+    conn.execute("DELETE FROM license_documents WHERE id = ?", (doc_id,))
+    _audit(conn, "license_documents", doc_id, "DELETE",
+           old_values=dict(row), changed_by=deleted_by)
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Notes
+# ---------------------------------------------------------------------------
+
+def create_note(
+    conn: sqlite3.Connection,
+    license_id: str,
+    note_text: str,
+    created_by: str = "system",
+) -> Dict[str, Any]:
+    """Create a license note."""
+    note_id = generate_uuid()
+    conn.execute(
+        """INSERT INTO license_notes (id, license_id, note_text, created_by)
+           VALUES (?, ?, ?, ?)""",
+        (note_id, license_id, note_text, created_by),
+    )
+    _audit(conn, "license_notes", note_id, "INSERT", changed_by=created_by)
+    row = conn.execute(
+        "SELECT * FROM license_notes WHERE id = ?", (note_id,)
+    ).fetchone()
+    return dict(row)
+
+
+def list_notes(
+    conn: sqlite3.Connection, license_id: str
+) -> List[Dict[str, Any]]:
+    """List all notes for a license, newest first."""
+    rows = conn.execute(
+        "SELECT * FROM license_notes WHERE license_id = ? ORDER BY created_at DESC",
+        (license_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def delete_note(
+    conn: sqlite3.Connection, note_id: str, deleted_by: str = "system"
+) -> bool:
+    """Delete a note by ID."""
+    row = conn.execute(
+        "SELECT * FROM license_notes WHERE id = ?", (note_id,)
+    ).fetchone()
+    if not row:
+        return False
+    conn.execute("DELETE FROM license_notes WHERE id = ?", (note_id,))
+    _audit(conn, "license_notes", note_id, "DELETE",
+           old_values=dict(row), changed_by=deleted_by)
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Activity Feed
+# ---------------------------------------------------------------------------
+
+def get_activity_feed(
+    conn: sqlite3.Connection, license_id: str, limit: int = 50
+) -> List[Dict[str, Any]]:
+    """Unified activity feed merging events, notes, and documents.
+
+    Returns list of dicts sorted by timestamp descending.
+    """
+    rows = conn.execute("""
+        SELECT
+            'event' AS activity_type,
+            created_at AS timestamp,
+            event_type || COALESCE(': ' || notes, '') AS description,
+            created_by,
+            id AS source_id
+        FROM license_events
+        WHERE license_id = ?
+
+        UNION ALL
+
+        SELECT
+            'note' AS activity_type,
+            created_at AS timestamp,
+            CASE WHEN LENGTH(note_text) > 200
+                 THEN SUBSTR(note_text, 1, 200) || '...'
+                 ELSE note_text END AS description,
+            created_by,
+            id AS source_id
+        FROM license_notes
+        WHERE license_id = ?
+
+        UNION ALL
+
+        SELECT
+            'document' AS activity_type,
+            uploaded_at AS timestamp,
+            'Uploaded ' || doc_type || ': ' || original_filename AS description,
+            uploaded_by AS created_by,
+            id AS source_id
+        FROM license_documents
+        WHERE license_id = ?
+
+        ORDER BY timestamp DESC
+        LIMIT ?
+    """, (license_id, license_id, license_id, limit)).fetchall()
     return [dict(r) for r in rows]

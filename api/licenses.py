@@ -27,16 +27,23 @@ from qms.licenses.db import (
     batch_get_license_scopes,
     create_ce_credit,
     create_ce_requirement,
+    create_document,
     create_event,
     create_license,
+    create_note,
     create_scope_category,
     delete_ce_credit,
     delete_ce_requirement,
+    delete_document,
     delete_license,
+    delete_note,
+    get_activity_feed,
     get_ce_compliance_report,
     get_ce_summary,
     get_certificate_path,
     get_compliance_dashboard_data,
+    get_document,
+    get_document_path,
     get_expiring_licenses,
     get_license,
     get_license_board,
@@ -49,11 +56,14 @@ from qms.licenses.db import (
     get_state_map_data,
     list_ce_credits,
     list_ce_requirements,
+    list_documents,
     list_licenses,
     list_licenses_for_state,
+    list_notes,
     list_scope_categories,
     renew_license,
     save_certificate_file,
+    save_document_file,
     set_license_scopes,
     update_ce_credit,
     update_ce_requirement,
@@ -1283,3 +1293,158 @@ def api_generate_notifications():
     with get_db() as conn:
         stats = generate_all_notifications(conn, send_webhook=send_webhook)
     return jsonify(stats)
+
+
+# ---------------------------------------------------------------------------
+# Documents
+# ---------------------------------------------------------------------------
+
+VALID_DOC_TYPES = {"certificate", "application", "correspondence",
+                   "receipt", "bond", "insurance", "other"}
+
+
+@bp.route("/api/licenses/<license_id>/documents", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_upload_documents(license_id):
+    """Upload one or more documents for a license (multipart)."""
+    import mimetypes as _mt
+
+    with get_db() as conn:
+        lic = get_license(conn, license_id)
+    if not lic:
+        return jsonify({"error": "License not found"}), 404
+
+    files = request.files.getlist("files")
+    if not files or all(f.filename == "" for f in files):
+        return jsonify({"error": "No files provided"}), 400
+
+    doc_type = request.form.get("doc_type", "other")
+    if doc_type not in VALID_DOC_TYPES:
+        return jsonify({"error": f"Invalid doc_type. Must be one of: {sorted(VALID_DOC_TYPES)}"}), 400
+
+    description = request.form.get("description", "").strip() or None
+    user = _get_user_id()
+    created = []
+
+    with get_db() as conn:
+        for f in files:
+            if not f.filename:
+                continue
+            data = f.read()
+            mime = f.content_type or _mt.guess_type(f.filename)[0] or "application/octet-stream"
+            rel_path = save_document_file(license_id, f.filename, data)
+            doc = create_document(
+                conn, license_id, doc_type,
+                filename=rel_path,
+                original_filename=f.filename,
+                file_size=len(data),
+                mime_type=mime,
+                description=description,
+                uploaded_by=user,
+            )
+            created.append(doc)
+
+    return jsonify(created), 201
+
+
+@bp.route("/api/licenses/<license_id>/documents", methods=["GET"])
+@module_required("licenses", min_role="viewer")
+def api_list_documents(license_id):
+    """List all documents for a license."""
+    with get_db() as conn:
+        docs = list_documents(conn, license_id)
+    return jsonify(docs)
+
+
+@bp.route("/api/documents/<doc_id>/download", methods=["GET"])
+@module_required("licenses", min_role="viewer")
+def api_download_document(doc_id):
+    """Download a document file."""
+    with get_db() as conn:
+        doc = get_document(conn, doc_id)
+        if not doc:
+            return jsonify({"error": "Document not found"}), 404
+        full_path = get_document_path(conn, doc_id)
+
+    if not full_path:
+        return jsonify({"error": "File not found on disk"}), 404
+
+    return send_file(
+        full_path,
+        mimetype=doc.get("mime_type", "application/octet-stream"),
+        as_attachment=True,
+        download_name=doc["original_filename"],
+    )
+
+
+@bp.route("/api/documents/<doc_id>", methods=["DELETE"])
+@module_required("licenses", min_role="admin")
+def api_delete_document(doc_id):
+    """Delete a document (admin only)."""
+    user = _get_user_id()
+    with get_db() as conn:
+        ok = delete_document(conn, doc_id, deleted_by=user)
+    if not ok:
+        return jsonify({"error": "Document not found"}), 404
+    return "", 204
+
+
+# ---------------------------------------------------------------------------
+# Notes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/licenses/<license_id>/notes", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_create_note(license_id):
+    """Create a note for a license."""
+    with get_db() as conn:
+        lic = get_license(conn, license_id)
+    if not lic:
+        return jsonify({"error": "License not found"}), 404
+
+    data = request.get_json(force=True)
+    note_text = (data.get("note_text") or "").strip()
+    if not note_text:
+        return jsonify({"error": "note_text is required"}), 400
+    if len(note_text) > 2000:
+        return jsonify({"error": "note_text must be 2000 characters or fewer"}), 400
+
+    user = _get_user_id()
+    with get_db() as conn:
+        note = create_note(conn, license_id, note_text, created_by=user)
+    return jsonify(note), 201
+
+
+@bp.route("/api/licenses/<license_id>/notes", methods=["GET"])
+@module_required("licenses", min_role="viewer")
+def api_list_notes(license_id):
+    """List all notes for a license."""
+    with get_db() as conn:
+        notes = list_notes(conn, license_id)
+    return jsonify(notes)
+
+
+@bp.route("/api/notes/<note_id>", methods=["DELETE"])
+@module_required("licenses", min_role="admin")
+def api_delete_note(note_id):
+    """Delete a note (admin only)."""
+    user = _get_user_id()
+    with get_db() as conn:
+        ok = delete_note(conn, note_id, deleted_by=user)
+    if not ok:
+        return jsonify({"error": "Note not found"}), 404
+    return "", 204
+
+
+# ---------------------------------------------------------------------------
+# Activity Feed
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/licenses/<license_id>/activity", methods=["GET"])
+@module_required("licenses", min_role="viewer")
+def api_activity_feed(license_id):
+    """Unified activity feed: events + notes + documents."""
+    limit = min(int(request.args.get("limit", 50)), 200)
+    with get_db() as conn:
+        feed = get_activity_feed(conn, license_id, limit=limit)
+    return jsonify(feed)
