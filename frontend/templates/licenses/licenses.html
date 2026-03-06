@@ -341,8 +341,8 @@
         document.getElementById('filterState').innerHTML = '<option value="">All States</option>' + stateOpts;
 
         const [licRes, statRes, empRes, mapRes, expRes, timeRes, dashRes] = await Promise.all([
-            fetch(API + '/licenses').then(r => r.json()),
-            fetch(API + '/licenses/stats').then(r => r.json()),
+            fetch(API + '/licenses').then(r => r.json()).catch(() => ({items:[],total:0,page:1,per_page:50,pages:0})),
+            fetch(API + '/licenses/stats').then(r => r.json()).catch(() => ({total:0,active:0,expiring_90:0,with_employee:0})),
             fetch(API + '/employees/lookup').then(r => r.json()).catch(() => []),
             fetch(API + '/map-data').then(r => r.json()).catch(() => []),
             fetch(API + '/expiring').then(r => r.json()).catch(() => ({critical:[],warning:[],upcoming:[]})),
