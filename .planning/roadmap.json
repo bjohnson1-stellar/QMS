@@ -20,11 +20,11 @@
           "tags": ["extraction", "welding", "batch"]
         },
         {
-          "title": "v0.2 License Compliance: Phase 7 — Renewal Workflow & Events",
-          "desc": "Transform static expiration dates into active renewal workflow. license_events table, event types (issued/renewed/amended/suspended/revoked/expired/reinstated), fee tracking, auto-expire job, renewal initiation workflow, event timeline on detail page.",
+          "title": "v0.2 License Compliance: Phase 8 — Notifications & Task Management",
+          "desc": "Proactive alerts for expiring licenses, CE deadlines, and renewal tasks. Clone welding notification pattern. license_notification_rules + license_notifications tables, CLI generator, Teams webhook integration, task queue UI.",
           "module": "licenses",
           "priority": "high",
-          "tags": ["licenses", "compliance", "renewal", "events", "workflow"]
+          "tags": ["licenses", "compliance", "notifications", "teams", "tasks"]
         }
       ]
     },
@@ -75,6 +75,14 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "v0.2 Phase 7 — Renewal Workflow & Events (2 plans)",
+          "desc": "license_events table with 7 event types, fee tracking, auto-expire CLI, renewal API endpoint, event timeline UI on detail page, renewal modal, add-event modal. 25 tests.",
+          "module": "licenses",
+          "priority": "high",
+          "tags": ["licenses", "compliance", "renewal", "events", "workflow", "ui"],
+          "completed": "2026-03-06"
+        },
         {
           "title": "v0.1 Phase 4 Plan 02 — Voice Transcription + Capture Review UI",
           "desc": "OpenAI Whisper voice transcription, Claude transcript analysis, capture review page at /quality/captures with inline editing. Completes phone-to-database pipeline (photos + voice notes). 9 new tests (26 total capture tests).",

@@ -85,7 +85,7 @@ Full execution log: see git history and `.paul/phases/01-*/` through `.paul/phas
 | Event timeline between Portal Creds and CE | v0.2 Phase 7 | Groups license lifecycle data logically |
 
 ### Git State
-Last commit: `14a6415` (Plan 07-01 license events + auto-expire + renewal)
+Last commit: `0b864d0` (Phase 7 Renewal Workflow & Events complete)
 Branch: main
 
 ### Deferred Issues
