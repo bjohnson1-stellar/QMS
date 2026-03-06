@@ -51,6 +51,9 @@ def run_license_migrations(conn: sqlite3.Connection):
     # Phase 8 — notification rules + notifications
     _create_notification_tables(conn)
 
+    # Phase 10 — business entities + entity registrations
+    _create_entity_tables(conn)
+
     conn.commit()
 
 
@@ -579,3 +582,102 @@ def _seed_ce_requirements(conn: sqlite3.Connection):
                VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 'system')""",
             (_gen_id(), state, lic_type, hours, period, notes),
         )
+
+
+# ---------------------------------------------------------------------------
+# Phase 10 — business entities + entity registrations
+# ---------------------------------------------------------------------------
+
+def _create_entity_tables(conn: sqlite3.Connection):
+    """Create business_entities and entity_registrations tables.
+
+    Also adds entity_id FK column to state_licenses and auto-links
+    existing licenses based on business_entity name.
+    """
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS business_entities (
+            id                      TEXT PRIMARY KEY,
+            name                    TEXT NOT NULL,
+            entity_type             TEXT NOT NULL DEFAULT 'corporation'
+                                    CHECK (entity_type IN (
+                                        'corporation','llc','partnership',
+                                        'sole_proprietorship','subsidiary','dba','branch')),
+            parent_id               TEXT,
+            ein                     TEXT,
+            state_of_incorporation  TEXT,
+            address                 TEXT,
+            city                    TEXT,
+            state_code              TEXT,
+            zip_code                TEXT,
+            phone                   TEXT,
+            website                 TEXT,
+            notes                   TEXT,
+            status                  TEXT NOT NULL DEFAULT 'active'
+                                    CHECK (status IN ('active','inactive','dissolved')),
+            created_at              TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at              TEXT NOT NULL DEFAULT (datetime('now')),
+            created_by              TEXT,
+            FOREIGN KEY (parent_id) REFERENCES business_entities(id)
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_business_entities_parent ON business_entities(parent_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_business_entities_type ON business_entities(entity_type)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_business_entities_status ON business_entities(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_business_entities_state ON business_entities(state_of_incorporation)")
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS entity_registrations (
+            id                  TEXT PRIMARY KEY,
+            entity_id           TEXT NOT NULL,
+            registration_type   TEXT NOT NULL
+                                CHECK (registration_type IN (
+                                    'secretary_of_state','dbe','mbe','wbe','sbe','hub','sdvosb','other')),
+            state_code          TEXT NOT NULL,
+            registration_number TEXT,
+            issuing_authority   TEXT,
+            issued_date         TEXT,
+            expiration_date     TEXT,
+            status              TEXT NOT NULL DEFAULT 'active'
+                                CHECK (status IN ('active','expired','pending','revoked','suspended')),
+            filing_frequency    TEXT
+                                CHECK (filing_frequency IS NULL OR filing_frequency IN (
+                                    'annual','biennial','triennial','one_time')),
+            next_filing_date    TEXT,
+            fee_amount          REAL,
+            notes               TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            created_by          TEXT,
+            UNIQUE(entity_id, registration_type, state_code),
+            FOREIGN KEY (entity_id) REFERENCES business_entities(id) ON DELETE CASCADE
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_registrations_entity ON entity_registrations(entity_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_registrations_type ON entity_registrations(registration_type)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_registrations_state ON entity_registrations(state_code)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_registrations_status ON entity_registrations(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_entity_registrations_expiration ON entity_registrations(expiration_date)")
+
+    # Add entity_id column to state_licenses if not present
+    sl_cols = {r[1] for r in conn.execute("PRAGMA table_info(state_licenses)").fetchall()}
+    if "entity_id" not in sl_cols:
+        conn.execute("ALTER TABLE state_licenses ADD COLUMN entity_id TEXT")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_state_licenses_entity ON state_licenses(entity_id)")
+
+        # Auto-link: create entity records from distinct business_entity names
+        distinct_entities = conn.execute(
+            "SELECT DISTINCT business_entity FROM state_licenses "
+            "WHERE business_entity IS NOT NULL AND TRIM(business_entity) != ''"
+        ).fetchall()
+
+        for (name,) in distinct_entities:
+            entity_id = _gen_id()
+            conn.execute(
+                """INSERT INTO business_entities (id, name, entity_type, created_by)
+                   VALUES (?, ?, 'corporation', 'migration')""",
+                (entity_id, name.strip()),
+            )
+            conn.execute(
+                "UPDATE state_licenses SET entity_id = ? WHERE business_entity = ?",
+                (entity_id, name),
+            )

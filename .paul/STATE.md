@@ -10,18 +10,18 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.2 License Compliance Platform
-Phase: 10 of 13 (Entity Registration Tracking) — Not started
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-03-06 — Phase 9 complete, transitioned to Phase 10
+Phase: 10 of 13 (Entity Registration Tracking) — In Progress
+Plan: 10-01 complete, Plan 02 needed (UI)
+Status: Ready for next PLAN
+Last activity: 2026-03-06 — Completed 10-01 (entity backend)
 
 Progress:
-- v0.2 License Compliance Platform: [█████░░░░░] 50%
+- v0.2 License Compliance Platform: [█████░░░░░] 53%
   - Phase 6: Foundation Hardening [██████████] 100% (3/3 plans complete)
   - Phase 7: Renewal Workflow & Events [██████████] 100% (2/2 plans complete)
   - Phase 8: Notifications & Task Management [██████████] 100% (2/2 plans complete)
   - Phase 9: Document Management & Activity Log [██████████] 100% (2/2 plans complete)
-  - Phase 10: Entity Registration Tracking [░░░░░░░░░░] 0%
+  - Phase 10: Entity Registration Tracking [█████░░░░░] 50% (1/2 plans complete)
   - Phase 11: Regulatory Intelligence Database [░░░░░░░░░░] 0%
   - Phase 12: Advanced CE & Multi-Credential [░░░░░░░░░░] 0%
   - Phase 13: Integrations & Automation [░░░░░░░░░░] 0%
@@ -52,6 +52,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 08-02 | Complete | Teams webhook, notification API, task queue UI | 2026-03-06 |
 | 09-01 | Complete | Documents + notes backend, activity feed API | 2026-03-06 |
 | 09-02 | Complete | Documents/Notes/Activity UI on detail page | 2026-03-06 |
+| 10-01 | Complete | Entity schema, DB functions, API endpoints | 2026-03-06 |
 
 **Pre-milestone work (completed before PAUL tracking):**
 - Licenses Phase 1: Base CRUD module, US state SVG map, CSV import, renewal timeline
@@ -87,9 +88,11 @@ Full execution log: see git history and `.paul/phases/01-*/` through `.paul/phas
 | Append-only events (no edit/delete) | v0.2 Phase 7 | Audit integrity, matches _audit() pattern |
 | Fetch-based dynamic sections for doc/note CRUD | v0.2 Phase 9 | No page reload, snappy UX |
 | UNION ALL activity feed (events+notes+docs) | v0.2 Phase 9 | Single query, easy to extend |
+| Keep business_entity TEXT column | v0.2 Phase 10 | Backward compat; entity_id is canonical FK |
+| Unlink licenses on entity delete (NULL) | v0.2 Phase 10 | Safer than blocking; licenses remain valid |
 
 ### Git State
-Last commit: `52bf92a` (Phase 9 Plan 01 — document management & notes backend)
+Last commit: `fd243a7` (Phase 9 complete — document management & activity feed UI)
 Branch: main
 
 ### Deferred Issues
@@ -106,12 +109,12 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Phase 9 complete, ready to plan Phase 10
-Next action: /paul:plan for Phase 10
-Resume file: .paul/ROADMAP.md
+Stopped at: Plan 10-01 complete
+Next action: /paul:plan for Phase 10 Plan 02 (Entity UI)
+Resume file: .paul/phases/10-entity-registration/10-01-SUMMARY.md
 Resume context:
-- Phase 9 complete: document management (backend + UI), notes, unified activity feed
-- Phase 10: Entity Registration Tracking (business_entities, entity_registrations, hierarchy)
+- Plan 10-01 complete: business_entities + entity_registrations backend (schema, 13 DB functions, 11 API endpoints)
+- Plan 10-02 needed: Entity list page, entity detail page, registration management UI, license linking UI
 
 ---
 *STATE.md — Updated after every significant action*

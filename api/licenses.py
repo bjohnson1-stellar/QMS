@@ -28,15 +28,19 @@ from qms.licenses.db import (
     create_ce_credit,
     create_ce_requirement,
     create_document,
+    create_entity,
     create_event,
     create_license,
     create_note,
+    create_registration,
     create_scope_category,
     delete_ce_credit,
     delete_ce_requirement,
     delete_document,
+    delete_entity,
     delete_license,
     delete_note,
+    delete_registration,
     get_activity_feed,
     get_ce_compliance_report,
     get_ce_summary,
@@ -44,12 +48,16 @@ from qms.licenses.db import (
     get_compliance_dashboard_data,
     get_document,
     get_document_path,
+    get_entity,
+    get_entity_hierarchy,
+    get_entity_summary,
     get_expiring_licenses,
     get_license,
     get_license_board,
     get_license_events,
     get_license_scopes,
     get_license_stats,
+    get_registration,
     get_renewal_timeline,
     get_scope_coverage_gaps,
     get_state_license_summary,
@@ -57,9 +65,11 @@ from qms.licenses.db import (
     list_ce_credits,
     list_ce_requirements,
     list_documents,
+    list_entities,
     list_licenses,
     list_licenses_for_state,
     list_notes,
+    list_registrations,
     list_scope_categories,
     renew_license,
     save_certificate_file,
@@ -67,13 +77,20 @@ from qms.licenses.db import (
     set_license_scopes,
     update_ce_credit,
     update_ce_requirement,
+    update_entity,
     update_license,
+    update_registration,
     upsert_license_board,
     delete_portal_credential,
     get_portal_credential,
     upsert_portal_credential,
+    VALID_ENTITY_TYPES,
+    VALID_ENTITY_STATUSES,
     VALID_EVENT_TYPES,
     VALID_FEE_TYPES,
+    VALID_FILING_FREQUENCIES,
+    VALID_REGISTRATION_TYPES,
+    VALID_REGISTRATION_STATUSES,
 )
 
 bp = Blueprint("licenses", __name__, url_prefix="/licenses")
@@ -1448,3 +1465,266 @@ def api_activity_feed(license_id):
     with get_db() as conn:
         feed = get_activity_feed(conn, license_id, limit=limit)
     return jsonify(feed)
+
+
+# ---------------------------------------------------------------------------
+# Business Entities
+# ---------------------------------------------------------------------------
+
+def _validate_entity_fields(data: dict, require_all: bool = False) -> list[str]:
+    """Validate entity create/update fields."""
+    errors: list[str] = []
+
+    if require_all:
+        if not data.get("name"):
+            errors.append("Missing required field: name")
+
+    if "name" in data and data.get("name"):
+        data["name"] = str(data["name"]).strip()
+        if len(data["name"]) > 200:
+            errors.append("name exceeds 200 characters")
+
+    if "entity_type" in data and data.get("entity_type"):
+        if data["entity_type"] not in VALID_ENTITY_TYPES:
+            errors.append(f"Invalid entity_type: must be one of {sorted(VALID_ENTITY_TYPES)}")
+
+    if "status" in data and data.get("status"):
+        if data["status"] not in VALID_ENTITY_STATUSES:
+            errors.append(f"Invalid status: must be one of {sorted(VALID_ENTITY_STATUSES)}")
+
+    if "state_code" in data and data.get("state_code"):
+        sc = str(data["state_code"]).strip().upper()
+        data["state_code"] = sc
+        if sc not in _STATE_NAMES:
+            errors.append(f"Invalid state_code: {sc}")
+
+    if "state_of_incorporation" in data and data.get("state_of_incorporation"):
+        sc = str(data["state_of_incorporation"]).strip().upper()
+        data["state_of_incorporation"] = sc
+        if sc not in _STATE_NAMES:
+            errors.append(f"Invalid state_of_incorporation: {sc}")
+
+    return errors
+
+
+def _validate_registration_fields(data: dict, require_all: bool = False) -> list[str]:
+    """Validate registration create/update fields."""
+    errors: list[str] = []
+
+    if require_all:
+        for f in ("registration_type", "state_code"):
+            if not data.get(f):
+                errors.append(f"Missing required field: {f}")
+
+    if "registration_type" in data and data.get("registration_type"):
+        if data["registration_type"] not in VALID_REGISTRATION_TYPES:
+            errors.append(f"Invalid registration_type: must be one of {sorted(VALID_REGISTRATION_TYPES)}")
+
+    if "status" in data and data.get("status"):
+        if data["status"] not in VALID_REGISTRATION_STATUSES:
+            errors.append(f"Invalid status: must be one of {sorted(VALID_REGISTRATION_STATUSES)}")
+
+    if "state_code" in data and data.get("state_code"):
+        sc = str(data["state_code"]).strip().upper()
+        data["state_code"] = sc
+        if sc not in _STATE_NAMES:
+            errors.append(f"Invalid state_code: {sc}")
+
+    if "filing_frequency" in data and data.get("filing_frequency"):
+        if data["filing_frequency"] not in VALID_FILING_FREQUENCIES:
+            errors.append(f"Invalid filing_frequency: must be one of {sorted(VALID_FILING_FREQUENCIES)}")
+
+    for df in ("issued_date", "expiration_date", "next_filing_date"):
+        if df in data and data.get(df):
+            err = _validate_date(data[df], df)
+            if err:
+                errors.append(err)
+
+    if "fee_amount" in data and data.get("fee_amount") is not None:
+        try:
+            f = float(data["fee_amount"])
+            if f < 0:
+                errors.append("fee_amount must be non-negative")
+        except (ValueError, TypeError):
+            errors.append("fee_amount must be a number")
+
+    return errors
+
+
+@bp.route("/api/licenses/entities/summary", methods=["GET"])
+@module_required("licenses", min_role="viewer")
+def api_entity_summary():
+    """Entity counts and registration stats."""
+    with get_db() as conn:
+        summary = get_entity_summary(conn)
+    return jsonify(summary)
+
+
+@bp.route("/api/licenses/entities", methods=["GET"])
+@module_required("licenses", min_role="viewer")
+def api_list_entities():
+    """List business entities with pagination."""
+    page = max(1, int(request.args.get("page", 1)))
+    per_page = min(int(request.args.get("per_page", 25)), 100)
+    search = request.args.get("search")
+    entity_type = request.args.get("entity_type")
+    status = request.args.get("status")
+    parent_id = request.args.get("parent_id")
+
+    with get_db() as conn:
+        result = list_entities(
+            conn, search=search, entity_type=entity_type,
+            status=status, parent_id=parent_id,
+            page=page, per_page=per_page,
+        )
+    return jsonify(result)
+
+
+@bp.route("/api/licenses/entities", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_create_entity():
+    """Create a new business entity."""
+    data = request.get_json(force=True, silent=True) or {}
+
+    errors = _validate_entity_fields(data, require_all=True)
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    user = _get_user_id()
+    try:
+        with get_db() as conn:
+            entity = create_entity(
+                conn,
+                name=data["name"],
+                entity_type=data.get("entity_type", "corporation"),
+                parent_id=data.get("parent_id"),
+                changed_by=user,
+                **{k: v for k, v in data.items()
+                   if k not in ("name", "entity_type", "parent_id")},
+            )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify(entity), 201
+
+
+@bp.route("/api/licenses/entities/<entity_id>", methods=["GET"])
+@module_required("licenses", min_role="viewer")
+def api_get_entity(entity_id):
+    """Get a single entity with registrations and linked licenses."""
+    with get_db() as conn:
+        entity = get_entity(conn, entity_id)
+    if not entity:
+        return jsonify({"error": "Entity not found"}), 404
+    return jsonify(entity)
+
+
+@bp.route("/api/licenses/entities/<entity_id>", methods=["PUT"])
+@module_required("licenses", min_role="editor")
+def api_update_entity(entity_id):
+    """Update a business entity."""
+    data = request.get_json(force=True, silent=True) or {}
+
+    errors = _validate_entity_fields(data)
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    user = _get_user_id()
+    with get_db() as conn:
+        entity = update_entity(conn, entity_id, changed_by=user, **data)
+    if not entity:
+        return jsonify({"error": "Entity not found"}), 404
+    return jsonify(entity)
+
+
+@bp.route("/api/licenses/entities/<entity_id>", methods=["DELETE"])
+@module_required("licenses", min_role="admin")
+def api_delete_entity(entity_id):
+    """Delete a business entity (admin only). Unlinks licenses, cascades registrations."""
+    user = _get_user_id()
+    with get_db() as conn:
+        ok = delete_entity(conn, entity_id, changed_by=user)
+    if not ok:
+        return jsonify({"error": "Entity not found"}), 404
+    return "", 204
+
+
+@bp.route("/api/licenses/entities/hierarchy", methods=["GET"])
+@module_required("licenses", min_role="viewer")
+def api_entity_hierarchy():
+    """Get entity hierarchy tree."""
+    entity_id = request.args.get("entity_id")
+    with get_db() as conn:
+        tree = get_entity_hierarchy(conn, entity_id=entity_id)
+    return jsonify(tree)
+
+
+# ---------------------------------------------------------------------------
+# Entity Registrations
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/licenses/entities/<entity_id>/registrations", methods=["GET"])
+@module_required("licenses", min_role="viewer")
+def api_list_entity_registrations(entity_id):
+    """List registrations for an entity."""
+    with get_db() as conn:
+        regs = list_registrations(conn, entity_id=entity_id)
+    return jsonify(regs)
+
+
+@bp.route("/api/licenses/entities/<entity_id>/registrations", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_create_registration(entity_id):
+    """Create a new registration for an entity."""
+    data = request.get_json(force=True, silent=True) or {}
+
+    errors = _validate_registration_fields(data, require_all=True)
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    user = _get_user_id()
+    try:
+        with get_db() as conn:
+            reg = create_registration(
+                conn,
+                entity_id=entity_id,
+                registration_type=data["registration_type"],
+                state_code=data["state_code"],
+                changed_by=user,
+                **{k: v for k, v in data.items()
+                   if k not in ("registration_type", "state_code")},
+            )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify(reg), 201
+
+
+@bp.route("/api/licenses/entities/<entity_id>/registrations/<reg_id>", methods=["PUT"])
+@module_required("licenses", min_role="editor")
+def api_update_registration(entity_id, reg_id):
+    """Update an entity registration."""
+    data = request.get_json(force=True, silent=True) or {}
+
+    errors = _validate_registration_fields(data)
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    user = _get_user_id()
+    with get_db() as conn:
+        reg = update_registration(conn, reg_id, changed_by=user, **data)
+    if not reg:
+        return jsonify({"error": "Registration not found"}), 404
+    return jsonify(reg)
+
+
+@bp.route("/api/licenses/entities/<entity_id>/registrations/<reg_id>", methods=["DELETE"])
+@module_required("licenses", min_role="admin")
+def api_delete_registration(entity_id, reg_id):
+    """Delete an entity registration (admin only)."""
+    user = _get_user_id()
+    with get_db() as conn:
+        ok = delete_registration(conn, reg_id, changed_by=user)
+    if not ok:
+        return jsonify({"error": "Registration not found"}), 404
+    return "", 204

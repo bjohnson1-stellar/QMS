@@ -194,7 +194,7 @@ def update_license(
         "holder_type", "employee_id", "business_entity", "state_code",
         "license_type", "license_number", "holder_name", "issued_date",
         "expiration_date", "reciprocal_state", "association_date",
-        "disassociation_date", "status", "notes",
+        "disassociation_date", "status", "notes", "entity_id",
     }
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
@@ -1513,3 +1513,466 @@ def get_activity_feed(
         LIMIT ?
     """, (license_id, license_id, license_id, limit)).fetchall()
     return [dict(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# Business Entities
+# ---------------------------------------------------------------------------
+
+VALID_ENTITY_TYPES = {
+    "corporation", "llc", "partnership", "sole_proprietorship",
+    "subsidiary", "dba", "branch",
+}
+VALID_ENTITY_STATUSES = {"active", "inactive", "dissolved"}
+
+
+def list_entities(
+    conn: sqlite3.Connection,
+    *,
+    search: Optional[str] = None,
+    entity_type: Optional[str] = None,
+    status: Optional[str] = None,
+    parent_id: Optional[str] = None,
+    page: int = 1,
+    per_page: int = 25,
+) -> Dict[str, Any]:
+    """List business entities with counts. Returns paginated dict."""
+    clauses: list = []
+    params: list = []
+
+    if search:
+        clauses.append("(be.name LIKE ? OR be.ein LIKE ?)")
+        params.extend([f"%{search}%", f"%{search}%"])
+    if entity_type:
+        clauses.append("be.entity_type = ?")
+        params.append(entity_type)
+    if status:
+        clauses.append("be.status = ?")
+        params.append(status)
+    if parent_id is not None:
+        if parent_id == "":
+            clauses.append("be.parent_id IS NULL")
+        else:
+            clauses.append("be.parent_id = ?")
+            params.append(parent_id)
+
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+
+    total = conn.execute(
+        f"SELECT COUNT(*) FROM business_entities be{where}", params
+    ).fetchone()[0]
+
+    pages = max(1, math.ceil(total / per_page)) if per_page > 0 else 1
+    offset = (page - 1) * per_page if per_page > 0 else 0
+
+    rows = conn.execute(f"""
+        SELECT be.*,
+            (SELECT COUNT(*) FROM business_entities c WHERE c.parent_id = be.id) AS child_count,
+            (SELECT COUNT(*) FROM state_licenses sl WHERE sl.entity_id = be.id) AS license_count,
+            (SELECT COUNT(*) FROM entity_registrations er WHERE er.entity_id = be.id) AS registration_count
+        FROM business_entities be
+        {where}
+        ORDER BY be.name
+        LIMIT ? OFFSET ?
+    """, params + [per_page, offset]).fetchall()
+
+    return {
+        "items": [dict(r) for r in rows],
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": pages,
+    }
+
+
+def get_entity(conn: sqlite3.Connection, entity_id: str) -> Optional[Dict[str, Any]]:
+    """Get a single entity with children, registrations, and linked licenses."""
+    row = conn.execute(
+        "SELECT * FROM business_entities WHERE id = ?", (entity_id,)
+    ).fetchone()
+    if not row:
+        return None
+
+    entity = dict(row)
+
+    # Children
+    children = conn.execute(
+        "SELECT id, name, entity_type, status FROM business_entities WHERE parent_id = ? ORDER BY name",
+        (entity_id,),
+    ).fetchall()
+    entity["children"] = [dict(c) for c in children]
+
+    # Registrations with days_until_expiry
+    regs = conn.execute("""
+        SELECT er.*,
+            CASE
+                WHEN er.expiration_date IS NULL THEN NULL
+                ELSE CAST(julianday(er.expiration_date) - julianday('now') AS INTEGER)
+            END AS days_until_expiry
+        FROM entity_registrations er
+        WHERE er.entity_id = ?
+        ORDER BY er.state_code, er.registration_type
+    """, (entity_id,)).fetchall()
+    entity["registrations"] = [dict(r) for r in regs]
+
+    # Linked licenses (summary)
+    licenses = conn.execute("""
+        SELECT id, license_type, license_number, state_code, holder_name, status, expiration_date
+        FROM state_licenses
+        WHERE entity_id = ?
+        ORDER BY state_code, license_type
+    """, (entity_id,)).fetchall()
+    entity["licenses"] = [dict(l) for l in licenses]
+
+    # Parent info
+    if entity.get("parent_id"):
+        parent = conn.execute(
+            "SELECT id, name, entity_type FROM business_entities WHERE id = ?",
+            (entity["parent_id"],),
+        ).fetchone()
+        entity["parent"] = dict(parent) if parent else None
+    else:
+        entity["parent"] = None
+
+    return entity
+
+
+def create_entity(
+    conn: sqlite3.Connection,
+    name: str,
+    entity_type: str = "corporation",
+    parent_id: Optional[str] = None,
+    changed_by: str = "system",
+    **kwargs,
+) -> Dict[str, Any]:
+    """Create a new business entity."""
+    entity_id = generate_uuid()
+    now = datetime.utcnow().isoformat()
+
+    if parent_id:
+        parent = conn.execute(
+            "SELECT id FROM business_entities WHERE id = ?", (parent_id,)
+        ).fetchone()
+        if not parent:
+            raise ValueError(f"Parent entity {parent_id} not found")
+
+    conn.execute(
+        """INSERT INTO business_entities
+           (id, name, entity_type, parent_id, ein, state_of_incorporation,
+            address, city, state_code, zip_code, phone, website, notes,
+            status, created_at, updated_at, created_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            entity_id, name.strip(), entity_type, parent_id,
+            kwargs.get("ein"), kwargs.get("state_of_incorporation"),
+            kwargs.get("address"), kwargs.get("city"),
+            kwargs.get("state_code"), kwargs.get("zip_code"),
+            kwargs.get("phone"), kwargs.get("website"),
+            kwargs.get("notes"),
+            kwargs.get("status", "active"),
+            now, now, changed_by,
+        ),
+    )
+    _audit(conn, "business_entity", entity_id, "created",
+           new_values={"name": name, "entity_type": entity_type},
+           changed_by=changed_by)
+    conn.commit()
+    return get_entity(conn, entity_id)
+
+
+def update_entity(
+    conn: sqlite3.Connection, entity_id: str, changed_by: str = "system", **kwargs
+) -> Optional[Dict[str, Any]]:
+    """Partial update of a business entity."""
+    allowed = {
+        "name", "entity_type", "parent_id", "ein", "state_of_incorporation",
+        "address", "city", "state_code", "zip_code", "phone", "website",
+        "notes", "status",
+    }
+    updates = {k: v for k, v in kwargs.items() if k in allowed}
+    if not updates:
+        return get_entity(conn, entity_id)
+
+    old = conn.execute(
+        "SELECT * FROM business_entities WHERE id = ?", (entity_id,)
+    ).fetchone()
+    if not old:
+        return None
+    old_dict = dict(old)
+    old_snapshot = {k: old_dict.get(k) for k in updates}
+
+    updates["updated_at"] = datetime.utcnow().isoformat()
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    params = list(updates.values()) + [entity_id]
+
+    conn.execute(f"UPDATE business_entities SET {set_clause} WHERE id = ?", params)
+    _audit(conn, "business_entity", entity_id, "updated",
+           old_values=old_snapshot,
+           new_values={k: v for k, v in updates.items() if k != "updated_at"},
+           changed_by=changed_by)
+    conn.commit()
+    return get_entity(conn, entity_id)
+
+
+def delete_entity(
+    conn: sqlite3.Connection, entity_id: str, changed_by: str = "system"
+) -> bool:
+    """Delete a business entity. Unlinks licenses first, cascades registrations."""
+    old = conn.execute(
+        "SELECT * FROM business_entities WHERE id = ?", (entity_id,)
+    ).fetchone()
+    if not old:
+        return False
+
+    # Unlink licenses (set entity_id = NULL, don't delete them)
+    conn.execute(
+        "UPDATE state_licenses SET entity_id = NULL WHERE entity_id = ?",
+        (entity_id,),
+    )
+    # Reparent children to this entity's parent
+    parent_id = dict(old).get("parent_id")
+    conn.execute(
+        "UPDATE business_entities SET parent_id = ? WHERE parent_id = ?",
+        (parent_id, entity_id),
+    )
+
+    cursor = conn.execute("DELETE FROM business_entities WHERE id = ?", (entity_id,))
+    if cursor.rowcount > 0:
+        _audit(conn, "business_entity", entity_id, "deleted",
+               old_values=dict(old), changed_by=changed_by)
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def get_entity_hierarchy(
+    conn: sqlite3.Connection, entity_id: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """Get entity hierarchy tree.
+
+    If entity_id given: returns that entity + all descendants.
+    If None: returns all top-level entities with nested children.
+    """
+    if entity_id:
+        rows = conn.execute("""
+            WITH RECURSIVE tree AS (
+                SELECT *, 0 AS depth FROM business_entities WHERE id = ?
+                UNION ALL
+                SELECT be.*, tree.depth + 1
+                FROM business_entities be
+                JOIN tree ON be.parent_id = tree.id
+            )
+            SELECT * FROM tree ORDER BY depth, name
+        """, (entity_id,)).fetchall()
+        return [dict(r) for r in rows]
+
+    # All top-level with child counts
+    rows = conn.execute("""
+        SELECT be.*,
+            (SELECT COUNT(*) FROM business_entities c WHERE c.parent_id = be.id) AS child_count,
+            (SELECT COUNT(*) FROM state_licenses sl WHERE sl.entity_id = be.id) AS license_count,
+            (SELECT COUNT(*) FROM entity_registrations er WHERE er.entity_id = be.id) AS registration_count
+        FROM business_entities be
+        WHERE be.parent_id IS NULL
+        ORDER BY be.name
+    """).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_entity_summary(conn: sqlite3.Connection) -> Dict[str, Any]:
+    """Summary stats for entities dashboard."""
+    total = conn.execute("SELECT COUNT(*) FROM business_entities").fetchone()[0]
+    by_type = conn.execute(
+        "SELECT entity_type, COUNT(*) as cnt FROM business_entities GROUP BY entity_type ORDER BY cnt DESC"
+    ).fetchall()
+    active_regs = conn.execute(
+        "SELECT COUNT(*) FROM entity_registrations WHERE status = 'active'"
+    ).fetchone()[0]
+    expiring_regs = conn.execute("""
+        SELECT COUNT(*) FROM entity_registrations
+        WHERE status = 'active' AND expiration_date IS NOT NULL
+          AND julianday(expiration_date) - julianday('now') <= 90
+    """).fetchone()[0]
+
+    return {
+        "total_entities": total,
+        "by_type": {r["entity_type"]: r["cnt"] for r in by_type},
+        "active_registrations": active_regs,
+        "expiring_registrations_90d": expiring_regs,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Entity Registrations
+# ---------------------------------------------------------------------------
+
+VALID_REGISTRATION_TYPES = {
+    "secretary_of_state", "dbe", "mbe", "wbe", "sbe", "hub", "sdvosb", "other",
+}
+VALID_REGISTRATION_STATUSES = {"active", "expired", "pending", "revoked", "suspended"}
+VALID_FILING_FREQUENCIES = {"annual", "biennial", "triennial", "one_time"}
+
+
+def list_registrations(
+    conn: sqlite3.Connection,
+    *,
+    entity_id: Optional[str] = None,
+    registration_type: Optional[str] = None,
+    state_code: Optional[str] = None,
+    status: Optional[str] = None,
+    expiring_days: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """List entity registrations with optional filters."""
+    clauses: list = []
+    params: list = []
+
+    if entity_id:
+        clauses.append("er.entity_id = ?")
+        params.append(entity_id)
+    if registration_type:
+        clauses.append("er.registration_type = ?")
+        params.append(registration_type)
+    if state_code:
+        clauses.append("er.state_code = ?")
+        params.append(state_code)
+    if status:
+        clauses.append("er.status = ?")
+        params.append(status)
+    if expiring_days is not None:
+        clauses.append(
+            "er.status = 'active' AND er.expiration_date IS NOT NULL "
+            "AND julianday(er.expiration_date) - julianday('now') <= ?"
+        )
+        params.append(expiring_days)
+
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+
+    rows = conn.execute(f"""
+        SELECT er.*,
+            be.name AS entity_name,
+            CASE
+                WHEN er.expiration_date IS NULL THEN NULL
+                ELSE CAST(julianday(er.expiration_date) - julianday('now') AS INTEGER)
+            END AS days_until_expiry
+        FROM entity_registrations er
+        JOIN business_entities be ON be.id = er.entity_id
+        {where}
+        ORDER BY er.state_code, er.registration_type
+    """, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_registration(
+    conn: sqlite3.Connection, registration_id: str
+) -> Optional[Dict[str, Any]]:
+    """Get a single registration with entity name."""
+    row = conn.execute("""
+        SELECT er.*,
+            be.name AS entity_name,
+            CASE
+                WHEN er.expiration_date IS NULL THEN NULL
+                ELSE CAST(julianday(er.expiration_date) - julianday('now') AS INTEGER)
+            END AS days_until_expiry
+        FROM entity_registrations er
+        JOIN business_entities be ON be.id = er.entity_id
+        WHERE er.id = ?
+    """, (registration_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def create_registration(
+    conn: sqlite3.Connection,
+    entity_id: str,
+    registration_type: str,
+    state_code: str,
+    changed_by: str = "system",
+    **kwargs,
+) -> Dict[str, Any]:
+    """Create a new entity registration."""
+    # Validate entity exists
+    entity = conn.execute(
+        "SELECT id FROM business_entities WHERE id = ?", (entity_id,)
+    ).fetchone()
+    if not entity:
+        raise ValueError(f"Entity {entity_id} not found")
+
+    reg_id = generate_uuid()
+    now = datetime.utcnow().isoformat()
+
+    conn.execute(
+        """INSERT INTO entity_registrations
+           (id, entity_id, registration_type, state_code, registration_number,
+            issuing_authority, issued_date, expiration_date, status,
+            filing_frequency, next_filing_date, fee_amount, notes,
+            created_at, updated_at, created_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            reg_id, entity_id, registration_type, state_code.upper(),
+            kwargs.get("registration_number"),
+            kwargs.get("issuing_authority"),
+            kwargs.get("issued_date"),
+            kwargs.get("expiration_date"),
+            kwargs.get("status", "active"),
+            kwargs.get("filing_frequency"),
+            kwargs.get("next_filing_date"),
+            kwargs.get("fee_amount"),
+            kwargs.get("notes"),
+            now, now, changed_by,
+        ),
+    )
+    _audit(conn, "entity_registration", reg_id, "created",
+           new_values={"entity_id": entity_id, "registration_type": registration_type,
+                       "state_code": state_code},
+           changed_by=changed_by)
+    conn.commit()
+    return get_registration(conn, reg_id)
+
+
+def update_registration(
+    conn: sqlite3.Connection, registration_id: str, changed_by: str = "system", **kwargs
+) -> Optional[Dict[str, Any]]:
+    """Partial update of an entity registration."""
+    allowed = {
+        "registration_type", "state_code", "registration_number",
+        "issuing_authority", "issued_date", "expiration_date", "status",
+        "filing_frequency", "next_filing_date", "fee_amount", "notes",
+    }
+    updates = {k: v for k, v in kwargs.items() if k in allowed}
+    if not updates:
+        return get_registration(conn, registration_id)
+
+    old = conn.execute(
+        "SELECT * FROM entity_registrations WHERE id = ?", (registration_id,)
+    ).fetchone()
+    if not old:
+        return None
+    old_dict = dict(old)
+    old_snapshot = {k: old_dict.get(k) for k in updates}
+
+    updates["updated_at"] = datetime.utcnow().isoformat()
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    params = list(updates.values()) + [registration_id]
+
+    conn.execute(f"UPDATE entity_registrations SET {set_clause} WHERE id = ?", params)
+    _audit(conn, "entity_registration", registration_id, "updated",
+           old_values=old_snapshot,
+           new_values={k: v for k, v in updates.items() if k != "updated_at"},
+           changed_by=changed_by)
+    conn.commit()
+    return get_registration(conn, registration_id)
+
+
+def delete_registration(
+    conn: sqlite3.Connection, registration_id: str, changed_by: str = "system"
+) -> bool:
+    """Delete an entity registration."""
+    old = conn.execute(
+        "SELECT * FROM entity_registrations WHERE id = ?", (registration_id,)
+    ).fetchone()
+    cursor = conn.execute(
+        "DELETE FROM entity_registrations WHERE id = ?", (registration_id,)
+    )
+    if cursor.rowcount > 0 and old:
+        _audit(conn, "entity_registration", registration_id, "deleted",
+               old_values=dict(old), changed_by=changed_by)
+    conn.commit()
+    return cursor.rowcount > 0

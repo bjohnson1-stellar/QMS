@@ -205,6 +205,66 @@ CREATE TABLE IF NOT EXISTS license_notes (
 
 CREATE INDEX IF NOT EXISTS idx_license_notes_license ON license_notes(license_id);
 
+-- Business entities (parent companies, subsidiaries, DBAs)
+CREATE TABLE IF NOT EXISTS business_entities (
+    id                      TEXT PRIMARY KEY,
+    name                    TEXT NOT NULL,
+    entity_type             TEXT NOT NULL DEFAULT 'corporation'
+                            CHECK (entity_type IN ('corporation','llc','partnership','sole_proprietorship','subsidiary','dba','branch')),
+    parent_id               TEXT,
+    ein                     TEXT,
+    state_of_incorporation  TEXT,
+    address                 TEXT,
+    city                    TEXT,
+    state_code              TEXT,
+    zip_code                TEXT,
+    phone                   TEXT,
+    website                 TEXT,
+    notes                   TEXT,
+    status                  TEXT NOT NULL DEFAULT 'active'
+                            CHECK (status IN ('active','inactive','dissolved')),
+    created_at              TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at              TEXT NOT NULL DEFAULT (datetime('now')),
+    created_by              TEXT,
+    FOREIGN KEY (parent_id) REFERENCES business_entities(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_business_entities_parent ON business_entities(parent_id);
+CREATE INDEX IF NOT EXISTS idx_business_entities_type ON business_entities(entity_type);
+CREATE INDEX IF NOT EXISTS idx_business_entities_status ON business_entities(status);
+CREATE INDEX IF NOT EXISTS idx_business_entities_state ON business_entities(state_of_incorporation);
+
+-- Entity registrations (SoS filings, DBE certs, minority certs, etc.)
+CREATE TABLE IF NOT EXISTS entity_registrations (
+    id                  TEXT PRIMARY KEY,
+    entity_id           TEXT NOT NULL,
+    registration_type   TEXT NOT NULL
+                        CHECK (registration_type IN ('secretary_of_state','dbe','mbe','wbe','sbe','hub','sdvosb','other')),
+    state_code          TEXT NOT NULL,
+    registration_number TEXT,
+    issuing_authority   TEXT,
+    issued_date         TEXT,
+    expiration_date     TEXT,
+    status              TEXT NOT NULL DEFAULT 'active'
+                        CHECK (status IN ('active','expired','pending','revoked','suspended')),
+    filing_frequency    TEXT
+                        CHECK (filing_frequency IS NULL OR filing_frequency IN ('annual','biennial','triennial','one_time')),
+    next_filing_date    TEXT,
+    fee_amount          REAL,
+    notes               TEXT,
+    created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    created_by          TEXT,
+    UNIQUE(entity_id, registration_type, state_code),
+    FOREIGN KEY (entity_id) REFERENCES business_entities(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_entity_registrations_entity ON entity_registrations(entity_id);
+CREATE INDEX IF NOT EXISTS idx_entity_registrations_type ON entity_registrations(registration_type);
+CREATE INDEX IF NOT EXISTS idx_entity_registrations_state ON entity_registrations(state_code);
+CREATE INDEX IF NOT EXISTS idx_entity_registrations_status ON entity_registrations(status);
+CREATE INDEX IF NOT EXISTS idx_entity_registrations_expiration ON entity_registrations(expiration_date);
+
 -- Pre-computed expiry view for dashboard queries
 CREATE VIEW IF NOT EXISTS v_expiring_licenses AS
 SELECT
