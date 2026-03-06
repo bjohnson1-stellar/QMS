@@ -42,9 +42,9 @@ Bidirectional Procore observation integration. Two tracks: personal mobile captu
 - [x] Drill-down navigation, scope mapping, CE tracking — Licenses Phase 2
 - [x] CE seed data, compliance dashboard, certificate upload, CSV exports — Licenses Phase 3
 - [x] Foundation hardening (N+1 fixes, audit trail, pagination, validation, rate limiting, CSRF) — v0.2 Phase 6
+- [x] Renewal workflow with event tracking, fee history, auto-expire CLI, timeline UI — v0.2 Phase 7
 
 ### Active (v0.2 — In Progress)
-- [ ] Renewal workflow with event tracking and fee history
 - [ ] Notification system (expiration warnings, CE deadlines, Teams webhook)
 - [ ] Document management (certificates, applications, correspondence)
 - [ ] Entity registration tracking (SoS, DBE, minority certs)
@@ -67,7 +67,7 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 **Technical Context:**
 - Existing licenses module: `licenses/` package with schema, db, migrations
-- 10 schema tables (state_licenses, ce_requirements, ce_credits, boards, scopes, etc.)
+- 11 schema tables (state_licenses, license_events, ce_requirements, ce_credits, boards, scopes, etc.)
 - Flask blueprint at `/licenses/` with full CRUD + compliance dashboard
 - Certificate file storage at `data/certificates/`
 - Welding notification pattern available for cloning (notification_rules + notifications tables)
@@ -82,6 +82,8 @@ SIS manages professional and business licenses across multiple states for MEP co
 | API-layer validation, not DB-layer | Clean boundary: API validates input, DB trusts internal calls | 2026-03-05 | Active |
 | In-memory rate limiting (no Redis) | LAN deployment, 1-5 users, restarts clear state acceptably | 2026-03-05 | Active |
 | Pagination dict response pattern | {items, total, page, per_page, pages} for all future list endpoints | 2026-03-05 | Active |
+| Events in dedicated table, not status field | Flexible event history, avoids SQLite schema rebuild | 2026-03-06 | Active |
+| Single-action renewal (not multi-step) | Simple now; approval workflow deferred to Phase 8 | 2026-03-06 | Active |
 | Clone welding notification pattern | Proven pattern reduces risk | 2026-03-05 | Active |
 | Self-hosted over SaaS | Integration with existing QMS modules, no recurring cost | 2026-03-05 | Active |
 | Two-track approach (v0.1) | Personal mobile pipeline vs team-wide import | 2026-02-25 | Active |
@@ -109,4 +111,4 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-05 — Phase 6 Foundation Hardening complete*
+*Last updated: 2026-03-06 after Phase 7*

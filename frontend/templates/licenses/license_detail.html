@@ -160,6 +160,43 @@
     {% endif %}
 </div>
 
+<!-- Event History -->
+<div class="card" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="margin:0;border:none;padding:0;">Event History</h3>
+        {% if is_editor %}
+        <div style="display:flex;gap:8px;">
+            <button class="btn-sm" onclick="openEventModal()">+ Add Event</button>
+            <button class="btn-sm" style="background:var(--color-primary);color:#fff;" onclick="openRenewModal()">Renew</button>
+        </div>
+        {% endif %}
+    </div>
+    {% if events %}
+    <div style="display:flex;flex-direction:column;gap:12px;">
+        {% for ev in events %}
+        {% set evt_colors = {'issued':'#238636','renewed':'#238636','reinstated':'#238636','amended':'#1f6feb','suspended':'#d29922','expired':'#da3633','revoked':'#6e7681'} %}
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;{% if not loop.last %}border-bottom:1px solid var(--color-border-light);{% endif %}">
+            <span class="badge" style="font-size:11px;padding:3px 8px;background:{{ evt_colors.get(ev.event_type, '#6e7681') }};color:#fff;white-space:nowrap;">{{ ev.event_type }}</span>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:0.9rem;">
+                    <span style="font-weight:600;">{{ ev.event_date }}</span>
+                    {% if ev.fee_amount %}
+                    <span style="margin-left:12px;color:var(--color-text-muted);font-size:0.85rem;">${{ '%.2f' % ev.fee_amount }}{% if ev.fee_type %} ({{ ev.fee_type }}){% endif %}</span>
+                    {% endif %}
+                </div>
+                {% if ev.notes %}
+                <div style="color:var(--color-text-muted);font-size:0.85rem;margin-top:4px;">{{ ev.notes }}</div>
+                {% endif %}
+                <div style="color:var(--color-text-muted);font-size:0.75rem;margin-top:2px;">by {{ ev.created_by }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--color-text-muted);text-align:center;margin:0;font-size:0.85rem;">No events recorded.</p>
+    {% endif %}
+</div>
+
 <!-- CE Credits Section -->
 <div class="card" style="padding:20px;margin-bottom:20px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -430,6 +467,102 @@
             <div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--color-border-light);display:flex;gap:10px;">
                 <button type="submit" id="creditSubmitBtn">Add Credit</button>
                 <button type="button" class="secondary" onclick="closeCreditModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Renewal Modal -->
+<div id="renewModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:450px;">
+        <div class="modal-header">
+            <h2 style="margin:0;border:none;padding:0;">Renew License</h2>
+            <button class="modal-close" onclick="closeRenewModal()">&times;</button>
+        </div>
+        <div class="error-message" id="renewError"></div>
+        <form onsubmit="return submitRenewal(event)">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="form-group">
+                    <label>New Expiration Date *</label>
+                    <input type="date" id="renewDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Fee Amount</label>
+                    <input type="number" id="renewFee" step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Fee Type</label>
+                    <select id="renewFeeType">
+                        <option value="">— None —</option>
+                        <option value="renewal">Renewal</option>
+                        <option value="application">Application</option>
+                        <option value="amendment">Amendment</option>
+                        <option value="late_fee">Late Fee</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="renewNotes" rows="2"></textarea>
+                </div>
+            </div>
+            <div style="margin-top:16px;padding-top:15px;border-top:1px solid var(--color-border-light);display:flex;gap:10px;">
+                <button type="submit">Renew License</button>
+                <button type="button" class="secondary" onclick="closeRenewModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Event Modal -->
+<div id="eventModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:450px;">
+        <div class="modal-header">
+            <h2 style="margin:0;border:none;padding:0;">Add Event</h2>
+            <button class="modal-close" onclick="closeEventModal()">&times;</button>
+        </div>
+        <div class="error-message" id="eventError"></div>
+        <form onsubmit="return submitEvent(event)">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="form-group">
+                    <label>Event Type *</label>
+                    <select id="evtType" required>
+                        <option value="">Select...</option>
+                        <option value="issued">Issued</option>
+                        <option value="renewed">Renewed</option>
+                        <option value="amended">Amended</option>
+                        <option value="suspended">Suspended</option>
+                        <option value="revoked">Revoked</option>
+                        <option value="expired">Expired</option>
+                        <option value="reinstated">Reinstated</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Event Date *</label>
+                    <input type="date" id="evtDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="evtNotes" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Fee Amount</label>
+                    <input type="number" id="evtFee" step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Fee Type</label>
+                    <select id="evtFeeType">
+                        <option value="">— None —</option>
+                        <option value="application">Application</option>
+                        <option value="renewal">Renewal</option>
+                        <option value="amendment">Amendment</option>
+                        <option value="late_fee">Late Fee</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-top:16px;padding-top:15px;border-top:1px solid var(--color-border-light);display:flex;gap:10px;">
+                <button type="submit">Add Event</button>
+                <button type="button" class="secondary" onclick="closeEventModal()">Cancel</button>
             </div>
         </form>
     </div>
@@ -718,6 +851,84 @@
             if (!res.ok) throw new Error((await res.json()).error || 'Failed');
             window.location.reload();
         } catch (err) { alert(err.message); }
+    }
+
+    // ── Renewal ───────────────────────────────────────────────────────────
+    function openRenewModal() {
+        document.getElementById('renewDate').value = '';
+        document.getElementById('renewFee').value = '';
+        document.getElementById('renewFeeType').value = '';
+        document.getElementById('renewNotes').value = '';
+        document.getElementById('renewError').style.display = 'none';
+        document.getElementById('renewModal').style.display = 'flex';
+    }
+    function closeRenewModal() { document.getElementById('renewModal').style.display = 'none'; }
+
+    async function submitRenewal(e) {
+        e.preventDefault();
+        const data = {
+            new_expiration_date: document.getElementById('renewDate').value,
+        };
+        const fee = document.getElementById('renewFee').value;
+        if (fee) data.fee_amount = parseFloat(fee);
+        const feeType = document.getElementById('renewFeeType').value;
+        if (feeType) data.fee_type = feeType;
+        const notes = document.getElementById('renewNotes').value;
+        if (notes) data.notes = notes;
+        try {
+            const res = await fetch(`${API}/licenses/${LIC_ID}/renew`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+            window.location.reload();
+        } catch (err) {
+            const el = document.getElementById('renewError');
+            el.textContent = err.message;
+            el.style.display = 'block';
+        }
+        return false;
+    }
+
+    // ── Add Event ─────────────────────────────────────────────────────────
+    function openEventModal() {
+        document.getElementById('evtType').value = '';
+        document.getElementById('evtDate').value = '';
+        document.getElementById('evtNotes').value = '';
+        document.getElementById('evtFee').value = '';
+        document.getElementById('evtFeeType').value = '';
+        document.getElementById('eventError').style.display = 'none';
+        document.getElementById('eventModal').style.display = 'flex';
+    }
+    function closeEventModal() { document.getElementById('eventModal').style.display = 'none'; }
+
+    async function submitEvent(e) {
+        e.preventDefault();
+        const data = {
+            event_type: document.getElementById('evtType').value,
+            event_date: document.getElementById('evtDate').value,
+        };
+        const notes = document.getElementById('evtNotes').value;
+        if (notes) data.notes = notes;
+        const fee = document.getElementById('evtFee').value;
+        if (fee) data.fee_amount = parseFloat(fee);
+        const feeType = document.getElementById('evtFeeType').value;
+        if (feeType) data.fee_type = feeType;
+        try {
+            const res = await fetch(`${API}/licenses/${LIC_ID}/events`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+            window.location.reload();
+        } catch (err) {
+            const el = document.getElementById('eventError');
+            el.textContent = err.message;
+            el.style.display = 'block';
+        }
+        return false;
     }
 </script>
 {% endblock %}

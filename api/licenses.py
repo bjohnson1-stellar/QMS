@@ -262,6 +262,7 @@ def license_detail_page(license_id):
         if user_id:
             secret = current_app.config.get("SECRET_KEY", "")
             portal_cred = get_portal_credential(conn, license_id, user_id, secret)
+        events = get_license_events(conn, license_id)
     state_name = _STATE_NAMES.get(lic["state_code"], lic["state_code"])
     return render_template(
         "licenses/license_detail.html",
@@ -273,6 +274,7 @@ def license_detail_page(license_id):
         ce_summary=ce_summary,
         credits=credits,
         portal_cred=portal_cred,
+        events=events,
     )
 
 

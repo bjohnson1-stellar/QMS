@@ -440,3 +440,80 @@ class TestCLI:
         # Verify nothing changed
         lic = memory_db.execute("SELECT status FROM state_licenses WHERE id = 'cli-lic-2'").fetchone()
         assert lic["status"] == "active"
+
+
+# ---------------------------------------------------------------------------
+# Route Context Tests (Plan 07-02)
+# ---------------------------------------------------------------------------
+
+class TestDetailPageEvents:
+    @pytest.fixture(autouse=True)
+    def _page_client(self, flask_app):
+        """Client with display_name for base.html template."""
+        with flask_app.test_client() as c:
+            with c.session_transaction() as sess:
+                sess["user"] = {
+                    "id": "test-user", "email": "test@test.com",
+                    "role": "admin", "display_name": "Test User",
+                }
+                sess["modules"] = {"licenses": "admin"}
+                sess["_csrf_nonce"] = "test"
+            self._client = c
+            yield
+
+    def test_detail_page_shows_events(self, memory_db):
+        """Detail page includes event data in rendered HTML."""
+        tomorrow = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")
+        memory_db.execute(
+            """INSERT INTO state_licenses
+                   (id, state_code, license_type, license_number, holder_name,
+                    expiration_date, status, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))""",
+            ("page-lic-1", "OH", "Electrical", "EL-PAGE", "Page Co", tomorrow, "active"),
+        )
+        memory_db.commit()
+        create_event(memory_db, "page-lic-1", "issued", "2025-01-15", notes="Initial issue")
+
+        resp = self._client.get("/licenses/page-lic-1")
+        assert resp.status_code == 200
+        html = resp.data.decode()
+        assert "Event History" in html
+        assert "issued" in html
+        assert "2025-01-15" in html
+        assert "Initial issue" in html
+
+    def test_detail_page_empty_events(self, memory_db):
+        """Detail page shows empty state when no events exist."""
+        tomorrow = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")
+        memory_db.execute(
+            """INSERT INTO state_licenses
+                   (id, state_code, license_type, license_number, holder_name,
+                    expiration_date, status, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))""",
+            ("page-lic-2", "CA", "General", "GN-PAGE", "Empty Co", tomorrow, "active"),
+        )
+        memory_db.commit()
+
+        resp = self._client.get("/licenses/page-lic-2")
+        assert resp.status_code == 200
+        html = resp.data.decode()
+        assert "Event History" in html
+        assert "No events recorded." in html
+
+    def test_detail_page_shows_renew_button(self, memory_db):
+        """Detail page shows Renew button for editor/admin users."""
+        tomorrow = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")
+        memory_db.execute(
+            """INSERT INTO state_licenses
+                   (id, state_code, license_type, license_number, holder_name,
+                    expiration_date, status, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))""",
+            ("page-lic-3", "NY", "Plumbing", "PL-PAGE", "Renew Co", tomorrow, "active"),
+        )
+        memory_db.commit()
+
+        resp = self._client.get("/licenses/page-lic-3")
+        assert resp.status_code == 200
+        html = resp.data.decode()
+        assert "openRenewModal()" in html
+        assert "openEventModal()" in html
