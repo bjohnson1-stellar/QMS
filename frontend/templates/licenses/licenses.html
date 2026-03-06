@@ -20,6 +20,7 @@
               current_user.modules.get('licenses') in ('admin', 'editor')) %}
         <a href="{{ url_for('licenses.import_page') }}" class="btn-secondary" style="text-decoration:none;">Import CSV</a>
         {% endif %}
+        <a href="{{ url_for('licenses.entities_page') }}" class="btn-secondary" style="text-decoration:none;">Entities</a>
         <button onclick="openModal()">+ Add License</button>
     </div>
 </div>

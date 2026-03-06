@@ -239,6 +239,28 @@ def import_page():
     return render_template("licenses/import.html")
 
 
+@bp.route("/entities")
+@module_required("licenses")
+def entities_page():
+    return render_template("licenses/entities.html")
+
+
+@bp.route("/entities/<entity_id>")
+@module_required("licenses")
+def entity_detail_page(entity_id):
+    with get_db(readonly=True) as conn:
+        entity = get_entity(conn, entity_id)
+        if not entity:
+            return "Entity not found", 404
+        # All entities for parent dropdown in edit modal
+        all_entities = list_entities(conn, per_page=200)["items"]
+    return render_template(
+        "licenses/entity_detail.html",
+        entity=entity,
+        all_entities=[e for e in all_entities if e["id"] != entity_id],
+    )
+
+
 @bp.route("/state/<state_code>")
 @module_required("licenses")
 def state_detail_page(state_code):

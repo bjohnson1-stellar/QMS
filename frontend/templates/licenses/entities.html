@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Business Entities - QMS{% endblock %}
+
+{% block content %}
+{% set is_editor = current_user and (current_user.role == 'admin' or current_user.modules.get('licenses') in ('admin', 'editor')) %}
+{% set is_admin = current_user and current_user.role == 'admin' %}
+
+<div style="margin-bottom:16px;font-size:0.85rem;color:var(--color-text-muted);">
+    <a href="{{ url_for('licenses.licenses_page') }}" style="color:var(--color-primary);text-decoration:none;">Licenses</a>
+    <span style="margin:0 6px;">/</span>
+    <span>Business Entities</span>
+</div>
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1>Business Entities</h1>
+        <p class="subtitle">Companies, subsidiaries, and DBAs with registration tracking</p>
+    </div>
+    <div style="display:flex;gap:8px;">
+        <a href="{{ url_for('licenses.licenses_page') }}" class="btn-secondary" style="text-decoration:none;">Licenses</a>
+        {% if is_editor %}
+        <button onclick="openAddModal()">+ Add Entity</button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px;" id="statsGrid">
+    <div class="stat-card">
+        <div class="stat-value" id="statTotal">-</div>
+        <div class="stat-label">Total Entities</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statActive">-</div>
+        <div class="stat-label">Active</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statRegistrations">-</div>
+        <div class="stat-label">Active Registrations</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="statExpiring">-</div>
+        <div class="stat-label">Expiring (90d)</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card" style="padding:12px 16px;margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <input type="text" id="searchInput" placeholder="Search by name or EIN..."
+           style="flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);font-size:0.85rem;">
+    <select id="filterType" style="padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);font-size:0.85rem;">
+        <option value="">All Types</option>
+        <option value="corporation">Corporation</option>
+        <option value="llc">LLC</option>
+        <option value="partnership">Partnership</option>
+        <option value="sole_proprietorship">Sole Proprietorship</option>
+        <option value="subsidiary">Subsidiary</option>
+        <option value="dba">DBA</option>
+        <option value="branch">Branch</option>
+    </select>
+    <select id="filterStatus" style="padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);font-size:0.85rem;">
+        <option value="">All Statuses</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+        <option value="dissolved">Dissolved</option>
+    </select>
+</div>
+
+<!-- Entity Table -->
+<div class="card" style="overflow-x:auto;">
+    <table class="data-table" style="width:100%;border-collapse:collapse;">
+        <thead>
+            <tr>
+                <th style="padding:10px 14px;text-align:left;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);border-bottom:1px solid var(--color-border-light);">Name</th>
+                <th style="padding:10px 14px;text-align:left;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);border-bottom:1px solid var(--color-border-light);">Type</th>
+                <th style="padding:10px 14px;text-align:left;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);border-bottom:1px solid var(--color-border-light);">State</th>
+                <th style="padding:10px 14px;text-align:left;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);border-bottom:1px solid var(--color-border-light);">Status</th>
+                <th style="padding:10px 14px;text-align:center;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);border-bottom:1px solid var(--color-border-light);">Licenses</th>
+                <th style="padding:10px 14px;text-align:center;font-size:0.8rem;text-transform:uppercase;color:var(--color-text-muted);border-bottom:1px solid var(--color-border-light);">Registrations</th>
+            </tr>
+        </thead>
+        <tbody id="entityTableBody">
+            <tr><td colspan="6" style="padding:20px;text-align:center;color:var(--color-text-muted);">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+<div id="pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:0.85rem;color:var(--color-text-muted);"></div>
+
+<!-- Add/Edit Entity Modal -->
+<div id="entityModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:center;justify-content:center;">
+    <div style="background:var(--color-surface);border-radius:8px;padding:24px;width:500px;max-width:90vw;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 id="modalTitle" style="margin:0;">Add Entity</h2>
+            <button onclick="closeModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--color-text-muted);">&#x2715;</button>
+        </div>
+        <form id="entityForm" onsubmit="submitEntity(event)">
+            <input type="hidden" id="editEntityId" value="">
+            <div style="display:grid;gap:12px;">
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Name *</label>
+                    <input type="text" id="fName" required style="width:100%;padding:8px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Entity Type *</label>
+                        <select id="fEntityType" required style="width:100%;padding:8px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);">
+                            <option value="corporation">Corporation</option>
+                            <option value="llc">LLC</option>
+                            <option value="partnership">Partnership</option>
+                            <option value="sole_proprietorship">Sole Proprietorship</option>
+                            <option value="subsidiary">Subsidiary</option>
+                            <option value="dba">DBA</option>
+                            <option value="branch">Branch</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Status</label>
+                        <select id="fStatus" style="width:100%;padding:8px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="dissolved">Dissolved</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">EIN</label>
+                        <input type="text" id="fEin" placeholder="XX-XXXXXXX" style="width:100%;padding:8px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">State of Incorporation</label>
+                        <input type="text" id="fStateInc" placeholder="e.g. OH" maxlength="2" style="width:100%;padding:8px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Parent Entity</label>
+                    <select id="fParentId" style="width:100%;padding:8px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);">
+                        <option value="">None (Top-level)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:4px;">Notes</label>
+                    <textarea id="fNotes" rows="2" style="width:100%;padding:8px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);resize:vertical;"></textarea>
+                </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const API = "{{ url_for('licenses.licenses_page') }}api/licenses/entities";
+const IS_EDITOR = {{ 'true' if is_editor else 'false' }};
+let currentPage = 1;
+let allEntities = [];
+
+async function loadStats() {
+    try {
+        const r = await fetch(API + '/summary');
+        const d = await r.json();
+        document.getElementById('statTotal').textContent = d.total_entities || 0;
+        const activeCount = (d.by_type ? Object.values(d.by_type).reduce((a,b) => a+b, 0) : d.total_entities) || 0;
+        document.getElementById('statActive').textContent = activeCount;
+        document.getElementById('statRegistrations').textContent = d.active_registrations || 0;
+        document.getElementById('statExpiring').textContent = d.expiring_registrations_90d || 0;
+    } catch(e) { console.error('Stats load error:', e); }
+}
+
+async function loadEntities() {
+    const search = document.getElementById('searchInput').value;
+    const type = document.getElementById('filterType').value;
+    const status = document.getElementById('filterStatus').value;
+
+    const params = new URLSearchParams({page: currentPage, per_page: 25});
+    if (search) params.set('search', search);
+    if (type) params.set('entity_type', type);
+    if (status) params.set('status', status);
+
+    try {
+        const r = await fetch(API + '?' + params);
+        const d = await r.json();
+        allEntities = d.items || [];
+        renderTable(allEntities);
+        renderPagination(d);
+    } catch(e) {
+        document.getElementById('entityTableBody').innerHTML =
+            '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--color-danger);">Error loading entities</td></tr>';
+    }
+}
+
+function renderTable(items) {
+    const tbody = document.getElementById('entityTableBody');
+    if (!items.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--color-text-muted);">No entities found</td></tr>';
+        return;
+    }
+
+    const statusColors = {active:'#238636', inactive:'#6e7681', dissolved:'#da3633'};
+    const typeLabels = {
+        corporation:'Corporation', llc:'LLC', partnership:'Partnership',
+        sole_proprietorship:'Sole Prop', subsidiary:'Subsidiary', dba:'DBA', branch:'Branch'
+    };
+
+    tbody.innerHTML = items.map(e => `
+        <tr style="border-bottom:1px solid var(--color-border-light);cursor:pointer;" onclick="window.location='{{ url_for('licenses.entities_page') }}/${e.id}'">
+            <td style="padding:10px 14px;">
+                <div style="font-weight:600;">${esc(e.name)}</div>
+                ${e.ein ? `<div style="font-size:0.8rem;color:var(--color-text-muted);">EIN: ${esc(e.ein)}</div>` : ''}
+            </td>
+            <td style="padding:10px 14px;">
+                <span class="badge" style="font-size:11px;padding:2px 8px;background:var(--color-primary-subtle);color:var(--color-primary);">${typeLabels[e.entity_type] || e.entity_type}</span>
+            </td>
+            <td style="padding:10px 14px;">${esc(e.state_of_incorporation || e.state_code || '—')}</td>
+            <td style="padding:10px 14px;">
+                <span class="badge" style="font-size:11px;padding:2px 8px;background:${statusColors[e.status] || '#6e7681'};color:#fff;">${e.status}</span>
+            </td>
+            <td style="padding:10px 14px;text-align:center;">${e.license_count || 0}</td>
+            <td style="padding:10px 14px;text-align:center;">${e.registration_count || 0}</td>
+        </tr>
+    `).join('');
+}
+
+function renderPagination(d) {
+    const el = document.getElementById('pagination');
+    if (!d.pages || d.pages <= 1) { el.innerHTML = `<span>${d.total || 0} entities</span><span></span>`; return; }
+    el.innerHTML = `
+        <span>Showing ${(d.page-1)*d.per_page+1}–${Math.min(d.page*d.per_page, d.total)} of ${d.total}</span>
+        <div style="display:flex;gap:8px;">
+            ${d.page > 1 ? `<button class="btn-sm btn-secondary" onclick="currentPage=${d.page-1};loadEntities()">Prev</button>` : ''}
+            ${d.page < d.pages ? `<button class="btn-sm btn-secondary" onclick="currentPage=${d.page+1};loadEntities()">Next</button>` : ''}
+        </div>
+    `;
+}
+
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// Modal
+function openAddModal() {
+    document.getElementById('editEntityId').value = '';
+    document.getElementById('modalTitle').textContent = 'Add Entity';
+    document.getElementById('entityForm').reset();
+    loadParentDropdown('');
+    showModal();
+}
+
+async function loadParentDropdown(excludeId) {
+    const sel = document.getElementById('fParentId');
+    sel.innerHTML = '<option value="">None (Top-level)</option>';
+    try {
+        const r = await fetch(API + '?per_page=200');
+        const d = await r.json();
+        (d.items || []).forEach(e => {
+            if (e.id !== excludeId) {
+                const opt = document.createElement('option');
+                opt.value = e.id;
+                opt.textContent = e.name;
+                sel.appendChild(opt);
+            }
+        });
+    } catch(e) {}
+}
+
+function showModal() {
+    const m = document.getElementById('entityModal');
+    m.style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('entityModal').style.display = 'none';
+}
+
+async function submitEntity(ev) {
+    ev.preventDefault();
+    const id = document.getElementById('editEntityId').value;
+    const data = {
+        name: document.getElementById('fName').value.trim(),
+        entity_type: document.getElementById('fEntityType').value,
+        status: document.getElementById('fStatus').value,
+        ein: document.getElementById('fEin').value.trim() || null,
+        state_of_incorporation: document.getElementById('fStateInc').value.trim().toUpperCase() || null,
+        parent_id: document.getElementById('fParentId').value || null,
+        notes: document.getElementById('fNotes').value.trim() || null,
+    };
+
+    const url = id ? API + '/' + id : API;
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const r = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
+        if (!r.ok) {
+            const err = await r.json();
+            alert(err.error || err.errors?.join(', ') || 'Error saving entity');
+            return;
+        }
+        closeModal();
+        loadStats();
+        loadEntities();
+    } catch(e) { alert('Network error'); }
+}
+
+// Debounced search
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { currentPage = 1; loadEntities(); }, 300);
+});
+document.getElementById('filterType').addEventListener('change', () => { currentPage = 1; loadEntities(); });
+document.getElementById('filterStatus').addEventListener('change', () => { currentPage = 1; loadEntities(); });
+
+// Close modal on backdrop click
+document.getElementById('entityModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+// Init
+loadStats();
+loadEntities();
+</script>
+{% endblock %}
