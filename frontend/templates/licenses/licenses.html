@@ -341,7 +341,7 @@
         document.getElementById('filterState').innerHTML = '<option value="">All States</option>' + stateOpts;
 
         const [licRes, statRes, empRes, mapRes, expRes, timeRes, dashRes] = await Promise.all([
-            fetch(API + '/licenses').then(r => r.json()).catch(() => ({items:[],total:0,page:1,per_page:50,pages:0})),
+            fetch(API + '/licenses').then(r => r.json()).catch(() => []),
             fetch(API + '/licenses/stats').then(r => r.json()).catch(() => ({total:0,active:0,expiring_90:0,with_employee:0})),
             fetch(API + '/employees/lookup').then(r => r.json()).catch(() => []),
             fetch(API + '/map-data').then(r => r.json()).catch(() => []),
@@ -350,7 +350,7 @@
             fetch(API + '/compliance-dashboard').then(r => r.json()).catch(() => ({health:{compliant:0,at_risk:0,non_compliant:0},action_items:[],ce_by_state:[]})),
         ]);
 
-        licenses = licRes;
+        licenses = Array.isArray(licRes) ? licRes : (licRes.items || []);
         updateStats(statRes);
         populateEmployees(empRes);
         renderComplianceDashboard(dashRes);
@@ -1061,8 +1061,8 @@
     }
 
     // ── Boot ──────────────────────────────────────────────────────────────
-    loadAll();
-    loadNotifications();
-    loadRegCompliance();
+    loadAll().catch(e => console.error('loadAll failed:', e));
+    loadNotifications().catch(e => console.error('loadNotifications failed:', e));
+    loadRegCompliance().catch(e => console.error('loadRegCompliance failed:', e));
 </script>
 {% endblock %}
