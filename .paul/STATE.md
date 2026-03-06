@@ -34,7 +34,7 @@ Previous milestone (v0.1 Quality Intelligence Platform):
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
+  ○        ○        ○     [Ready for new PLAN]
 ```
 
 ## Execution Log
