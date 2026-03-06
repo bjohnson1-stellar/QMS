@@ -292,6 +292,15 @@ def create_app() -> Flask:
                     stats["employees"] = conn.execute(
                         "SELECT COUNT(*) FROM employees WHERE is_active = 1"
                     ).fetchone()[0]
+                if "licenses" in accessible:
+                    stats["expiring_licenses"] = conn.execute(
+                        "SELECT COUNT(*) FROM v_expiring_licenses "
+                        "WHERE days_until_expiry BETWEEN 0 AND 90"
+                    ).fetchone()[0]
+                    stats["license_alerts"] = conn.execute(
+                        "SELECT COUNT(*) FROM license_notifications "
+                        "WHERE status = 'active'"
+                    ).fetchone()[0]
             except Exception:
                 pass
 

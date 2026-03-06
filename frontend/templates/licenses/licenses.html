@@ -14,6 +14,7 @@
             <div id="exportMenu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--color-surface);border:1px solid var(--color-border-light);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:20;min-width:180px;">
                 <a href="{{ url_for('licenses.export_licenses_csv') }}" style="display:block;padding:8px 14px;color:var(--color-text);text-decoration:none;font-size:0.85rem;">Licenses CSV</a>
                 <a href="{{ url_for('licenses.export_ce_compliance_csv') }}" style="display:block;padding:8px 14px;color:var(--color-text);text-decoration:none;font-size:0.85rem;border-top:1px solid var(--color-border-light);">CE Compliance CSV</a>
+                <a href="#" onclick="event.preventDefault();showCalendarSubscribe();" style="display:block;padding:8px 14px;color:var(--color-text);text-decoration:none;font-size:0.85rem;border-top:1px solid var(--color-border-light);">Subscribe to Calendar</a>
             </div>
         </div>
         {% if current_user and (current_user.role == 'admin' or
@@ -1016,6 +1017,47 @@
             document.getElementById('regComplianceLoading').textContent =
                 'Could not load compliance data.';
         }
+    }
+
+    // ── Calendar subscribe ─────────────────────────────────────────────
+    function showCalendarSubscribe() {
+        // Close export menu
+        const em = document.getElementById('exportMenu');
+        if (em) em.style.display = 'none';
+
+        // Build webcal URL
+        const icsUrl = window.location.protocol + '//' + window.location.host + '/licenses/calendar.ics';
+        const webcalUrl = 'webcal://' + window.location.host + '/licenses/calendar.ics';
+
+        // Remove existing popover if any
+        const existing = document.getElementById('calendarPopover');
+        if (existing) { existing.remove(); return; }
+
+        const popover = document.createElement('div');
+        popover.id = 'calendarPopover';
+        popover.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--color-surface);border:1px solid var(--color-border-light);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:100;padding:20px;max-width:420px;width:90%;';
+        popover.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h3 style="margin:0;font-size:1rem;">Subscribe to Calendar</h3>
+                <button onclick="document.getElementById('calendarPopover').remove()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--color-text-muted);">&#10005;</button>
+            </div>
+            <p style="font-size:0.85rem;color:var(--color-text-secondary);margin:0 0 12px;">Add license renewal and CE deadlines to your calendar app.</p>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <input type="text" value="${icsUrl}" readonly style="flex:1;padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;font-size:0.8rem;background:var(--color-bg);color:var(--color-text);" id="calendarUrlInput">
+                <button onclick="copyCalendarUrl()" class="btn-secondary" style="white-space:nowrap;font-size:0.8rem;" id="copyCalBtn">Copy URL</button>
+            </div>
+            <a href="${webcalUrl}" style="display:inline-block;padding:6px 14px;background:var(--color-primary);color:#fff;text-decoration:none;border-radius:4px;font-size:0.85rem;">Open in Calendar App</a>
+        `;
+        document.body.appendChild(popover);
+    }
+
+    function copyCalendarUrl() {
+        const inp = document.getElementById('calendarUrlInput');
+        navigator.clipboard.writeText(inp.value).then(() => {
+            const btn = document.getElementById('copyCalBtn');
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy URL'; }, 2000);
+        });
     }
 
     // ── Boot ──────────────────────────────────────────────────────────────

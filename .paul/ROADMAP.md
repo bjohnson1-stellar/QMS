@@ -23,7 +23,7 @@ Phases: 7 of 8 complete
 | 10 | Entity Registration Tracking | 2 | Complete | 2026-03-06 |
 | 11 | Regulatory Intelligence Database | 2 | Complete | 2026-03-06 |
 | 12 | Advanced CE & Multi-Credential | 2 | Complete | 2026-03-06 |
-| 13 | Integrations & Automation | TBD | Not started | - |
+| 13 | Integrations & Automation | ~3 | Planning | - |
 
 ### Phase Details
 

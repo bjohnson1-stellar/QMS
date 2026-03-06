@@ -114,6 +114,7 @@ from qms.licenses.db import (
     get_credit_courses,
     list_employees_with_licenses,
     get_employee_portfolio,
+    get_calendar_events,
     VALID_COURSE_FORMATS,
 )
 
@@ -921,6 +922,50 @@ def export_ce_compliance_csv():
         buf.getvalue(),
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=ce-compliance.csv"},
+    )
+
+
+# ---------------------------------------------------------------------------
+# iCal Calendar Feed
+# ---------------------------------------------------------------------------
+
+def _ical_escape(text: str) -> str:
+    """Escape text for iCalendar format (RFC 5545)."""
+    return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+@bp.route("/calendar.ics", methods=["GET"])
+@module_required("licenses")
+def calendar_ics():
+    """Return an iCalendar feed of license expirations and CE deadlines."""
+    with get_db(readonly=True) as conn:
+        events = get_calendar_events(conn)
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//SIS QMS//Licenses//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:QMS License Renewals",
+    ]
+    for ev in events:
+        dtstart = ev["dtstart"].replace("-", "")  # YYYYMMDD
+        lines.extend([
+            "BEGIN:VEVENT",
+            f"UID:{ev['uid']}",
+            f"DTSTART;VALUE=DATE:{dtstart}",
+            f"SUMMARY:{_ical_escape(ev['summary'])}",
+            f"DESCRIPTION:{_ical_escape(ev['description'])}",
+            f"LOCATION:{_ical_escape(ev.get('location', ''))}",
+            "END:VEVENT",
+        ])
+    lines.append("END:VCALENDAR")
+
+    return Response(
+        "\r\n".join(lines),
+        mimetype="text/calendar",
+        headers={"Content-Disposition": "attachment; filename=licenses-calendar.ics"},
     )
 
 

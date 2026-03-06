@@ -2828,3 +2828,72 @@ def get_credit_courses(
                     d[field] = []
         results.append(d)
     return results
+
+
+# ── Calendar feed ─────────────────────────────────────────────────────
+
+def get_calendar_events(conn: sqlite3.Connection, months_ahead: int = 12) -> list:
+    """Return license expirations and CE deadlines as calendar event dicts.
+
+    Each dict has: uid, summary, description, dtstart (YYYY-MM-DD), location.
+    """
+    events: list = []
+
+    # License expirations within the lookahead window
+    rows = conn.execute(
+        "SELECT sl.id, sl.license_type, sl.license_number, sl.state_code, "
+        "       sl.holder_name, sl.expiration_date "
+        "FROM state_licenses sl "
+        "WHERE sl.status = 'active' "
+        "  AND sl.expiration_date IS NOT NULL "
+        "  AND sl.expiration_date >= date('now') "
+        "  AND sl.expiration_date <= date('now', ? || ' months')",
+        (str(months_ahead),),
+    ).fetchall()
+
+    for r in rows:
+        r = dict(r)
+        events.append({
+            "uid": f"license-{r['id']}@qms",
+            "summary": f"{r['license_type']} #{r['license_number']} expires ({r['state_code']})",
+            "description": (
+                f"Holder: {r['holder_name']}\n"
+                f"State: {r['state_code']}\n"
+                f"License: {r['license_type']} #{r['license_number']}\n"
+                f"Action: Renew before {r['expiration_date']}"
+            ),
+            "dtstart": r["expiration_date"],
+            "location": r["state_code"],
+        })
+
+    # CE requirement deadlines (use license expiration as period end proxy)
+    ce_rows = conn.execute(
+        "SELECT sl.id, sl.license_type, sl.license_number, sl.state_code, "
+        "       sl.holder_name, sl.expiration_date, "
+        "       cr.hours_required, cr.period_months "
+        "FROM state_licenses sl "
+        "JOIN ce_requirements cr ON cr.state_code = sl.state_code "
+        "  AND cr.license_type = sl.license_type "
+        "WHERE sl.status = 'active' "
+        "  AND sl.expiration_date IS NOT NULL "
+        "  AND sl.expiration_date >= date('now') "
+        "  AND sl.expiration_date <= date('now', ? || ' months')",
+        (str(months_ahead),),
+    ).fetchall()
+
+    for r in ce_rows:
+        r = dict(r)
+        events.append({
+            "uid": f"ce-deadline-{r['id']}@qms",
+            "summary": f"CE deadline: {r['hours_required']}hrs for {r['license_type']} ({r['state_code']})",
+            "description": (
+                f"Holder: {r['holder_name']}\n"
+                f"Requirement: {r['hours_required']} hours every {r['period_months']} months\n"
+                f"License: {r['license_type']} #{r['license_number']}\n"
+                f"Complete CE credits before {r['expiration_date']}"
+            ),
+            "dtstart": r["expiration_date"],
+            "location": r["state_code"],
+        })
+
+    return events

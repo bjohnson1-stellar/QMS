@@ -43,6 +43,16 @@
         <div class="stat-label">Employees</div>
     </div>
     {% endif %}
+    {% if 'licenses' in accessible_modules %}
+    <a href="{{ url_for('licenses.licenses_page') }}" class="stat-card" style="text-decoration:none; color:inherit;{% if stats.get('expiring_licenses', 0) > 0 %} border-left:3px solid var(--color-warning);{% endif %}">
+        <div class="stat-value"{% if stats.get('expiring_licenses', 0) > 0 %} style="color:var(--color-warning);"{% endif %}>{{ stats.get('expiring_licenses', 0) }}</div>
+        <div class="stat-label">Expiring Licenses</div>
+    </a>
+    <a href="{{ url_for('licenses.licenses_page') }}" class="stat-card" style="text-decoration:none; color:inherit;">
+        <div class="stat-value">{{ stats.get('license_alerts', 0) }}</div>
+        <div class="stat-label">License Alerts</div>
+    </a>
+    {% endif %}
 </div>
 
 <!-- Two-column: Recent Projects + Activity Feed -->
