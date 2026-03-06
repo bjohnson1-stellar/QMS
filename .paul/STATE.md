@@ -5,18 +5,18 @@
 See: .paul/PROJECT.md
 
 **Core value:** Unified quality management platform — quality intelligence from Procore data (v0.1) + Harbor-like multi-state license compliance management (v0.2).
-**Current focus:** v0.2 Phase 10 — Entity Registration Tracking (Plan 02 complete)
+**Current focus:** v0.2 Phase 11 — Regulatory Intelligence Database
 
 ## Current Position
 
 Milestone: v0.2 License Compliance Platform
-Phase: 10 of 13 (Entity Registration Tracking) — APPLY complete
-Plan: 10-02 executed, awaiting UNIFY
-Status: APPLY complete, ready for UNIFY
-Last activity: 2026-03-06 — Executed 10-02 (entity UI)
+Phase: 11 of 13 (Regulatory Intelligence Database) — Not started
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-03-06 — Phase 10 complete, transitioned to Phase 11
 
 Progress:
-- v0.2 License Compliance Platform: [██████░░░░] 60%
+- v0.2 License Compliance Platform: [██████░░░░] 63%
   - Phase 6: Foundation Hardening [██████████] 100% (3/3 plans complete)
   - Phase 7: Renewal Workflow & Events [██████████] 100% (2/2 plans complete)
   - Phase 8: Notifications & Task Management [██████████] 100% (2/2 plans complete)
@@ -34,7 +34,7 @@ Previous milestone (v0.1 Quality Intelligence Platform):
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ○     [APPLY complete, ready for UNIFY]
+  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
 ```
 
 ## Execution Log
@@ -91,9 +91,10 @@ Full execution log: see git history and `.paul/phases/01-*/` through `.paul/phas
 | UNION ALL activity feed (events+notes+docs) | v0.2 Phase 9 | Single query, easy to extend |
 | Keep business_entity TEXT column | v0.2 Phase 10 | Backward compat; entity_id is canonical FK |
 | Unlink licenses on entity delete (NULL) | v0.2 Phase 10 | Safer than blocking; licenses remain valid |
+| Entity hierarchy via recursive CTE | v0.2 Phase 10 | WITH RECURSIVE for tree traversal |
 
 ### Git State
-Last commit: `a903a6a` (Phase 10-01 complete — entity registration backend)
+Last commit: `9065720` (Phase 10-02 — entity registration UI)
 Branch: main
 
 ### Deferred Issues
@@ -110,9 +111,9 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Plan 10-02 APPLY complete
-Next action: /paul:unify
-Resume file: .paul/phases/10-entity-registration/10-02-PLAN.md
+Stopped at: Phase 10 complete, ready to plan Phase 11
+Next action: /paul:plan for Phase 11 (Regulatory Intelligence Database)
+Resume file: .paul/ROADMAP.md
 
 ---
 *STATE.md — Updated after every significant action*
