@@ -35,6 +35,7 @@ venv/
 # Large binary files
 *.pdf
 *.png
+!frontend/static/branding/*.png
 
 # Directus (separate CMS installation)
 directus/

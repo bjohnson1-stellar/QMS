@@ -3,9 +3,12 @@
 {% block title %}Welding Dashboard - QMS{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Welding Dashboard</h1>
-    <p class="subtitle">Qualification tracking and certification management</p>
+<div class="page-header" style="display:flex; align-items:center; justify-content:space-between;">
+    <div>
+        <h1>Welding Dashboard</h1>
+        <p class="subtitle">Qualification tracking and certification management</p>
+    </div>
+    <img src="{{ url_for('static', filename='branding/Orion_Weld_Inspector_nobg.png') }}" alt="Inspector Orion" style="height:100px; object-fit:contain; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15)); margin-left:16px;">
 </div>
 
 <div class="stats-grid">
