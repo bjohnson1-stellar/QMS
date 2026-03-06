@@ -48,6 +48,9 @@ def run_license_migrations(conn: sqlite3.Connection):
     # Phase 7 — license events table
     _create_license_events_table(conn)
 
+    # Phase 8 — notification rules + notifications
+    _create_notification_tables(conn)
+
     conn.commit()
 
 
@@ -483,6 +486,69 @@ def _create_license_events_table(conn: sqlite3.Connection):
               WHERE le.license_id = sl.id AND le.event_type = 'issued'
           )
     """)
+
+
+# ---------------------------------------------------------------------------
+# Phase 8 — notification rules + notifications
+# ---------------------------------------------------------------------------
+
+def _create_notification_tables(conn: sqlite3.Connection):
+    """Create notification rules and notifications tables, seed default rules."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS license_notification_rules (
+            id              INTEGER PRIMARY KEY,
+            rule_name       TEXT UNIQUE NOT NULL,
+            notification_type TEXT NOT NULL,
+            entity_type     TEXT NOT NULL,
+            days_before     INTEGER NOT NULL,
+            priority        TEXT DEFAULT 'normal',
+            repeat_interval_days INTEGER,
+            is_active       INTEGER DEFAULT 1,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS license_notifications (
+            id              INTEGER PRIMARY KEY,
+            notification_type TEXT NOT NULL,
+            entity_type     TEXT NOT NULL,
+            entity_id       TEXT NOT NULL,
+            rule_id         INTEGER REFERENCES license_notification_rules(id),
+            priority        TEXT DEFAULT 'normal',
+            due_date        TEXT,
+            days_until_due  INTEGER,
+            title           TEXT NOT NULL,
+            message         TEXT NOT NULL,
+            status          TEXT DEFAULT 'active',
+            acknowledged_by TEXT,
+            acknowledged_at TEXT,
+            resolved_by     TEXT,
+            resolved_at     TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(entity_type, entity_id, rule_id, status)
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_license_notifications_status ON license_notifications(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_license_notifications_type ON license_notifications(notification_type)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_license_notifications_entity ON license_notifications(entity_type, entity_id)")
+
+    # Seed default rules if empty
+    existing = conn.execute("SELECT COUNT(*) FROM license_notification_rules").fetchone()[0]
+    if existing == 0:
+        rules = [
+            ("expiration_90day", "expiration_warning", "license", 90, "normal"),
+            ("expiration_60day", "expiration_warning", "license", 60, "high"),
+            ("expiration_30day", "expiration_warning", "license", 30, "urgent"),
+            ("ce_deadline_60day", "ce_deadline", "ce_credit", 60, "normal"),
+            ("ce_deadline_30day", "ce_deadline", "ce_credit", 30, "high"),
+            ("renewal_reminder_14day", "renewal_reminder", "license", 14, "urgent"),
+        ]
+        conn.executemany(
+            """INSERT INTO license_notification_rules
+                   (rule_name, notification_type, entity_type, days_before, priority)
+               VALUES (?, ?, ?, ?, ?)""",
+            rules,
+        )
 
 
 def _seed_ce_requirements(conn: sqlite3.Connection):

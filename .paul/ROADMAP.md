@@ -18,7 +18,7 @@ Phases: 2 of 8 complete
 |-------|------|-------|--------|-----------|
 | 6 | Foundation Hardening | 3 | Complete | 2026-03-05 |
 | 7 | Renewal Workflow & Events | 2 | Complete | 2026-03-06 |
-| 8 | Notifications & Task Management | TBD | Not started | - |
+| 8 | Notifications & Task Management | 2 | Planning | - |
 | 9 | Document Management & Activity Log | TBD | Not started | - |
 | 10 | Entity Registration Tracking | TBD | Not started | - |
 | 11 | Regulatory Intelligence Database | TBD | Not started | - |

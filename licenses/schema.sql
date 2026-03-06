@@ -136,6 +136,44 @@ CREATE TABLE IF NOT EXISTS license_events (
 CREATE INDEX IF NOT EXISTS idx_license_events_license ON license_events(license_id);
 CREATE INDEX IF NOT EXISTS idx_license_events_type ON license_events(event_type);
 
+-- Notification rules — configurable alert triggers
+CREATE TABLE IF NOT EXISTS license_notification_rules (
+    id              INTEGER PRIMARY KEY,
+    rule_name       TEXT UNIQUE NOT NULL,
+    notification_type TEXT NOT NULL,          -- expiration_warning, ce_deadline, renewal_reminder
+    entity_type     TEXT NOT NULL,            -- license, ce_credit
+    days_before     INTEGER NOT NULL,
+    priority        TEXT DEFAULT 'normal',    -- urgent, high, normal, low
+    repeat_interval_days INTEGER,
+    is_active       INTEGER DEFAULT 1,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Generated notifications (alerts)
+CREATE TABLE IF NOT EXISTS license_notifications (
+    id              INTEGER PRIMARY KEY,
+    notification_type TEXT NOT NULL,
+    entity_type     TEXT NOT NULL,
+    entity_id       TEXT NOT NULL,            -- UUID (matches state_licenses.id)
+    rule_id         INTEGER REFERENCES license_notification_rules(id),
+    priority        TEXT DEFAULT 'normal',
+    due_date        TEXT,                     -- ISO 8601
+    days_until_due  INTEGER,
+    title           TEXT NOT NULL,
+    message         TEXT NOT NULL,
+    status          TEXT DEFAULT 'active',    -- active, acknowledged, resolved, auto_resolved
+    acknowledged_by TEXT,
+    acknowledged_at TEXT,
+    resolved_by     TEXT,
+    resolved_at     TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(entity_type, entity_id, rule_id, status)
+);
+
+CREATE INDEX IF NOT EXISTS idx_license_notifications_status ON license_notifications(status);
+CREATE INDEX IF NOT EXISTS idx_license_notifications_type ON license_notifications(notification_type);
+CREATE INDEX IF NOT EXISTS idx_license_notifications_entity ON license_notifications(entity_type, entity_id);
+
 -- Pre-computed expiry view for dashboard queries
 CREATE VIEW IF NOT EXISTS v_expiring_licenses AS
 SELECT
