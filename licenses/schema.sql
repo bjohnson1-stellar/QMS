@@ -294,6 +294,51 @@ CREATE INDEX IF NOT EXISTS idx_state_requirements_state ON state_requirements(st
 CREATE INDEX IF NOT EXISTS idx_state_requirements_type ON state_requirements(requirement_type);
 CREATE INDEX IF NOT EXISTS idx_state_requirements_license_type ON state_requirements(license_type);
 
+-- CE providers — organizations offering continuing education
+CREATE TABLE IF NOT EXISTS ce_providers (
+    id                    TEXT PRIMARY KEY,
+    name                  TEXT NOT NULL UNIQUE,
+    accreditation_body    TEXT,
+    accreditation_number  TEXT,
+    contact_email         TEXT,
+    contact_phone         TEXT,
+    website               TEXT,
+    notes                 TEXT,
+    is_active             INTEGER NOT NULL DEFAULT 1,
+    created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ce_providers_active ON ce_providers(is_active);
+
+-- CE courses — catalog of available courses from providers
+CREATE TABLE IF NOT EXISTS ce_courses (
+    id                TEXT PRIMARY KEY,
+    provider_id       TEXT REFERENCES ce_providers(id),
+    title             TEXT NOT NULL,
+    description       TEXT,
+    hours             REAL NOT NULL,
+    format            TEXT CHECK (format IS NULL OR format IN (
+                          'online','classroom','self_study','webinar','conference','other')),
+    states_accepted   TEXT NOT NULL DEFAULT '[]',   -- JSON array of state codes
+    license_types     TEXT NOT NULL DEFAULT '[]',   -- JSON array of license types
+    url               TEXT,
+    is_active         INTEGER NOT NULL DEFAULT 1,
+    created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(provider_id, title)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ce_courses_provider ON ce_courses(provider_id);
+CREATE INDEX IF NOT EXISTS idx_ce_courses_active ON ce_courses(is_active);
+
+-- Junction: link CE credits to catalog courses
+CREATE TABLE IF NOT EXISTS ce_credit_courses (
+    credit_id TEXT NOT NULL REFERENCES ce_credits(id) ON DELETE CASCADE,
+    course_id TEXT NOT NULL REFERENCES ce_courses(id) ON DELETE CASCADE,
+    PRIMARY KEY (credit_id, course_id)
+);
+
 -- Pre-computed expiry view for dashboard queries
 CREATE VIEW IF NOT EXISTS v_expiring_licenses AS
 SELECT

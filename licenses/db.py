@@ -559,18 +559,30 @@ def list_ce_credits(
     license_id: Optional[str] = None,
     employee_id: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """List CE credits, optionally filtered."""
+    """List CE credits, optionally filtered. Includes linked course/provider info."""
     clauses: list = []
     params: list = []
     if license_id:
-        clauses.append("license_id = ?")
+        clauses.append("cr.license_id = ?")
         params.append(license_id)
     if employee_id:
-        clauses.append("employee_id = ?")
+        clauses.append("cr.employee_id = ?")
         params.append(employee_id)
     where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
     rows = conn.execute(
-        f"SELECT * FROM ce_credits{where} ORDER BY completion_date DESC", params
+        f"""SELECT cr.*,
+                   co.id AS catalog_course_id,
+                   co.title AS catalog_course_title,
+                   co.hours AS catalog_course_hours,
+                   cp.id AS catalog_provider_id,
+                   cp.name AS catalog_provider_name
+            FROM ce_credits cr
+            LEFT JOIN ce_credit_courses cc ON cc.credit_id = cr.id
+            LEFT JOIN ce_courses co ON co.id = cc.course_id
+            LEFT JOIN ce_providers cp ON cp.id = co.provider_id
+            {where}
+            ORDER BY cr.completion_date DESC""",
+        params,
     ).fetchall()
     return [dict(r) for r in rows]
 
@@ -2424,3 +2436,347 @@ def seed_state_requirements(
         count += cursor.rowcount
     conn.commit()
     return count
+
+
+# ---------------------------------------------------------------------------
+# CE Providers — catalog CRUD
+# ---------------------------------------------------------------------------
+
+VALID_COURSE_FORMATS = ("online", "classroom", "self_study", "webinar", "conference", "other")
+
+
+def list_ce_providers(
+    conn: sqlite3.Connection,
+    active_only: bool = True,
+    search: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """List CE providers with optional filters."""
+    clauses: list = []
+    params: list = []
+    if active_only:
+        clauses.append("is_active = 1")
+    if search:
+        clauses.append("(name LIKE ? OR accreditation_body LIKE ?)")
+        term = f"%{search}%"
+        params.extend([term, term])
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+    rows = conn.execute(
+        f"SELECT * FROM ce_providers{where} ORDER BY name", params
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_ce_provider(
+    conn: sqlite3.Connection, provider_id: str
+) -> Optional[Dict[str, Any]]:
+    """Get a single CE provider by ID."""
+    row = conn.execute(
+        "SELECT * FROM ce_providers WHERE id = ?", (provider_id,)
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def create_ce_provider(
+    conn: sqlite3.Connection,
+    name: str,
+    accreditation_body: Optional[str] = None,
+    accreditation_number: Optional[str] = None,
+    contact_email: Optional[str] = None,
+    contact_phone: Optional[str] = None,
+    website: Optional[str] = None,
+    notes: Optional[str] = None,
+    changed_by: str = "system",
+) -> Dict[str, Any]:
+    """Create a new CE provider."""
+    provider_id = generate_uuid()
+    now = datetime.utcnow().isoformat()
+    conn.execute(
+        """INSERT INTO ce_providers
+               (id, name, accreditation_body, accreditation_number,
+                contact_email, contact_phone, website, notes,
+                created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (provider_id, name, accreditation_body, accreditation_number,
+         contact_email, contact_phone, website, notes, now, now),
+    )
+    _audit(conn, "ce_provider", provider_id, "created",
+           new_values={"name": name}, changed_by=changed_by)
+    conn.commit()
+    return dict(conn.execute(
+        "SELECT * FROM ce_providers WHERE id = ?", (provider_id,)
+    ).fetchone())
+
+
+def update_ce_provider(
+    conn: sqlite3.Connection, provider_id: str, changed_by: str = "system", **fields
+) -> Optional[Dict[str, Any]]:
+    """Partial update of a CE provider."""
+    allowed = {
+        "name", "accreditation_body", "accreditation_number",
+        "contact_email", "contact_phone", "website", "notes", "is_active",
+    }
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        return get_ce_provider(conn, provider_id)
+
+    old_row = conn.execute(
+        "SELECT * FROM ce_providers WHERE id = ?", (provider_id,)
+    ).fetchone()
+    if not old_row:
+        return None
+    old_snapshot = {k: dict(old_row)[k] for k in updates if k in dict(old_row)}
+
+    updates["updated_at"] = datetime.utcnow().isoformat()
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    params = list(updates.values()) + [provider_id]
+    conn.execute(f"UPDATE ce_providers SET {set_clause} WHERE id = ?", params)
+    _audit(conn, "ce_provider", provider_id, "updated",
+           old_values=old_snapshot,
+           new_values={k: v for k, v in updates.items() if k != "updated_at"},
+           changed_by=changed_by)
+    conn.commit()
+    return get_ce_provider(conn, provider_id)
+
+
+def delete_ce_provider(
+    conn: sqlite3.Connection, provider_id: str, changed_by: str = "system"
+) -> bool:
+    """Soft-delete a CE provider (set is_active=0)."""
+    old_row = conn.execute(
+        "SELECT * FROM ce_providers WHERE id = ?", (provider_id,)
+    ).fetchone()
+    if not old_row:
+        return False
+    conn.execute(
+        "UPDATE ce_providers SET is_active = 0, updated_at = ? WHERE id = ?",
+        (datetime.utcnow().isoformat(), provider_id),
+    )
+    _audit(conn, "ce_provider", provider_id, "soft_deleted",
+           old_values={"is_active": 1}, changed_by=changed_by)
+    conn.commit()
+    return True
+
+
+# ---------------------------------------------------------------------------
+# CE Courses — catalog CRUD
+# ---------------------------------------------------------------------------
+
+
+def list_ce_courses(
+    conn: sqlite3.Connection,
+    provider_id: Optional[str] = None,
+    state_code: Optional[str] = None,
+    license_type: Optional[str] = None,
+    active_only: bool = True,
+    search: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """List CE courses with optional filters.
+
+    Cross-state filtering uses json_each() on the states_accepted JSON array.
+    """
+    clauses: list = []
+    params: list = []
+    if active_only:
+        clauses.append("c.is_active = 1")
+    if provider_id:
+        clauses.append("c.provider_id = ?")
+        params.append(provider_id)
+    if state_code:
+        clauses.append(
+            "EXISTS (SELECT 1 FROM json_each(c.states_accepted) WHERE value = ?)"
+        )
+        params.append(state_code)
+    if license_type:
+        clauses.append(
+            "EXISTS (SELECT 1 FROM json_each(c.license_types) WHERE value = ?)"
+        )
+        params.append(license_type)
+    if search:
+        clauses.append("(c.title LIKE ? OR c.description LIKE ?)")
+        term = f"%{search}%"
+        params.extend([term, term])
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+    rows = conn.execute(
+        f"""SELECT c.*, p.name AS provider_name
+            FROM ce_courses c
+            LEFT JOIN ce_providers p ON p.id = c.provider_id
+            {where}
+            ORDER BY c.title""",
+        params,
+    ).fetchall()
+    results = []
+    for r in rows:
+        d = dict(r)
+        # Parse JSON arrays for the response
+        for field in ("states_accepted", "license_types"):
+            if isinstance(d.get(field), str):
+                try:
+                    d[field] = json.loads(d[field])
+                except (json.JSONDecodeError, TypeError):
+                    d[field] = []
+        results.append(d)
+    return results
+
+
+def get_ce_course(
+    conn: sqlite3.Connection, course_id: str
+) -> Optional[Dict[str, Any]]:
+    """Get a single CE course with provider name."""
+    row = conn.execute(
+        """SELECT c.*, p.name AS provider_name
+           FROM ce_courses c
+           LEFT JOIN ce_providers p ON p.id = c.provider_id
+           WHERE c.id = ?""",
+        (course_id,),
+    ).fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    for field in ("states_accepted", "license_types"):
+        if isinstance(d.get(field), str):
+            try:
+                d[field] = json.loads(d[field])
+            except (json.JSONDecodeError, TypeError):
+                d[field] = []
+    return d
+
+
+def create_ce_course(
+    conn: sqlite3.Connection,
+    title: str,
+    hours: float,
+    provider_id: Optional[str] = None,
+    description: Optional[str] = None,
+    format: Optional[str] = None,
+    states_accepted: Optional[List[str]] = None,
+    license_types: Optional[List[str]] = None,
+    url: Optional[str] = None,
+    changed_by: str = "system",
+) -> Dict[str, Any]:
+    """Create a new CE course."""
+    course_id = generate_uuid()
+    now = datetime.utcnow().isoformat()
+    sa_json = json.dumps(states_accepted or [])
+    lt_json = json.dumps(license_types or [])
+    conn.execute(
+        """INSERT INTO ce_courses
+               (id, provider_id, title, description, hours, format,
+                states_accepted, license_types, url, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (course_id, provider_id, title, description, hours, format,
+         sa_json, lt_json, url, now, now),
+    )
+    _audit(conn, "ce_course", course_id, "created",
+           new_values={"title": title, "hours": hours},
+           changed_by=changed_by)
+    conn.commit()
+    return get_ce_course(conn, course_id)
+
+
+def update_ce_course(
+    conn: sqlite3.Connection, course_id: str, changed_by: str = "system", **fields
+) -> Optional[Dict[str, Any]]:
+    """Partial update of a CE course."""
+    allowed = {
+        "provider_id", "title", "description", "hours", "format",
+        "states_accepted", "license_types", "url", "is_active",
+    }
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        return get_ce_course(conn, course_id)
+
+    old_row = conn.execute(
+        "SELECT * FROM ce_courses WHERE id = ?", (course_id,)
+    ).fetchone()
+    if not old_row:
+        return None
+    old_snapshot = {k: dict(old_row)[k] for k in updates if k in dict(old_row)}
+
+    # Serialize JSON fields
+    for jf in ("states_accepted", "license_types"):
+        if jf in updates and isinstance(updates[jf], list):
+            updates[jf] = json.dumps(updates[jf])
+
+    updates["updated_at"] = datetime.utcnow().isoformat()
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    params = list(updates.values()) + [course_id]
+    conn.execute(f"UPDATE ce_courses SET {set_clause} WHERE id = ?", params)
+    _audit(conn, "ce_course", course_id, "updated",
+           old_values=old_snapshot,
+           new_values={k: v for k, v in updates.items() if k != "updated_at"},
+           changed_by=changed_by)
+    conn.commit()
+    return get_ce_course(conn, course_id)
+
+
+def delete_ce_course(
+    conn: sqlite3.Connection, course_id: str, changed_by: str = "system"
+) -> bool:
+    """Soft-delete a CE course (set is_active=0)."""
+    old_row = conn.execute(
+        "SELECT * FROM ce_courses WHERE id = ?", (course_id,)
+    ).fetchone()
+    if not old_row:
+        return False
+    conn.execute(
+        "UPDATE ce_courses SET is_active = 0, updated_at = ? WHERE id = ?",
+        (datetime.utcnow().isoformat(), course_id),
+    )
+    _audit(conn, "ce_course", course_id, "soft_deleted",
+           old_values={"is_active": 1}, changed_by=changed_by)
+    conn.commit()
+    return True
+
+
+# ---------------------------------------------------------------------------
+# CE Credit ↔ Course linking
+# ---------------------------------------------------------------------------
+
+
+def link_credit_to_course(
+    conn: sqlite3.Connection, credit_id: str, course_id: str
+) -> bool:
+    """Link a CE credit to a catalog course."""
+    conn.execute(
+        "INSERT OR IGNORE INTO ce_credit_courses (credit_id, course_id) VALUES (?, ?)",
+        (credit_id, course_id),
+    )
+    conn.commit()
+    return True
+
+
+def unlink_credit_from_course(
+    conn: sqlite3.Connection, credit_id: str, course_id: str
+) -> bool:
+    """Remove link between a CE credit and a catalog course."""
+    cur = conn.execute(
+        "DELETE FROM ce_credit_courses WHERE credit_id = ? AND course_id = ?",
+        (credit_id, course_id),
+    )
+    conn.commit()
+    return cur.rowcount > 0
+
+
+def get_credit_courses(
+    conn: sqlite3.Connection, credit_id: str
+) -> List[Dict[str, Any]]:
+    """Get all courses linked to a CE credit."""
+    rows = conn.execute(
+        """SELECT c.*, p.name AS provider_name
+           FROM ce_credit_courses cc
+           JOIN ce_courses c ON c.id = cc.course_id
+           LEFT JOIN ce_providers p ON p.id = c.provider_id
+           WHERE cc.credit_id = ?""",
+        (credit_id,),
+    ).fetchall()
+    results = []
+    for r in rows:
+        d = dict(r)
+        for field in ("states_accepted", "license_types"):
+            if isinstance(d.get(field), str):
+                try:
+                    d[field] = json.loads(d[field])
+                except (json.JSONDecodeError, TypeError):
+                    d[field] = []
+        results.append(d)
+    return results

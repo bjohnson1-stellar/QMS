@@ -99,6 +99,20 @@ from qms.licenses.db import (
     VALID_FILING_FREQUENCIES,
     VALID_REGISTRATION_TYPES,
     VALID_REGISTRATION_STATUSES,
+    create_ce_provider,
+    delete_ce_provider,
+    get_ce_provider,
+    list_ce_providers,
+    update_ce_provider,
+    create_ce_course,
+    delete_ce_course,
+    get_ce_course,
+    list_ce_courses,
+    update_ce_course,
+    link_credit_to_course,
+    unlink_credit_from_course,
+    get_credit_courses,
+    VALID_COURSE_FORMATS,
 )
 
 bp = Blueprint("licenses", __name__, url_prefix="/licenses")
@@ -648,10 +662,24 @@ def api_create_ce_credit():
             )
             data["certificate_file"] = rel_path
 
+    # Auto-populate from catalog course if course_id provided
+    course_id = data.pop("course_id", None)
+
     user = session.get("user", {})
     data["created_by"] = user.get("id", user.get("email", "unknown"))
     with get_db() as conn:
+        # If course_id given, fill course_name/provider from catalog
+        if course_id:
+            course = get_ce_course(conn, course_id)
+            if course:
+                if not data.get("course_name"):
+                    data["course_name"] = course["title"]
+                if not data.get("provider") and course.get("provider_name"):
+                    data["provider"] = course["provider_name"]
         result = create_ce_credit(conn, **data)
+        # Link credit to course
+        if course_id:
+            link_credit_to_course(conn, result["id"], course_id)
     return jsonify(result), 201
 
 
@@ -1899,3 +1927,204 @@ def api_compliance_summary():
     with get_db() as conn:
         summary = get_compliance_summary_by_state(conn)
     return jsonify(summary)
+
+
+# ---------------------------------------------------------------------------
+# CE Providers API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/ce-providers", methods=["GET"])
+@module_required("licenses")
+def api_list_ce_providers():
+    active = request.args.get("active", "true").lower() != "false"
+    search = request.args.get("search")
+    with get_db(readonly=True) as conn:
+        providers = list_ce_providers(conn, active_only=active, search=search)
+    return jsonify(providers)
+
+
+@bp.route("/api/ce-providers/<provider_id>", methods=["GET"])
+@module_required("licenses")
+def api_get_ce_provider(provider_id):
+    with get_db(readonly=True) as conn:
+        provider = get_ce_provider(conn, provider_id)
+    if not provider:
+        return jsonify({"error": "Provider not found"}), 404
+    return jsonify(provider)
+
+
+@bp.route("/api/ce-providers", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_create_ce_provider():
+    data = request.get_json(force=True)
+    if not data.get("name"):
+        return jsonify({"error": "Missing: name"}), 400
+    user = session.get("user", {})
+    changed_by = user.get("id", user.get("email", "unknown"))
+    with get_db() as conn:
+        provider = create_ce_provider(
+            conn,
+            name=data["name"],
+            accreditation_body=data.get("accreditation_body"),
+            accreditation_number=data.get("accreditation_number"),
+            contact_email=data.get("contact_email"),
+            contact_phone=data.get("contact_phone"),
+            website=data.get("website"),
+            notes=data.get("notes"),
+            changed_by=changed_by,
+        )
+    return jsonify(provider), 201
+
+
+@bp.route("/api/ce-providers/<provider_id>", methods=["PUT"])
+@module_required("licenses", min_role="editor")
+def api_update_ce_provider(provider_id):
+    data = request.get_json(force=True)
+    user = session.get("user", {})
+    data["changed_by"] = user.get("id", user.get("email", "unknown"))
+    with get_db() as conn:
+        result = update_ce_provider(conn, provider_id, **data)
+    if not result:
+        return jsonify({"error": "Provider not found"}), 404
+    return jsonify(result)
+
+
+@bp.route("/api/ce-providers/<provider_id>", methods=["DELETE"])
+@module_required("licenses", min_role="admin")
+def api_delete_ce_provider(provider_id):
+    user = session.get("user", {})
+    changed_by = user.get("id", user.get("email", "unknown"))
+    with get_db() as conn:
+        deleted = delete_ce_provider(conn, provider_id, changed_by=changed_by)
+    if not deleted:
+        return jsonify({"error": "Provider not found"}), 404
+    return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# CE Courses API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/ce-courses", methods=["GET"])
+@module_required("licenses")
+def api_list_ce_courses():
+    active = request.args.get("active", "true").lower() != "false"
+    with get_db(readonly=True) as conn:
+        courses = list_ce_courses(
+            conn,
+            provider_id=request.args.get("provider_id"),
+            state_code=request.args.get("state_code"),
+            license_type=request.args.get("license_type"),
+            active_only=active,
+            search=request.args.get("search"),
+        )
+    return jsonify(courses)
+
+
+@bp.route("/api/ce-courses/<course_id>", methods=["GET"])
+@module_required("licenses")
+def api_get_ce_course(course_id):
+    with get_db(readonly=True) as conn:
+        course = get_ce_course(conn, course_id)
+    if not course:
+        return jsonify({"error": "Course not found"}), 404
+    return jsonify(course)
+
+
+@bp.route("/api/ce-courses", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_create_ce_course():
+    data = request.get_json(force=True)
+    missing = [f for f in ("title", "hours") if not data.get(f)]
+    if missing:
+        return jsonify({"error": f"Missing: {', '.join(missing)}"}), 400
+    try:
+        hours = float(data["hours"])
+    except (ValueError, TypeError):
+        return jsonify({"error": "hours must be a number"}), 400
+    fmt = data.get("format")
+    if fmt and fmt not in VALID_COURSE_FORMATS:
+        return jsonify({"error": f"Invalid format. Must be one of: {', '.join(VALID_COURSE_FORMATS)}"}), 400
+    user = session.get("user", {})
+    changed_by = user.get("id", user.get("email", "unknown"))
+    with get_db() as conn:
+        course = create_ce_course(
+            conn,
+            title=data["title"],
+            hours=hours,
+            provider_id=data.get("provider_id"),
+            description=data.get("description"),
+            format=fmt,
+            states_accepted=data.get("states_accepted"),
+            license_types=data.get("license_types"),
+            url=data.get("url"),
+            changed_by=changed_by,
+        )
+    return jsonify(course), 201
+
+
+@bp.route("/api/ce-courses/<course_id>", methods=["PUT"])
+@module_required("licenses", min_role="editor")
+def api_update_ce_course(course_id):
+    data = request.get_json(force=True)
+    fmt = data.get("format")
+    if fmt and fmt not in VALID_COURSE_FORMATS:
+        return jsonify({"error": f"Invalid format. Must be one of: {', '.join(VALID_COURSE_FORMATS)}"}), 400
+    if "hours" in data:
+        try:
+            data["hours"] = float(data["hours"])
+        except (ValueError, TypeError):
+            return jsonify({"error": "hours must be a number"}), 400
+    user = session.get("user", {})
+    data["changed_by"] = user.get("id", user.get("email", "unknown"))
+    with get_db() as conn:
+        result = update_ce_course(conn, course_id, **data)
+    if not result:
+        return jsonify({"error": "Course not found"}), 404
+    return jsonify(result)
+
+
+@bp.route("/api/ce-courses/<course_id>", methods=["DELETE"])
+@module_required("licenses", min_role="admin")
+def api_delete_ce_course(course_id):
+    user = session.get("user", {})
+    changed_by = user.get("id", user.get("email", "unknown"))
+    with get_db() as conn:
+        deleted = delete_ce_course(conn, course_id, changed_by=changed_by)
+    if not deleted:
+        return jsonify({"error": "Course not found"}), 404
+    return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# CE Credit ↔ Course linking API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/ce-credits/<credit_id>/courses", methods=["GET"])
+@module_required("licenses")
+def api_get_credit_courses(credit_id):
+    with get_db(readonly=True) as conn:
+        courses = get_credit_courses(conn, credit_id)
+    return jsonify(courses)
+
+
+@bp.route("/api/ce-credits/<credit_id>/course", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_link_credit_to_course(credit_id):
+    data = request.get_json(force=True)
+    course_id = data.get("course_id")
+    if not course_id:
+        return jsonify({"error": "Missing: course_id"}), 400
+    with get_db() as conn:
+        link_credit_to_course(conn, credit_id, course_id)
+    return jsonify({"ok": True})
+
+
+@bp.route("/api/ce-credits/<credit_id>/course/<course_id>", methods=["DELETE"])
+@module_required("licenses", min_role="editor")
+def api_unlink_credit_from_course(credit_id, course_id):
+    with get_db() as conn:
+        removed = unlink_credit_from_course(conn, credit_id, course_id)
+    if not removed:
+        return jsonify({"error": "Link not found"}), 404
+    return jsonify({"ok": True})

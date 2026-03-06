@@ -57,6 +57,9 @@ def run_license_migrations(conn: sqlite3.Connection):
     # Phase 11 — state regulatory requirements
     _create_state_requirements_table(conn)
 
+    # Phase 12 — CE provider & course catalog
+    _create_ce_catalog_tables(conn)
+
     conn.commit()
 
 
@@ -697,6 +700,61 @@ def _create_state_requirements_table(conn: sqlite3.Connection):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_state_requirements_state ON state_requirements(state_code)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_state_requirements_type ON state_requirements(requirement_type)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_state_requirements_license_type ON state_requirements(license_type)")
+
+
+
+
+# ---------------------------------------------------------------------------
+# Phase 12 — CE provider & course catalog
+# ---------------------------------------------------------------------------
+
+def _create_ce_catalog_tables(conn: sqlite3.Connection):
+    """Create ce_providers, ce_courses, and ce_credit_courses tables."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS ce_providers (
+            id                    TEXT PRIMARY KEY,
+            name                  TEXT NOT NULL UNIQUE,
+            accreditation_body    TEXT,
+            accreditation_number  TEXT,
+            contact_email         TEXT,
+            contact_phone         TEXT,
+            website               TEXT,
+            notes                 TEXT,
+            is_active             INTEGER NOT NULL DEFAULT 1,
+            created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_ce_providers_active ON ce_providers(is_active)")
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS ce_courses (
+            id                TEXT PRIMARY KEY,
+            provider_id       TEXT REFERENCES ce_providers(id),
+            title             TEXT NOT NULL,
+            description       TEXT,
+            hours             REAL NOT NULL,
+            format            TEXT CHECK (format IS NULL OR format IN (
+                                  'online','classroom','self_study','webinar','conference','other')),
+            states_accepted   TEXT NOT NULL DEFAULT '[]',
+            license_types     TEXT NOT NULL DEFAULT '[]',
+            url               TEXT,
+            is_active         INTEGER NOT NULL DEFAULT 1,
+            created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(provider_id, title)
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_ce_courses_provider ON ce_courses(provider_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_ce_courses_active ON ce_courses(is_active)")
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS ce_credit_courses (
+            credit_id TEXT NOT NULL REFERENCES ce_credits(id) ON DELETE CASCADE,
+            course_id TEXT NOT NULL REFERENCES ce_courses(id) ON DELETE CASCADE,
+            PRIMARY KEY (credit_id, course_id)
+        )
+    """)
 
 
     # Add entity_id column to state_licenses if not present
