@@ -102,7 +102,7 @@ Full execution log: see git history and `.paul/phases/01-*/` through `.paul/phas
 | Catalog course auto-fill on credit entry | v0.2 Phase 12 | Optional, non-breaking enhancement |
 
 ### Git State
-Last commit: `e884fe5` (Phase 11 complete — regulatory intelligence)
+Last commit: `1706142` (Phase 12 complete — CE catalog UI + credential portfolios)
 Branch: main
 
 ### Deferred Issues

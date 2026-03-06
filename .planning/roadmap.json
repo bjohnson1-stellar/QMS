@@ -20,11 +20,11 @@
           "tags": ["extraction", "welding", "batch"]
         },
         {
-          "title": "v0.2 License Compliance: Phase 9 — Document Management & Activity Log",
-          "desc": "Attach documents to licenses (certificates, applications, correspondence). Timestamped activity notes. Activity feed combining events + notes + document uploads on detail page.",
+          "title": "v0.2 License Compliance: Phase 13 — Integrations & Automation",
+          "desc": "Primary source verification, calendar integration, cross-module links, bulk operations, API endpoints for external systems, dashboard widgets.",
           "module": "licenses",
           "priority": "high",
-          "tags": ["licenses", "compliance", "documents", "activity-log"]
+          "tags": ["licenses", "compliance", "integrations", "automation"]
         }
       ]
     },
@@ -75,6 +75,14 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "v0.2 Phase 12 — Advanced CE & Multi-Credential (2 plans)",
+          "desc": "CE provider & course catalog with cross-state applicability, CRUD modals, course browser with state/format filters. Employee credential portfolio with master-detail layout, CE progress bars. Catalog-linked credit entry.",
+          "module": "licenses",
+          "priority": "high",
+          "tags": ["licenses", "compliance", "ce", "catalog", "credentials", "portfolio", "ui"],
+          "completed": "2026-03-06"
+        },
         {
           "title": "v0.2 Phase 8 — Notifications & Task Management (2 plans)",
           "desc": "Rule-driven notification engine with 3 generators (expiration, CE deadline, renewal), CLI with 6 ops, 5 notification API endpoints, Teams webhook for critical alerts (Adaptive Card format), task queue UI panel on licenses dashboard with acknowledge/resolve actions.",
