@@ -5,22 +5,22 @@
 See: .paul/PROJECT.md
 
 **Core value:** Unified quality management platform — quality intelligence from Procore data (v0.1) + Harbor-like multi-state license compliance management (v0.2).
-**Current focus:** v0.2 Phase 9 — Document Management & Activity Log
+**Current focus:** v0.2 Phase 10 — Entity Registration Tracking
 
 ## Current Position
 
 Milestone: v0.2 License Compliance Platform
-Phase: 9 of 13 (Document Management & Activity Log) — Planning
-Plan: 09-01 complete, 09-02 not started
-Status: Ready for next PLAN (09-02)
-Last activity: 2026-03-06 — Plan 09-01 complete (documents + notes backend + activity feed)
+Phase: 10 of 13 (Entity Registration Tracking) — Not started
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-03-06 — Phase 9 complete, transitioned to Phase 10
 
 Progress:
-- v0.2 License Compliance Platform: [████░░░░░░] 37%
+- v0.2 License Compliance Platform: [█████░░░░░] 50%
   - Phase 6: Foundation Hardening [██████████] 100% (3/3 plans complete)
   - Phase 7: Renewal Workflow & Events [██████████] 100% (2/2 plans complete)
   - Phase 8: Notifications & Task Management [██████████] 100% (2/2 plans complete)
-  - Phase 9: Document Management & Activity Log [█████░░░░░] 50% (1/2 plans complete)
+  - Phase 9: Document Management & Activity Log [██████████] 100% (2/2 plans complete)
   - Phase 10: Entity Registration Tracking [░░░░░░░░░░] 0%
   - Phase 11: Regulatory Intelligence Database [░░░░░░░░░░] 0%
   - Phase 12: Advanced CE & Multi-Credential [░░░░░░░░░░] 0%
@@ -51,6 +51,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 08-01 | Complete | Notification backend: schema, engine, CLI | 2026-03-06 |
 | 08-02 | Complete | Teams webhook, notification API, task queue UI | 2026-03-06 |
 | 09-01 | Complete | Documents + notes backend, activity feed API | 2026-03-06 |
+| 09-02 | Complete | Documents/Notes/Activity UI on detail page | 2026-03-06 |
 
 **Pre-milestone work (completed before PAUL tracking):**
 - Licenses Phase 1: Base CRUD module, US state SVG map, CSV import, renewal timeline
@@ -83,15 +84,12 @@ Full execution log: see git history and `.paul/phases/01-*/` through `.paul/phas
 | Pagination dict response pattern | v0.2 Phase 6 | {items, total, page, per_page, pages} for list endpoints |
 | In-memory rate limiting | v0.2 Phase 6 | No Redis needed for LAN deployment |
 | Events in dedicated table, not status field | v0.2 Phase 7 | Avoids SQLite table rebuild, flexible event history |
-| Single-action renewal (not multi-step) | v0.2 Phase 7 | Approval workflow deferred to Phase 8 |
 | Append-only events (no edit/delete) | v0.2 Phase 7 | Audit integrity, matches _audit() pattern |
-| Event timeline between Portal Creds and CE | v0.2 Phase 7 | Groups license lifecycle data logically |
-| urllib.request for Teams webhook (no new deps) | v0.2 Phase 8 | Zero dependency footprint for webhook delivery |
-| Adaptive Card format for Teams | v0.2 Phase 8 | Modern format, richer than legacy connector cards |
-| Notifications load independently from dashboard | v0.2 Phase 8 | Non-blocking; dashboard renders fast |
+| Fetch-based dynamic sections for doc/note CRUD | v0.2 Phase 9 | No page reload, snappy UX |
+| UNION ALL activity feed (events+notes+docs) | v0.2 Phase 9 | Single query, easy to extend |
 
 ### Git State
-Last commit: `f85a944` (Phase 8 complete — notification system with Teams webhook & dashboard UI)
+Last commit: `52bf92a` (Phase 9 Plan 01 — document management & notes backend)
 Branch: main
 
 ### Deferred Issues
@@ -108,13 +106,12 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Plan 09-01 loop closed
-Next action: /paul:plan for Phase 9 Plan 02 (Document & Notes UI on detail page)
-Resume file: .paul/phases/09-document-management/09-01-PLAN.md
+Stopped at: Phase 9 complete, ready to plan Phase 10
+Next action: /paul:plan for Phase 10
+Resume file: .paul/ROADMAP.md
 Resume context:
-- Phase 8 complete: notification rules + generators + CLI + API + dashboard UI + Teams webhook
-- Phase 9 Plan 01 scope: license_documents + license_notes tables, CRUD functions, API routes, activity feed
-- Plan 02 will handle UI (detail page sections, bulk upload UI, activity timeline)
+- Phase 9 complete: document management (backend + UI), notes, unified activity feed
+- Phase 10: Entity Registration Tracking (business_entities, entity_registrations, hierarchy)
 
 ---
 *STATE.md — Updated after every significant action*
