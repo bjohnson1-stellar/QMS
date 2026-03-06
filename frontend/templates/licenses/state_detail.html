@@ -125,6 +125,54 @@
     {% endif %}
 </div>
 
+<!-- State Requirements (Regulatory Intelligence) -->
+<div class="card" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="margin:0;border:none;padding:0;">State Requirements</h3>
+        {% if current_user and (current_user.role == 'admin' or
+              current_user.modules.get('licenses') in ('admin', 'editor')) %}
+        <button class="btn-sm" onclick="openReqModal()">+ Add Requirement</button>
+        {% endif %}
+    </div>
+    {% if state_reqs %}
+    <table>
+        <thead>
+            <tr>
+                <th>License Type</th>
+                <th>Requirement</th>
+                <th>Description</th>
+                <th>Fee</th>
+                <th>Frequency</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in state_reqs %}
+            <tr>
+                <td>{{ req.license_type }}</td>
+                <td>
+                    {% set rtype_colors = {'renewal':'#1f6feb','ce_requirement':'#8957e5','bond':'#d29922','insurance':'#d29922','initial_application':'#238636','exam':'#6e7681','background_check':'#6e7681','fingerprinting':'#6e7681'} %}
+                    <span class="badge" style="font-size:11px;padding:3px 8px;background:{{ rtype_colors.get(req.requirement_type, '#6e7681') }};color:#fff;">{{ req.requirement_type|replace('_', ' ')|title }}</span>
+                </td>
+                <td>{{ req.description or '—' }}</td>
+                <td>{% if req.fee_amount %}${{ '%.2f'|format(req.fee_amount) }}{% else %}—{% endif %}</td>
+                <td>{{ (req.fee_frequency or '—')|replace('_', ' ')|title }}</td>
+                <td style="white-space:nowrap;">
+                    {% if current_user and (current_user.role == 'admin' or
+                          current_user.modules.get('licenses') in ('admin', 'editor')) %}
+                    <button class="btn-sm" onclick="editReq('{{ req.id }}')">Edit</button>
+                    <button class="btn-sm btn-danger" onclick="deleteReq('{{ req.id }}')">Delete</button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--color-text-muted);margin:0;">No state requirements defined. Add requirements to enable compliance scoring.</p>
+    {% endif %}
+</div>
+
 <!-- Coverage Gaps Alert -->
 <div id="gapsAlert" style="display:none;margin-bottom:20px;padding:16px;border-left:4px solid var(--color-warning, #d29922);background:var(--color-surface-alt);border-radius:0 6px 6px 0;">
     <strong style="color:var(--color-warning, #d29922);">Coverage Gaps Detected</strong>
@@ -265,6 +313,76 @@
         </form>
     </div>
 </div>
+<!-- State Requirement Modal -->
+<div id="reqModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:550px;">
+        <div class="modal-header">
+            <h2 id="reqTitle" style="margin:0;border:none;padding:0;">Add State Requirement</h2>
+            <button class="modal-close" onclick="closeReqModal()">&times;</button>
+        </div>
+        <div class="error-message" id="reqError"></div>
+        <form onsubmit="return saveReq(event)">
+            <input type="hidden" id="reqEditId">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="form-group">
+                    <label>License Type *</label>
+                    <input type="text" id="reqLicType" required placeholder="e.g. Mechanical Contractor">
+                </div>
+                <div class="form-group">
+                    <label>Requirement Type *</label>
+                    <select id="reqType" required>
+                        <option value="">Select type...</option>
+                        <option value="initial_application">Initial Application</option>
+                        <option value="renewal">Renewal</option>
+                        <option value="ce_requirement">CE Requirement</option>
+                        <option value="bond">Bond</option>
+                        <option value="insurance">Insurance</option>
+                        <option value="exam">Exam</option>
+                        <option value="background_check">Background Check</option>
+                        <option value="fingerprinting">Fingerprinting</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="reqDesc" rows="2" placeholder="Details about this requirement"></textarea>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label>Fee Amount ($)</label>
+                        <input type="number" id="reqFee" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Fee Frequency</label>
+                        <select id="reqFreq">
+                            <option value="">N/A</option>
+                            <option value="one_time">One Time</option>
+                            <option value="annual">Annual</option>
+                            <option value="biennial">Biennial</option>
+                            <option value="triennial">Triennial</option>
+                            <option value="per_renewal">Per Renewal</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Authority Name</label>
+                    <input type="text" id="reqAuthority" placeholder="e.g. Ohio OCILB">
+                </div>
+                <div class="form-group">
+                    <label>Authority URL</label>
+                    <input type="url" id="reqAuthorityUrl" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="reqNotes" rows="2"></textarea>
+                </div>
+            </div>
+            <div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--color-border-light);display:flex;gap:10px;">
+                <button type="submit" id="reqSubmitBtn">Add Requirement</button>
+                <button type="button" class="secondary" onclick="closeReqModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -272,6 +390,7 @@
     const API = '/licenses/api';
     const STATE_CODE = '{{ state_code }}';
     const CE_REQS = {{ ce_reqs | tojson }};
+    const STATE_REQS = {{ state_reqs | tojson }};
 
     // ── Board ────────────────────────────────────────────────────────────
     function editBoard() {
@@ -377,6 +496,85 @@
         if (!confirm('Delete this CE requirement?')) return;
         try {
             const res = await fetch(`${API}/ce-requirements/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+            window.location.reload();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    // ── State Requirements ─────────────────────────────────────────────
+    function openReqModal() {
+        document.getElementById('reqEditId').value = '';
+        document.getElementById('reqTitle').textContent = 'Add State Requirement';
+        document.getElementById('reqSubmitBtn').textContent = 'Add Requirement';
+        document.getElementById('reqLicType').value = '';
+        document.getElementById('reqType').value = '';
+        document.getElementById('reqDesc').value = '';
+        document.getElementById('reqFee').value = '';
+        document.getElementById('reqFreq').value = '';
+        document.getElementById('reqAuthority').value = '';
+        document.getElementById('reqAuthorityUrl').value = '';
+        document.getElementById('reqNotes').value = '';
+        document.getElementById('reqError').style.display = 'none';
+        document.getElementById('reqModal').style.display = 'flex';
+    }
+
+    function editReq(id) {
+        const req = STATE_REQS.find(r => r.id === id);
+        if (!req) return;
+        document.getElementById('reqEditId').value = id;
+        document.getElementById('reqTitle').textContent = 'Edit State Requirement';
+        document.getElementById('reqSubmitBtn').textContent = 'Save Changes';
+        document.getElementById('reqLicType').value = req.license_type || '';
+        document.getElementById('reqType').value = req.requirement_type || '';
+        document.getElementById('reqDesc').value = req.description || '';
+        document.getElementById('reqFee').value = req.fee_amount || '';
+        document.getElementById('reqFreq').value = req.fee_frequency || '';
+        document.getElementById('reqAuthority').value = req.authority_name || '';
+        document.getElementById('reqAuthorityUrl').value = req.authority_url || '';
+        document.getElementById('reqNotes').value = req.notes || '';
+        document.getElementById('reqError').style.display = 'none';
+        document.getElementById('reqModal').style.display = 'flex';
+    }
+
+    function closeReqModal() {
+        document.getElementById('reqModal').style.display = 'none';
+    }
+
+    async function saveReq(e) {
+        e.preventDefault();
+        const editId = document.getElementById('reqEditId').value;
+        const feeVal = document.getElementById('reqFee').value;
+        const data = {
+            state_code: STATE_CODE,
+            license_type: document.getElementById('reqLicType').value,
+            requirement_type: document.getElementById('reqType').value,
+            description: document.getElementById('reqDesc').value || null,
+            fee_amount: feeVal ? parseFloat(feeVal) : null,
+            fee_frequency: document.getElementById('reqFreq').value || null,
+            authority_name: document.getElementById('reqAuthority').value || null,
+            authority_url: document.getElementById('reqAuthorityUrl').value || null,
+            notes: document.getElementById('reqNotes').value || null,
+        };
+        try {
+            const url = editId ? `${API}/requirements/${editId}` : `${API}/requirements`;
+            const method = editId ? 'PUT' : 'POST';
+            const res = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+            window.location.reload();
+        } catch (err) {
+            const el = document.getElementById('reqError');
+            el.textContent = err.message;
+            el.style.display = 'block';
+        }
+        return false;
+    }
+
+    async function deleteReq(id) {
+        if (!confirm('Delete this state requirement?')) return;
+        try {
+            const res = await fetch(`${API}/requirements/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error((await res.json()).error || 'Failed');
             window.location.reload();
         } catch (err) {

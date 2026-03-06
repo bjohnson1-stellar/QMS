@@ -46,9 +46,9 @@ Bidirectional Procore observation integration. Two tracks: personal mobile captu
 - [x] Notification system (rule-driven alerts, CLI, API, dashboard UI, Teams webhook) — v0.2 Phase 8
 - [x] Document management with notes, file storage, and unified activity feed — v0.2 Phase 9
 - [x] Entity registration tracking (business entities, SoS filings, DBE/MBE/WBE certs, hierarchy, license linking) — v0.2 Phase 10
+- [x] Regulatory intelligence database (state requirements, fee schedules, compliance scoring, gap analysis UI) — v0.2 Phase 11
 
 ### Active (v0.2 — In Progress)
-- [ ] Regulatory intelligence database (state requirements, fee schedules)
 - [ ] Advanced CE management (providers, courses, cross-state mapping)
 - [ ] Integrations (primary source verification, calendar, cross-module)
 
@@ -111,4 +111,4 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-06 after Phase 10*
+*Last updated: 2026-03-06 after Phase 11*

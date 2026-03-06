@@ -281,6 +281,8 @@ def state_detail_page(state_code):
         stats = get_state_license_summary(conn, state_code)
         licenses_list = list_licenses_for_state(conn, state_code)
         ce_reqs = list_ce_requirements(conn, state_code=state_code)
+        state_reqs_result = list_requirements(conn, state_code=state_code)
+        state_reqs = state_reqs_result.get("items", state_reqs_result) if isinstance(state_reqs_result, dict) else state_reqs_result
         scopes = list_scope_categories(conn)
         # Batch-load scopes for all licenses (single query instead of N+1)
         license_ids = [lic["id"] for lic in licenses_list]
@@ -295,6 +297,7 @@ def state_detail_page(state_code):
         stats=stats,
         licenses=licenses_list,
         ce_reqs=ce_reqs,
+        state_reqs=state_reqs,
         scopes=scopes,
     )
 
@@ -327,6 +330,7 @@ def license_detail_page(license_id):
             secret = current_app.config.get("SECRET_KEY", "")
             portal_cred = get_portal_credential(conn, license_id, user_id, secret)
         events = get_license_events(conn, license_id)
+        compliance = calculate_compliance_score(conn, license_id)
     state_name = _STATE_NAMES.get(lic["state_code"], lic["state_code"])
     return render_template(
         "licenses/license_detail.html",
@@ -339,6 +343,7 @@ def license_detail_page(license_id):
         credits=credits,
         portal_cred=portal_cred,
         events=events,
+        compliance=compliance,
     )
 
 

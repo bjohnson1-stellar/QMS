@@ -160,6 +160,53 @@
     {% endif %}
 </div>
 
+<!-- Compliance Score -->
+<div class="card" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="margin:0;border:none;padding:0;">Compliance</h3>
+        <a href="{{ url_for('licenses.state_detail_page', state_code=license.state_code) }}" class="btn-sm" style="text-decoration:none;">Manage Requirements</a>
+    </div>
+    {% if compliance and compliance.total_requirements > 0 %}
+    <div style="display:flex;align-items:flex-start;gap:24px;">
+        <!-- Score Gauge -->
+        <div style="flex-shrink:0;text-align:center;">
+            {% set score = compliance.score|round|int %}
+            {% set gauge_color = '#238636' if score >= 80 else '#d29922' if score >= 50 else '#da3633' %}
+            <div style="position:relative;width:80px;height:80px;">
+                <div style="width:80px;height:80px;border-radius:50%;background:conic-gradient({{ gauge_color }} {{ score * 3.6 }}deg, var(--color-border-light) {{ score * 3.6 }}deg);display:flex;align-items:center;justify-content:center;">
+                    <div style="width:60px;height:60px;border-radius:50%;background:var(--color-surface);display:flex;align-items:center;justify-content:center;">
+                        <span style="font-size:1.2rem;font-weight:700;color:{{ gauge_color }};">{{ score }}%</span>
+                    </div>
+                </div>
+            </div>
+            <div style="font-size:0.8rem;color:var(--color-text-muted);margin-top:6px;">{{ compliance.met_count }} of {{ compliance.total_requirements }} met</div>
+        </div>
+        <!-- Requirements Breakdown -->
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px;font-size:0.85rem;">
+            {% for item in compliance.met %}
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="color:#238636;font-weight:700;flex-shrink:0;">&#10003;</span>
+                <span>{{ item.requirement_type|replace('_', ' ')|title }}</span>
+                <span style="color:var(--color-text-muted);font-size:0.8rem;">— {{ item.description or item.evidence or '' }}</span>
+            </div>
+            {% endfor %}
+            {% for item in compliance.unmet %}
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="color:#da3633;font-weight:700;flex-shrink:0;">&#10007;</span>
+                <span>{{ item.requirement_type|replace('_', ' ')|title }}</span>
+                <span style="color:var(--color-text-muted);font-size:0.8rem;">— {{ item.reason or item.description or '' }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <p style="color:var(--color-text-muted);margin:0;font-size:0.85rem;">
+        No state requirements defined for {{ license.license_type }} in {{ license.state_code }}.
+        <a href="{{ url_for('licenses.state_detail_page', state_code=license.state_code) }}" style="color:var(--color-primary);">Add requirements on the state page.</a>
+    </p>
+    {% endif %}
+</div>
+
 <!-- Event History -->
 <div class="card" style="padding:20px;margin-bottom:20px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
