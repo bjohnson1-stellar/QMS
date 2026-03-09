@@ -27,6 +27,7 @@ class TrayApp:
         self._external = False  # True if a server we didn't start is on the port
         self._stop_health = threading.Event()
         self._icon: pystray.Icon | None = None
+        self._auto_start = False
 
     # ── Status ──────────────────────────────────────────────────────
 
@@ -152,10 +153,12 @@ class TrayApp:
             title="SIS QMS",
             menu=self._build_menu(),
         )
-        # Detect if server is already running
+        # Detect if server is already running, or auto-start it
         if self._port_in_use():
             self._external = True
             self._refresh_menu()
+        elif self._auto_start:
+            self.start_server()
 
         health_thread = threading.Thread(target=self._health_loop, daemon=True)
         health_thread.start()
@@ -171,6 +174,8 @@ def _default_icon() -> Image.Image:
     return img
 
 
-def main(port: int = _DEFAULT_PORT):
+def main(port: int = _DEFAULT_PORT, auto_start: bool = False):
     app = TrayApp(port=port)
+    if auto_start:
+        app._auto_start = True
     app.run()
