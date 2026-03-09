@@ -12,9 +12,9 @@ Centralized quality and compliance management for MEP contractors — replacing 
 
 | Attribute | Value |
 |-----------|-------|
-| Version | 0.2.0-alpha |
-| Status | In Progress |
-| Last Updated | 2026-03-05 (v0.2 milestone created) |
+| Version | 0.2.0 |
+| Status | Complete |
+| Last Updated | 2026-03-09 (v0.2 milestone complete) |
 
 **Production URL:** http://L004470-CAD:5000
 
@@ -49,8 +49,8 @@ Bidirectional Procore observation integration. Two tracks: personal mobile captu
 - [x] Regulatory intelligence database (state requirements, fee schedules, compliance scoring, gap analysis UI) — v0.2 Phase 11
 - [x] Advanced CE management (provider catalog, course browser, cross-state mapping, employee credential portfolios) — v0.2 Phase 12
 
-### Active (v0.2 — In Progress)
-- [ ] Integrations (primary source verification, calendar, cross-module)
+### Active (v0.2 — Complete)
+- [x] Integrations (dashboard widgets, iCal feed, cross-module credentials, bulk ops, verification tracking, external API) — v0.2 Phase 13
 
 ### Paused (v0.1 remaining)
 - [ ] Procore push (Phase 5)
@@ -86,6 +86,9 @@ SIS manages professional and business licenses across multiple states for MEP co
 | Single-action renewal (not multi-step) | Simple now; approval workflow deferred to Phase 8 | 2026-03-06 | Active |
 | Clone welding notification pattern | Proven pattern reduces risk | 2026-03-05 | Active |
 | Self-hosted over SaaS | Integration with existing QMS modules, no recurring cost | 2026-03-05 | Active |
+| Separate verification table (not events) | Avoids SQLite table rebuild for CHECK constraint | 2026-03-09 | Active |
+| SHA-256 hashed API tokens | Plaintext shown once, never stored | 2026-03-09 | Active |
+| Read-only external API v1 | Safety first for LAN deployment | 2026-03-09 | Active |
 | Two-track approach (v0.1) | Personal mobile pipeline vs team-wide import | 2026-02-25 | Active |
 | OneDrive as mobile bridge (v0.1) | No API integration needed | 2026-02-25 | Active |
 
@@ -111,4 +114,4 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-06 after Phase 12*
+*Last updated: 2026-03-09 after Phase 13 — v0.2 milestone complete*

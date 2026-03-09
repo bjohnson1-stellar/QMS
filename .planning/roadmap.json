@@ -26,18 +26,6 @@
             "welding",
             "batch"
           ]
-        },
-        {
-          "title": "v0.2 License Compliance: Phase 13 \u00e2\u20ac\u201d Integrations & Automation",
-          "desc": "Primary source verification, calendar integration, cross-module links, bulk operations, API endpoints for external systems, dashboard widgets.",
-          "module": "licenses",
-          "priority": "high",
-          "tags": [
-            "licenses",
-            "compliance",
-            "integrations",
-            "automation"
-          ]
         }
       ]
     },
@@ -106,6 +94,20 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "v0.2 Phase 13 — Integrations & Automation (3 plans)",
+          "desc": "Dashboard widgets + iCal calendar feed, cross-module credentials + bulk operations, license verification tracking with state board lookup, token-authenticated external API at /api/v1/. Completes v0.2 milestone.",
+          "module": "licenses",
+          "priority": "high",
+          "tags": [
+            "licenses",
+            "compliance",
+            "integrations",
+            "verification",
+            "api"
+          ],
+          "completed": "2026-03-09"
+        },
         {
           "title": "System Tray App for Waitress Server Control",
           "desc": "pystray-based system tray icon with Start/Stop/Restart server, Open in Browser, health monitoring. Subprocess isolation, port conflict detection, external server awareness. CLI: qms tray.",
