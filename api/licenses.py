@@ -118,6 +118,9 @@ from qms.licenses.db import (
     get_calendar_events,
     bulk_renew_licenses,
     batch_create_ce_credits,
+    record_verification,
+    get_verification_history,
+    VALID_VERIFICATION_STATUSES,
     VALID_COURSE_FORMATS,
 )
 
@@ -363,6 +366,8 @@ def license_detail_page(license_id):
             portal_cred = get_portal_credential(conn, license_id, user_id, secret)
         events = get_license_events(conn, license_id)
         compliance = calculate_compliance_score(conn, license_id)
+        board = get_license_board(conn, lic["state_code"])
+        verifications = get_verification_history(conn, license_id)
     state_name = _STATE_NAMES.get(lic["state_code"], lic["state_code"])
     return render_template(
         "licenses/license_detail.html",
@@ -376,6 +381,8 @@ def license_detail_page(license_id):
         portal_cred=portal_cred,
         events=events,
         compliance=compliance,
+        board=board,
+        verifications=verifications,
     )
 
 
@@ -2298,3 +2305,40 @@ def api_batch_ce():
             created_by=_get_user_id(),
         )
     return jsonify({"created": created})
+
+
+# ---------------------------------------------------------------------------
+# Verification routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/licenses/<license_id>/verify", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_verify_license(license_id):
+    """Record a primary source verification result."""
+    data = request.get_json(silent=True) or {}
+    status = data.get("status", "").strip()
+    if status not in VALID_VERIFICATION_STATUSES:
+        return jsonify({"error": f"status must be one of: {', '.join(VALID_VERIFICATION_STATUSES)}"}), 400
+
+    with get_db() as conn:
+        board = get_license_board(conn, data.get("state_code", ""))
+        board_url = (board or {}).get("lookup_url")
+        try:
+            result = record_verification(
+                conn, license_id, status,
+                notes=data.get("notes"),
+                board_url=board_url,
+                created_by=_get_user_id(),
+            )
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+    return jsonify(result)
+
+
+@bp.route("/api/licenses/<license_id>/verifications", methods=["GET"])
+@module_required("licenses")
+def api_verification_history(license_id):
+    """Return verification history for a license."""
+    with get_db(readonly=True) as conn:
+        history = get_verification_history(conn, license_id)
+    return jsonify(history)

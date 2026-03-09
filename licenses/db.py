@@ -3082,3 +3082,68 @@ def batch_create_ce_credits(
 
     conn.commit()
     return created
+
+
+# ---------------------------------------------------------------------------
+# Verification tracking
+# ---------------------------------------------------------------------------
+
+VALID_VERIFICATION_STATUSES = ("verified", "not_found", "discrepancy")
+
+
+def record_verification(
+    conn: sqlite3.Connection,
+    license_id: str,
+    status: str,
+    *,
+    notes: Optional[str] = None,
+    board_url: Optional[str] = None,
+    created_by: str = "system",
+) -> Dict[str, Any]:
+    """Record a verification check result and update license verification fields."""
+    if status not in VALID_VERIFICATION_STATUSES:
+        raise ValueError(f"Invalid verification status: {status}")
+    lic = get_license(conn, license_id)
+    if not lic:
+        raise ValueError(f"License not found: {license_id}")
+
+    now = datetime.utcnow().isoformat()
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    vid = generate_uuid()
+
+    conn.execute(
+        """INSERT INTO license_verifications
+               (id, license_id, verified_date, status, source, board_url, notes,
+                created_by, created_at)
+           VALUES (?, ?, ?, ?, 'manual', ?, ?, ?, ?)""",
+        (vid, license_id, today, status, board_url, notes, created_by, now),
+    )
+
+    conn.execute(
+        """UPDATE state_licenses
+           SET last_verified_date = ?, verification_status = ?, updated_at = ?
+           WHERE id = ?""",
+        (today, status, now, license_id),
+    )
+
+    _audit(conn, "license_verification", vid, "created",
+           new_values={"license_id": license_id, "status": status},
+           changed_by=created_by)
+
+    conn.commit()
+    return {"id": vid, "license_id": license_id, "status": status,
+            "verified_date": today, "notes": notes}
+
+
+def get_verification_history(
+    conn: sqlite3.Connection,
+    license_id: str,
+) -> List[Dict[str, Any]]:
+    """Return verification records for a license, newest first."""
+    rows = conn.execute(
+        """SELECT * FROM license_verifications
+           WHERE license_id = ?
+           ORDER BY verified_date DESC, created_at DESC""",
+        (license_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]

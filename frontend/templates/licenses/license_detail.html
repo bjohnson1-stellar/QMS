@@ -23,9 +23,13 @@
         </h1>
         {% set status_colors = {'active':'#238636','expired':'#da3633','pending':'#d29922','revoked':'#6e7681','disassociation':'#6e7681'} %}
         <span class="badge" style="font-size:12px;background:{{ status_colors.get(license.status, '#6e7681') }};color:#fff;margin-top:4px;">{{ license.status }}</span>
+        {% set v_colors = {'verified':'#238636','not_found':'#da3633','discrepancy':'#d29922','unverified':'#6e7681'} %}
+        {% set v_status = license.verification_status or 'unverified' %}
+        <span class="badge" style="font-size:11px;background:{{ v_colors.get(v_status, '#6e7681') }};color:#fff;margin-top:4px;margin-left:4px;" title="Last verified: {{ license.last_verified_date or 'Never' }}">{{ v_status }}</span>
     </div>
     <div style="display:flex;gap:8px;">
         {% if is_editor %}
+        <button onclick="openVerifyModal()">Verify License</button>
         <button onclick="openEditModal()">Edit</button>
         {% endif %}
         {% if is_admin %}
@@ -594,6 +598,46 @@
             <div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--color-border-light);display:flex;gap:10px;">
                 <button type="submit" id="creditSubmitBtn">Add Credit</button>
                 <button type="button" class="secondary" onclick="closeCreditModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Verification Modal -->
+<div id="verifyModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:450px;">
+        <div class="modal-header">
+            <h2 style="margin:0;border:none;padding:0;">Verify License</h2>
+            <button type="button" class="modal-close" onclick="closeVerifyModal()">&times;</button>
+        </div>
+        {% if board and board.lookup_url %}
+        <div style="margin:12px 0;padding:10px 14px;background:var(--color-bg-subtle,#f6f8fa);border-radius:6px;font-size:0.85rem;">
+            <strong>State Board Lookup:</strong>
+            <a href="{{ board.lookup_url }}" target="_blank" rel="noopener" style="color:var(--color-primary);margin-left:6px;">{{ board.board_name or 'Open Lookup' }} &#8599;</a>
+        </div>
+        {% elif board and board.website_url %}
+        <div style="margin:12px 0;padding:10px 14px;background:var(--color-bg-subtle,#f6f8fa);border-radius:6px;font-size:0.85rem;">
+            <strong>State Board:</strong>
+            <a href="{{ board.website_url }}" target="_blank" rel="noopener" style="color:var(--color-primary);margin-left:6px;">{{ board.board_name or 'Open Website' }} &#8599;</a>
+            <div style="color:var(--color-text-muted);margin-top:4px;font-size:0.8rem;">No direct lookup URL available.</div>
+        </div>
+        {% endif %}
+        <div id="verifyError" style="display:none;color:var(--color-danger,#da3633);padding:8px;margin-bottom:12px;background:rgba(218,54,51,0.1);border-radius:4px;font-size:0.85rem;"></div>
+        <form onsubmit="return submitVerification(event)">
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.85rem;">Verification Result</label>
+                <select id="verifyStatus" required style="width:100%;padding:8px;border:1px solid var(--color-border);border-radius:4px;font-size:0.9rem;">
+                    <option value="verified">Verified &mdash; License confirmed active</option>
+                    <option value="not_found">Not Found &mdash; License not in board records</option>
+                    <option value="discrepancy">Discrepancy &mdash; Details don't match</option>
+                </select>
+            </div>
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.85rem;">Notes (optional)</label>
+                <textarea id="verifyNotes" rows="3" maxlength="1000" placeholder="e.g., Confirmed active on state board website..." style="width:100%;padding:8px;border:1px solid var(--color-border);border-radius:4px;font-size:0.9rem;resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button type="submit">Record Verification</button>
+                <button type="button" class="secondary" onclick="closeVerifyModal()">Cancel</button>
             </div>
         </form>
     </div>
@@ -1229,6 +1273,39 @@
     loadDocuments();
     loadNotes();
     loadActivity();
+
+    // ── Verification ─────────────────────────────────────────────────────
+    function openVerifyModal() {
+        document.getElementById('verifyStatus').value = 'verified';
+        document.getElementById('verifyNotes').value = '';
+        document.getElementById('verifyError').style.display = 'none';
+        document.getElementById('verifyModal').style.display = 'flex';
+    }
+    function closeVerifyModal() { document.getElementById('verifyModal').style.display = 'none'; }
+
+    async function submitVerification(e) {
+        e.preventDefault();
+        const data = {
+            status: document.getElementById('verifyStatus').value,
+            state_code: '{{ license.state_code }}',
+        };
+        const notes = document.getElementById('verifyNotes').value;
+        if (notes) data.notes = notes;
+        try {
+            const res = await fetch(`${API}/licenses/${LIC_ID}/verify`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+            window.location.reload();
+        } catch (err) {
+            const el = document.getElementById('verifyError');
+            el.textContent = err.message;
+            el.style.display = 'block';
+        }
+        return false;
+    }
 
     // ── Add Event ─────────────────────────────────────────────────────────
     function openEventModal() {

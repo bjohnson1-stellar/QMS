@@ -38,3 +38,16 @@ CREATE TABLE IF NOT EXISTS user_business_units (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ubu_user ON user_business_units(user_id);
+
+-- API tokens for external system access (X-API-Key header auth)
+CREATE TABLE IF NOT EXISTS api_tokens (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    token_hash  TEXT NOT NULL UNIQUE,
+    permissions TEXT DEFAULT 'read',
+    created_by  TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    expires_at  TEXT,
+    last_used   TEXT,
+    is_active   INTEGER DEFAULT 1
+);

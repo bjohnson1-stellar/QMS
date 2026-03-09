@@ -339,6 +339,23 @@ CREATE TABLE IF NOT EXISTS ce_credit_courses (
     PRIMARY KEY (credit_id, course_id)
 );
 
+-- License verification records (primary source verification tracking)
+CREATE TABLE IF NOT EXISTS license_verifications (
+    id              TEXT PRIMARY KEY,
+    license_id      TEXT NOT NULL,
+    verified_date   TEXT NOT NULL,        -- ISO 8601 (YYYY-MM-DD)
+    status          TEXT NOT NULL
+                    CHECK (status IN ('verified','not_found','discrepancy')),
+    source          TEXT DEFAULT 'manual', -- 'manual' or future 'automated'
+    board_url       TEXT,                  -- URL used for verification
+    notes           TEXT,
+    created_by      TEXT DEFAULT 'system',
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (license_id) REFERENCES state_licenses(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_verifications_license ON license_verifications(license_id);
+
 -- Pre-computed expiry view for dashboard queries
 CREATE VIEW IF NOT EXISTS v_expiring_licenses AS
 SELECT

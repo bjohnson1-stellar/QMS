@@ -246,6 +246,9 @@ def create_app() -> Flask:
     from qms.api.licenses import bp as licenses_bp
     app.register_blueprint(licenses_bp)
 
+    from qms.api.external import bp as external_bp
+    app.register_blueprint(external_bp)
+
     # Root route — landing page
     @app.route("/")
     def index():

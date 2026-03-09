@@ -60,6 +60,9 @@ def run_license_migrations(conn: sqlite3.Connection):
     # Phase 12 — CE provider & course catalog
     _create_ce_catalog_tables(conn)
 
+    # Phase 13 — license verification tracking
+    _create_verification_table(conn)
+
     conn.commit()
 
 
@@ -780,3 +783,36 @@ def _create_ce_catalog_tables(conn: sqlite3.Connection):
                 "UPDATE state_licenses SET entity_id = ? WHERE business_entity = ?",
                 (entity_id, name),
             )
+
+
+# ---------------------------------------------------------------------------
+# Phase 13 — license verification tracking
+# ---------------------------------------------------------------------------
+
+def _create_verification_table(conn: sqlite3.Connection):
+    """Create license_verifications table and add verification columns to state_licenses."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS license_verifications (
+            id              TEXT PRIMARY KEY,
+            license_id      TEXT NOT NULL,
+            verified_date   TEXT NOT NULL,
+            status          TEXT NOT NULL
+                            CHECK (status IN ('verified','not_found','discrepancy')),
+            source          TEXT DEFAULT 'manual',
+            board_url       TEXT,
+            notes           TEXT,
+            created_by      TEXT DEFAULT 'system',
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (license_id) REFERENCES state_licenses(id) ON DELETE CASCADE
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_verifications_license ON license_verifications(license_id)")
+
+    # Add verification tracking columns to state_licenses
+    sl_cols = {r[1] for r in conn.execute("PRAGMA table_info(state_licenses)").fetchall()}
+    if "last_verified_date" not in sl_cols:
+        conn.execute("ALTER TABLE state_licenses ADD COLUMN last_verified_date TEXT")
+    if "verification_status" not in sl_cols:
+        conn.execute(
+            "ALTER TABLE state_licenses ADD COLUMN verification_status TEXT DEFAULT 'unverified'"
+        )

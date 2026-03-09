@@ -22,6 +22,7 @@ def run_auth_migrations(conn: sqlite3.Connection) -> None:
     _create_business_unit_access_table(conn)
     _fix_module_access_fk(conn)
     _add_employee_link(conn)
+    _create_api_tokens_table(conn)
 
 
 def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
@@ -243,4 +244,28 @@ def _add_employee_link(conn: sqlite3.Connection) -> None:
     conn.execute(
         "ALTER TABLE users ADD COLUMN employee_id TEXT REFERENCES employees(id)"
     )
+    conn.commit()
+
+
+def _create_api_tokens_table(conn: sqlite3.Connection) -> None:
+    """Create api_tokens table for external API authentication."""
+    existing = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='api_tokens'"
+    ).fetchone()
+    if existing:
+        return
+    logger.info("Creating api_tokens table")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS api_tokens (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL,
+            token_hash  TEXT NOT NULL UNIQUE,
+            permissions TEXT DEFAULT 'read',
+            created_by  TEXT,
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            expires_at  TEXT,
+            last_used   TEXT,
+            is_active   INTEGER DEFAULT 1
+        )
+    """)
     conn.commit()

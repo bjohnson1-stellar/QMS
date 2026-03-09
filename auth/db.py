@@ -4,8 +4,12 @@ User CRUD operations for QMS auth — local email + password.
 Pure business logic — no Flask imports.
 """
 
+import hashlib
 import json
+import secrets
 import sqlite3
+import uuid
+from datetime import datetime
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -355,3 +359,94 @@ def get_employee_for_user(conn: sqlite3.Connection, user_id: int) -> dict | None
         (user_id,),
     ).fetchone()
     return dict(row) if row else None
+
+
+# ── API Token Management ─────────────────────────────────────────────────────
+
+def _hash_token(token: str) -> str:
+    """SHA-256 hash of a plaintext API token."""
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def create_api_token(
+    conn: sqlite3.Connection,
+    name: str,
+    permissions: str = "read",
+    created_by: str = "system",
+    expires_days: int | None = None,
+) -> dict:
+    """Create an API token. Returns dict with plaintext token (shown once)."""
+    token_id = str(uuid.uuid4())
+    plaintext = secrets.token_urlsafe(32)
+    token_hash = _hash_token(plaintext)
+
+    expires_at = None
+    if expires_days:
+        from datetime import timedelta
+        expires_at = (datetime.utcnow() + timedelta(days=expires_days)).isoformat()
+
+    conn.execute(
+        """INSERT INTO api_tokens (id, name, token_hash, permissions, created_by, expires_at)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (token_id, name, token_hash, permissions, created_by, expires_at),
+    )
+    conn.commit()
+
+    log_auth_event(conn, "api_token_created", token_id, changed_by=created_by,
+                   detail={"name": name, "permissions": permissions})
+
+    return {
+        "id": token_id,
+        "name": name,
+        "token": plaintext,
+        "permissions": permissions,
+        "created_at": datetime.utcnow().isoformat(),
+        "expires_at": expires_at,
+    }
+
+
+def validate_api_token(conn: sqlite3.Connection, token: str) -> dict | None:
+    """Validate an API token. Returns token record if valid, None otherwise."""
+    token_hash = _hash_token(token)
+    row = conn.execute(
+        "SELECT * FROM api_tokens WHERE token_hash = ? AND is_active = 1",
+        (token_hash,),
+    ).fetchone()
+    if not row:
+        return None
+
+    record = dict(row)
+
+    # Check expiry
+    if record.get("expires_at"):
+        if datetime.utcnow().isoformat() > record["expires_at"]:
+            return None
+
+    # Update last_used
+    conn.execute(
+        "UPDATE api_tokens SET last_used = ? WHERE id = ?",
+        (datetime.utcnow().isoformat(), record["id"]),
+    )
+    conn.commit()
+
+    return record
+
+
+def list_api_tokens(conn: sqlite3.Connection) -> list[dict]:
+    """List all API tokens (without hash)."""
+    rows = conn.execute(
+        """SELECT id, name, permissions, created_by, created_at,
+                  expires_at, last_used, is_active
+           FROM api_tokens ORDER BY created_at DESC"""
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def revoke_api_token(conn: sqlite3.Connection, token_id: str) -> bool:
+    """Deactivate an API token. Returns True if found."""
+    cursor = conn.execute(
+        "UPDATE api_tokens SET is_active = 0 WHERE id = ?",
+        (token_id,),
+    )
+    conn.commit()
+    return cursor.rowcount > 0

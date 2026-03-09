@@ -7,6 +7,8 @@ from typing import Optional
 import typer
 
 app = typer.Typer(help="License compliance management")
+api_token_app = typer.Typer(help="Manage external API tokens")
+app.add_typer(api_token_app, name="api-token")
 
 
 @app.command()
@@ -318,3 +320,70 @@ def seed_requirements():
     typer.echo(f"Seeded {count} state requirements across SIS operating states.")
     if count == 0:
         typer.echo("(All requirements already existed — no duplicates created.)")
+
+
+# ---------------------------------------------------------------------------
+# API Token Management
+# ---------------------------------------------------------------------------
+
+@api_token_app.command("create")
+def token_create(
+    name: str = typer.Option(..., "--name", help="Descriptive name for the token"),
+    permissions: str = typer.Option("read", "--permissions", help="Token permissions (read)"),
+    expires_days: Optional[int] = typer.Option(None, "--expires-days", help="Days until expiry (None=no expiry)"),
+):
+    """Create an API token for external system access."""
+    from qms.core import get_db
+    from qms.auth.db import create_api_token
+
+    with get_db() as conn:
+        result = create_api_token(conn, name, permissions, created_by="cli", expires_days=expires_days)
+
+    typer.echo(f"\nAPI Token Created")
+    typer.echo(f"{'='*50}")
+    typer.echo(f"Name:        {result['name']}")
+    typer.echo(f"Token:       {result['token']}")
+    typer.echo(f"Permissions: {result['permissions']}")
+    typer.echo(f"Expires:     {result['expires_at'] or 'Never'}")
+    typer.echo(f"{'='*50}")
+    typer.echo(f"\nSave this token now — it cannot be retrieved later.")
+    typer.echo(f"Use header: X-API-Key: {result['token']}")
+
+
+@api_token_app.command("list")
+def token_list():
+    """List all API tokens."""
+    from qms.core import get_db
+    from qms.auth.db import list_api_tokens
+
+    with get_db(readonly=True) as conn:
+        tokens = list_api_tokens(conn)
+
+    if not tokens:
+        typer.echo("No API tokens found.")
+        return
+
+    typer.echo(f"{'Name':<25} {'Permissions':<12} {'Active':<8} {'Last Used':<20} {'Created':<20}")
+    typer.echo("-" * 90)
+    for t in tokens:
+        active = "Yes" if t["is_active"] else "No"
+        last_used = (t["last_used"] or "Never")[:19]
+        created = (t["created_at"] or "")[:19]
+        typer.echo(f"{t['name']:<25} {t['permissions']:<12} {active:<8} {last_used:<20} {created:<20}")
+        typer.echo(f"  ID: {t['id']}")
+
+
+@api_token_app.command("revoke")
+def token_revoke(
+    token_id: str = typer.Argument(help="Token ID to revoke"),
+):
+    """Revoke (deactivate) an API token."""
+    from qms.core import get_db
+    from qms.auth.db import revoke_api_token
+
+    with get_db() as conn:
+        if revoke_api_token(conn, token_id):
+            typer.echo(f"Token {token_id} revoked.")
+        else:
+            typer.echo(f"Token not found: {token_id}", err=True)
+            raise typer.Exit(1)
