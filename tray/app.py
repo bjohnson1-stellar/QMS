@@ -50,6 +50,22 @@ class TrayApp:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             return s.connect_ex(("127.0.0.1", self.port)) == 0
 
+    def _find_pid_on_port(self) -> int | None:
+        """Return PID of the process listening on our port, or None."""
+        try:
+            out = subprocess.check_output(
+                ["netstat", "-ano", "-p", "TCP"],
+                creationflags=subprocess.CREATE_NO_WINDOW,
+                text=True, timeout=5,
+            )
+            for line in out.splitlines():
+                parts = line.split()
+                if len(parts) >= 5 and f":{self.port}" in parts[1] and parts[3] == "LISTENING":
+                    return int(parts[4])
+        except Exception:
+            pass
+        return None
+
     def _status_text(self) -> str:
         if self.running:
             return f"SIS QMS — Running (:{self.port})"
@@ -83,16 +99,33 @@ class TrayApp:
         threading.Thread(target=self._wait_and_notify_ready, daemon=True).start()
 
     def stop_server(self):
-        if not self.running:
+        if self.running:
+            # We own the process — terminate gracefully
+            self._process.terminate()
+            try:
+                self._process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self._process.kill()
+                self._process.wait(timeout=3)
+            self._process = None
+            self._close_log()
+        elif self._external:
+            # Orphaned or external process — find and kill by port
+            pid = self._find_pid_on_port()
+            if pid:
+                try:
+                    subprocess.run(
+                        ["taskkill", "/PID", str(pid), "/F"],
+                        creationflags=subprocess.CREATE_NO_WINDOW,
+                        timeout=5,
+                    )
+                except Exception:
+                    self._notify("Stop failed", f"Could not kill PID {pid}.")
+                    return
+            else:
+                return
+        else:
             return
-        self._process.terminate()
-        try:
-            self._process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            self._process.kill()
-            self._process.wait(timeout=3)
-        self._process = None
-        self._close_log()
         self._external = False
         self._refresh_menu()
 
@@ -141,13 +174,13 @@ class TrayApp:
 
     def _build_menu(self) -> pystray.Menu:
         is_running = self.running or self._external
-        is_ours = self.running and not self._external
+        can_stop = self.running or self._external
         return pystray.Menu(
             pystray.MenuItem(self._status_text(), None, enabled=False),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Start Server", lambda: self.start_server(), enabled=not is_running),
-            pystray.MenuItem("Stop Server", lambda: self.stop_server(), enabled=is_ours),
-            pystray.MenuItem("Restart Server", lambda: self.restart_server(), enabled=is_ours),
+            pystray.MenuItem("Stop Server", lambda: self.stop_server(), enabled=can_stop),
+            pystray.MenuItem("Restart Server", lambda: self.restart_server(), enabled=can_stop),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Open in Browser", lambda: self.open_browser(), enabled=is_running),
             pystray.MenuItem("View Logs", lambda: self.view_logs()),
