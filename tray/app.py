@@ -14,7 +14,7 @@ import pystray
 from PIL import Image
 
 _PACKAGE_DIR = Path(__file__).resolve().parent.parent
-_ICON_PATH = _PACKAGE_DIR / "frontend" / "static" / "branding" / "Stellar_40th_Logo_Rev1_Circle_BlueGraphite.png"
+_ICON_PATH = _PACKAGE_DIR / "frontend" / "static" / "branding" / "SIS-QMS.png"
 _DEFAULT_PORT = 5000
 _HEALTH_INTERVAL = 10  # seconds
 
