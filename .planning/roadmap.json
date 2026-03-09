@@ -76,6 +76,14 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "System Tray App for Waitress Server Control",
+          "desc": "pystray-based system tray icon with Start/Stop/Restart server, Open in Browser, health monitoring. Subprocess isolation, port conflict detection, external server awareness. CLI: qms tray.",
+          "module": "core",
+          "priority": "medium",
+          "tags": ["devops", "tray", "server", "ui"],
+          "completed": "2026-03-09"
+        },
+        {
           "title": "v0.2 Phase 12 — Advanced CE & Multi-Credential (2 plans)",
           "desc": "CE provider & course catalog with cross-state applicability, CRUD modals, course browser with state/format filters. Employee credential portfolio with master-detail layout, CE progress bars. Catalog-linked credit entry.",
           "module": "licenses",
