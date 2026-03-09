@@ -296,8 +296,78 @@
             <option value="revoked">Revoked</option>
         </select>
     </div>
+    <!-- Bulk action toolbar (editor/admin only) -->
+    {% if current_user and (current_user.role == 'admin' or
+          current_user.modules.get('licenses') in ('admin', 'editor')) %}
+    <div id="bulkToolbar" style="display:none;margin-bottom:12px;padding:10px 14px;background:var(--color-primary);color:#fff;border-radius:6px;align-items:center;gap:12px;">
+        <span id="bulkCount" style="font-weight:600;font-size:0.85rem;">0 selected</span>
+        <button onclick="openBulkRenewModal()" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.3);padding:4px 12px;border-radius:4px;font-size:0.8rem;cursor:pointer;">Bulk Renew</button>
+        <button onclick="clearSelection()" style="background:none;color:rgba(255,255,255,0.8);border:none;padding:4px 8px;font-size:0.8rem;cursor:pointer;margin-left:auto;">Clear</button>
+    </div>
+    <div style="margin-bottom:12px;">
+        <button onclick="openBatchCeModal()" class="btn-secondary" style="font-size:0.8rem;">Batch CE Entry</button>
+    </div>
+    {% endif %}
+
     <div id="licensesTable"><div class="loading">Loading licenses...</div></div>
 </div>
+
+<!-- Bulk Renew Modal -->
+<div id="bulkRenewOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:90;" onclick="closeBulkRenewModal()"></div>
+<div id="bulkRenewModal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--color-surface);border:1px solid var(--color-border-light);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:100;padding:24px;max-width:440px;width:90%;">
+    <h3 style="margin:0 0 16px;border:none;padding:0;">Bulk Renewal</h3>
+    <p id="bulkRenewInfo" style="font-size:0.85rem;color:var(--color-text-muted);margin:0 0 16px;"></p>
+    <div style="margin-bottom:12px;">
+        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">New Expiration Date</label>
+        <input type="date" id="bulkRenewDate" style="width:100%;padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:16px;">
+        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Notes (optional)</label>
+        <textarea id="bulkRenewNotes" rows="2" style="width:100%;padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);resize:vertical;box-sizing:border-box;" placeholder="Bulk renewal notes..."></textarea>
+    </div>
+    <div id="bulkRenewError" style="display:none;color:#da3633;font-size:0.85rem;margin-bottom:12px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="closeBulkRenewModal()" class="btn-secondary">Cancel</button>
+        <button onclick="submitBulkRenew()" id="bulkRenewSubmit">Renew Selected</button>
+    </div>
+</div>
+
+<!-- Batch CE Entry Modal -->
+<div id="batchCeOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:90;" onclick="closeBatchCeModal()"></div>
+<div id="batchCeModal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--color-surface);border:1px solid var(--color-border-light);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:100;padding:24px;max-width:440px;width:90%;">
+    <h3 style="margin:0 0 16px;border:none;padding:0;">Batch CE Credit Entry</h3>
+    <div style="margin-bottom:12px;">
+        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Employee</label>
+        <select id="batchCeEmployee" style="width:100%;padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+            <option value="">Select employee...</option>
+        </select>
+    </div>
+    <div style="margin-bottom:12px;">
+        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Course Name</label>
+        <input type="text" id="batchCeCourse" style="width:100%;padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;" placeholder="Course name">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Hours</label>
+            <input type="number" id="batchCeHours" min="0.5" step="0.5" style="width:100%;padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;" placeholder="0">
+        </div>
+        <div>
+            <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Completion Date</label>
+            <input type="date" id="batchCeDate" style="width:100%;padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;">
+        </div>
+    </div>
+    <div style="margin-bottom:16px;">
+        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Provider (optional)</label>
+        <input type="text" id="batchCeProvider" style="width:100%;padding:6px 10px;border:1px solid var(--color-border-light);border-radius:4px;background:var(--color-surface);color:var(--color-text);box-sizing:border-box;" placeholder="CE provider name">
+    </div>
+    <div id="batchCeError" style="display:none;color:#da3633;font-size:0.85rem;margin-bottom:12px;"></div>
+    <div id="batchCeSuccess" style="display:none;color:#238636;font-size:0.85rem;margin-bottom:12px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="closeBatchCeModal()" class="btn-secondary">Cancel</button>
+        <button onclick="submitBatchCe()" id="batchCeSubmit">Create Credits</button>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -310,6 +380,8 @@
     let currentEditId = null;
     let renewalChart = null;
     let ceStateChart = null;
+    const selectedIds = new Set();
+    const IS_EDITOR = {{ 'true' if current_user and (current_user.role == 'admin' or current_user.modules.get('licenses') in ('admin', 'editor')) else 'false' }};
 
     const US_STATES = [
         ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],
@@ -694,6 +766,7 @@
         }
 
         let html = `<table><thead><tr>
+            ${IS_EDITOR ? '<th style="width:32px;"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this.checked)" title="Select all"></th>' : ''}
             <th>State</th><th>License Type</th><th>License #</th>
             <th>Qualifying Party</th><th>Expiration</th><th>Status</th>
         </tr></thead><tbody>`;
@@ -702,14 +775,16 @@
             const badge = statusBadge(l.status);
             const empName = getEmployeeName(l.employee_id);
             const expWarn = expiryWarning(l);
+            const checked = selectedIds.has(l.id) ? 'checked' : '';
 
-            html += `<tr onclick="window.location='/licenses/${l.id}'" style="cursor:pointer;">
-                <td><strong>${l.state_code}</strong></td>
-                <td>${esc(l.license_type)}</td>
-                <td>${esc(l.license_number)}</td>
-                <td>${empName ? esc(empName) : '<span style="color:var(--color-text-muted);">—</span>'}</td>
-                <td>${l.expiration_date || 'No Expiry'}${expWarn}</td>
-                <td>${badge}</td>
+            html += `<tr style="cursor:pointer;">
+                ${IS_EDITOR ? `<td onclick="event.stopPropagation()"><input type="checkbox" ${checked} onchange="toggleSelect('${l.id}', this.checked)" title="Select"></td>` : ''}
+                <td onclick="window.location='/licenses/${l.id}'"><strong>${l.state_code}</strong></td>
+                <td onclick="window.location='/licenses/${l.id}'">${esc(l.license_type)}</td>
+                <td onclick="window.location='/licenses/${l.id}'">${esc(l.license_number)}</td>
+                <td onclick="window.location='/licenses/${l.id}'">${empName ? esc(empName) : '<span style="color:var(--color-text-muted);">—</span>'}</td>
+                <td onclick="window.location='/licenses/${l.id}'">${l.expiration_date || 'No Expiry'}${expWarn}</td>
+                <td onclick="window.location='/licenses/${l.id}'">${badge}</td>
             </tr>`;
         }
         html += '</tbody></table>';
@@ -1048,6 +1123,188 @@
             btn.textContent = 'Copied!';
             setTimeout(() => { btn.textContent = 'Copy URL'; }, 2000);
         });
+    }
+
+    // ── Selection & Bulk Operations ──────────────────────────────────────
+
+    function toggleSelect(id, checked) {
+        if (checked) selectedIds.add(id); else selectedIds.delete(id);
+        updateBulkToolbar();
+    }
+
+    function toggleSelectAll(checked) {
+        const cbs = document.querySelectorAll('#licensesTable tbody input[type="checkbox"]');
+        cbs.forEach(cb => { cb.checked = checked; });
+        if (checked) {
+            licenses.forEach(l => selectedIds.add(l.id));
+        } else {
+            selectedIds.clear();
+        }
+        updateBulkToolbar();
+    }
+
+    function clearSelection() {
+        selectedIds.clear();
+        const cbs = document.querySelectorAll('#licensesTable input[type="checkbox"]');
+        cbs.forEach(cb => { cb.checked = false; });
+        updateBulkToolbar();
+    }
+
+    function updateBulkToolbar() {
+        const tb = document.getElementById('bulkToolbar');
+        if (!tb) return;
+        if (selectedIds.size > 0) {
+            tb.style.display = 'flex';
+            document.getElementById('bulkCount').textContent = `${selectedIds.size} selected`;
+        } else {
+            tb.style.display = 'none';
+        }
+    }
+
+    // ── Bulk Renew Modal ──────────────────────────────────────────────────
+
+    function openBulkRenewModal() {
+        document.getElementById('bulkRenewOverlay').style.display = '';
+        document.getElementById('bulkRenewModal').style.display = '';
+        document.getElementById('bulkRenewInfo').textContent = `Renewing ${selectedIds.size} license(s)`;
+        document.getElementById('bulkRenewError').style.display = 'none';
+        document.getElementById('bulkRenewDate').value = '';
+        document.getElementById('bulkRenewNotes').value = '';
+    }
+
+    function closeBulkRenewModal() {
+        document.getElementById('bulkRenewOverlay').style.display = 'none';
+        document.getElementById('bulkRenewModal').style.display = 'none';
+    }
+
+    async function submitBulkRenew() {
+        const errEl = document.getElementById('bulkRenewError');
+        const newDate = document.getElementById('bulkRenewDate').value;
+        const notes = document.getElementById('bulkRenewNotes').value.trim();
+
+        if (!newDate) {
+            errEl.textContent = 'Please select a new expiration date.';
+            errEl.style.display = '';
+            return;
+        }
+
+        const btn = document.getElementById('bulkRenewSubmit');
+        btn.disabled = true;
+        btn.textContent = 'Renewing...';
+        errEl.style.display = 'none';
+
+        try {
+            const res = await fetch('/licenses/api/bulk-renew', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    license_ids: Array.from(selectedIds),
+                    new_expiration_date: newDate,
+                    notes: notes || undefined,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                errEl.textContent = (data.errors || [data.error]).join('; ');
+                errEl.style.display = '';
+                return;
+            }
+            closeBulkRenewModal();
+            selectedIds.clear();
+            updateBulkToolbar();
+            await loadAll();
+        } catch (e) {
+            errEl.textContent = 'Network error: ' + e.message;
+            errEl.style.display = '';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Renew Selected';
+        }
+    }
+
+    // ── Batch CE Entry Modal ──────────────────────────────────────────────
+
+    function openBatchCeModal() {
+        document.getElementById('batchCeOverlay').style.display = '';
+        document.getElementById('batchCeModal').style.display = '';
+        document.getElementById('batchCeError').style.display = 'none';
+        document.getElementById('batchCeSuccess').style.display = 'none';
+        document.getElementById('batchCeCourse').value = '';
+        document.getElementById('batchCeHours').value = '';
+        document.getElementById('batchCeDate').value = '';
+        document.getElementById('batchCeProvider').value = '';
+
+        // Populate employee dropdown
+        const sel = document.getElementById('batchCeEmployee');
+        sel.innerHTML = '<option value="">Select employee...</option>';
+        employees.sort((a, b) => (a.last_name || '').localeCompare(b.last_name || ''));
+        employees.forEach(e => {
+            const name = `${e.last_name || ''}, ${e.first_name || ''}`.replace(/(^, |, $)/g, '') || 'Unknown';
+            sel.innerHTML += `<option value="${e.id}">${esc(name)}${e.employee_number ? ' (#' + esc(e.employee_number) + ')' : ''}</option>`;
+        });
+    }
+
+    function closeBatchCeModal() {
+        document.getElementById('batchCeOverlay').style.display = 'none';
+        document.getElementById('batchCeModal').style.display = 'none';
+    }
+
+    async function submitBatchCe() {
+        const errEl = document.getElementById('batchCeError');
+        const successEl = document.getElementById('batchCeSuccess');
+        errEl.style.display = 'none';
+        successEl.style.display = 'none';
+
+        const employeeId = document.getElementById('batchCeEmployee').value;
+        const courseName = document.getElementById('batchCeCourse').value.trim();
+        const hours = parseFloat(document.getElementById('batchCeHours').value);
+        const completionDate = document.getElementById('batchCeDate').value;
+        const provider = document.getElementById('batchCeProvider').value.trim();
+
+        if (!employeeId || !courseName || !hours || !completionDate) {
+            errEl.textContent = 'Please fill in employee, course name, hours, and completion date.';
+            errEl.style.display = '';
+            return;
+        }
+
+        const btn = document.getElementById('batchCeSubmit');
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+
+        try {
+            const res = await fetch('/licenses/api/batch-ce', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    employee_id: employeeId,
+                    credits: [{
+                        course_name: courseName,
+                        hours: hours,
+                        completion_date: completionDate,
+                        provider: provider || undefined,
+                    }],
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                errEl.textContent = (data.errors || [data.error]).join('; ');
+                errEl.style.display = '';
+                return;
+            }
+            successEl.textContent = `Created ${data.created} CE credit(s) across employee's active licenses.`;
+            successEl.style.display = '';
+            // Reset form for another entry
+            document.getElementById('batchCeCourse').value = '';
+            document.getElementById('batchCeHours').value = '';
+            document.getElementById('batchCeDate').value = '';
+            document.getElementById('batchCeProvider').value = '';
+        } catch (e) {
+            errEl.textContent = 'Network error: ' + e.message;
+            errEl.style.display = '';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Create Credits';
+        }
     }
 
     // ── Boot ──────────────────────────────────────────────────────────────

@@ -114,7 +114,10 @@ from qms.licenses.db import (
     get_credit_courses,
     list_employees_with_licenses,
     get_employee_portfolio,
+    get_employee_welding_credentials,
     get_calendar_events,
+    bulk_renew_licenses,
+    batch_create_ce_credits,
     VALID_COURSE_FORMATS,
 )
 
@@ -2206,4 +2209,92 @@ def api_list_credential_employees():
 def api_get_employee_portfolio(employee_id):
     with get_db(readonly=True) as conn:
         portfolio = get_employee_portfolio(conn, employee_id)
-    return jsonify(portfolio)
+        welding = get_employee_welding_credentials(conn, employee_id)
+    return jsonify({"licenses": portfolio, "welding": welding})
+
+
+# ---------------------------------------------------------------------------
+# Bulk Operations API routes
+# ---------------------------------------------------------------------------
+
+@bp.route("/api/bulk-renew", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_bulk_renew():
+    """Renew multiple licenses at once."""
+    data = request.get_json(silent=True) or {}
+
+    errors: list[str] = []
+    license_ids = data.get("license_ids")
+    if not license_ids or not isinstance(license_ids, list):
+        errors.append("license_ids must be a non-empty array")
+    if not data.get("new_expiration_date"):
+        errors.append("Missing required field: new_expiration_date")
+    else:
+        err = _validate_date(data["new_expiration_date"], "new_expiration_date")
+        if err:
+            errors.append(err)
+        else:
+            try:
+                exp = _dt.strptime(data["new_expiration_date"], "%Y-%m-%d")
+                if exp.date() <= _dt.utcnow().date():
+                    errors.append("new_expiration_date must be in the future")
+            except ValueError:
+                pass
+
+    if data.get("notes") and len(str(data["notes"])) > 500:
+        errors.append("notes exceeds 500 characters")
+
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    with get_db() as conn:
+        renewed = bulk_renew_licenses(
+            conn, license_ids,
+            new_expiration_date=data["new_expiration_date"],
+            notes=data.get("notes"),
+            created_by=_get_user_id(),
+        )
+    return jsonify({"renewed": renewed})
+
+
+@bp.route("/api/batch-ce", methods=["POST"])
+@module_required("licenses", min_role="editor")
+def api_batch_ce():
+    """Create CE credits in batch for an employee."""
+    data = request.get_json(silent=True) or {}
+
+    errors: list[str] = []
+    if not data.get("employee_id"):
+        errors.append("Missing required field: employee_id")
+    credits = data.get("credits")
+    if not credits or not isinstance(credits, list):
+        errors.append("credits must be a non-empty array")
+    else:
+        for i, c in enumerate(credits):
+            if not c.get("course_name"):
+                errors.append(f"credits[{i}]: missing course_name")
+            if not c.get("hours"):
+                errors.append(f"credits[{i}]: missing hours")
+            else:
+                try:
+                    h = float(c["hours"])
+                    if h <= 0:
+                        errors.append(f"credits[{i}]: hours must be positive")
+                except (ValueError, TypeError):
+                    errors.append(f"credits[{i}]: hours must be a number")
+            if not c.get("completion_date"):
+                errors.append(f"credits[{i}]: missing completion_date")
+            else:
+                err = _validate_date(c["completion_date"], f"credits[{i}].completion_date")
+                if err:
+                    errors.append(err)
+
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    with get_db() as conn:
+        created = batch_create_ce_credits(
+            conn, data["employee_id"], credits,
+            created_by=_get_user_id(),
+        )
+    return jsonify({"created": created})

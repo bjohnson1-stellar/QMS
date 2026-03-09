@@ -2626,15 +2626,30 @@ def list_ce_courses(
 def list_employees_with_licenses(
     conn: sqlite3.Connection,
 ) -> List[Dict[str, Any]]:
-    """Return employees who hold at least one license, with summary counts."""
+    """Return employees who hold at least one license or welding qualification."""
     rows = conn.execute(
         """SELECT e.id, e.first_name, e.last_name, e.employee_number,
-                  COUNT(sl.id) AS license_count,
-                  SUM(CASE WHEN sl.status = 'active' THEN 1 ELSE 0 END) AS active_count,
-                  SUM(CASE WHEN sl.status = 'expired' THEN 1 ELSE 0 END) AS expired_count
+                  COALESCE(lic.license_count, 0) AS license_count,
+                  COALESCE(lic.active_count, 0) AS active_count,
+                  COALESCE(lic.expired_count, 0) AS expired_count,
+                  COALESCE(wld.welding_count, 0) AS welding_count
            FROM employees e
-           JOIN state_licenses sl ON sl.employee_id = e.id
-           GROUP BY e.id
+           LEFT JOIN (
+               SELECT employee_id,
+                      COUNT(id) AS license_count,
+                      SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_count,
+                      SUM(CASE WHEN status = 'expired' THEN 1 ELSE 0 END) AS expired_count
+               FROM state_licenses
+               GROUP BY employee_id
+           ) lic ON lic.employee_id = e.id
+           LEFT JOIN (
+               SELECT wwr.employee_id, COUNT(wpq.id) AS welding_count
+               FROM weld_welder_registry wwr
+               LEFT JOIN weld_wpq wpq ON wpq.welder_id = wwr.id
+               WHERE wwr.employee_id IS NOT NULL
+               GROUP BY wwr.employee_id
+           ) wld ON wld.employee_id = e.id
+           WHERE lic.license_count > 0 OR wld.welding_count > 0
            ORDER BY e.last_name, e.first_name"""
     ).fetchall()
     return [dict(r) for r in rows]
@@ -2897,3 +2912,173 @@ def get_calendar_events(conn: sqlite3.Connection, months_ahead: int = 12) -> lis
         })
 
     return events
+
+
+# ---------------------------------------------------------------------------
+# Cross-module: Welding Credentials
+# ---------------------------------------------------------------------------
+
+
+def get_employee_welding_credentials(
+    conn: sqlite3.Connection, employee_id: str
+) -> List[Dict[str, Any]]:
+    """Return welding qualifications (WPQ records) for an employee.
+
+    Bridges via weld_welder_registry.employee_id → weld_wpq.welder_id.
+    Returns empty list if employee has no welder registry entry.
+    """
+    rows = conn.execute(
+        """SELECT wwr.employee_number AS welder_number,
+                  wwr.welder_stamp,
+                  wwr.status AS welder_status,
+                  wpq.id AS wpq_id,
+                  wpq.wpq_number,
+                  wpq.process_type,
+                  wpq.test_position,
+                  wpq.p_number_qualified,
+                  wpq.f_number_qualified,
+                  wpq.thickness_qualified_min,
+                  wpq.thickness_qualified_max,
+                  wpq.groove_positions_qualified,
+                  wpq.fillet_positions_qualified,
+                  wpq.test_date,
+                  wpq.current_expiration_date,
+                  wpq.status AS wpq_status
+           FROM weld_welder_registry wwr
+           JOIN weld_wpq wpq ON wpq.welder_id = wwr.id
+           WHERE wwr.employee_id = ?
+           ORDER BY wpq.process_type, wpq.test_date DESC""",
+        (employee_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# Bulk Operations
+# ---------------------------------------------------------------------------
+
+
+def bulk_renew_licenses(
+    conn: sqlite3.Connection,
+    license_ids: List[str],
+    new_expiration_date: str,
+    notes: Optional[str] = None,
+    created_by: str = "system",
+) -> int:
+    """Renew multiple licenses at once: update expiration, create events.
+
+    Returns count of successfully renewed licenses.
+    """
+    renewed = 0
+    now = datetime.utcnow().isoformat()
+
+    for lid in license_ids:
+        current = conn.execute(
+            "SELECT id, status, expiration_date FROM state_licenses WHERE id = ?",
+            (lid,),
+        ).fetchone()
+        if not current:
+            continue
+
+        current = dict(current)
+
+        # If expired, reinstate first
+        if current["status"] == "expired":
+            conn.execute(
+                "UPDATE state_licenses SET status = 'active', updated_at = ? WHERE id = ?",
+                (now, lid),
+            )
+            _audit(conn, "license", lid, "updated",
+                   old_values={"status": "expired"},
+                   new_values={"status": "active"},
+                   changed_by=created_by)
+            reinstate_id = generate_uuid()
+            conn.execute(
+                """INSERT INTO license_events
+                       (id, license_id, event_type, event_date, notes, created_by)
+                   VALUES (?, ?, 'reinstated', ?, ?, ?)""",
+                (reinstate_id, lid, new_expiration_date,
+                 "Reinstated during bulk renewal", created_by),
+            )
+
+        # Update expiration
+        old_exp = current.get("expiration_date")
+        conn.execute(
+            "UPDATE state_licenses SET expiration_date = ?, updated_at = ? WHERE id = ?",
+            (new_expiration_date, now, lid),
+        )
+        _audit(conn, "license", lid, "updated",
+               old_values={"expiration_date": old_exp},
+               new_values={"expiration_date": new_expiration_date},
+               changed_by=created_by)
+
+        # Create renewal event
+        event_id = generate_uuid()
+        event_notes = notes or "Bulk renewal"
+        conn.execute(
+            """INSERT INTO license_events
+                   (id, license_id, event_type, event_date, notes, created_by)
+               VALUES (?, ?, 'renewed', ?, ?, ?)""",
+            (event_id, lid, new_expiration_date, event_notes, created_by),
+        )
+        renewed += 1
+
+    conn.commit()
+    return renewed
+
+
+def batch_create_ce_credits(
+    conn: sqlite3.Connection,
+    employee_id: str,
+    credits_data: List[Dict[str, Any]],
+    created_by: str = "system",
+) -> int:
+    """Create CE credit records in batch for an employee.
+
+    credits_data: list of dicts with keys:
+        course_name, hours, completion_date, provider (optional),
+        license_ids (optional list — creates one credit per license)
+
+    Returns count of CE credits created.
+    """
+    created = 0
+    now = datetime.utcnow().isoformat()
+
+    # Get all employee licenses as fallback targets
+    emp_licenses = conn.execute(
+        "SELECT id FROM state_licenses WHERE employee_id = ? AND status = 'active'",
+        (employee_id,),
+    ).fetchall()
+    emp_license_ids = [dict(r)["id"] for r in emp_licenses]
+
+    for entry in credits_data:
+        target_ids = entry.get("license_ids") or emp_license_ids
+        if not target_ids:
+            continue
+
+        for lid in target_ids:
+            credit_id = generate_uuid()
+            conn.execute(
+                """INSERT INTO ce_credits
+                       (id, employee_id, license_id, provider, course_name, hours,
+                        completion_date, status, notes, created_at, updated_at, created_by)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, ?)""",
+                (
+                    credit_id, employee_id, lid,
+                    entry.get("provider"),
+                    entry["course_name"],
+                    entry["hours"],
+                    entry["completion_date"],
+                    entry.get("notes"),
+                    now, now, created_by,
+                ),
+            )
+            _audit(conn, "ce_credit", credit_id, "created",
+                   new_values={"course_name": entry["course_name"],
+                               "hours": entry["hours"],
+                               "license_id": lid},
+                   changed_by=created_by)
+            created += 1
+
+    conn.commit()
+    return created
