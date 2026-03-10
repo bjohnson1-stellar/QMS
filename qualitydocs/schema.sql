@@ -195,3 +195,107 @@ CREATE TABLE IF NOT EXISTS qm_intake_log (
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- =============================================================================
+-- M3 Quality Programs & M4 SOPs (v0.3)
+-- =============================================================================
+
+-- M3 Quality Programs
+CREATE TABLE IF NOT EXISTS qm_programs (
+    id                        INTEGER PRIMARY KEY AUTOINCREMENT,
+    program_id                TEXT UNIQUE NOT NULL,
+    title                     TEXT NOT NULL,
+    description               TEXT,
+    primary_codes             TEXT,
+    qualification_requirements TEXT,
+    status                    TEXT CHECK(status IN ('draft','under_review','approved','published','superseded','obsolete')) DEFAULT 'draft',
+    version                   TEXT DEFAULT '1.0',
+    created_at                TEXT DEFAULT (datetime('now')),
+    updated_at                TEXT DEFAULT (datetime('now'))
+);
+
+-- M4 SOP Categories
+CREATE TABLE IF NOT EXISTS qm_categories (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    category_code     TEXT UNIQUE NOT NULL,
+    module_number     INTEGER DEFAULT 4,
+    name              TEXT NOT NULL,
+    description       TEXT,
+    parent_program_id INTEGER REFERENCES qm_programs(id) ON DELETE SET NULL,
+    display_order     INTEGER,
+    created_at        TEXT DEFAULT (datetime('now'))
+);
+
+-- M4 Standard Operating Procedures
+CREATE TABLE IF NOT EXISTS qm_sops (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    document_id         TEXT UNIQUE NOT NULL,
+    title               TEXT NOT NULL,
+    category_id         INTEGER NOT NULL REFERENCES qm_categories(id),
+    status              TEXT CHECK(status IN ('draft','under_review','approved','published','superseded','obsolete')) DEFAULT 'draft',
+    scope_tags          TEXT DEFAULT '[]',
+    version             TEXT DEFAULT '1.0',
+    revision            TEXT DEFAULT 'A',
+    file_path           TEXT,
+    file_hash           TEXT,
+    content_text        TEXT,
+    summary             TEXT,
+    approved_by         TEXT,
+    approved_at         TEXT,
+    effective_date      TEXT,
+    review_cycle_months INTEGER DEFAULT 24,
+    created_at          TEXT DEFAULT (datetime('now')),
+    updated_at          TEXT DEFAULT (datetime('now'))
+);
+
+-- M3-M4 linkage (many-to-many)
+CREATE TABLE IF NOT EXISTS qm_program_sops (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    program_id INTEGER NOT NULL REFERENCES qm_programs(id) ON DELETE CASCADE,
+    sop_id     INTEGER NOT NULL REFERENCES qm_sops(id) ON DELETE CASCADE,
+    UNIQUE(program_id, sop_id)
+);
+
+-- Code references detected in SOPs
+CREATE TABLE IF NOT EXISTS qm_sop_code_references (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    sop_id           INTEGER NOT NULL REFERENCES qm_sops(id) ON DELETE CASCADE,
+    code             TEXT NOT NULL,
+    organization     TEXT,
+    code_section     TEXT,
+    original_text    TEXT,
+    detection_method TEXT CHECK(detection_method IN ('explicit','ai_detected','prose_detected'))
+);
+
+-- SOP intake/classification pipeline tracking
+CREATE TABLE IF NOT EXISTS qm_sop_intake (
+    id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_name              TEXT NOT NULL,
+    file_path              TEXT,
+    file_hash              TEXT,
+    status                 TEXT CHECK(status IN ('pending','analyzing','classified','approved','rejected','error')) DEFAULT 'pending',
+    ai_classification      TEXT,
+    suggested_category_id  INTEGER REFERENCES qm_categories(id),
+    suggested_scope_tags   TEXT,
+    suggested_program_ids  TEXT,
+    suggested_document_id  TEXT,
+    user_overrides         TEXT,
+    final_sop_id           INTEGER REFERENCES qm_sops(id),
+    error_message          TEXT,
+    created_at             TEXT DEFAULT (datetime('now')),
+    processed_at           TEXT
+);
+
+-- SOP revision/approval history
+CREATE TABLE IF NOT EXISTS qm_sop_history (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    sop_id          INTEGER NOT NULL REFERENCES qm_sops(id) ON DELETE CASCADE,
+    action          TEXT NOT NULL CHECK(action IN ('created','submitted','approved','rejected','published','revised','superseded')),
+    actor           TEXT,
+    notes           TEXT,
+    previous_status TEXT,
+    new_status      TEXT,
+    created_at      TEXT DEFAULT (datetime('now'))
+);
+
+-- NOTE: FTS extension for SOP content planned for Phase 18 (rebuild qm_content_fts to include qm_sops.content_text)

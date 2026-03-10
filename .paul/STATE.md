@@ -4,18 +4,19 @@
 
 See: .paul/PROJECT.md
 
-**Core value:** Unified quality management platform — quality intelligence from Procore data (v0.1) + Harbor-like multi-state license compliance management (v0.2).
-**Current focus:** Awaiting next milestone
+**Core value:** Unified quality management platform — quality intelligence (v0.1) + license compliance (v0.2) + quality manual platform (v0.3).
+**Current focus:** v0.3 Quality Manual Platform — unified tabbed UI for M1–M4, AI-powered SOP intake, draft/approval workflow.
 
 ## Current Position
 
-Milestone: Awaiting next milestone
-Phase: None active
-Plan: None
-Status: Milestone v0.2 License Compliance Platform complete — ready for next
-Last activity: 2026-03-09 — Milestone completed
+Milestone: v0.3 Quality Manual Platform
+Phase: 14 of 18 (Schema & API Foundation) — In Progress (1/2 plans)
+Plan: 14-01 complete, 14-02 next (API endpoints)
+Status: Ready for next PLAN
+Last activity: 2026-03-10 — Completed 14-01 (Schema + DB functions)
 
 Progress:
+- v0.3 Quality Manual Platform: [█░░░░░░░░░] 10%
 - v0.2 License Compliance Platform: [██████████] 100%
 - v0.1 Quality Intelligence Platform: [████████░░] 90% (Phase 5 not started)
 
@@ -24,10 +25,16 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ○        ○        ○     [Milestone complete - ready for next]
+  ✓        ✓        ✓     [Loop 14-01 complete — ready for next PLAN]
 ```
 
 ## Execution Log
+
+### v0.3 Quality Manual Platform
+
+| Plan | Status | Description | Date |
+|------|--------|-------------|------|
+| 14-01 | Complete | M3/M4 schema (7 tables) + qualitydocs/db.py CRUD module | 2026-03-10 |
 
 ### v0.2 License Compliance Platform
 
@@ -67,8 +74,6 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 4: Mobile Capture Pipeline | Complete (2/2 plans) | `5a2d9a6` | 2026-03-05 |
 | 5: Procore Push | Not started | - | - |
 
-Full execution log: see git history and `.paul/phases/01-*/` through `.paul/phases/04-*/` summaries.
-
 ## Accumulated Context
 
 ### Decisions
@@ -82,29 +87,23 @@ Full execution log: see git history and `.paul/phases/01-*/` through `.paul/phas
 | API-layer validation pattern | v0.2 Phase 6 | Validation at API boundary, DB layer trusts |
 | Pagination dict response pattern | v0.2 Phase 6 | {items, total, page, per_page, pages} for list endpoints |
 | In-memory rate limiting | v0.2 Phase 6 | No Redis needed for LAN deployment |
-| Events in dedicated table, not status field | v0.2 Phase 7 | Avoids SQLite table rebuild, flexible event history |
-| Append-only events (no edit/delete) | v0.2 Phase 7 | Audit integrity, matches _audit() pattern |
-| Fetch-based dynamic sections for doc/note CRUD | v0.2 Phase 9 | No page reload, snappy UX |
-| UNION ALL activity feed (events+notes+docs) | v0.2 Phase 9 | Single query, easy to extend |
-| Keep business_entity TEXT column | v0.2 Phase 10 | Backward compat; entity_id is canonical FK |
-| Unlink licenses on entity delete (NULL) | v0.2 Phase 10 | Safer than blocking; licenses remain valid |
-| Entity hierarchy via recursive CTE | v0.2 Phase 10 | WITH RECURSIVE for tree traversal |
-| AJAX compliance overview on licenses page | v0.2 Phase 11 | Avoids slowing page load with gap analysis queries |
-| CSS conic-gradient gauge (no Chart.js) | v0.2 Phase 11 | Lightweight score display, no extra dependency |
-| Master-detail layout for credentials | v0.2 Phase 12 | Compact UX, AJAX detail loading |
-| Catalog course auto-fill on credit entry | v0.2 Phase 12 | Optional, non-breaking enhancement |
-| Separate verification table (not events) | v0.2 Phase 13 | Avoids CHECK constraint rebuild |
-| SHA-256 hashed API tokens | v0.2 Phase 13 | Plaintext shown once, never stored |
-| Read-only external API v1 | v0.2 Phase 13 | Safety first for LAN deployment |
+| Unified tabbed QM UI replacing single viewer | v0.3 Init | M1/M2/M3/M4 as horizontal tabs |
+| Master cross-module search | v0.3 Init | FTS5 across all modules |
+| AI-powered SOP classification | v0.3 Init | Claude analyzes PDFs → category, scope, program |
+| Draft → approved → published lifecycle | v0.3 Init | SOPs enter as draft, require approval |
+| Schema-first for future CRUD | v0.3 Init | Don't build editor yet, but don't block it |
+| Scope tag infrastructure without data | v0.3 Init | Schema ready, UI scaffolded, functional when populated |
+| LIKE filter for scope_tags (not json_each) | v0.3 Phase 14 | Simpler, works on all SQLite versions |
+| Separate transactions for SOP history | v0.3 Phase 14 | Avoids nested get_db() context manager issues |
 
 ### Git State
-Last commit: `1c3a253` (fix: reseed CE requirements to match actual license types)
+Last commit: `da64906` (feat: add state coverage map to projects manage page)
 Branch: main
 
 ### Deferred Issues
 | Issue | Impact | Resolution Path |
 |-------|--------|-----------------|
-| v0.1 Phase 5 not started | Procore push deferred | Can be done in parallel or after v0.2 |
+| v0.1 Phase 5 not started | Procore push deferred | Can be done in parallel or after v0.3 |
 | CE requirement type matching | Seeded types don't exactly match existing license_type values | Data cleanup when relevant |
 
 ### Blockers/Concerns
@@ -114,10 +113,10 @@ Branch: main
 
 ## Session Continuity
 
-Last session: 2026-03-09
-Stopped at: Milestone v0.2 License Compliance Platform complete
-Next action: /paul:discuss-milestone or /paul:milestone
-Resume file: .paul/MILESTONES.md
+Last session: 2026-03-10
+Stopped at: Plan 14-01 loop complete
+Next action: Run /paul:plan for 14-02 (API endpoints)
+Resume file: .paul/phases/14-schema-api-foundation/14-01-SUMMARY.md
 
 ---
 *STATE.md — Updated after every significant action*

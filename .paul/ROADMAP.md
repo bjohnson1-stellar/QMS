@@ -2,13 +2,45 @@
 
 ## Overview
 
-Modular quality management platform for construction. Two completed milestones: v0.1 (Procore quality intelligence) and v0.2 (Harbor-like license compliance platform). Ready for next milestone definition.
+Modular quality management platform for construction. Two completed milestones: v0.1 (Procore quality intelligence) and v0.2 (Harbor-like license compliance platform). Current: v0.3 Quality Manual Platform.
 
 ---
 
-## Next Milestone
+## Current Milestone
 
-Run /paul:discuss-milestone or /paul:milestone to define.
+**v0.3 Quality Manual Platform**
+Status: In Progress
+Phases: 0 of 5 complete
+
+Unified tabbed UI for the complete quality manual (M1–M4), with search, AI-powered SOP intake for M4, draft/approval workflow, and infrastructure for future authoring and scope filtering.
+
+| Phase | Name | Plans | Status | Completed |
+|-------|------|-------|--------|-----------|
+| 14 | Schema & API Foundation | 2 | Planning | - |
+| 15 | Tabbed UI Shell & M1/M2 | TBD | Not started | - |
+| 16 | M3 Programs UI | TBD | Not started | - |
+| 17 | M4 SOP Catalog UI | TBD | Not started | - |
+| 18 | M4 SOP Intake & Classification | TBD | Not started | - |
+
+### Phase 14: Schema & API Foundation
+
+Focus: Extend DB schema for M3 programs + M4 SOPs (categories, scopes, program-SOP linkage). Build API endpoints for all 4 modules. Ensure schema supports future CRUD and draft/approval workflow.
+
+### Phase 15: Tabbed UI Shell & M1/M2
+
+Focus: Build the horizontal tab bar, master search across all modules, and M1/M2 tab views (refactor from existing viewer into separated tabs).
+
+### Phase 16: M3 Programs UI
+
+Focus: Program cards for 5 discipline programs, discipline detail view, code references, linked SOPs list. Empty-state handling for unpopulated programs.
+
+### Phase 17: M4 SOP Catalog UI
+
+Focus: Category-based SOP browser (15 categories), search/filter within M4, scope tag infrastructure (visible but data-pending). Empty-state handling.
+
+### Phase 18: M4 SOP Intake & Classification
+
+Focus: PDF upload, Claude-powered analysis (category, scope, program, codes), recommendation review UI, draft insertion. Approval workflow (draft → approved → published).
 
 ---
 
@@ -47,4 +79,4 @@ Run /paul:discuss-milestone or /paul:milestone to define.
 
 ---
 *Roadmap created: 2026-02-25*
-*Last updated: 2026-03-09 — v0.2 milestone completed, roadmap reorganized*
+*Last updated: 2026-03-10 — v0.3 Quality Manual Platform milestone created*
