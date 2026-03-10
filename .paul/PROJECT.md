@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Modular Python platform for construction quality management. Two active milestones: (1) Procore quality intelligence — aggregating siloed quality data into unified analytics with mobile capture. (2) License compliance platform — Harbor-like multi-state license management with renewal workflows, CE tracking, regulatory intelligence, and document management.
+Modular Python platform for construction quality management. Two milestones shipped: (1) Procore quality intelligence — aggregating siloed quality data into unified analytics with mobile capture. (2) License compliance platform — Harbor-like multi-state license management with renewal workflows, CE tracking, regulatory intelligence, and document management.
 
 ## Core Value
 
@@ -20,16 +20,11 @@ Centralized quality and compliance management for MEP contractors — replacing 
 
 ## Milestones
 
-### v0.2 License Compliance Platform (Current)
-Expand the licenses module from basic CRUD + CE tracking into a comprehensive Harbor-like compliance management system. 8 phases covering foundation hardening through integrations.
-
-**Pre-PAUL work already completed:**
-- Phase 1 (pre-tracked): Base CRUD, SVG map, CSV import, renewal timeline
-- Phase 2 (pre-tracked): Drill-down navigation, scope mapping, CE tracking, board data for 51 states
-- Phase 3 (pre-tracked): CE seed data, period-aware summary, certificate upload, CSV exports, compliance dashboard
+### v0.2 License Compliance Platform (Complete - 2026-03-09)
+Expanded licenses module from basic CRUD into comprehensive Harbor-like compliance management. 8 phases (18 plans) over 5 days: foundation hardening, renewal workflows, notifications, document management, entity registration, regulatory intelligence, CE catalog, and integrations/automation.
 
 ### v0.1 Quality Intelligence Platform (80% complete)
-Bidirectional Procore observation integration. Two tracks: personal mobile capture pipeline and team-wide Procore observation import.
+Procore quality intelligence with mobile capture. 4 of 5 phases complete. Phase 5 (Procore push) not started.
 
 ## Requirements
 
@@ -48,9 +43,10 @@ Bidirectional Procore observation integration. Two tracks: personal mobile captu
 - [x] Entity registration tracking (business entities, SoS filings, DBE/MBE/WBE certs, hierarchy, license linking) — v0.2 Phase 10
 - [x] Regulatory intelligence database (state requirements, fee schedules, compliance scoring, gap analysis UI) — v0.2 Phase 11
 - [x] Advanced CE management (provider catalog, course browser, cross-state mapping, employee credential portfolios) — v0.2 Phase 12
+- [x] Integrations & automation (dashboard widgets, iCal feed, cross-module credentials, bulk ops, verification tracking, external API) — v0.2 Phase 13
 
-### Active (v0.2 — Complete)
-- [x] Integrations (dashboard widgets, iCal feed, cross-module credentials, bulk ops, verification tracking, external API) — v0.2 Phase 13
+### Active
+None — awaiting next milestone definition.
 
 ### Paused (v0.1 remaining)
 - [ ] Procore push (Phase 5)
@@ -67,7 +63,7 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 **Technical Context:**
 - Existing licenses module: `licenses/` package with schema, db, migrations
-- 11 schema tables (state_licenses, license_events, ce_requirements, ce_credits, boards, scopes, etc.)
+- ~24 schema tables (state_licenses, license_events, ce_requirements, ce_credits, ce_providers, ce_courses, boards, scopes, business_entities, entity_registrations, state_requirements, license_documents, license_notes, license_notifications, license_verifications, api_tokens, etc.)
 - Flask blueprint at `/licenses/` with full CRUD + compliance dashboard
 - Certificate file storage at `data/certificates/`
 - Welding notification pattern available for cloning (notification_rules + notifications tables)
@@ -77,7 +73,7 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 | Decision | Rationale | Date | Status |
 |----------|-----------|------|--------|
-| Harbor feature parity as target | Comprehensive compliance management, not just license tracking | 2026-03-05 | Active |
+| Harbor feature parity as target | Comprehensive compliance management, not just license tracking | 2026-03-05 | Shipped |
 | Foundation hardening first | Security + perf fixes before new features (architecture audit findings) | 2026-03-05 | Shipped |
 | API-layer validation, not DB-layer | Clean boundary: API validates input, DB trusts internal calls | 2026-03-05 | Active |
 | In-memory rate limiting (no Redis) | LAN deployment, 1-5 users, restarts clear state acceptably | 2026-03-05 | Active |
@@ -114,4 +110,4 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-09 after Phase 13 — v0.2 milestone complete*
+*Last updated: 2026-03-09 after v0.2 License Compliance Platform milestone complete*
