@@ -668,6 +668,250 @@
     border-radius: var(--radius-sm);
 }
 
+/* === M4 SOP Catalog === */
+.qm-categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.qm-category-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    cursor: pointer;
+    transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease), transform 0.12s var(--ease);
+    box-shadow: var(--shadow-sm);
+}
+
+.qm-category-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.qm-category-code {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    background: var(--color-primary-subtle);
+    padding: 3px 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.qm-category-card h3 {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 650;
+    color: var(--color-text);
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+}
+
+.qm-category-card .qm-category-desc {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    line-height: 1.55;
+    margin-bottom: 14px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.qm-category-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.qm-category-meta svg {
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.qm-category-meta .qm-sop-count-zero {
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.qm-parent-program {
+    font-size: 11.5px;
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+}
+
+.qm-parent-program strong {
+    color: var(--color-text-secondary);
+    font-weight: 550;
+}
+
+/* === M4 SOP List === */
+.qm-sop-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.qm-sop-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-border-light);
+    cursor: pointer;
+    transition: background 0.12s var(--ease), border-left-color 0.12s var(--ease);
+    border-left: 3px solid transparent;
+}
+
+.qm-sop-row:hover {
+    background: var(--color-surface-alt);
+    border-left-color: var(--color-primary);
+}
+
+.qm-sop-row:last-child {
+    border-bottom: none;
+}
+
+.qm-sop-doc-id {
+    font-family: var(--font-mono, monospace);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--color-primary);
+    background: var(--color-primary-subtle);
+    padding: 2px 8px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.qm-sop-title {
+    flex: 1;
+    font-size: 13.5px;
+    color: var(--color-text-secondary);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qm-sop-version {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+/* === Status Badges === */
+.qm-status-badge {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 8px;
+    text-transform: capitalize;
+    flex-shrink: 0;
+}
+
+.qm-status-badge.status-draft {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.qm-status-badge.status-under_review {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+}
+
+.qm-status-badge.status-approved {
+    background: rgba(20, 184, 166, 0.12);
+    color: #0d9488;
+}
+
+.qm-status-badge.status-published {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.qm-status-badge.status-superseded {
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+}
+
+.qm-status-badge.status-obsolete {
+    background: var(--color-danger-bg, rgba(239,68,68,0.1));
+    color: var(--color-danger, #dc2626);
+}
+
+/* === Scope Tags === */
+.qm-scope-tag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: var(--color-surface-alt);
+    color: var(--color-text-secondary);
+    letter-spacing: 0.02em;
+}
+
+/* === M4 SOP Detail === */
+.qm-sop-detail {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    padding: 28px 32px;
+}
+
+.qm-sop-detail .qm-detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+}
+
+.qm-sop-detail .qm-detail-meta dt {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    display: inline;
+}
+
+.qm-sop-detail .qm-detail-meta dd {
+    display: inline;
+    margin: 0 24px 0 4px;
+}
+
+/* === M4 Search Results === */
+.qm-m4-search-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 550;
+    color: var(--color-primary);
+    cursor: pointer;
+    margin-bottom: 18px;
+    padding: 5px 0;
+    border: none;
+    background: none;
+    transition: opacity 0.12s var(--ease);
+}
+
+.qm-m4-search-back:hover {
+    opacity: 0.7;
+}
+
 /* === Responsive === */
 @media (max-width: 900px) {
     .qm-layout {
@@ -771,21 +1015,12 @@
     <div id="qmM3Detail" style="display:none;"></div>
 </div>
 
-<!-- M4 Empty State -->
+<!-- M4 SOP Catalog -->
 <div id="qmM4Panel" style="display:none;">
-    <div class="qm-content">
-        <div class="qm-empty-state">
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-            </svg>
-            <h3>SOP Catalog</h3>
-            <p>Standard operating procedures organized across 15 categories — searchable, filterable, with AI-powered intake and classification.</p>
-            <span class="qm-coming-soon">Coming in Phase 17</span>
-        </div>
-    </div>
+    <div id="qmM4Grid"></div>
+    <div id="qmM4CatDetail" style="display:none;"></div>
+    <div id="qmM4SopDetail" style="display:none;"></div>
+    <div id="qmM4SearchResults" style="display:none;"></div>
 </div>
 {% endblock %}
 
@@ -799,6 +1034,9 @@
     var activeTab = 'm1';
     var programsCache = null;  // M3 programs data
     var categoriesCache = null; // M4 categories for linkage
+    var sopCategoriesCache = null; // M4 categories with SOP counts
+    var currentCategoryId = null; // M4 navigation state
+    var m4SearchMode = false; // M4 search active
 
     /* ── Tab map: tab id → module number ─────────────────────── */
     var TAB_MODULES = { m1: 1, m2: 2 };
@@ -897,6 +1135,8 @@
             stats.style.display = 'none';
             searchBar.style.display = '';
             activeSection = null;
+            m4SearchMode = false;
+            loadCategories();
         }
     };
 
@@ -1151,6 +1391,12 @@
         var q = document.getElementById('qmSearchInput').value.trim();
         if (!q) return;
 
+        // M4 tab: search SOPs instead of manual content
+        if (activeTab === 'm4') {
+            searchM4Sops(q);
+            return;
+        }
+
         // Ensure layout is visible for search results
         var layout = document.getElementById('qmLayout');
         layout.style.display = '';
@@ -1184,6 +1430,7 @@
     window.clearSearch = function() {
         document.getElementById('qmSearchInput').value = '';
         document.getElementById('qmClearBtn').style.display = 'none';
+        m4SearchMode = false;
         // Restore current tab view
         switchTab(activeTab);
     };
@@ -1446,6 +1693,355 @@
         document.getElementById('qmM3Detail').style.display = 'none';
         document.getElementById('qmM3Grid').style.display = '';
     };
+
+    /* ── M4 SOP Catalog ────────────────────────────────────────── */
+    function loadCategories() {
+        var grid = document.getElementById('qmM4Grid');
+        var catDetail = document.getElementById('qmM4CatDetail');
+        var sopDetail = document.getElementById('qmM4SopDetail');
+        var searchResults = document.getElementById('qmM4SearchResults');
+        catDetail.style.display = 'none';
+        sopDetail.style.display = 'none';
+        searchResults.style.display = 'none';
+        grid.style.display = '';
+
+        if (sopCategoriesCache) {
+            renderCategoryCards(sopCategoriesCache);
+            return;
+        }
+
+        grid.innerHTML = '<div class="qm-loading">Loading SOP categories...</div>';
+
+        fetch('/qualitydocs/api/categories')
+            .then(function(r) { return r.json(); })
+            .then(function(categories) {
+                sopCategoriesCache = categories;
+                renderCategoryCards(categories);
+            })
+            .catch(function(err) {
+                grid.innerHTML = '<div class="qm-empty-state"><h3>Failed to load categories</h3></div>';
+                console.error('M4 load error:', err);
+            });
+    }
+
+    function renderCategoryCards(categories) {
+        var grid = document.getElementById('qmM4Grid');
+
+        if (!categories || !categories.length) {
+            grid.innerHTML =
+                '<div class="qm-empty-state">' +
+                '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>' +
+                '<polyline points="14 2 14 8 20 8"/>' +
+                '</svg>' +
+                '<h3>No SOP Categories</h3>' +
+                '<p>SOP categories have not been configured yet. Run the seed command to populate categories.</p>' +
+                '</div>';
+            return;
+        }
+
+        // Find program names for linking
+        var programMap = {};
+        if (programsCache) {
+            programsCache.forEach(function(p) { programMap[p.id] = p.title; });
+        }
+
+        var html = '<div class="qm-categories-grid">';
+        categories.forEach(function(cat) {
+            var desc = cat.description || '';
+            if (desc.length > 100) desc = desc.substring(0, 97) + '...';
+            var sopCount = cat.sop_count || 0;
+            var parentName = programMap[cat.parent_program_id] || '';
+
+            html += '<div class="qm-category-card" onclick="showCategoryDetail(' + cat.id + ', \'' + escAttr(cat.category_code) + '\')">' +
+                '<span class="qm-category-code">' + escHtml(cat.category_code) + '</span>' +
+                '<h3>' + escHtml(cat.name) + '</h3>';
+            if (desc) {
+                html += '<div class="qm-category-desc">' + escHtml(desc) + '</div>';
+            }
+            if (parentName) {
+                html += '<div class="qm-parent-program">Program: <strong>' + escHtml(parentName) + '</strong></div>';
+            }
+            html += '<div class="qm-category-meta">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>' +
+                '<polyline points="14 2 14 8 20 8"/></svg>';
+            if (sopCount > 0) {
+                html += sopCount + ' SOP' + (sopCount !== 1 ? 's' : '');
+            } else {
+                html += '<span class="qm-sop-count-zero">No SOPs yet</span>';
+            }
+            html += '</div></div>';
+        });
+        html += '</div>';
+        grid.innerHTML = html;
+    }
+
+    window.showCategoryDetail = function(categoryId, categoryCode) {
+        var grid = document.getElementById('qmM4Grid');
+        var catDetail = document.getElementById('qmM4CatDetail');
+        var sopDetail = document.getElementById('qmM4SopDetail');
+        var searchResults = document.getElementById('qmM4SearchResults');
+        grid.style.display = 'none';
+        sopDetail.style.display = 'none';
+        searchResults.style.display = 'none';
+        catDetail.style.display = '';
+        currentCategoryId = categoryId;
+        catDetail.innerHTML = '<div class="qm-loading">Loading SOPs...</div>';
+
+        // Find category info
+        var catInfo = null;
+        if (sopCategoriesCache) {
+            sopCategoriesCache.forEach(function(c) {
+                if (c.id === categoryId) catInfo = c;
+            });
+        }
+
+        fetch('/qualitydocs/api/sops?category_id=' + categoryId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                renderCategoryDetail(catInfo, data.items || []);
+            })
+            .catch(function(err) {
+                catDetail.innerHTML = '<div class="qm-empty-state"><h3>Error loading SOPs</h3></div>';
+                console.error('Category detail error:', err);
+            });
+    };
+
+    function renderCategoryDetail(catInfo, sops) {
+        var catDetail = document.getElementById('qmM4CatDetail');
+        var html = '<div class="qm-program-detail">';
+
+        // Back button
+        html += '<button class="qm-detail-back" onclick="backToCategories()">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="15 18 9 12 15 6"/></svg> Back to Categories</button>';
+
+        // Header
+        if (catInfo) {
+            html += '<div class="qm-detail-header">' +
+                '<span class="qm-category-code">' + escHtml(catInfo.category_code) + '</span>' +
+                '<h2>' + escHtml(catInfo.name) + '</h2>' +
+                '</div>';
+            if (catInfo.description) {
+                html += '<div class="qm-detail-section">' +
+                    '<p>' + escHtml(catInfo.description) + '</p>' +
+                    '</div>';
+            }
+        }
+
+        // SOP list
+        html += '<div class="qm-detail-section">' +
+            '<h4>Standard Operating Procedures (' + sops.length + ')</h4>';
+        if (sops.length) {
+            html += '<ul class="qm-sop-list">';
+            sops.forEach(function(sop) {
+                html += '<li class="qm-sop-row" onclick="showSopDetail(\'' + escAttr(sop.document_id) + '\')">' +
+                    '<span class="qm-sop-doc-id">' + escHtml(sop.document_id) + '</span>' +
+                    '<span class="qm-sop-title">' + escHtml(sop.title) + '</span>' +
+                    '<span class="qm-status-badge status-' + escAttr(sop.status) + '">' + escHtml(sop.status) + '</span>' +
+                    '<span class="qm-sop-version">v' + escHtml(sop.version || '1.0') + '</span>' +
+                    '</li>';
+            });
+            html += '</ul>';
+        } else {
+            html += '<div class="qm-empty-state" style="padding:40px 20px;">' +
+                '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>' +
+                '<polyline points="14 2 14 8 20 8"/></svg>' +
+                '<h3>No Procedures Yet</h3>' +
+                '<p>SOPs will appear here after intake and classification in Phase 18.</p>' +
+                '</div>';
+        }
+        html += '</div></div>';
+        catDetail.innerHTML = html;
+    }
+
+    window.showSopDetail = function(documentId) {
+        var grid = document.getElementById('qmM4Grid');
+        var catDetail = document.getElementById('qmM4CatDetail');
+        var sopDetail = document.getElementById('qmM4SopDetail');
+        var searchResults = document.getElementById('qmM4SearchResults');
+        grid.style.display = 'none';
+        catDetail.style.display = 'none';
+        searchResults.style.display = 'none';
+        sopDetail.style.display = '';
+        sopDetail.innerHTML = '<div class="qm-loading">Loading SOP details...</div>';
+
+        fetch('/qualitydocs/api/sops/' + encodeURIComponent(documentId))
+            .then(function(r) { return r.json(); })
+            .then(function(sop) {
+                if (sop.error) {
+                    sopDetail.innerHTML = '<div class="qm-empty-state"><h3>SOP not found</h3></div>';
+                    return;
+                }
+                renderSopDetail(sop);
+            })
+            .catch(function(err) {
+                sopDetail.innerHTML = '<div class="qm-empty-state"><h3>Error loading SOP</h3></div>';
+                console.error('SOP detail error:', err);
+            });
+    };
+
+    function renderSopDetail(sop) {
+        var sopDetail = document.getElementById('qmM4SopDetail');
+        var html = '<div class="qm-sop-detail">';
+
+        // Back button — go to category list or search results
+        var backLabel = m4SearchMode ? 'Back to Search Results' : 'Back to SOP List';
+        var backFn = m4SearchMode ? 'backToM4Search()' : 'backToSopList()';
+        html += '<button class="qm-detail-back" onclick="' + backFn + '">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="15 18 9 12 15 6"/></svg> ' + backLabel + '</button>';
+
+        // Header
+        html += '<div class="qm-detail-header">' +
+            '<span class="qm-sop-doc-id" style="font-size:12px;padding:4px 12px;">' + escHtml(sop.document_id) + '</span> ' +
+            '<span class="qm-status-badge status-' + escAttr(sop.status) + '">' + escHtml(sop.status) + '</span>' +
+            '<h2>' + escHtml(sop.title) + '</h2>' +
+            '</div>';
+
+        // Metadata
+        html += '<dl class="qm-detail-meta">';
+        html += '<dt>Version:</dt><dd>' + escHtml(sop.version || '1.0') + '</dd>';
+        html += '<dt>Revision:</dt><dd>' + escHtml(sop.revision || 'A') + '</dd>';
+        if (sop.category_name) {
+            html += '<dt>Category:</dt><dd>' + escHtml(sop.category_code + ' — ' + sop.category_name) + '</dd>';
+        }
+        if (sop.effective_date) {
+            html += '<dt>Effective:</dt><dd>' + escHtml(sop.effective_date) + '</dd>';
+        }
+        if (sop.review_cycle_months) {
+            html += '<dt>Review Cycle:</dt><dd>' + sop.review_cycle_months + ' months</dd>';
+        }
+        if (sop.approved_by) {
+            html += '<dt>Approved By:</dt><dd>' + escHtml(sop.approved_by) + '</dd>';
+        }
+        if (sop.approved_at) {
+            html += '<dt>Approved:</dt><dd>' + escHtml(sop.approved_at) + '</dd>';
+        }
+        html += '</dl>';
+
+        // Scope tags
+        var scopeTags = sop.scope_tags || [];
+        if (scopeTags.length) {
+            html += '<div class="qm-detail-section">' +
+                '<h4>Scope Tags</h4>' +
+                '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+            scopeTags.forEach(function(tag) {
+                html += '<span class="qm-scope-tag">' + escHtml(tag) + '</span>';
+            });
+            html += '</div></div>';
+        }
+
+        // Summary
+        if (sop.summary) {
+            html += '<div class="qm-detail-section">' +
+                '<h4>Summary</h4>' +
+                '<p>' + escHtml(sop.summary) + '</p>' +
+                '</div>';
+        }
+
+        // Linked programs
+        var programs = sop.programs || [];
+        if (programs.length) {
+            html += '<div class="qm-detail-section">' +
+                '<h4>Linked Programs (' + programs.length + ')</h4>' +
+                '<ul class="qm-linked-categories">';
+            programs.forEach(function(p) {
+                html += '<li><span class="qm-cat-code">' + escHtml(p.program_id) + '</span>' +
+                    escHtml(p.title) + '</li>';
+            });
+            html += '</ul></div>';
+        }
+
+        html += '</div>';
+        sopDetail.innerHTML = html;
+    }
+
+    window.backToCategories = function() {
+        document.getElementById('qmM4CatDetail').style.display = 'none';
+        document.getElementById('qmM4SopDetail').style.display = 'none';
+        document.getElementById('qmM4SearchResults').style.display = 'none';
+        document.getElementById('qmM4Grid').style.display = '';
+        m4SearchMode = false;
+    };
+
+    window.backToSopList = function() {
+        document.getElementById('qmM4SopDetail').style.display = 'none';
+        document.getElementById('qmM4CatDetail').style.display = '';
+    };
+
+    window.backToM4Search = function() {
+        document.getElementById('qmM4SopDetail').style.display = 'none';
+        document.getElementById('qmM4SearchResults').style.display = '';
+    };
+
+    /* ── M4 Search ─────────────────────────────────────────────── */
+    function searchM4Sops(query) {
+        var grid = document.getElementById('qmM4Grid');
+        var catDetail = document.getElementById('qmM4CatDetail');
+        var sopDetail = document.getElementById('qmM4SopDetail');
+        var searchResults = document.getElementById('qmM4SearchResults');
+        grid.style.display = 'none';
+        catDetail.style.display = 'none';
+        sopDetail.style.display = 'none';
+        searchResults.style.display = '';
+        m4SearchMode = true;
+
+        document.getElementById('qmClearBtn').style.display = '';
+        searchResults.innerHTML = '<div class="qm-loading">Searching SOPs...</div>';
+
+        fetch('/qualitydocs/api/sops/search?q=' + encodeURIComponent(query))
+            .then(function(r) { return r.json(); })
+            .then(function(sops) {
+                renderM4SearchResults(sops, query);
+            })
+            .catch(function(err) {
+                searchResults.innerHTML = '<div class="qm-empty-state"><h3>Search failed</h3></div>';
+                console.error('M4 search error:', err);
+            });
+    }
+
+    function renderM4SearchResults(sops, query) {
+        var container = document.getElementById('qmM4SearchResults');
+
+        var html = '<div class="qm-program-detail">';
+
+        // Back to categories
+        html += '<button class="qm-m4-search-back" onclick="backToCategories()">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="15 18 9 12 15 6"/></svg> Back to Categories</button>';
+
+        html += '<div class="qm-detail-header">' +
+            '<h2>SOP Search Results</h2>' +
+            '<div class="qm-section-number">' + sops.length + ' result' + (sops.length !== 1 ? 's' : '') +
+            ' for &ldquo;' + escHtml(query) + '&rdquo;</div>' +
+            '</div>';
+
+        if (!sops.length) {
+            html += '<div class="qm-empty-state" style="padding:40px 20px;">' +
+                '<h3>No SOPs Found</h3>' +
+                '<p>No standard operating procedures matched &ldquo;' + escHtml(query) + '&rdquo;. Try different search terms.</p>' +
+                '</div>';
+        } else {
+            html += '<ul class="qm-sop-list">';
+            sops.forEach(function(sop) {
+                html += '<li class="qm-sop-row" onclick="showSopDetail(\'' + escAttr(sop.document_id) + '\')">' +
+                    '<span class="qm-sop-doc-id">' + escHtml(sop.document_id) + '</span>' +
+                    '<span class="qm-sop-title">' + escHtml(sop.title) + '</span>';
+                if (sop.category_name) {
+                    html += '<span class="qm-code-tag">' + escHtml(sop.category_name) + '</span>';
+                }
+                html += '<span class="qm-status-badge status-' + escAttr(sop.status) + '">' + escHtml(sop.status) + '</span>' +
+                    '</li>';
+            });
+            html += '</ul>';
+        }
+
+        html += '</div>';
+        container.innerHTML = html;
+    }
 
     /* ── Helpers ────────────────────────────────────────────────── */
     function escHtml(s) {

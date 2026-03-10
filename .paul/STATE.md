@@ -10,13 +10,13 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.3 Quality Manual Platform
-Phase: 17 of 18 (M4 SOP Catalog UI) — Not started
+Phase: 18 of 18 (M4 SOP Intake & Classification) — Not started
 Plan: Not started
-Status: Ready to plan Phase 17
-Last activity: 2026-03-10 — Phase 16 complete, transitioned to Phase 17
+Status: Ready to plan Phase 18
+Last activity: 2026-03-10 — Phase 17 complete, transitioned to Phase 18
 
 Progress:
-- v0.3 Quality Manual Platform: [██████░░░░] 60%
+- v0.3 Quality Manual Platform: [████████░░] 80%
 - v0.2 License Compliance Platform: [██████████] 100%
 - v0.1 Quality Intelligence Platform: [████████░░] 90% (Phase 5 not started)
 
@@ -25,7 +25,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Phase 16 complete — ready for Phase 17 PLAN]
+  ✓        ✓        ✓     [Phase 17 complete — ready for Phase 18 PLAN]
 ```
 
 ## Execution Log
@@ -38,6 +38,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 14-02 | Complete | API endpoints for programs, categories, SOPs (12 endpoints) | 2026-03-10 |
 | 15-01 | Complete | Tabbed UI shell + M1/M2 separated views + cross-module search | 2026-03-10 |
 | 16-01 | Complete | M3 Programs UI — 5 programs seeded, cards grid, detail view | 2026-03-10 |
+| 17-01 | Complete | M4 SOP Catalog UI — category grid, SOP list, SOP detail, search | 2026-03-10 |
 
 ### v0.2 License Compliance Platform
 
@@ -102,9 +103,11 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Search goes full-width (hides TOC) | v0.3 Phase 15 | Cross-module results don't pair with single-module TOC |
 | Programs seeded as published, not draft | v0.3 Phase 16 | Foundational programs visible immediately |
 | Search bar hidden on M3 tab | v0.3 Phase 16 | Only 5 programs — visual browsing sufficient |
+| M4 search routes through existing search bar | v0.3 Phase 17 | Tab-aware branching: M4 searches SOPs, M1/M2 searches manual |
+| Status badge CSS class convention | v0.3 Phase 17 | .status-{status} for color coding (6 states) |
 
 ### Git State
-Last commit: `6c4865e` (feat(qualitydocs): add tabbed UI shell with M1/M2 separated views — Phase 15)
+Last commit: `a5a9f51` (feat(qualitydocs): M3 Programs UI — Phase 16)
 Branch: main
 
 ### Deferred Issues
@@ -113,6 +116,7 @@ Branch: main
 | v0.1 Phase 5 not started | Procore push deferred | Can be done in parallel or after v0.3 |
 | CE requirement type matching | Seeded types don't exactly match existing license_type values | Data cleanup when relevant |
 | Production Waitress template caching | New templates require server restart | Configure auto_reload or restart after deploys |
+| Parent program names on M4 cards depend on programsCache | Minor: empty if M3 not visited first | Will resolve naturally on use; could prefetch in init |
 
 ### Blockers/Concerns
 | Blocker | Impact | Resolution Path |
@@ -122,8 +126,8 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 16 complete, ready to plan Phase 17
-Next action: Run /paul:plan for Phase 17 (M4 SOP Catalog UI)
+Stopped at: Phase 17 complete, ready to plan Phase 18
+Next action: Run /paul:plan for Phase 18 (M4 SOP Intake & Classification)
 Resume file: .paul/ROADMAP.md
 
 ---
