@@ -6,6 +6,18 @@
       "icon": "&#9881;",
       "items": [
         {
+          "title": "v0.3 Quality Manual Platform",
+          "desc": "Unified tabbed UI for M1-M4, AI-powered SOP intake, draft/approval workflow. Phase 14 (schema + API) complete, 4 phases remaining.",
+          "module": "qualitydocs",
+          "priority": "high",
+          "tags": [
+            "milestone",
+            "qualitydocs",
+            "quality-manual",
+            "v0.3"
+          ]
+        },
+        {
           "title": "Procore Drawing Zip Import",
           "desc": "Extract PDFs from Procore zip exports and route to project discipline folders. Handle revision superseding.",
           "module": "pipeline",
@@ -94,6 +106,21 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "v0.3 Phase 14 — Schema & API Foundation (2 plans)",
+          "desc": "M3 programs + M4 SOPs schema (7 tables), qualitydocs/db.py CRUD module with 22 functions, 15 seeded M4 categories, 12 REST API endpoints for programs/categories/SOPs/lifecycle/search.",
+          "module": "qualitydocs",
+          "priority": "high",
+          "tags": [
+            "qualitydocs",
+            "schema",
+            "api",
+            "m3",
+            "m4",
+            "sops"
+          ],
+          "completed": "2026-03-10"
+        },
         {
           "title": "v0.2 License Compliance Platform — MILESTONE COMPLETE",
           "desc": "8 phases, 18 plans over 5 days. Harbor-like multi-state license compliance: foundation hardening, renewal workflows, notifications, document management, entity registration, regulatory intelligence, CE catalog, integrations/automation. Git tag: v0.2.0.",

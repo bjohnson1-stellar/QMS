@@ -98,7 +98,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Separate transactions for SOP history | v0.3 Phase 14 | Avoids nested get_db() context manager issues |
 
 ### Git State
-Last commit: pending (phase 14 transition commit)
+Last commit: `ceb2daa` (feat(qualitydocs): add M3/M4 API endpoints — Phase 14 complete)
 Branch: main
 
 ### Deferred Issues
