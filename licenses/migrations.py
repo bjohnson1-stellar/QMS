@@ -63,6 +63,9 @@ def run_license_migrations(conn: sqlite3.Connection):
     # Phase 13 — license verification tracking
     _create_verification_table(conn)
 
+    # Fix: re-seed CE requirements to match actual license types
+    _reseed_ce_requirements(conn)
+
     conn.commit()
 
 
@@ -564,24 +567,37 @@ def _create_notification_tables(conn: sqlite3.Connection):
 
 
 def _seed_ce_requirements(conn: sqlite3.Connection):
-    """Seed researched CE hour requirements for key MEP contractor states.
+    """Seed researched CE hour requirements matching actual license types.
 
     Uses INSERT OR IGNORE with UNIQUE(state_code, license_type) so
     re-running migration doesn't duplicate rows.
+
+    Only states with CE requirements for HVAC/refrigeration contractor
+    licenses are included (AZ, CA, LA, MS, VA have no CE requirement
+    for these license types).
     """
     # (state_code, license_type, hours_required, period_months, notes)
     requirements = [
-        ("FL", "Mechanical Contractor", 14, 24,
-         "1hr workplace safety, 1hr workers comp, 1hr business"),
-        ("FL", "Plumbing Contractor", 14, 24,
-         "1hr workplace safety, 1hr workers comp, 1hr business"),
-        ("TX", "Master Plumber", 8, 12, "Annual renewal"),
-        ("TX", "Journeyman Plumber", 8, 12, "Annual renewal"),
-        ("GA", "Conditioned Air Contractor", 6, 24, None),
-        ("AL", "Master Plumber", 6, 12, None),
-        ("NC", "Plumbing/Heating/Fire Sprinkler", 8, 12, None),
-        ("SC", "Mechanical Contractor", 4, 24, None),
-        ("LA", "Master Plumber", 6, 12, None),
+        # Alabama — 4 hrs/yr, 2 hrs must be AL-specific
+        ("AL", "HVAC", 4, 12,
+         "2 hrs must be AL-specific; IMC and HVAC topics"),
+        ("AL", "Refrigeration", 4, 12,
+         "2 hrs must be AL-specific; complete by Nov 1"),
+        # Ohio — 10 hrs/yr (8 w/ Compliant Contractor Program)
+        ("OH", "HVAC", 10, 12,
+         "50% must be in-person; safety, codes, business"),
+        ("OH", "Hydronics", 10, 12,
+         "50% must be in-person; safety, codes, business"),
+        ("OH", "Refrigeration", 10, 12,
+         "50% must be in-person; safety, codes, business"),
+        # Texas — 8 hrs/yr, 1 hr TX law required
+        ("TX", "Air Conditioning/Refrigeration Contractor Type: AC", 8, 12,
+         "1 hr TX state law required; TDLR-approved courses"),
+        # Utah — 6 hrs/2 yrs, 3 hrs core incl 1 hr energy conservation
+        ("UT", "S350 - HVAC Qualifier", 6, 24,
+         "3 hrs core (1 hr energy conservation); max 3 hrs online"),
+        ("UT", "S410 - Boiler, Pipeline, Waste and Cond.", 6, 24,
+         "3 hrs core (1 hr energy conservation); max 3 hrs online"),
     ]
     for state, lic_type, hours, period, notes in requirements:
         conn.execute(
@@ -590,6 +606,32 @@ def _seed_ce_requirements(conn: sqlite3.Connection):
                     notes, created_at, updated_at, created_by)
                VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 'system')""",
             (_gen_id(), state, lic_type, hours, period, notes),
+        )
+
+
+def _reseed_ce_requirements(conn: sqlite3.Connection):
+    """Remove stale CE requirements that don't match any actual license type.
+
+    The original seed data used generic types (Master Plumber, Mechanical
+    Contractor) that never matched the actual license_type values in
+    state_licenses. This cleans those out — _seed_ce_requirements now
+    inserts rows matching the real license types.
+    """
+    # Only keep rows whose (state_code, license_type) matches a real license
+    stale = conn.execute("""
+        SELECT cr.id FROM ce_requirements cr
+        WHERE NOT EXISTS (
+            SELECT 1 FROM state_licenses sl
+            WHERE sl.state_code = cr.state_code
+              AND sl.license_type = cr.license_type
+        )
+        AND cr.created_by = 'system'
+    """).fetchall()
+    if stale:
+        ids = [row[0] for row in stale]
+        conn.execute(
+            f"DELETE FROM ce_requirements WHERE id IN ({','.join('?' * len(ids))})",
+            ids,
         )
 
 
