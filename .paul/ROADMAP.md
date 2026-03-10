@@ -17,7 +17,7 @@ Unified tabbed UI for the complete quality manual (M1–M4), with search, AI-pow
 | Phase | Name | Plans | Status | Completed |
 |-------|------|-------|--------|-----------|
 | 14 | Schema & API Foundation | 2 | Complete | 2026-03-10 |
-| 15 | Tabbed UI Shell & M1/M2 | TBD | Not started | - |
+| 15 | Tabbed UI Shell & M1/M2 | 1 | Planning | - |
 | 16 | M3 Programs UI | TBD | Not started | - |
 | 17 | M4 SOP Catalog UI | TBD | Not started | - |
 | 18 | M4 SOP Intake & Classification | TBD | Not started | - |

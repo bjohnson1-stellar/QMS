@@ -4,12 +4,73 @@
 
 {% block extra_css %}
 <style>
+/* === Tab Bar === */
+.qm-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--color-border-light);
+    margin-bottom: 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.qm-tab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 20px;
+    font-size: 13.5px;
+    font-weight: 550;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease);
+    white-space: nowrap;
+    user-select: none;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.qm-tab:hover {
+    color: var(--color-text-secondary);
+    background: var(--color-surface-alt);
+}
+
+.qm-tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: 600;
+}
+
+.qm-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 10.5px;
+    font-weight: 600;
+    border-radius: 9px;
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+}
+
+.qm-tab.active .qm-tab-badge {
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+}
+
 /* === Quality Manual Layout === */
 .qm-layout {
     display: grid;
     grid-template-columns: 300px 1fr;
     gap: 20px;
     align-items: start;
+}
+
+.qm-layout.no-sidebar {
+    grid-template-columns: 1fr;
 }
 
 /* === Search === */
@@ -289,6 +350,24 @@
     color: var(--color-text-muted);
 }
 
+.qm-search-result-module {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+.qm-search-result-module.mod-1 {
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+}
+
+.qm-search-result-module.mod-2 {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+}
+
 .qm-search-result-content {
     font-size: 13px;
     color: var(--color-text-secondary);
@@ -298,7 +377,7 @@
     overflow: hidden;
 }
 
-/* === Welcome state === */
+/* === Welcome / Empty state === */
 .qm-welcome {
     text-align: center;
     padding: 60px 20px;
@@ -319,6 +398,45 @@
 
 .qm-welcome p {
     font-size: 13.5px;
+}
+
+.qm-empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--color-text-muted);
+}
+
+.qm-empty-state svg {
+    margin-bottom: 20px;
+    opacity: 0.35;
+}
+
+.qm-empty-state h3 {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+}
+
+.qm-empty-state p {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    max-width: 400px;
+    margin: 0 auto 6px;
+    line-height: 1.6;
+}
+
+.qm-empty-state .qm-coming-soon {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    padding: 5px 14px;
+    border-radius: 12px;
+    background: var(--color-surface-alt);
 }
 
 /* === Loading state === */
@@ -364,6 +482,13 @@
         position: static;
         max-height: none;
     }
+    .qm-tabs {
+        gap: 0;
+    }
+    .qm-tab {
+        padding: 10px 14px;
+        font-size: 12.5px;
+    }
 }
 </style>
 {% endblock %}
@@ -377,22 +502,44 @@
     <img src="{{ url_for('static', filename='branding/Inspector_Orion_nobg.png') }}" alt="Inspector Orion" style="height:100px; object-fit:contain; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15)); margin-left:16px;">
 </div>
 
+<!-- Tab Bar -->
+<div class="qm-tabs" id="qmTabs">
+    <div class="qm-tab active" data-tab="m1" onclick="switchTab('m1')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        M1 &mdash; Quality Manual
+        <span class="qm-tab-badge" id="tabBadgeM1">--</span>
+    </div>
+    <div class="qm-tab" data-tab="m2" onclick="switchTab('m2')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+        M2 &mdash; Compliance
+        <span class="qm-tab-badge" id="tabBadgeM2">--</span>
+    </div>
+    <div class="qm-tab" data-tab="m3" onclick="switchTab('m3')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        M3 &mdash; Programs
+    </div>
+    <div class="qm-tab" data-tab="m4" onclick="switchTab('m4')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        M4 &mdash; SOPs
+    </div>
+</div>
+
 <div class="stats-grid" id="qmStats">
     <div class="stat-card">
         <div class="stat-value" id="statModules">--</div>
-        <div class="stat-label">Modules</div>
+        <div class="stat-label" id="statModulesLabel">Modules</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" id="statSections">--</div>
-        <div class="stat-label">Sections</div>
+        <div class="stat-label" id="statSectionsLabel">Sections</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" id="statContent">--</div>
-        <div class="stat-label">Content Blocks</div>
+        <div class="stat-label" id="statContentLabel">Content Blocks</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" id="statXrefs">--</div>
-        <div class="stat-label">Cross-References</div>
+        <div class="stat-label" id="statXrefsLabel">Cross-References</div>
     </div>
 </div>
 
@@ -402,7 +549,8 @@
     <button class="secondary" onclick="clearSearch()" style="display:none" id="qmClearBtn">Clear</button>
 </div>
 
-<div class="qm-layout">
+<!-- M1/M2 Content: TOC + Content -->
+<div class="qm-layout" id="qmLayout">
     <div class="qm-toc" id="qmToc">
         <div class="qm-toc-header">Table of Contents</div>
         <div id="qmTocBody" class="qm-loading">Loading...</div>
@@ -421,24 +569,69 @@
         </div>
     </div>
 </div>
+
+<!-- M3 Empty State -->
+<div id="qmM3Panel" style="display:none;">
+    <div class="qm-content">
+        <div class="qm-empty-state">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            <h3>Quality Programs</h3>
+            <p>Discipline-specific quality programs covering welding, piping, mechanical, electrical, and plumbing — with code references and linked SOPs.</p>
+            <span class="qm-coming-soon">Coming in Phase 16</span>
+        </div>
+    </div>
+</div>
+
+<!-- M4 Empty State -->
+<div id="qmM4Panel" style="display:none;">
+    <div class="qm-content">
+        <div class="qm-empty-state">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            <h3>SOP Catalog</h3>
+            <p>Standard operating procedures organized across 15 categories — searchable, filterable, with AI-powered intake and classification.</p>
+            <span class="qm-coming-soon">Coming in Phase 17</span>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 (function() {
     /* ── State ─────────────────────────────────────────────────── */
-    var moduleData = {};  // keyed by module_number
+    var moduleData = {};       // keyed by module_number
+    var moduleSummary = null;  // full summary response
     var activeSection = null;
+    var activeTab = 'm1';
+
+    /* ── Tab map: tab id → module number ─────────────────────── */
+    var TAB_MODULES = { m1: 1, m2: 2 };
+    var MANUAL_TABS = ['m1', 'm2'];
 
     /* ── Init ──────────────────────────────────────────────────── */
     init();
 
     function init() {
+        // Determine initial tab from URL hash
+        var hash = location.hash.replace('#', '');
+        if (['m1', 'm2', 'm3', 'm4'].indexOf(hash) !== -1) {
+            activeTab = hash;
+        }
+
         fetch('{{ url_for("qualitydocs.api_summary") }}')
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                renderStats(data);
-                // Load each module's sections for the TOC
+                moduleSummary = data;
                 var promises = data.modules.map(function(m) {
                     return fetch('{{ url_for("qualitydocs.api_module", module_number=0) }}'.replace('0', m.module_number))
                         .then(function(r) { return r.json(); })
@@ -448,36 +641,134 @@
                 });
                 return Promise.all(promises);
             })
-            .then(function() { renderToc(); })
+            .then(function() {
+                renderTabBadges();
+                switchTab(activeTab);
+            })
             .catch(function(err) {
                 document.getElementById('qmTocBody').textContent = 'Failed to load.';
                 console.error('QM init error:', err);
             });
 
-        // Enter key in search
         document.getElementById('qmSearchInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') doSearch();
         });
     }
 
+    /* ── Tab Badges ───────────────────────────────────────────── */
+    function renderTabBadges() {
+        if (!moduleSummary) return;
+        moduleSummary.modules.forEach(function(m) {
+            var badge = document.getElementById('tabBadgeM' + m.module_number);
+            if (badge) badge.textContent = m.section_count;
+        });
+    }
+
+    /* ── Tab Switching ────────────────────────────────────────── */
+    window.switchTab = function(tabId) {
+        activeTab = tabId;
+        location.hash = '#' + tabId;
+
+        // Update tab bar active state
+        document.querySelectorAll('.qm-tab').forEach(function(el) {
+            el.classList.toggle('active', el.dataset.tab === tabId);
+        });
+
+        var layout = document.getElementById('qmLayout');
+        var m3panel = document.getElementById('qmM3Panel');
+        var m4panel = document.getElementById('qmM4Panel');
+        var stats = document.getElementById('qmStats');
+        var searchBar = document.querySelector('.qm-search-bar');
+
+        // Hide all panels first
+        layout.style.display = 'none';
+        m3panel.style.display = 'none';
+        m4panel.style.display = 'none';
+
+        if (tabId === 'm1' || tabId === 'm2') {
+            layout.style.display = '';
+            layout.classList.remove('no-sidebar');
+            stats.style.display = '';
+            searchBar.style.display = '';
+            renderStats(TAB_MODULES[tabId]);
+            renderToc(TAB_MODULES[tabId]);
+            // Reset content to welcome if no active section or section belongs to different module
+            if (activeSection) {
+                var secModNum = getSectionModuleNumber(activeSection);
+                if (secModNum !== TAB_MODULES[tabId]) {
+                    resetContent();
+                    activeSection = null;
+                }
+            }
+        } else if (tabId === 'm3') {
+            m3panel.style.display = '';
+            stats.style.display = 'none';
+            searchBar.style.display = '';
+            activeSection = null;
+        } else if (tabId === 'm4') {
+            m4panel.style.display = '';
+            stats.style.display = 'none';
+            searchBar.style.display = '';
+            activeSection = null;
+        }
+    };
+
+    /* ── Get module number for a section ──────────────────────── */
+    function getSectionModuleNumber(sectionNumber) {
+        var moduleNums = Object.keys(moduleData);
+        for (var i = 0; i < moduleNums.length; i++) {
+            var num = moduleNums[i];
+            var sections = moduleData[num].sections || [];
+            for (var j = 0; j < sections.length; j++) {
+                if (sections[j].section_number === sectionNumber) return parseInt(num);
+            }
+        }
+        return null;
+    }
+
+    /* ── Reset content to welcome ─────────────────────────────── */
+    function resetContent() {
+        document.getElementById('qmContent').innerHTML =
+            '<div class="qm-welcome">' +
+            '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>' +
+            '<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' +
+            '<line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/>' +
+            '</svg>' +
+            '<h3>Select a section to begin reading</h3>' +
+            '<p>Choose a section from the table of contents, or search for specific content.</p>' +
+            '</div>';
+    }
+
     /* ── Stats ─────────────────────────────────────────────────── */
-    function renderStats(data) {
-        var totalSections = 0;
-        data.modules.forEach(function(m) { totalSections += m.section_count; });
-        document.getElementById('statModules').textContent = data.total_modules;
-        document.getElementById('statSections').textContent = totalSections;
-        document.getElementById('statContent').textContent = data.total_content_blocks.toLocaleString();
-        document.getElementById('statXrefs').textContent = data.total_cross_references;
+    function renderStats(moduleNum) {
+        if (!moduleSummary) return;
+        var mod = null;
+        moduleSummary.modules.forEach(function(m) {
+            if (m.module_number === moduleNum) mod = m;
+        });
+        if (!mod) return;
+
+        document.getElementById('statModules').textContent = 'M' + moduleNum;
+        document.getElementById('statModulesLabel').textContent = mod.title || 'Module ' + moduleNum;
+        document.getElementById('statSections').textContent = mod.section_count;
+        document.getElementById('statSectionsLabel').textContent = 'Sections';
+        document.getElementById('statContent').textContent = mod.subsection_count || 0;
+        document.getElementById('statContentLabel').textContent = 'Subsections';
+        document.getElementById('statXrefs').textContent = mod.version || '--';
+        document.getElementById('statXrefsLabel').textContent = 'Version';
     }
 
     /* ── TOC ───────────────────────────────────────────────────── */
-    function renderToc() {
+    function renderToc(filterModule) {
         var body = document.getElementById('qmTocBody');
         body.innerHTML = '';
         body.className = '';
 
         var moduleNums = Object.keys(moduleData).sort(function(a, b) { return a - b; });
         moduleNums.forEach(function(num) {
+            if (filterModule && parseInt(num) !== filterModule) return;
+
             var mod = moduleData[num];
             var header = document.createElement('div');
             header.className = 'qm-toc-module';
@@ -487,6 +778,7 @@
             (mod.sections || []).forEach(function(sec) {
                 var a = document.createElement('a');
                 a.className = 'qm-toc-section';
+                if (activeSection === sec.section_number) a.className += ' active';
                 a.textContent = sec.section_number + ' ' + (sec.title || '');
                 a.dataset.section = sec.section_number;
                 a.href = '#section-' + sec.section_number;
@@ -502,6 +794,12 @@
     /* ── Load Section ──────────────────────────────────────────── */
     window.loadSection = function(sectionNumber) {
         activeSection = sectionNumber;
+
+        // Determine which module this section belongs to and switch tab if needed
+        var secMod = getSectionModuleNumber(sectionNumber);
+        if (secMod && MANUAL_TABS.indexOf('m' + secMod) !== -1 && activeTab !== 'm' + secMod) {
+            switchTab('m' + secMod);
+        }
 
         // Update TOC active state
         document.querySelectorAll('.qm-toc-section').forEach(function(el) {
@@ -666,6 +964,15 @@
         var q = document.getElementById('qmSearchInput').value.trim();
         if (!q) return;
 
+        // Ensure layout is visible for search results
+        var layout = document.getElementById('qmLayout');
+        layout.style.display = '';
+        layout.classList.add('no-sidebar');
+        document.getElementById('qmToc').style.display = 'none';
+        document.getElementById('qmM3Panel').style.display = 'none';
+        document.getElementById('qmM4Panel').style.display = 'none';
+        document.getElementById('qmStats').style.display = 'none';
+
         var content = document.getElementById('qmContent');
         content.innerHTML = '<div class="qm-loading">Searching...</div>';
         document.getElementById('qmClearBtn').style.display = '';
@@ -690,16 +997,8 @@
     window.clearSearch = function() {
         document.getElementById('qmSearchInput').value = '';
         document.getElementById('qmClearBtn').style.display = 'none';
-        var content = document.getElementById('qmContent');
-        content.innerHTML = '<div class="qm-welcome">' +
-            '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
-            '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>' +
-            '<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' +
-            '<line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/>' +
-            '</svg>' +
-            '<h3>Select a section to begin reading</h3>' +
-            '<p>Choose a section from the table of contents, or search for specific content.</p>' +
-            '</div>';
+        // Restore current tab view
+        switchTab(activeTab);
     };
 
     function renderSearchResults(results, query) {
@@ -718,8 +1017,13 @@
         html += '<ul class="qm-search-results">';
         results.forEach(function(r) {
             var snippet = (r.content || '').substring(0, 200);
+            var modNum = getResultModuleNumber(r.section_number);
+            var modClass = modNum ? 'mod-' + modNum : '';
+            var modLabel = modNum ? 'M' + modNum : '';
+
             html += '<li class="qm-search-result" data-section="' + escAttr(r.section_number) + '">' +
                 '<div class="qm-search-result-header">' +
+                (modLabel ? '<span class="qm-search-result-module ' + modClass + '">' + modLabel + '</span>' : '') +
                 '<span class="qm-search-result-section">Section ' + escHtml(r.section_number) + '</span>' +
                 '<span class="qm-search-result-type">' + escHtml(r.block_type) + '</span>' +
                 (r.subsection_ref ? '<span class="qm-search-result-type">' + escHtml(r.subsection_ref) + '</span>' : '') +
@@ -731,12 +1035,28 @@
 
         content.innerHTML = html;
 
-        // Click to navigate
+        // Click to navigate — switches tab and loads section
         content.querySelectorAll('.qm-search-result').forEach(function(el) {
             el.addEventListener('click', function() {
+                document.getElementById('qmClearBtn').style.display = 'none';
+                document.getElementById('qmSearchInput').value = '';
+                document.getElementById('qmToc').style.display = '';
                 loadSection(this.dataset.section);
             });
         });
+    }
+
+    /* ── Get module number from section number ────────────────── */
+    function getResultModuleNumber(sectionNumber) {
+        var moduleNums = Object.keys(moduleData);
+        for (var i = 0; i < moduleNums.length; i++) {
+            var num = moduleNums[i];
+            var sections = moduleData[num].sections || [];
+            for (var j = 0; j < sections.length; j++) {
+                if (sections[j].section_number === sectionNumber) return parseInt(num);
+            }
+        }
+        return null;
     }
 
     /* ── Helpers ────────────────────────────────────────────────── */
