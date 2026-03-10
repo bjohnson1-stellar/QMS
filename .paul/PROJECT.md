@@ -47,8 +47,9 @@ Procore quality intelligence with mobile capture. 4 of 5 phases complete. Phase 
 - [x] M3/M4 schema foundation (7 tables, CRUD module, 15 seeded categories, SOP lifecycle) — v0.3 Phase 14
 - [x] Quality manual API endpoints (12 endpoints: programs, categories, SOPs, lifecycle, search) — v0.3 Phase 14
 
+- [x] Tabbed UI shell with M1/M2 separated views, cross-module search, URL hash routing — v0.3 Phase 15
+
 ### Active
-- [ ] Tabbed UI shell with M1/M2 views — v0.3 Phase 15
 - [ ] M3 Programs UI — v0.3 Phase 16
 - [ ] M4 SOP Catalog UI — v0.3 Phase 17
 - [ ] M4 SOP Intake & Classification — v0.3 Phase 18
@@ -115,4 +116,4 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-10 after v0.3 Phase 14 (Schema & API Foundation) complete*
+*Last updated: 2026-03-10 after v0.3 Phase 15 (Tabbed UI Shell & M1/M2) complete*

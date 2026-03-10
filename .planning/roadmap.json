@@ -7,7 +7,7 @@
       "items": [
         {
           "title": "v0.3 Quality Manual Platform",
-          "desc": "Unified tabbed UI for M1-M4, AI-powered SOP intake, draft/approval workflow. Phase 14 (schema + API) complete, 4 phases remaining.",
+          "desc": "Unified tabbed UI for M1-M4, AI-powered SOP intake, draft/approval workflow. Phases 14-15 complete (schema, API, tabbed UI shell), 3 phases remaining.",
           "module": "qualitydocs",
           "priority": "high",
           "tags": [
