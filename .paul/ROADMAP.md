@@ -10,7 +10,7 @@ Modular quality management platform for construction. Two completed milestones: 
 
 **v0.3 Quality Manual Platform**
 Status: In Progress
-Phases: 2 of 5 complete
+Phases: 3 of 5 complete
 
 Unified tabbed UI for the complete quality manual (M1–M4), with search, AI-powered SOP intake for M4, draft/approval workflow, and infrastructure for future authoring and scope filtering.
 
@@ -18,7 +18,7 @@ Unified tabbed UI for the complete quality manual (M1–M4), with search, AI-pow
 |-------|------|-------|--------|-----------|
 | 14 | Schema & API Foundation | 2 | Complete | 2026-03-10 |
 | 15 | Tabbed UI Shell & M1/M2 | 1 | Complete | 2026-03-10 |
-| 16 | M3 Programs UI | TBD | Not started | - |
+| 16 | M3 Programs UI | 1 | Complete | 2026-03-10 |
 | 17 | M4 SOP Catalog UI | TBD | Not started | - |
 | 18 | M4 SOP Intake & Classification | TBD | Not started | - |
 
@@ -79,4 +79,4 @@ Focus: PDF upload, Claude-powered analysis (category, scope, program, codes), re
 
 ---
 *Roadmap created: 2026-02-25*
-*Last updated: 2026-03-10 — Phase 15 (Tabbed UI Shell & M1/M2) complete*
+*Last updated: 2026-03-10 — Phase 16 (M3 Programs UI) complete*

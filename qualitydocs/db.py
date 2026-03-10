@@ -140,6 +140,85 @@ def create_category(category_code, name, description=None,
         return cur.lastrowid
 
 
+# ---------------------------------------------------------------------------
+# M3 Program Seed Data
+# ---------------------------------------------------------------------------
+
+_M3_PROGRAMS = [
+    (
+        "SIS-3.01",
+        "Hot Work & Welding",
+        "Quality program governing hot work permits, welding procedures, welder qualifications, and weld inspection per ASME and AWS codes.",
+        ["ASME IX", "AWS D1.1", "ASME B31.1", "ASME B31.5"],
+        "Welders must hold current qualification per ASME IX or AWS D1.1. Hot work permits required for all open-flame operations.",
+    ),
+    (
+        "SIS-3.02",
+        "Mechanical & Piping",
+        "Quality program for mechanical piping, HVAC ductwork, and plumbing installation including refrigeration systems and glycol loops.",
+        ["ASME B31.1", "ASME B31.5", "SMACNA", "IMC", "UPC"],
+        "Journeyman-level mechanical installer certification. Brazing qualifications for refrigerant piping per ASME IX.",
+    ),
+    (
+        "SIS-3.03",
+        "Rigging & Equipment",
+        "Quality program for equipment rigging, setting, alignment, grouting, and foundation work for heavy mechanical equipment.",
+        ["ASME BTH-1", "OSHA 1926"],
+        "Certified rigger or signal person credentials. Equipment-specific training for cranes and hoisting devices.",
+    ),
+    (
+        "SIS-3.04",
+        "Testing & Commissioning",
+        "Quality program for system testing, startup, commissioning, and performance verification of mechanical and refrigeration systems.",
+        ["ASHRAE", "NETA", "ASME PCC-1"],
+        "Commissioning authority certification or equivalent experience. System-specific startup training required.",
+    ),
+    (
+        "SIS-3.05",
+        "Electrical & Controls",
+        "Quality program for electrical installation, controls wiring, instrumentation calibration, and PLC programming.",
+        ["NEC", "NFPA 70E", "UL 508A"],
+        "Licensed electrician or apprentice under licensed supervision. Arc flash training per NFPA 70E.",
+    ),
+]
+
+
+def seed_programs():
+    """Seed the 5 M3 discipline programs if not already present.
+
+    Also fixes category parent_program_id linkage after programs exist.
+    """
+    with get_db() as conn:
+        for prog_id, title, desc, codes, qual_req in _M3_PROGRAMS:
+            existing = conn.execute(
+                "SELECT id FROM qm_programs WHERE program_id = ?", (prog_id,)
+            ).fetchone()
+            if existing:
+                continue
+            conn.execute(
+                """INSERT INTO qm_programs
+                   (program_id, title, description, primary_codes,
+                    qualification_requirements, status)
+                   VALUES (?, ?, ?, ?, ?, 'published')""",
+                (prog_id, title, desc, json.dumps(codes), qual_req),
+            )
+        # Fix category linkage — update parent_program_id for categories
+        # that reference M3 programs by program_id string
+        for code, _name, _desc, parent_prog, _order in _M4_CATEGORIES:
+            if not parent_prog:
+                continue
+            prog = conn.execute(
+                "SELECT id FROM qm_programs WHERE program_id = ?",
+                (parent_prog,),
+            ).fetchone()
+            if prog:
+                conn.execute(
+                    "UPDATE qm_categories SET parent_program_id = ? WHERE category_code = ?",
+                    (prog["id"], code),
+                )
+        conn.commit()
+
+
 _M4_CATEGORIES = [
     ("4.01", "Project Management & Meetings", "Kickoff meetings, coordination, scheduling, daily reports, extra work documentation.", None, 1),
     ("4.02", "Material Handling, Receiving & Storage", "Receiving inspection, pipe/valve handling, equipment storage, winter protection.", None, 2),

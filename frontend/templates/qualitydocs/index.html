@@ -473,6 +473,201 @@
     flex-shrink: 0;
 }
 
+/* === M3 Programs === */
+.qm-programs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.qm-program-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    cursor: pointer;
+    transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease), transform 0.12s var(--ease);
+    box-shadow: var(--shadow-sm);
+}
+
+.qm-program-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.qm-program-id {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    background: var(--color-primary-subtle);
+    padding: 3px 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.qm-program-card h3 {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 650;
+    color: var(--color-text);
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+}
+
+.qm-program-card .qm-program-desc {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    line-height: 1.55;
+    margin-bottom: 14px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.qm-program-codes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 12px;
+}
+
+.qm-code-tag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: var(--color-surface-alt);
+    color: var(--color-text-secondary);
+    letter-spacing: 0.02em;
+}
+
+.qm-program-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.qm-program-meta svg {
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+/* === M3 Program Detail === */
+.qm-program-detail {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    padding: 28px 32px;
+}
+
+.qm-detail-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 550;
+    color: var(--color-primary);
+    cursor: pointer;
+    margin-bottom: 18px;
+    padding: 5px 0;
+    border: none;
+    background: none;
+    transition: opacity 0.12s var(--ease);
+}
+
+.qm-detail-back:hover {
+    opacity: 0.7;
+}
+
+.qm-detail-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--color-primary);
+}
+
+.qm-detail-header h2 {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 4px;
+}
+
+.qm-detail-header .qm-program-id {
+    margin-bottom: 0;
+}
+
+.qm-detail-section {
+    margin-bottom: 24px;
+}
+
+.qm-detail-section h4 {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 650;
+    color: var(--color-text);
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.qm-detail-section p {
+    font-size: 13.5px;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+    margin: 0;
+}
+
+.qm-linked-categories {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.qm-linked-categories li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--color-border-light);
+    font-size: 13.5px;
+    color: var(--color-text-secondary);
+}
+
+.qm-linked-categories li:last-child {
+    border-bottom: none;
+}
+
+.qm-linked-categories .qm-cat-code {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primary);
+    background: var(--color-primary-subtle);
+    padding: 2px 8px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.qm-linked-sops-empty {
+    text-align: center;
+    padding: 24px;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-sm);
+}
+
 /* === Responsive === */
 @media (max-width: 900px) {
     .qm-layout {
@@ -570,21 +765,10 @@
     </div>
 </div>
 
-<!-- M3 Empty State -->
+<!-- M3 Programs Panel -->
 <div id="qmM3Panel" style="display:none;">
-    <div class="qm-content">
-        <div class="qm-empty-state">
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-            </svg>
-            <h3>Quality Programs</h3>
-            <p>Discipline-specific quality programs covering welding, piping, mechanical, electrical, and plumbing — with code references and linked SOPs.</p>
-            <span class="qm-coming-soon">Coming in Phase 16</span>
-        </div>
-    </div>
+    <div id="qmM3Grid"></div>
+    <div id="qmM3Detail" style="display:none;"></div>
 </div>
 
 <!-- M4 Empty State -->
@@ -613,6 +797,8 @@
     var moduleSummary = null;  // full summary response
     var activeSection = null;
     var activeTab = 'm1';
+    var programsCache = null;  // M3 programs data
+    var categoriesCache = null; // M4 categories for linkage
 
     /* ── Tab map: tab id → module number ─────────────────────── */
     var TAB_MODULES = { m1: 1, m2: 2 };
@@ -703,8 +889,9 @@
         } else if (tabId === 'm3') {
             m3panel.style.display = '';
             stats.style.display = 'none';
-            searchBar.style.display = '';
+            searchBar.style.display = 'none';
             activeSection = null;
+            loadPrograms();
         } else if (tabId === 'm4') {
             m4panel.style.display = '';
             stats.style.display = 'none';
@@ -1058,6 +1245,207 @@
         }
         return null;
     }
+
+    /* ── M3 Programs ───────────────────────────────────────────── */
+    function loadPrograms() {
+        var grid = document.getElementById('qmM3Grid');
+        var detail = document.getElementById('qmM3Detail');
+        detail.style.display = 'none';
+        grid.style.display = '';
+
+        // Use cache if available
+        if (programsCache) {
+            renderProgramCards(programsCache);
+            return;
+        }
+
+        grid.innerHTML = '<div class="qm-loading">Loading programs...</div>';
+
+        Promise.all([
+            fetch('/qualitydocs/api/programs').then(function(r) { return r.json(); }),
+            fetch('/qualitydocs/api/categories').then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            programsCache = results[0];
+            categoriesCache = results[1];
+            renderProgramCards(programsCache);
+        }).catch(function(err) {
+            grid.innerHTML = '<div class="qm-empty-state"><h3>Failed to load programs</h3></div>';
+            console.error('M3 load error:', err);
+        });
+    }
+
+    function renderProgramCards(programs) {
+        var grid = document.getElementById('qmM3Grid');
+
+        if (!programs || !programs.length) {
+            grid.innerHTML =
+                '<div class="qm-empty-state">' +
+                '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+                '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>' +
+                '<rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>' +
+                '</svg>' +
+                '<h3>No Programs Configured</h3>' +
+                '<p>Quality programs have not been set up yet. Run the seed command to populate M3 discipline programs.</p>' +
+                '</div>';
+            return;
+        }
+
+        var html = '<div class="qm-programs-grid">';
+        programs.forEach(function(prog) {
+            var codes = [];
+            try { codes = JSON.parse(prog.primary_codes || '[]'); } catch(e) {}
+            var catCount = getCategoryCountForProgram(prog.id);
+            var desc = prog.description || '';
+            if (desc.length > 120) desc = desc.substring(0, 117) + '...';
+
+            html += '<div class="qm-program-card" onclick="showProgramDetail(\'' + escAttr(prog.program_id) + '\')">' +
+                '<span class="qm-program-id">' + escHtml(prog.program_id) + '</span>' +
+                '<h3>' + escHtml(prog.title) + '</h3>' +
+                '<div class="qm-program-desc">' + escHtml(desc) + '</div>' +
+                '<div class="qm-program-codes">';
+            codes.forEach(function(code) {
+                html += '<span class="qm-code-tag">' + escHtml(code) + '</span>';
+            });
+            html += '</div>' +
+                '<div class="qm-program-meta">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' +
+                catCount + ' categor' + (catCount === 1 ? 'y' : 'ies') +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' +
+                escHtml(prog.status) +
+                '</div>' +
+                '</div>';
+        });
+        html += '</div>';
+        grid.innerHTML = html;
+    }
+
+    function getCategoryCountForProgram(programId) {
+        if (!categoriesCache) return 0;
+        var count = 0;
+        categoriesCache.forEach(function(cat) {
+            if (cat.parent_program_id === programId) count++;
+        });
+        return count;
+    }
+
+    window.showProgramDetail = function(programId) {
+        var grid = document.getElementById('qmM3Grid');
+        var detail = document.getElementById('qmM3Detail');
+        grid.style.display = 'none';
+        detail.style.display = '';
+        detail.innerHTML = '<div class="qm-loading">Loading program details...</div>';
+
+        fetch('/qualitydocs/api/programs/' + encodeURIComponent(programId))
+            .then(function(r) { return r.json(); })
+            .then(function(prog) {
+                if (prog.error) {
+                    detail.innerHTML = '<div class="qm-empty-state"><h3>Program not found</h3></div>';
+                    return;
+                }
+                renderProgramDetail(prog);
+            })
+            .catch(function(err) {
+                detail.innerHTML = '<div class="qm-empty-state"><h3>Error loading program</h3></div>';
+                console.error('Program detail error:', err);
+            });
+    };
+
+    function renderProgramDetail(prog) {
+        var detail = document.getElementById('qmM3Detail');
+        var codes = [];
+        try { codes = JSON.parse(prog.primary_codes || '[]'); } catch(e) {}
+
+        // Get linked categories
+        var linkedCats = [];
+        if (categoriesCache) {
+            categoriesCache.forEach(function(cat) {
+                if (cat.parent_program_id === prog.id) linkedCats.push(cat);
+            });
+        }
+
+        var html = '<div class="qm-program-detail">';
+
+        // Back button
+        html += '<button class="qm-detail-back" onclick="backToPrograms()">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="15 18 9 12 15 6"/></svg> Back to Programs</button>';
+
+        // Header
+        html += '<div class="qm-detail-header">' +
+            '<span class="qm-program-id">' + escHtml(prog.program_id) + '</span>' +
+            '<h2>' + escHtml(prog.title) + '</h2>' +
+            '</div>';
+
+        // Description
+        if (prog.description) {
+            html += '<div class="qm-detail-section">' +
+                '<h4>Description</h4>' +
+                '<p>' + escHtml(prog.description) + '</p>' +
+                '</div>';
+        }
+
+        // Primary Codes
+        if (codes.length) {
+            html += '<div class="qm-detail-section">' +
+                '<h4>Primary Code References</h4>' +
+                '<div class="qm-program-codes">';
+            codes.forEach(function(code) {
+                html += '<span class="qm-code-tag">' + escHtml(code) + '</span>';
+            });
+            html += '</div></div>';
+        }
+
+        // Qualification Requirements
+        if (prog.qualification_requirements) {
+            html += '<div class="qm-detail-section">' +
+                '<h4>Qualification Requirements</h4>' +
+                '<p>' + escHtml(prog.qualification_requirements) + '</p>' +
+                '</div>';
+        }
+
+        // Linked Categories
+        html += '<div class="qm-detail-section">' +
+            '<h4>Linked M4 Categories (' + linkedCats.length + ')</h4>';
+        if (linkedCats.length) {
+            html += '<ul class="qm-linked-categories">';
+            linkedCats.forEach(function(cat) {
+                html += '<li>' +
+                    '<span class="qm-cat-code">' + escHtml(cat.category_code) + '</span>' +
+                    escHtml(cat.name) +
+                    '</li>';
+            });
+            html += '</ul>';
+        } else {
+            html += '<div class="qm-linked-sops-empty">No categories linked to this program yet.</div>';
+        }
+        html += '</div>';
+
+        // Linked SOPs
+        var sops = prog.sops || [];
+        html += '<div class="qm-detail-section">' +
+            '<h4>Linked SOPs (' + sops.length + ')</h4>';
+        if (sops.length) {
+            html += '<ul class="qm-linked-categories">';
+            sops.forEach(function(sop) {
+                html += '<li>' +
+                    '<span class="qm-cat-code">' + escHtml(sop.document_id) + '</span>' +
+                    escHtml(sop.title) +
+                    '</li>';
+            });
+            html += '</ul>';
+        } else {
+            html += '<div class="qm-linked-sops-empty">No SOPs linked yet. SOPs will appear here after intake in Phase 18.</div>';
+        }
+        html += '</div>';
+
+        html += '</div>';
+        detail.innerHTML = html;
+    }
+
+    window.backToPrograms = function() {
+        document.getElementById('qmM3Detail').style.display = 'none';
+        document.getElementById('qmM3Grid').style.display = '';
+    };
 
     /* ── Helpers ────────────────────────────────────────────────── */
     function escHtml(s) {

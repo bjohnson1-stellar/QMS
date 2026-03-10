@@ -10,13 +10,13 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.3 Quality Manual Platform
-Phase: 16 of 18 (M3 Programs UI) — Not started
+Phase: 17 of 18 (M4 SOP Catalog UI) — Not started
 Plan: Not started
-Status: Ready to plan Phase 16
-Last activity: 2026-03-10 — Phase 15 complete, transitioned to Phase 16
+Status: Ready to plan Phase 17
+Last activity: 2026-03-10 — Phase 16 complete, transitioned to Phase 17
 
 Progress:
-- v0.3 Quality Manual Platform: [████░░░░░░] 40%
+- v0.3 Quality Manual Platform: [██████░░░░] 60%
 - v0.2 License Compliance Platform: [██████████] 100%
 - v0.1 Quality Intelligence Platform: [████████░░] 90% (Phase 5 not started)
 
@@ -25,7 +25,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Phase 15 complete — ready for Phase 16 PLAN]
+  ✓        ✓        ✓     [Phase 16 complete — ready for Phase 17 PLAN]
 ```
 
 ## Execution Log
@@ -37,6 +37,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 14-01 | Complete | M3/M4 schema (7 tables) + qualitydocs/db.py CRUD module | 2026-03-10 |
 | 14-02 | Complete | API endpoints for programs, categories, SOPs (12 endpoints) | 2026-03-10 |
 | 15-01 | Complete | Tabbed UI shell + M1/M2 separated views + cross-module search | 2026-03-10 |
+| 16-01 | Complete | M3 Programs UI — 5 programs seeded, cards grid, detail view | 2026-03-10 |
 
 ### v0.2 License Compliance Platform
 
@@ -99,6 +100,8 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Separate transactions for SOP history | v0.3 Phase 14 | Avoids nested get_db() context manager issues |
 | Stats show subsections + version per module | v0.3 Phase 15 | Module API lacks per-module block counts; subsections available |
 | Search goes full-width (hides TOC) | v0.3 Phase 15 | Cross-module results don't pair with single-module TOC |
+| Programs seeded as published, not draft | v0.3 Phase 16 | Foundational programs visible immediately |
+| Search bar hidden on M3 tab | v0.3 Phase 16 | Only 5 programs — visual browsing sufficient |
 
 ### Git State
 Last commit: `6c4865e` (feat(qualitydocs): add tabbed UI shell with M1/M2 separated views — Phase 15)
@@ -119,8 +122,8 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 15 complete, ready to plan Phase 16
-Next action: Run /paul:plan for Phase 16 (M3 Programs UI)
+Stopped at: Phase 16 complete, ready to plan Phase 17
+Next action: Run /paul:plan for Phase 17 (M4 SOP Catalog UI)
 Resume file: .paul/ROADMAP.md
 
 ---

@@ -26,6 +26,7 @@ from qms.qualitydocs.db import (
     list_categories,
     get_category,
     create_category,
+    seed_programs,
     seed_categories,
     list_sops,
     get_sop,
@@ -58,6 +59,7 @@ __all__ = [
     "list_categories",
     "get_category",
     "create_category",
+    "seed_programs",
     "seed_categories",
     # SOPs (M4)
     "list_sops",
