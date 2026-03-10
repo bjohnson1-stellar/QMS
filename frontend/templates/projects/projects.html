@@ -14,6 +14,27 @@
     </div>
 </div>
 
+<!-- State Coverage Map -->
+<div class="card" style="margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h3 style="margin:0;border:none;padding:0;">State Coverage</h3>
+        <button class="secondary" onclick="toggleMapSection()" id="mapToggle"
+                style="font-size:12px;padding:4px 12px;">Hide Map</button>
+    </div>
+    <div id="mapSection">
+        <div style="display:flex;gap:16px;font-size:0.8rem;color:var(--color-text-muted);margin-bottom:8px;flex-wrap:wrap;">
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#238636;vertical-align:middle;margin-right:4px;"></span>Active Construction</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#2f81f7;vertical-align:middle;margin-right:4px;"></span>Proposals / Bidding</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#d29922;vertical-align:middle;margin-right:4px;"></span>Warranty / Other</span>
+            <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:var(--color-border-light, #d0d7de);vertical-align:middle;margin-right:4px;"></span>No Projects</span>
+        </div>
+        <div id="projectMapContainer" style="position:relative;max-width:800px;margin:0 auto;">
+            <svg id="projectMap" viewBox="0 0 959 593" style="width:100%;height:auto;"></svg>
+            <div id="projectMapTooltip" style="display:none;position:absolute;background:var(--color-surface);border:1px solid var(--color-border-light);border-radius:6px;padding:8px 12px;font-size:0.8rem;pointer-events:none;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.15);max-width:260px;"></div>
+        </div>
+    </div>
+</div>
+
 <!-- Project Form Modal -->
 <div id="projectModal" class="modal-overlay" style="display:none;">
     <div class="modal-content">
@@ -237,6 +258,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='us-map-paths.js') }}"></script>
 <script>
     let projects = [];
     let businessUnits = [];
@@ -1150,8 +1172,102 @@
         slider.dispatchEvent(new Event('change'));
     }, { passive: false });
 
+    // ── State Coverage Map ────────────────────────────────────────
+    let _projectMapData = {};
+
+    async function loadMapData() {
+        try {
+            const res = await fetch(`${API_BASE}/projects/map-data`);
+            if (!res.ok) return;
+            renderProjectMap(await res.json());
+        } catch (e) { console.warn('Map data load failed:', e); }
+    }
+
+    function renderProjectMap(mapData) {
+        const svg = document.getElementById('projectMap');
+        if (!svg || typeof US_MAP_PATHS === 'undefined') return;
+        const dataByState = {};
+        mapData.forEach(d => { dataByState[d.state_code] = d; });
+        _projectMapData = dataByState;
+
+        const gray = getComputedStyle(document.documentElement)
+            .getPropertyValue('--color-border-light').trim() || '#d0d7de';
+        const stroke = getComputedStyle(document.documentElement)
+            .getPropertyValue('--color-surface').trim() || '#fff';
+
+        let html = '';
+        for (const [code, path] of Object.entries(US_MAP_PATHS)) {
+            const d = dataByState[code];
+            let fill = gray;
+            if (d && d.active > 0) {
+                if (d.in_construction > 0) fill = '#238636';
+                else if (d.proposals > 0) fill = '#2f81f7';
+                else fill = '#d29922';
+            } else if (d && d.total > 0) {
+                fill = '#d29922';
+            }
+            const name = (typeof STATE_NAMES !== 'undefined' && STATE_NAMES[code]) || code;
+            html += `<path d="${path}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"
+                           data-state="${code}"
+                           style="cursor:pointer;transition:opacity 0.15s;"
+                           onmouseenter="showProjectMapTooltip(event,'${code}')"
+                           onmouseleave="hideProjectMapTooltip()"
+                           onclick="filterProjectsByState('${code}')"/>`;
+        }
+        svg.innerHTML = html;
+    }
+
+    function showProjectMapTooltip(evt, code) {
+        const tip = document.getElementById('projectMapTooltip');
+        const d = _projectMapData[code];
+        const name = (typeof STATE_NAMES !== 'undefined' && STATE_NAMES[code]) || code;
+        if (d && d.total > 0) {
+            const names = d.project_names ? d.project_names.split(',').slice(0, 5) : [];
+            const nameList = names.map(n =>
+                `<div style="font-size:0.75rem;color:var(--color-text-muted);">\u2022 ${n.trim()}</div>`
+            ).join('');
+            const extra = d.project_names && d.project_names.split(',').length > 5
+                ? `<div style="font-size:0.75rem;color:var(--color-text-muted);">+ ${d.project_names.split(',').length - 5} more</div>` : '';
+            tip.innerHTML = `<strong>${name}</strong><br>
+                Projects: ${d.total} (${d.active} active)<br>
+                Construction: ${d.in_construction} | Proposals: ${d.proposals}
+                ${nameList ? '<hr style="margin:4px 0;border-color:var(--color-border-light);">' + nameList + extra : ''}`;
+        } else {
+            tip.innerHTML = `<strong>${name}</strong><br>No projects`;
+        }
+        tip.style.display = 'block';
+        const container = document.getElementById('projectMapContainer');
+        const rect = container.getBoundingClientRect();
+        const x = evt.clientX - rect.left + 12;
+        const y = evt.clientY - rect.top - 10;
+        tip.style.left = Math.min(x, rect.width - 220) + 'px';
+        tip.style.top = y + 'px';
+    }
+
+    function hideProjectMapTooltip() {
+        document.getElementById('projectMapTooltip').style.display = 'none';
+    }
+
+    function filterProjectsByState(code) {
+        const search = document.getElementById('searchFilter');
+        if (search) { search.value = code; renderProjects(); }
+    }
+
+    function toggleMapSection() {
+        const section = document.getElementById('mapSection');
+        const btn = document.getElementById('mapToggle');
+        if (section.style.display === 'none') {
+            section.style.display = 'block';
+            btn.textContent = 'Hide Map';
+        } else {
+            section.style.display = 'none';
+            btn.textContent = 'Show Map';
+        }
+    }
+
     loadBusinessUnits();
     setArchiveTab('active'); // sync stage dropdown on init
     loadProjects();
+    loadMapData();
 </script>
 {% endblock %}

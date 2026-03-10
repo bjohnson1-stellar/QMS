@@ -196,6 +196,41 @@ def list_projects_with_budgets(
         return _run(c)
 
 
+def get_state_map_data(
+    conn: Optional[sqlite3.Connection] = None,
+    *,
+    bu_ids: Optional[List[int]] = None,
+) -> List[Dict[str, Any]]:
+    """Per-state project aggregation for the SVG coverage map."""
+    proj_filter, proj_params = _accessible_project_ids_sql(bu_ids)
+    sql = f"""
+        SELECT
+            p.state                AS state_code,
+            COUNT(*)               AS total,
+            SUM(CASE WHEN p.stage NOT IN ('Archive','Lost Proposal')
+                 THEN 1 ELSE 0 END) AS active,
+            SUM(CASE WHEN p.stage IN ('Course of Construction',
+                                      'Construction and Bidding')
+                 THEN 1 ELSE 0 END) AS in_construction,
+            SUM(CASE WHEN p.stage IN ('Proposal','Bidding')
+                 THEN 1 ELSE 0 END) AS proposals,
+            GROUP_CONCAT(DISTINCT p.name) AS project_names
+        FROM projects p
+        WHERE p.state IS NOT NULL AND p.state != ''
+          {proj_filter}
+        GROUP BY p.state
+        ORDER BY p.state
+    """
+
+    def _run(c: sqlite3.Connection):
+        return [dict(r) for r in c.execute(sql, proj_params).fetchall()]
+
+    if conn:
+        return _run(conn)
+    with get_db(readonly=True) as c:
+        return _run(c)
+
+
 def get_project_with_budget(
     conn: sqlite3.Connection, project_id: int
 ) -> Optional[Dict[str, Any]]:

@@ -64,6 +64,14 @@ def api_list_projects():
     return jsonify(budget.list_projects_with_budgets(bu_ids=_user_bu_ids()))
 
 
+@bp.route("/api/projects/map-data", methods=["GET"])
+def api_project_map_data():
+    """Per-state project aggregation for the SVG coverage map."""
+    with get_db(readonly=True) as conn:
+        data = budget.get_state_map_data(conn, bu_ids=_user_bu_ids())
+    return jsonify(data)
+
+
 @bp.route("/api/projects", methods=["POST"])
 def api_create_project():
     data = request.json
