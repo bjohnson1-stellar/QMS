@@ -95,6 +95,19 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "v0.2 License Compliance Platform — MILESTONE COMPLETE",
+          "desc": "8 phases, 18 plans over 5 days. Harbor-like multi-state license compliance: foundation hardening, renewal workflows, notifications, document management, entity registration, regulatory intelligence, CE catalog, integrations/automation. Git tag: v0.2.0.",
+          "module": "licenses",
+          "priority": "high",
+          "tags": [
+            "milestone",
+            "licenses",
+            "compliance",
+            "v0.2"
+          ],
+          "completed": "2026-03-09"
+        },
+        {
           "title": "v0.2 Phase 13 — Integrations & Automation (3 plans)",
           "desc": "Dashboard widgets + iCal calendar feed, cross-module credentials + bulk operations, license verification tracking with state board lookup, token-authenticated external API at /api/v1/. Completes v0.2 milestone.",
           "module": "licenses",
