@@ -39,8 +39,16 @@ from qms.qualitydocs.db import (
     create_intake,
     update_intake,
     get_intake,
+    get_intake_by_hash,
+    get_intake_detail,
     list_intakes,
+    list_intakes_paginated,
+    next_document_id,
+    create_code_references,
+    approve_intake,
 )
+
+from qms.qualitydocs.classifier import classify_sop
 
 __all__ = [
     # Loader (M1/M2)
@@ -75,5 +83,13 @@ __all__ = [
     "create_intake",
     "update_intake",
     "get_intake",
+    "get_intake_by_hash",
+    "get_intake_detail",
     "list_intakes",
+    "list_intakes_paginated",
+    "next_document_id",
+    "create_code_references",
+    "approve_intake",
+    # Classifier
+    "classify_sop",
 ]

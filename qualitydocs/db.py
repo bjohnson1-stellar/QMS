@@ -523,6 +523,17 @@ def create_intake(file_name, file_path=None, file_hash=None):
         return cur.lastrowid
 
 
+def get_intake_by_hash(file_hash):
+    """Check for existing intake with the same file hash (dedup)."""
+    if not file_hash:
+        return None
+    with get_db(readonly=True) as conn:
+        row = conn.execute(
+            "SELECT * FROM qm_sop_intake WHERE file_hash = ?", (file_hash,)
+        ).fetchone()
+        return dict(row) if row else None
+
+
 def update_intake(id, **kwargs):
     """Update intake fields. Returns True if a row was updated."""
     if not kwargs:
@@ -562,3 +573,177 @@ def list_intakes(status=None):
             params.append(status)
         sql += " ORDER BY created_at DESC"
         return [dict(r) for r in conn.execute(sql, params).fetchall()]
+
+
+def list_intakes_paginated(status=None, page=1, per_page=25):
+    """List intake records with pagination. Returns {items, total, page, per_page, pages}."""
+    where, params = [], []
+    if status:
+        where.append("i.status = ?")
+        params.append(status)
+    where_sql = (" WHERE " + " AND ".join(where)) if where else ""
+
+    with get_db(readonly=True) as conn:
+        total = conn.execute(
+            f"SELECT COUNT(*) FROM qm_sop_intake i{where_sql}", params
+        ).fetchone()[0]
+
+        per_page = min(per_page, 200) if per_page > 0 else 25
+        pages = max(1, math.ceil(total / per_page)) if total else 1
+        offset = (page - 1) * per_page
+
+        rows = conn.execute(
+            f"""SELECT i.*, c.category_code, c.name AS suggested_category_name
+                FROM qm_sop_intake i
+                LEFT JOIN qm_categories c ON c.id = i.suggested_category_id
+                {where_sql}
+                ORDER BY i.created_at DESC
+                LIMIT ? OFFSET ?""",
+            params + [per_page, offset],
+        ).fetchall()
+
+        return {
+            "items": [dict(r) for r in rows],
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": pages,
+        }
+
+
+def get_intake_detail(id):
+    """Get an intake record with parsed JSON fields and joined names."""
+    with get_db(readonly=True) as conn:
+        row = conn.execute(
+            """SELECT i.*, c.category_code, c.name AS suggested_category_name
+               FROM qm_sop_intake i
+               LEFT JOIN qm_categories c ON c.id = i.suggested_category_id
+               WHERE i.id = ?""",
+            (id,),
+        ).fetchone()
+        if not row:
+            return None
+        intake = dict(row)
+        # Parse JSON fields
+        for field in ("ai_classification", "user_overrides"):
+            try:
+                intake[field] = json.loads(intake[field]) if intake[field] else None
+            except (json.JSONDecodeError, TypeError):
+                pass
+        for field in ("suggested_scope_tags", "suggested_program_ids"):
+            try:
+                intake[field] = json.loads(intake[field]) if intake[field] else []
+            except (json.JSONDecodeError, TypeError):
+                intake[field] = []
+        # Resolve program names
+        if intake.get("suggested_program_ids"):
+            placeholders = ",".join("?" * len(intake["suggested_program_ids"]))
+            progs = conn.execute(
+                f"SELECT id, program_id, title FROM qm_programs WHERE id IN ({placeholders})",
+                intake["suggested_program_ids"],
+            ).fetchall()
+            intake["suggested_programs"] = [dict(p) for p in progs]
+        else:
+            intake["suggested_programs"] = []
+        return intake
+
+
+def next_document_id(category_code):
+    """Generate the next SOP document_id for a category (e.g., SOP-004-001)."""
+    # Convert category code like "4.03" to zero-padded "004"
+    parts = category_code.split(".")
+    cat_num = parts[1] if len(parts) > 1 else parts[0]
+    cat_prefix = f"SOP-{cat_num.zfill(3)}"
+
+    with get_db(readonly=True) as conn:
+        row = conn.execute(
+            "SELECT document_id FROM qm_sops WHERE document_id LIKE ? ORDER BY document_id DESC LIMIT 1",
+            (f"{cat_prefix}-%",),
+        ).fetchone()
+        if row:
+            # Extract the sequence number and increment
+            last_seq = int(row["document_id"].split("-")[-1])
+            return f"{cat_prefix}-{str(last_seq + 1).zfill(3)}"
+        return f"{cat_prefix}-001"
+
+
+def create_code_references(sop_id, references):
+    """Bulk insert code references for a SOP."""
+    if not references:
+        return
+    with get_db() as conn:
+        for ref in references:
+            conn.execute(
+                """INSERT INTO qm_sop_code_references
+                   (sop_id, code, organization, code_section, original_text, detection_method)
+                   VALUES (?, ?, ?, ?, ?, 'ai_detected')""",
+                (sop_id, ref.get("code", ""), ref.get("organization"),
+                 ref.get("section"), ref.get("original_text")),
+            )
+        conn.commit()
+
+
+def approve_intake(id, overrides=None):
+    """Approve an intake record — creates a draft SOP from AI suggestions + user overrides.
+
+    Returns the new SOP id, or None on failure.
+    """
+    intake = get_intake(id)
+    if not intake or intake["status"] != "classified":
+        return None
+
+    overrides = overrides or {}
+
+    # Parse AI classification
+    ai_class = {}
+    try:
+        ai_class = json.loads(intake["ai_classification"]) if intake["ai_classification"] else {}
+    except (json.JSONDecodeError, TypeError):
+        pass
+
+    # Merge: user overrides win over AI suggestions
+    category_id = overrides.get("category_id") or intake.get("suggested_category_id")
+    scope_tags = overrides.get("scope_tags") or (
+        json.loads(intake["suggested_scope_tags"]) if intake.get("suggested_scope_tags") else []
+    )
+    program_ids = overrides.get("program_ids") or (
+        json.loads(intake["suggested_program_ids"]) if intake.get("suggested_program_ids") else []
+    )
+    document_id = overrides.get("document_id") or intake.get("suggested_document_id")
+    title = overrides.get("title") or ai_class.get("title") or intake["file_name"].replace(".pdf", "").replace("_", " ").title()
+    summary = overrides.get("summary") or ai_class.get("summary", "")
+    content_text = ai_class.get("content_text", "")
+
+    if not category_id or not document_id:
+        return None
+
+    # Create SOP
+    sop_id = create_sop(
+        document_id=document_id,
+        title=title,
+        category_id=category_id,
+        scope_tags=scope_tags if isinstance(scope_tags, list) else [],
+        file_path=intake.get("file_path"),
+        file_hash=intake.get("file_hash"),
+        content_text=content_text,
+        summary=summary,
+    )
+
+    # Create code references from AI classification
+    code_refs = ai_class.get("code_references", [])
+    if code_refs:
+        create_code_references(sop_id, code_refs)
+
+    # Link to programs
+    for prog_id in (program_ids if isinstance(program_ids, list) else []):
+        link_sop_to_program(sop_id, prog_id)
+
+    # Update intake record
+    update_intake(
+        id,
+        status="approved",
+        final_sop_id=sop_id,
+        user_overrides=overrides if overrides else None,
+    )
+
+    return sop_id

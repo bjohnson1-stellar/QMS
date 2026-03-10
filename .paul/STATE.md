@@ -10,10 +10,10 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.3 Quality Manual Platform
-Phase: 18 of 18 (M4 SOP Intake & Classification) — Not started
-Plan: Not started
-Status: Ready to plan Phase 18
-Last activity: 2026-03-10 — Phase 17 complete, transitioned to Phase 18
+Phase: 18 of 18 (M4 SOP Intake & Classification) — Planning
+Plan: 18-01 executed
+Status: APPLY complete, ready for UNIFY
+Last activity: 2026-03-10 — Executed 18-01 (upload, classifier, intake endpoints)
 
 Progress:
 - v0.3 Quality Manual Platform: [████████░░] 80%
@@ -25,7 +25,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Phase 17 complete — ready for Phase 18 PLAN]
+  ✓        ✓        ○     [Apply complete, ready for UNIFY]
 ```
 
 ## Execution Log
@@ -39,6 +39,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 15-01 | Complete | Tabbed UI shell + M1/M2 separated views + cross-module search | 2026-03-10 |
 | 16-01 | Complete | M3 Programs UI — 5 programs seeded, cards grid, detail view | 2026-03-10 |
 | 17-01 | Complete | M4 SOP Catalog UI — category grid, SOP list, SOP detail, search | 2026-03-10 |
+| 18-01 | Applied | SOP intake backend pipeline — upload, AI classify, approve/reject | 2026-03-10 |
 
 ### v0.2 License Compliance Platform
 
@@ -107,7 +108,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Status badge CSS class convention | v0.3 Phase 17 | .status-{status} for color coding (6 states) |
 
 ### Git State
-Last commit: `a5a9f51` (feat(qualitydocs): M3 Programs UI — Phase 16)
+Last commit: `67437eb` (feat(qualitydocs): M4 SOP Catalog UI — Phase 17)
 Branch: main
 
 ### Deferred Issues
@@ -126,9 +127,9 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 17 complete, ready to plan Phase 18
-Next action: Run /paul:plan for Phase 18 (M4 SOP Intake & Classification)
-Resume file: .paul/ROADMAP.md
+Stopped at: Plan 18-01 applied — all 3 tasks complete
+Next action: Run /paul:unify to close the loop
+Resume file: .paul/phases/18-m4-sop-intake-classification/18-01-PLAN.md
 
 ---
 *STATE.md — Updated after every significant action*
