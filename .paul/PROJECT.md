@@ -44,9 +44,14 @@ Procore quality intelligence with mobile capture. 4 of 5 phases complete. Phase 
 - [x] Regulatory intelligence database (state requirements, fee schedules, compliance scoring, gap analysis UI) — v0.2 Phase 11
 - [x] Advanced CE management (provider catalog, course browser, cross-state mapping, employee credential portfolios) — v0.2 Phase 12
 - [x] Integrations & automation (dashboard widgets, iCal feed, cross-module credentials, bulk ops, verification tracking, external API) — v0.2 Phase 13
+- [x] M3/M4 schema foundation (7 tables, CRUD module, 15 seeded categories, SOP lifecycle) — v0.3 Phase 14
+- [x] Quality manual API endpoints (12 endpoints: programs, categories, SOPs, lifecycle, search) — v0.3 Phase 14
 
 ### Active
-None — awaiting next milestone definition.
+- [ ] Tabbed UI shell with M1/M2 views — v0.3 Phase 15
+- [ ] M3 Programs UI — v0.3 Phase 16
+- [ ] M4 SOP Catalog UI — v0.3 Phase 17
+- [ ] M4 SOP Intake & Classification — v0.3 Phase 18
 
 ### Paused (v0.1 remaining)
 - [ ] Procore push (Phase 5)
@@ -110,4 +115,4 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-09 after v0.2 License Compliance Platform milestone complete*
+*Last updated: 2026-03-10 after v0.3 Phase 14 (Schema & API Foundation) complete*
