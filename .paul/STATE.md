@@ -11,12 +11,12 @@ See: .paul/PROJECT.md
 
 Milestone: v0.3 Quality Manual Platform
 Phase: 18 of 18 (M4 SOP Intake & Classification) — Planning
-Plan: 18-01 executed
-Status: APPLY complete, ready for UNIFY
-Last activity: 2026-03-10 — Executed 18-01 (upload, classifier, intake endpoints)
+Plan: 18-01 complete
+Status: Loop closed, ready for next PLAN (18-02)
+Last activity: 2026-03-10 — Unified 18-01 (SOP intake backend pipeline)
 
 Progress:
-- v0.3 Quality Manual Platform: [████████░░] 80%
+- v0.3 Quality Manual Platform: [█████████░] 90%
 - v0.2 License Compliance Platform: [██████████] 100%
 - v0.1 Quality Intelligence Platform: [████████░░] 90% (Phase 5 not started)
 
@@ -25,7 +25,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ○     [Apply complete, ready for UNIFY]
+  ✓        ✓        ✓     [Loop complete — ready for 18-02 PLAN]
 ```
 
 ## Execution Log
@@ -39,7 +39,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 15-01 | Complete | Tabbed UI shell + M1/M2 separated views + cross-module search | 2026-03-10 |
 | 16-01 | Complete | M3 Programs UI — 5 programs seeded, cards grid, detail view | 2026-03-10 |
 | 17-01 | Complete | M4 SOP Catalog UI — category grid, SOP list, SOP detail, search | 2026-03-10 |
-| 18-01 | Applied | SOP intake backend pipeline — upload, AI classify, approve/reject | 2026-03-10 |
+| 18-01 | Complete | SOP intake backend pipeline — upload, AI classify, approve/reject | 2026-03-10 |
 
 ### v0.2 License Compliance Platform
 
@@ -127,9 +127,9 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Plan 18-01 applied — all 3 tasks complete
-Next action: Run /paul:unify to close the loop
-Resume file: .paul/phases/18-m4-sop-intake-classification/18-01-PLAN.md
+Stopped at: Plan 18-01 loop closed
+Next action: Run /paul:plan for Plan 18-02 (Intake & Approval UI)
+Resume file: .paul/phases/18-m4-sop-intake-classification/18-01-SUMMARY.md
 
 ---
 *STATE.md — Updated after every significant action*
