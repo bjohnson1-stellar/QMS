@@ -12,13 +12,16 @@ Centralized quality and compliance management for MEP contractors — replacing 
 
 | Attribute | Value |
 |-----------|-------|
-| Version | 0.2.0 |
+| Version | 0.3.0 |
 | Status | Complete |
-| Last Updated | 2026-03-09 (v0.2 milestone complete) |
+| Last Updated | 2026-03-11 (v0.3 milestone complete) |
 
 **Production URL:** http://L004470-CAD:5000
 
 ## Milestones
+
+### v0.3 Quality Manual Platform (Complete - 2026-03-11)
+Unified tabbed UI for M1-M4 quality manual modules with cross-module search, AI-powered SOP intake and classification, draft/approval workflow, and SOP lifecycle management. 5 phases (7 plans) over 2 days.
 
 ### v0.2 License Compliance Platform (Complete - 2026-03-09)
 Expanded licenses module from basic CRUD into comprehensive Harbor-like compliance management. 8 phases (18 plans) over 5 days: foundation hardening, renewal workflows, notifications, document management, entity registration, regulatory intelligence, CE catalog, and integrations/automation.
@@ -50,9 +53,11 @@ Procore quality intelligence with mobile capture. 4 of 5 phases complete. Phase 
 - [x] Tabbed UI shell with M1/M2 separated views, cross-module search, URL hash routing — v0.3 Phase 15
 - [x] M3 Programs UI — 5 discipline programs seeded, cards grid, detail view with code refs and linked categories — v0.3 Phase 16
 - [x] M4 SOP Catalog UI — 15-category card grid, SOP list/detail, status badges, M4 search — v0.3 Phase 17
+- [x] M4 SOP Intake backend — PDF upload, Claude classification, intake management, approve-to-SOP — v0.3 Phase 18
+- [x] M4 SOP Intake UI — upload modal, intake queue, classification review, approve/reject, lifecycle buttons — v0.3 Phase 18
 
 ### Active
-- [ ] M4 SOP Intake & Classification — v0.3 Phase 18
+(No active requirements)
 
 ### Paused (v0.1 remaining)
 - [ ] Procore push (Phase 5)
@@ -116,4 +121,4 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-10 after v0.3 Phase 17 (M4 SOP Catalog UI) complete*
+*Last updated: 2026-03-11 after v0.3 Phase 18 (M4 SOP Intake & Classification) complete — v0.3 milestone complete*

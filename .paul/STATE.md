@@ -5,27 +5,27 @@
 See: .paul/PROJECT.md
 
 **Core value:** Unified quality management platform — quality intelligence (v0.1) + license compliance (v0.2) + quality manual platform (v0.3).
-**Current focus:** v0.3 Quality Manual Platform — unified tabbed UI for M1–M4, AI-powered SOP intake, draft/approval workflow.
+**Current focus:** v0.3 Quality Manual Platform — COMPLETE. All 5 phases shipped.
 
 ## Current Position
 
-Milestone: v0.3 Quality Manual Platform
-Phase: 18 of 18 (M4 SOP Intake & Classification) — Planning
-Plan: 18-01 complete
-Status: Loop closed, ready for next PLAN (18-02)
-Last activity: 2026-03-10 — Unified 18-01 (SOP intake backend pipeline)
+Milestone: v0.3 Quality Manual Platform — COMPLETE
+Phase: 18 of 18 (M4 SOP Intake & Classification) — Complete
+Plan: 18-02 complete (7/7 plans shipped)
+Status: Milestone complete
+Last activity: 2026-03-11 — Phase 18 complete, v0.3 milestone complete
 
 Progress:
-- v0.3 Quality Manual Platform: [█████████░] 90%
+- v0.3 Quality Manual Platform: [██████████] 100%
 - v0.2 License Compliance Platform: [██████████] 100%
-- v0.1 Quality Intelligence Platform: [████████░░] 90% (Phase 5 not started)
+- v0.1 Quality Intelligence Platform: [████████░░] 80% (Phase 5 not started)
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — ready for 18-02 PLAN]
+  ✓        ✓        ✓     [v0.3 milestone complete]
 ```
 
 ## Execution Log
@@ -40,6 +40,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 16-01 | Complete | M3 Programs UI — 5 programs seeded, cards grid, detail view | 2026-03-10 |
 | 17-01 | Complete | M4 SOP Catalog UI — category grid, SOP list, SOP detail, search | 2026-03-10 |
 | 18-01 | Complete | SOP intake backend pipeline — upload, AI classify, approve/reject | 2026-03-10 |
+| 18-02 | Complete | Intake & Approval UI — upload modal, queue, review, lifecycle | 2026-03-11 |
 
 ### v0.2 License Compliance Platform
 
@@ -106,9 +107,13 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Search bar hidden on M3 tab | v0.3 Phase 16 | Only 5 programs — visual browsing sufficient |
 | M4 search routes through existing search bar | v0.3 Phase 17 | Tab-aware branching: M4 searches SOPs, M1/M2 searches manual |
 | Status badge CSS class convention | v0.3 Phase 17 | .status-{status} for color coding (6 states) |
+| Synchronous classification (no async queue) | v0.3 Phase 18 | Simple for single-user LAN; upload blocks during classify |
+| PDF document type (not vision) for classify | v0.3 Phase 18 | Better text extraction from PDFs |
+| CSRF token in FormData for multipart uploads | v0.3 Phase 18 | JSON API bypasses CSRF via Origin header; multipart needs explicit token |
+| Centralized hideAllM4Panels() navigation | v0.3 Phase 18 | Single function manages all M4 sub-view visibility |
 
 ### Git State
-Last commit: `67437eb` (feat(qualitydocs): M4 SOP Catalog UI — Phase 17)
+Last commit: `816139c` (docs(paul): close loop — Phase 18 Plan 01 SUMMARY)
 Branch: main
 
 ### Deferred Issues
@@ -126,10 +131,10 @@ Branch: main
 
 ## Session Continuity
 
-Last session: 2026-03-10
-Stopped at: Plan 18-01 loop closed
-Next action: Run /paul:plan for Plan 18-02 (Intake & Approval UI)
-Resume file: .paul/phases/18-m4-sop-intake-classification/18-01-SUMMARY.md
+Last session: 2026-03-11
+Stopped at: v0.3 milestone complete
+Next action: /paul:complete-milestone or /paul:discuss-milestone for v0.4
+Resume file: .paul/ROADMAP.md
 
 ---
 *STATE.md — Updated after every significant action*

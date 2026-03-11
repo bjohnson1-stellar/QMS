@@ -912,6 +912,375 @@
     opacity: 0.7;
 }
 
+/* === Upload Modal === */
+.qm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: qmFadeIn 0.15s ease;
+}
+@keyframes qmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.qm-modal {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    width: 500px;
+    max-width: 92vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 28px 32px;
+}
+
+.qm-modal h3 {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 6px;
+}
+
+.qm-modal .qm-modal-sub {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin-bottom: 20px;
+}
+
+.qm-dropzone {
+    border: 2px dashed var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+    margin-bottom: 16px;
+}
+
+.qm-dropzone:hover,
+.qm-dropzone.dragover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-subtle);
+}
+
+.qm-dropzone svg {
+    margin-bottom: 12px;
+    opacity: 0.4;
+}
+
+.qm-dropzone p {
+    font-size: 13.5px;
+    color: var(--color-text-muted);
+    margin: 0 0 4px;
+}
+
+.qm-dropzone .qm-dropzone-hint {
+    font-size: 11.5px;
+    color: var(--color-text-muted);
+    opacity: 0.7;
+}
+
+.qm-upload-progress {
+    text-align: center;
+    padding: 32px 24px;
+}
+
+.qm-upload-progress .qm-spinner {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-border-light);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: qmSpin 0.7s linear infinite;
+    margin-bottom: 12px;
+}
+@keyframes qmSpin { to { transform: rotate(360deg); } }
+
+.qm-upload-error {
+    background: var(--color-danger-bg, rgba(239,68,68,0.1));
+    color: var(--color-danger, #dc2626);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    margin-top: 12px;
+}
+
+.qm-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+/* === M4 Header Actions === */
+.qm-m4-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.qm-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    border: 1px solid var(--color-border-light);
+    transition: all 0.15s var(--ease);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+}
+
+.qm-action-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.qm-action-btn.primary {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.qm-action-btn.primary:hover {
+    opacity: 0.9;
+}
+
+.qm-action-btn svg {
+    flex-shrink: 0;
+}
+
+/* === Intake Queue === */
+.qm-intake-filters {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--color-border-light);
+    margin-bottom: 16px;
+}
+
+.qm-intake-filter {
+    padding: 8px 16px;
+    font-size: 12.5px;
+    font-weight: 550;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.12s var(--ease), border-color 0.12s var(--ease);
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+}
+
+.qm-intake-filter:hover {
+    color: var(--color-text-secondary);
+}
+
+.qm-intake-filter.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: 600;
+}
+
+.qm-intake-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.qm-intake-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-text-muted);
+    border-bottom: 2px solid var(--color-border-light);
+    background: var(--color-surface-alt);
+}
+
+.qm-intake-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-border-light);
+    color: var(--color-text-secondary);
+}
+
+.qm-intake-table tr {
+    cursor: pointer;
+    transition: background 0.12s var(--ease);
+}
+
+.qm-intake-table tbody tr:hover {
+    background: var(--color-surface-alt);
+}
+
+.qm-intake-table .qm-intake-filename {
+    font-weight: 550;
+    color: var(--color-text);
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Intake status badges reuse .qm-status-badge + extras */
+.qm-status-badge.status-pending {
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+}
+
+.qm-status-badge.status-analyzing {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+}
+
+.qm-status-badge.status-classified {
+    background: rgba(20, 184, 166, 0.12);
+    color: #0d9488;
+}
+
+.qm-status-badge.status-error {
+    background: var(--color-danger-bg, rgba(239,68,68,0.1));
+    color: var(--color-danger, #dc2626);
+}
+
+.qm-status-badge.status-rejected {
+    background: var(--color-danger-bg, rgba(239,68,68,0.1));
+    color: var(--color-danger, #dc2626);
+}
+
+/* === Intake Detail / Review === */
+.qm-intake-detail {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+    padding: 28px 32px;
+}
+
+.qm-ai-section {
+    margin-bottom: 20px;
+}
+
+.qm-ai-section h4 {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 650;
+    color: var(--color-text);
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.qm-ai-field {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 13.5px;
+}
+
+.qm-ai-field label {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    min-width: 120px;
+    flex-shrink: 0;
+}
+
+.qm-ai-field span {
+    color: var(--color-text);
+}
+
+.qm-ai-field input[type="text"] {
+    flex: 1;
+    padding: 5px 10px;
+    font-size: 13px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+.qm-ai-field input[type="text"]:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-subtle);
+}
+
+.qm-intake-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.qm-intake-msg {
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 14px;
+}
+
+.qm-intake-msg .qm-spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--color-border-light);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: qmSpin 0.7s linear infinite;
+    margin-bottom: 10px;
+}
+
+/* === SOP Lifecycle Buttons === */
+.qm-sop-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.qm-sop-actions .qm-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* === Toast Notification === */
+.qm-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 550;
+    z-index: 1100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    animation: qmSlideUp 0.25s ease;
+}
+@keyframes qmSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.qm-toast.success {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+    border: 1px solid var(--color-success);
+}
+
+.qm-toast.error {
+    background: var(--color-danger-bg, rgba(239,68,68,0.1));
+    color: var(--color-danger, #dc2626);
+    border: 1px solid var(--color-danger, #dc2626);
+}
+
 /* === Responsive === */
 @media (max-width: 900px) {
     .qm-layout {
@@ -1017,17 +1386,33 @@
 
 <!-- M4 SOP Catalog -->
 <div id="qmM4Panel" style="display:none;">
+    <div class="qm-m4-actions" id="qmM4Actions">
+        <button class="qm-action-btn primary" onclick="openUploadModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload SOP
+        </button>
+        <button class="qm-action-btn" onclick="showIntakeQueue()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            Intake Queue
+        </button>
+    </div>
     <div id="qmM4Grid"></div>
     <div id="qmM4CatDetail" style="display:none;"></div>
     <div id="qmM4SopDetail" style="display:none;"></div>
     <div id="qmM4SearchResults" style="display:none;"></div>
+    <div id="qmM4IntakeQueue" style="display:none;"></div>
+    <div id="qmM4IntakeDetail" style="display:none;"></div>
 </div>
+
+<!-- Upload Modal (hidden) -->
+<div id="qmUploadModal" style="display:none;"></div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 (function() {
     /* ── State ─────────────────────────────────────────────────── */
+    var csrfToken = '{{ csrf_token() }}';
     var moduleData = {};       // keyed by module_number
     var moduleSummary = null;  // full summary response
     var activeSection = null;
@@ -1696,13 +2081,8 @@
 
     /* ── M4 SOP Catalog ────────────────────────────────────────── */
     function loadCategories() {
+        hideAllM4Panels();
         var grid = document.getElementById('qmM4Grid');
-        var catDetail = document.getElementById('qmM4CatDetail');
-        var sopDetail = document.getElementById('qmM4SopDetail');
-        var searchResults = document.getElementById('qmM4SearchResults');
-        catDetail.style.display = 'none';
-        sopDetail.style.display = 'none';
-        searchResults.style.display = 'none';
         grid.style.display = '';
 
         if (sopCategoriesCache) {
@@ -1778,13 +2158,8 @@
     }
 
     window.showCategoryDetail = function(categoryId, categoryCode) {
-        var grid = document.getElementById('qmM4Grid');
+        hideAllM4Panels();
         var catDetail = document.getElementById('qmM4CatDetail');
-        var sopDetail = document.getElementById('qmM4SopDetail');
-        var searchResults = document.getElementById('qmM4SearchResults');
-        grid.style.display = 'none';
-        sopDetail.style.display = 'none';
-        searchResults.style.display = 'none';
         catDetail.style.display = '';
         currentCategoryId = categoryId;
         catDetail.innerHTML = '<div class="qm-loading">Loading SOPs...</div>';
@@ -1858,13 +2233,8 @@
     }
 
     window.showSopDetail = function(documentId) {
-        var grid = document.getElementById('qmM4Grid');
-        var catDetail = document.getElementById('qmM4CatDetail');
+        hideAllM4Panels();
         var sopDetail = document.getElementById('qmM4SopDetail');
-        var searchResults = document.getElementById('qmM4SearchResults');
-        grid.style.display = 'none';
-        catDetail.style.display = 'none';
-        searchResults.style.display = 'none';
         sopDetail.style.display = '';
         sopDetail.innerHTML = '<div class="qm-loading">Loading SOP details...</div>';
 
@@ -1900,6 +2270,19 @@
             '<span class="qm-status-badge status-' + escAttr(sop.status) + '">' + escHtml(sop.status) + '</span>' +
             '<h2>' + escHtml(sop.title) + '</h2>' +
             '</div>';
+
+        // Lifecycle actions
+        if (sop.status === 'draft') {
+            html += '<div class="qm-sop-actions">' +
+                '<button class="qm-action-btn primary" id="btnSopApprove" onclick="approveSop(' + sop.id + ', \'' + escAttr(sop.document_id) + '\')">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Approve SOP</button>' +
+                '</div>';
+        } else if (sop.status === 'approved') {
+            html += '<div class="qm-sop-actions">' +
+                '<button class="qm-action-btn primary" id="btnSopPublish" onclick="publishSop(' + sop.id + ', \'' + escAttr(sop.document_id) + '\')">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Publish SOP</button>' +
+                '</div>';
+        }
 
         // Metadata
         html += '<dl class="qm-detail-meta">';
@@ -1960,11 +2343,8 @@
     }
 
     window.backToCategories = function() {
-        document.getElementById('qmM4CatDetail').style.display = 'none';
-        document.getElementById('qmM4SopDetail').style.display = 'none';
-        document.getElementById('qmM4SearchResults').style.display = 'none';
+        hideAllM4Panels();
         document.getElementById('qmM4Grid').style.display = '';
-        m4SearchMode = false;
     };
 
     window.backToSopList = function() {
@@ -1979,13 +2359,8 @@
 
     /* ── M4 Search ─────────────────────────────────────────────── */
     function searchM4Sops(query) {
-        var grid = document.getElementById('qmM4Grid');
-        var catDetail = document.getElementById('qmM4CatDetail');
-        var sopDetail = document.getElementById('qmM4SopDetail');
+        hideAllM4Panels();
         var searchResults = document.getElementById('qmM4SearchResults');
-        grid.style.display = 'none';
-        catDetail.style.display = 'none';
-        sopDetail.style.display = 'none';
         searchResults.style.display = '';
         m4SearchMode = true;
 
@@ -2043,15 +2418,508 @@
         container.innerHTML = html;
     }
 
+    /* ── SOP Lifecycle Actions ──────────────────────────────────── */
+    window.approveSop = function(sopId, documentId) {
+        var btn = document.getElementById('btnSopApprove');
+        if (btn) { btn.disabled = true; btn.textContent = 'Approving...'; }
+
+        fetch('/qualitydocs/api/sops/' + sopId + '/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ approved_by: 'admin' })
+        })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+        .then(function(res) {
+            if (!res.ok) {
+                showToast(res.data.error || 'Approve failed', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'Approve SOP'; }
+                return;
+            }
+            showToast('SOP approved', 'success');
+            showSopDetail(documentId); // Refresh
+        })
+        .catch(function(err) {
+            showToast('Network error: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.textContent = 'Approve SOP'; }
+        });
+    };
+
+    window.publishSop = function(sopId, documentId) {
+        var btn = document.getElementById('btnSopPublish');
+        if (btn) { btn.disabled = true; btn.textContent = 'Publishing...'; }
+
+        fetch('/qualitydocs/api/sops/' + sopId + '/publish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+        .then(function(res) {
+            if (!res.ok) {
+                showToast(res.data.error || 'Publish failed', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'Publish SOP'; }
+                return;
+            }
+            showToast('SOP published', 'success');
+            sopCategoriesCache = null; // Invalidate to refresh counts
+            showSopDetail(documentId); // Refresh
+        })
+        .catch(function(err) {
+            showToast('Network error: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.textContent = 'Publish SOP'; }
+        });
+    };
+
+    /* ── Upload Modal ──────────────────────────────────────────── */
+    window.openUploadModal = function() {
+        var modal = document.getElementById('qmUploadModal');
+        modal.style.display = '';
+        modal.innerHTML =
+            '<div class="qm-modal-overlay" onclick="closeUploadModal(event)">' +
+            '<div class="qm-modal" onclick="event.stopPropagation()">' +
+            '<h3>Upload SOP Document</h3>' +
+            '<p class="qm-modal-sub">Upload a PDF to classify and add to the SOP catalog.</p>' +
+            '<div class="qm-dropzone" id="qmDropzone">' +
+            '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+            '<polyline points="17 8 12 3 7 8"/>' +
+            '<line x1="12" y1="3" x2="12" y2="15"/></svg>' +
+            '<p>Drag and drop a PDF here</p>' +
+            '<p class="qm-dropzone-hint">or click to browse (PDF only, max 50 MB)</p>' +
+            '<input type="file" id="qmFileInput" accept=".pdf" style="display:none">' +
+            '</div>' +
+            '<div id="qmUploadError"></div>' +
+            '<div class="qm-modal-actions">' +
+            '<button class="qm-action-btn" onclick="closeUploadModal()">Cancel</button>' +
+            '</div>' +
+            '</div></div>';
+
+        // Wire up dropzone
+        var dropzone = document.getElementById('qmDropzone');
+        var fileInput = document.getElementById('qmFileInput');
+
+        dropzone.addEventListener('click', function() { fileInput.click(); });
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault(); dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragleave', function() {
+            dropzone.classList.remove('dragover');
+        });
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault(); dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFileUpload(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length) handleFileUpload(fileInput.files[0]);
+        });
+    };
+
+    window.closeUploadModal = function(e) {
+        if (e && e.target && !e.target.classList.contains('qm-modal-overlay')) return;
+        document.getElementById('qmUploadModal').style.display = 'none';
+        document.getElementById('qmUploadModal').innerHTML = '';
+    };
+
+    function handleFileUpload(file) {
+        if (!file.name.toLowerCase().endsWith('.pdf')) {
+            document.getElementById('qmUploadError').innerHTML =
+                '<div class="qm-upload-error">Only PDF files are supported.</div>';
+            return;
+        }
+        if (file.size > 50 * 1024 * 1024) {
+            document.getElementById('qmUploadError').innerHTML =
+                '<div class="qm-upload-error">File exceeds 50 MB limit.</div>';
+            return;
+        }
+
+        // Show progress
+        var modal = document.querySelector('.qm-modal');
+        modal.innerHTML =
+            '<div class="qm-upload-progress">' +
+            '<div class="qm-spinner"></div>' +
+            '<p>Uploading and classifying<br><strong>' + escHtml(file.name) + '</strong></p>' +
+            '<p style="font-size:12px;color:var(--color-text-muted);">AI classification may take 10\u201330 seconds...</p>' +
+            '</div>';
+
+        var formData = new FormData();
+        formData.append('file', file);
+        formData.append('csrf_token', csrfToken);
+
+        fetch('/qualitydocs/api/sops/upload', { method: 'POST', body: formData })
+            .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d, status: r.status }; }); })
+            .then(function(res) {
+                if (!res.ok) {
+                    modal.innerHTML =
+                        '<h3>Upload Failed</h3>' +
+                        '<div class="qm-upload-error">' + escHtml(res.data.error || 'Unknown error') + '</div>' +
+                        '<div class="qm-modal-actions"><button class="qm-action-btn" onclick="closeUploadModal()">Close</button></div>';
+                    return;
+                }
+                // Success
+                closeUploadModal();
+                showToast('SOP uploaded and classified successfully', 'success');
+                showIntakeQueue();
+            })
+            .catch(function(err) {
+                modal.innerHTML =
+                    '<h3>Upload Error</h3>' +
+                    '<div class="qm-upload-error">Network error: ' + escHtml(err.message) + '</div>' +
+                    '<div class="qm-modal-actions"><button class="qm-action-btn" onclick="closeUploadModal()">Close</button></div>';
+            });
+    }
+
+    /* ── Intake Queue ──────────────────────────────────────────── */
+    var intakeFilter = '';
+
+    window.showIntakeQueue = function() {
+        hideAllM4Panels();
+        document.getElementById('qmM4IntakeQueue').style.display = '';
+        loadIntakeQueue();
+    };
+
+    function hideAllM4Panels() {
+        document.getElementById('qmM4Grid').style.display = 'none';
+        document.getElementById('qmM4CatDetail').style.display = 'none';
+        document.getElementById('qmM4SopDetail').style.display = 'none';
+        document.getElementById('qmM4SearchResults').style.display = 'none';
+        document.getElementById('qmM4IntakeQueue').style.display = 'none';
+        document.getElementById('qmM4IntakeDetail').style.display = 'none';
+        m4SearchMode = false;
+    }
+
+    function loadIntakeQueue() {
+        var container = document.getElementById('qmM4IntakeQueue');
+        var url = '/qualitydocs/api/intakes?per_page=50';
+        if (intakeFilter) url += '&status=' + intakeFilter;
+
+        container.innerHTML = '<div class="qm-loading">Loading intake queue...</div>';
+
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                renderIntakeQueue(data.items || [], data.total || 0);
+            })
+            .catch(function(err) {
+                container.innerHTML = '<div class="qm-empty-state"><h3>Failed to load intake queue</h3></div>';
+            });
+    }
+
+    function renderIntakeQueue(intakes, total) {
+        var container = document.getElementById('qmM4IntakeQueue');
+        var html = '<div class="qm-program-detail">';
+
+        // Back button
+        html += '<button class="qm-detail-back" onclick="backFromIntakeQueue()">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="15 18 9 12 15 6"/></svg> Back to Categories</button>';
+
+        html += '<div class="qm-detail-header"><h2>SOP Intake Queue</h2>' +
+            '<div class="qm-section-number">' + total + ' intake' + (total !== 1 ? 's' : '') + '</div></div>';
+
+        // Filter tabs
+        var filters = [
+            { val: '', label: 'All' },
+            { val: 'classified', label: 'Classified' },
+            { val: 'pending', label: 'Pending' },
+            { val: 'approved', label: 'Approved' },
+            { val: 'rejected', label: 'Rejected' }
+        ];
+        html += '<div class="qm-intake-filters">';
+        filters.forEach(function(f) {
+            html += '<button class="qm-intake-filter' + (intakeFilter === f.val ? ' active' : '') +
+                '" onclick="setIntakeFilter(\'' + f.val + '\')">' + f.label + '</button>';
+        });
+        html += '</div>';
+
+        if (!intakes.length) {
+            html += '<div class="qm-empty-state" style="padding:40px 20px;">' +
+                '<h3>No Intakes Found</h3>' +
+                '<p>Upload a PDF to get started with SOP intake.</p></div>';
+        } else {
+            html += '<table class="qm-intake-table"><thead><tr>' +
+                '<th>File</th><th>Status</th><th>Category</th><th>Date</th>' +
+                '</tr></thead><tbody>';
+            intakes.forEach(function(intake) {
+                var catName = intake.suggested_category_name || '\u2014';
+                var date = intake.created_at ? intake.created_at.split('T')[0] : '\u2014';
+                html += '<tr onclick="showIntakeDetail(' + intake.id + ')">' +
+                    '<td class="qm-intake-filename">' + escHtml(intake.file_name) + '</td>' +
+                    '<td><span class="qm-status-badge status-' + escAttr(intake.status) + '">' +
+                    escHtml(intake.status) + '</span></td>' +
+                    '<td>' + escHtml(catName) + '</td>' +
+                    '<td>' + escHtml(date) + '</td>' +
+                    '</tr>';
+            });
+            html += '</tbody></table>';
+        }
+
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    window.setIntakeFilter = function(val) {
+        intakeFilter = val;
+        loadIntakeQueue();
+    };
+
+    window.backFromIntakeQueue = function() {
+        hideAllM4Panels();
+        document.getElementById('qmM4Grid').style.display = '';
+    };
+
+    /* ── Intake Detail / Classification Review ─────────────────── */
+    window.showIntakeDetail = function(intakeId) {
+        hideAllM4Panels();
+        var container = document.getElementById('qmM4IntakeDetail');
+        container.style.display = '';
+        container.innerHTML = '<div class="qm-loading">Loading intake details...</div>';
+
+        fetch('/qualitydocs/api/intakes/' + intakeId)
+            .then(function(r) { return r.json(); })
+            .then(function(intake) {
+                if (intake.error) {
+                    container.innerHTML = '<div class="qm-empty-state"><h3>Intake not found</h3></div>';
+                    return;
+                }
+                renderIntakeDetail(intake);
+            })
+            .catch(function(err) {
+                container.innerHTML = '<div class="qm-empty-state"><h3>Error loading intake</h3></div>';
+            });
+    };
+
+    function renderIntakeDetail(intake) {
+        var container = document.getElementById('qmM4IntakeDetail');
+        var html = '<div class="qm-intake-detail">';
+
+        // Back button
+        html += '<button class="qm-detail-back" onclick="backToIntakeQueue()">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="15 18 9 12 15 6"/></svg> Back to Intake Queue</button>';
+
+        // Header
+        html += '<div class="qm-detail-header">' +
+            '<span class="qm-status-badge status-' + escAttr(intake.status) + '">' + escHtml(intake.status) + '</span>' +
+            '<h2>' + escHtml(intake.file_name) + '</h2>' +
+            '<div class="qm-section-number">Uploaded: ' + escHtml(intake.created_at || '\u2014') + '</div>' +
+            '</div>';
+
+        // Status-specific content
+        if (intake.status === 'classified') {
+            html += renderClassificationReview(intake);
+        } else if (intake.status === 'pending' || intake.status === 'analyzing') {
+            html += '<div class="qm-intake-msg"><div class="qm-spinner"></div>' +
+                '<p>Classification in progress... Refresh in a few seconds.</p></div>';
+        } else if (intake.status === 'error') {
+            html += '<div class="qm-intake-msg" style="color:var(--color-danger,#dc2626);">' +
+                '<p>Classification failed</p>' +
+                '<p style="font-size:13px;">' + escHtml(intake.error_message || 'Unknown error') + '</p></div>';
+            // Allow reject for error intakes
+            html += '<div class="qm-intake-actions">' +
+                '<button class="qm-action-btn" style="color:var(--color-danger,#dc2626);border-color:var(--color-danger,#dc2626);" onclick="rejectIntake(' + intake.id + ')">Reject</button>' +
+                '</div>';
+        } else if (intake.status === 'approved') {
+            html += '<div class="qm-intake-msg" style="color:var(--color-success);">' +
+                '<p>This intake has been approved.</p>';
+            if (intake.final_sop_id) {
+                html += '<p><button class="qm-action-btn" onclick="showSopById(' + intake.final_sop_id + ')">View Created SOP</button></p>';
+            }
+            html += '</div>';
+        } else if (intake.status === 'rejected') {
+            html += '<div class="qm-intake-msg" style="color:var(--color-danger,#dc2626);">' +
+                '<p>This intake was rejected.</p>';
+            if (intake.error_message) {
+                html += '<p style="font-size:13px;">Reason: ' + escHtml(intake.error_message) + '</p>';
+            }
+            html += '</div>';
+        }
+
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function renderClassificationReview(intake) {
+        // Parse ai_classification JSON
+        var ai = {};
+        try {
+            if (intake.ai_classification) {
+                ai = typeof intake.ai_classification === 'string'
+                    ? JSON.parse(intake.ai_classification) : intake.ai_classification;
+            }
+        } catch(e) {}
+
+        var html = '<div class="qm-ai-section">';
+        html += '<h4>AI Classification Results</h4>';
+
+        // Category
+        var catName = intake.suggested_category_name || ai.category_name || '\u2014';
+        var catCode = intake.category_code || ai.category_code || '';
+        html += '<div class="qm-ai-field"><label>Category:</label>' +
+            '<span>' + (catCode ? '<span class="qm-category-code" style="font-size:10px;padding:2px 7px;">' + escHtml(catCode) + '</span> ' : '') +
+            escHtml(catName) + '</span></div>';
+
+        // Editable title
+        var sugTitle = ai.suggested_title || intake.file_name.replace(/\.pdf$/i, '');
+        html += '<div class="qm-ai-field"><label>Title:</label>' +
+            '<input type="text" id="intakeEditTitle" value="' + escAttr(sugTitle) + '"></div>';
+
+        // Editable doc ID
+        var sugDocId = intake.suggested_document_id || ai.suggested_document_id || '';
+        html += '<div class="qm-ai-field"><label>Document ID:</label>' +
+            '<input type="text" id="intakeEditDocId" value="' + escAttr(sugDocId) + '"></div>';
+
+        // Summary
+        var summary = ai.summary || '';
+        if (summary) {
+            html += '<div class="qm-ai-field" style="align-items:flex-start;"><label>Summary:</label>' +
+                '<span style="line-height:1.55;">' + escHtml(summary) + '</span></div>';
+        }
+
+        // Scope tags
+        var scopeTags = ai.scope_tags || [];
+        if (typeof intake.suggested_scope_tags === 'string') {
+            try { scopeTags = JSON.parse(intake.suggested_scope_tags); } catch(e) {}
+        }
+        if (scopeTags.length) {
+            html += '<div class="qm-ai-field"><label>Scope Tags:</label><span>';
+            scopeTags.forEach(function(tag) {
+                html += '<span class="qm-scope-tag" style="margin-right:5px;">' + escHtml(tag) + '</span>';
+            });
+            html += '</span></div>';
+        }
+
+        // Programs
+        var programs = ai.programs || [];
+        if (programs.length) {
+            html += '<div class="qm-ai-field" style="align-items:flex-start;"><label>Programs:</label><span>';
+            programs.forEach(function(p) {
+                var name = typeof p === 'string' ? p : (p.title || p.program_id || p);
+                html += '<span class="qm-code-tag" style="margin-right:5px;margin-bottom:3px;">' + escHtml(name) + '</span>';
+            });
+            html += '</span></div>';
+        }
+
+        // Code references
+        var codeRefs = ai.code_references || [];
+        if (codeRefs.length) {
+            html += '<div class="qm-ai-field" style="align-items:flex-start;"><label>Code Refs:</label><span>';
+            codeRefs.forEach(function(ref) {
+                var refText = typeof ref === 'string' ? ref : (ref.code || ref);
+                html += '<span class="qm-code-tag" style="margin-right:5px;margin-bottom:3px;">' + escHtml(refText) + '</span>';
+            });
+            html += '</span></div>';
+        }
+
+        html += '</div>';
+
+        // Action buttons
+        html += '<div class="qm-intake-actions">' +
+            '<button class="qm-action-btn primary" id="btnApproveIntake" onclick="approveIntake(' + intake.id + ')">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Approve &amp; Create SOP</button>' +
+            '<button class="qm-action-btn" style="color:var(--color-danger,#dc2626);border-color:var(--color-danger,#dc2626);" onclick="rejectIntake(' + intake.id + ')">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Reject</button>' +
+            '</div>';
+
+        return html;
+    }
+
+    window.approveIntake = function(intakeId) {
+        var btn = document.getElementById('btnApproveIntake');
+        if (btn) { btn.disabled = true; btn.textContent = 'Approving...'; }
+
+        var overrides = {};
+        var titleEl = document.getElementById('intakeEditTitle');
+        var docIdEl = document.getElementById('intakeEditDocId');
+        if (titleEl && titleEl.value.trim()) overrides.title = titleEl.value.trim();
+        if (docIdEl && docIdEl.value.trim()) overrides.document_id = docIdEl.value.trim();
+
+        fetch('/qualitydocs/api/intakes/' + intakeId + '/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(overrides)
+        })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+        .then(function(res) {
+            if (!res.ok) {
+                showToast(res.data.error || 'Approve failed', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'Approve & Create SOP'; }
+                return;
+            }
+            showToast('SOP created successfully', 'success');
+            sopCategoriesCache = null; // Invalidate cache so counts refresh
+            showIntakeQueue();
+        })
+        .catch(function(err) {
+            showToast('Network error: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.textContent = 'Approve & Create SOP'; }
+        });
+    };
+
+    window.rejectIntake = function(intakeId) {
+        var reason = prompt('Rejection reason (optional):');
+        if (reason === null) return; // Cancelled
+
+        fetch('/qualitydocs/api/intakes/' + intakeId + '/reject', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: reason })
+        })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+        .then(function(res) {
+            if (!res.ok) {
+                showToast(res.data.error || 'Reject failed', 'error');
+                return;
+            }
+            showToast('Intake rejected', 'success');
+            showIntakeQueue();
+        })
+        .catch(function(err) {
+            showToast('Network error: ' + err.message, 'error');
+        });
+    };
+
+    window.backToIntakeQueue = function() {
+        hideAllM4Panels();
+        document.getElementById('qmM4IntakeQueue').style.display = '';
+        loadIntakeQueue();
+    };
+
+    window.showSopById = function(sopId) {
+        // Fetch SOP by ID to get document_id, then show detail
+        fetch('/qualitydocs/api/sops?per_page=200')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var sop = (data.items || []).find(function(s) { return s.id === sopId; });
+                if (sop) {
+                    showSopDetail(sop.document_id);
+                } else {
+                    showToast('SOP not found', 'error');
+                }
+            });
+    };
+
+    /* ── Toast ─────────────────────────────────────────────────── */
+    function showToast(message, type) {
+        var existing = document.querySelector('.qm-toast');
+        if (existing) existing.remove();
+
+        var toast = document.createElement('div');
+        toast.className = 'qm-toast ' + (type || 'success');
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(function() { toast.remove(); }, 3500);
+    }
+
     /* ── Helpers ────────────────────────────────────────────────── */
     function escHtml(s) {
+        if (s == null) return '';
         var div = document.createElement('div');
-        div.appendChild(document.createTextNode(s));
+        div.appendChild(document.createTextNode(String(s)));
         return div.innerHTML;
     }
 
     function escAttr(s) {
-        return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        if (s == null) return '';
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
     }
 })();
 </script>
