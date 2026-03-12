@@ -43,6 +43,7 @@
             <option value="">All Types</option>
         </select>
         <button onclick="loadInbox()">Refresh</button>
+        <button class="primary" onclick="syncAndProcess()">Sync &amp; Process</button>
         <button class="success" onclick="processFiles(false)">Process Selected</button>
         <button class="secondary" onclick="processFiles(true)">Dry Run</button>
     </div>
@@ -201,6 +202,38 @@ function processFiles(dryRun) {
         loadLog();
     })
     .catch(err => showError('Process failed: ' + err));
+}
+
+function syncAndProcess() {
+    showMessage('Syncing from OneDrive...');
+    fetch('/pipeline/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    })
+    .then(r => r.json())
+    .then(data => {
+        const s = data.summary;
+        if (s.synced === 0 && s.skipped === 0) {
+            showMessage('No new files in OneDrive. Processing inbox...');
+        } else {
+            showMessage(`Synced ${s.synced} files (${s.skipped} skipped). Processing...`);
+        }
+        // Now process all inbox files
+        return fetch('/pipeline/api/intake', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+    })
+    .then(r => r.json())
+    .then(data => {
+        const s = data.summary;
+        showMessage(`Done: ${s.routed} routed, ${s.needs_review} to NEEDS-REVIEW, ${s.duplicate} duplicates`);
+        loadInbox();
+        loadLog();
+    })
+    .catch(err => showError('Sync & Process failed: ' + err));
 }
 
 function classifyFile() {

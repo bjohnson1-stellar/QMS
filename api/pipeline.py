@@ -106,6 +106,31 @@ def api_intake():
     })
 
 
+@bp.route("/api/sync", methods=["POST"])
+def api_sync():
+    """Sync files from OneDrive into the inbox."""
+    from qms.pipeline.classifier import sync_from_sources
+
+    data = request.get_json(silent=True) or {}
+    dry_run = data.get("dry_run", False)
+
+    results = sync_from_sources(dry_run=dry_run)
+
+    synced = sum(1 for r in results if r["action"] in ("synced", "would_sync"))
+    skipped = sum(1 for r in results if r["action"] == "skipped")
+    errors = sum(1 for r in results if r["action"] == "error")
+
+    return jsonify({
+        "results": results,
+        "summary": {
+            "synced": synced,
+            "skipped": skipped,
+            "errors": errors,
+            "dry_run": dry_run,
+        },
+    })
+
+
 @bp.route("/api/classify", methods=["POST"])
 def api_classify():
     """Classify a single uploaded file (preview only, no move)."""
