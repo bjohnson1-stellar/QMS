@@ -339,6 +339,7 @@ onedrive_sync:
   enabled: true
   source_root: "C:/Users/bjohnson1/OneDrive - Stellar Group Incorporated/QMS-Intake"
   delete_after_sync: true
+  exclude_extensions: [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".svg", ".webp"]
 
 # =============================================================================
 # DEPARTMENTS

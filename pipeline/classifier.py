@@ -549,6 +549,12 @@ def sync_from_sources(dry_run: bool = False) -> List[dict]:
         if path.name.startswith(".") or path.name.startswith("~$"):
             continue
 
+        # Skip excluded extensions (e.g. email signature images from Power Automate)
+        exclude_exts = sync_cfg.get("exclude_extensions", [])
+        if exclude_exts and path.suffix.lower() in exclude_exts:
+            logger.debug("Skipping excluded extension: %s", path.name)
+            continue
+
         # Determine the source subfolder name (e.g. "Field-Locations")
         try:
             source_folder = path.relative_to(source_root).parts[0]
