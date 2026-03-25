@@ -560,3 +560,53 @@ def extract_electrical(
     typer.echo("-" * 80)
     typer.echo(f"Results: {success} success, {partial} partial, {failed} failed")
     typer.echo(f"Total time: {total_time:.1f}s ({total_time/len(results):.1f}s avg)")
+
+
+@app.command()
+def reconcile(
+    project: str = typer.Argument(..., help="Project number or name to reconcile"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview without writing to database"),
+):
+    """Reconcile extracted data into equipment registry."""
+    from qms.core import get_db
+    from qms.pipeline.reconciler import reconcile_project
+
+    # Resolve project
+    with get_db(readonly=True) as conn:
+        row = conn.execute(
+            "SELECT id, name FROM projects WHERE project_number = ? OR name = ?",
+            (project, project),
+        ).fetchone()
+        if not row:
+            typer.echo(f"Project not found: {project}")
+            raise typer.Exit(1)
+        project_id = row["id"]
+        project_name = row["name"]
+
+    typer.echo(f"Reconciling equipment for: {project_name} (id={project_id})")
+    if dry_run:
+        typer.echo("[DRY RUN MODE]")
+    typer.echo("-" * 50)
+
+    result = reconcile_project(project_id, dry_run=dry_run)
+
+    typer.echo()
+    typer.echo(f"  Equipment instances: {result.instances}")
+    typer.echo(f"  Appearances:         {result.appearances}")
+    typer.echo(f"  Systems:             {result.systems}")
+    typer.echo(f"  Relationships:       {result.relationships}")
+    typer.echo(f"  Equipment types:     {result.types}")
+    typer.echo(f"  Duration:            {result.duration_ms}ms")
+
+    if result.errors:
+        typer.echo()
+        for err in result.errors:
+            typer.echo(f"  ERROR: {err}")
+
+    if not dry_run:
+        from qms.pipeline.equipment import get_equipment_stats
+        stats = get_equipment_stats(project_id)
+        typer.echo()
+        typer.echo("Equipment by discipline:")
+        for disc, cnt in sorted(stats["by_discipline"].items(), key=lambda x: -x[1]):
+            typer.echo(f"  {disc:<25} {cnt:>5}")

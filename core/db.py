@@ -149,3 +149,28 @@ def migrate_all():
         logger.info("License migrations applied")
     except Exception as exc:
         logger.warning("License migration step failed (non-fatal): %s", exc)
+
+    # Equipment registry schema (extends pipeline module)
+    try:
+        equip_schema = package_dir / "pipeline" / "equipment_schema.sql"
+        if equip_schema.exists():
+            with get_db() as eq_conn:
+                # Rename legacy tables if they exist (idempotent)
+                for old_name, new_name in [
+                    ("equipment_master", "_legacy_equipment_master"),
+                    ("equipment_appearances", "_legacy_equipment_appearances"),
+                ]:
+                    exists = eq_conn.execute(
+                        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                        (old_name,),
+                    ).fetchone()
+                    if exists:
+                        eq_conn.execute(f"ALTER TABLE [{old_name}] RENAME TO [{new_name}]")
+                        logger.info("Renamed %s → %s", old_name, new_name)
+                eq_conn.commit()
+
+                eq_conn.executescript(equip_schema.read_text(encoding="utf-8"))
+                eq_conn.commit()
+            logger.info("Equipment registry schema applied")
+    except Exception as exc:
+        logger.warning("Equipment schema step failed (non-fatal): %s", exc)
