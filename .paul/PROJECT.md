@@ -58,6 +58,7 @@ Procore quality intelligence with mobile capture. 4 of 5 phases complete. Phase 
 
 - [x] Equipment registry schema (10 tables), reconciliation engine, CLI command, Vital populated (585 instances, 23 systems) — v0.4 Phase 19
 - [x] Cross-discipline conflict detection (attribute + negative space), configurable rules, CLI with RFI output — v0.4 Phase 20
+- [x] Spec compliance engine (9 configurable requirements, 6 check types), impact chain analyzer (BFS graph traversal, drawing impact, violation propagation) — v0.4 Phase 21
 
 ### Active
 (No active requirements)

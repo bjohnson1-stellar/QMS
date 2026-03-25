@@ -107,6 +107,14 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "v0.4 Phase 21 — Spec Compliance & Impact Chains",
+          "desc": "Spec compliance engine with 9 configurable requirements (6 check types), equipment impact chain analyzer via BFS graph traversal (524 relationships), drawing revision impact assessment, violation propagation tracing. 4 spec violations detected for Vital.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["equipment", "spec-compliance", "impact-analysis", "graph-traversal", "v0.4"],
+          "completed": "2026-03-25"
+        },
+        {
           "title": "v0.4 Phase 20 — Conflict Detection & Negative Space",
           "desc": "Cross-discipline attribute conflict detection (rule-based with tolerance), missing-discipline negative space scanner, CLI command with summary and RFI output. 492 conflicts detected for Vital (2 attribute, 490 missing discipline).",
           "module": "pipeline",

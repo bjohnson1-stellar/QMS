@@ -196,6 +196,26 @@ CREATE TABLE IF NOT EXISTS equipment_conflicts (
 CREATE INDEX IF NOT EXISTS idx_equipment_conflicts_project
     ON equipment_conflicts(project_id, status);
 
+-- Spec compliance requirements (per equipment type)
+CREATE TABLE IF NOT EXISTS equipment_spec_requirements (
+    id INTEGER PRIMARY KEY,
+    type_id INTEGER REFERENCES equipment_types(id),
+    type_name TEXT,                              -- fallback match when type_id NULL (e.g., "Switchboard")
+    attribute_name TEXT NOT NULL,                -- attribute to check (voltage, phases, aic_rating, etc.)
+    check_type TEXT NOT NULL DEFAULT 'exact'
+        CHECK(check_type IN ('exact', 'min', 'max', 'range', 'one_of', 'regex')),
+    expected_value TEXT NOT NULL,                -- expected value or JSON for complex checks
+    severity TEXT NOT NULL DEFAULT 'warning'
+        CHECK(severity IN ('critical', 'warning', 'info')),
+    source_spec TEXT,                            -- spec reference (e.g., "NEC 240.6")
+    description TEXT,                            -- human-readable requirement description
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_spec_req_type ON equipment_spec_requirements(type_id);
+CREATE INDEX IF NOT EXISTS idx_spec_req_name ON equipment_spec_requirements(type_name);
+
 -- Seed default conflict rules
 INSERT OR IGNORE INTO conflict_rules (attribute_name, comparison_type, tolerance_value, tolerance_type, severity, description) VALUES
     ('hp', 'numeric_tolerance', 10, 'percent', 'warning', 'Horsepower mismatch >10% between disciplines'),
@@ -204,3 +224,23 @@ INSERT OR IGNORE INTO conflict_rules (attribute_name, comparison_type, tolerance
     ('weight_lbs', 'numeric_tolerance', 20, 'percent', 'warning', 'Weight mismatch >20% — affects structural support design'),
     ('pipe_size', 'exact', NULL, NULL, 'warning', 'Pipe size mismatch between disciplines'),
     ('refrigerant', 'exact', NULL, NULL, 'critical', 'Refrigerant type mismatch — different piping materials and safety requirements');
+
+-- Seed default spec requirements (general commercial/industrial standards)
+INSERT OR IGNORE INTO equipment_spec_requirements
+    (type_name, attribute_name, check_type, expected_value, severity, source_spec, description) VALUES
+    ('Switchboard', 'voltage', 'one_of', '["480V","480/277V"]', 'critical',
+     'NEC 480V Service', 'Switchboards must be 480V or 480/277V service'),
+    ('Switchboard', 'phases', 'exact', '3', 'warning',
+     'NEC 3-Phase Service', 'Switchboards should be 3-phase'),
+    ('Distribution Panel', 'voltage', 'one_of', '["480V","480/277V"]', 'critical',
+     'NEC 480V Distribution', 'Distribution panels must be 480V or 480/277V'),
+    ('Panelboard', 'phases', 'exact', '3', 'warning',
+     'NEC 3-Phase', 'Panelboards should be 3-phase'),
+    ('Transformer', 'phases', 'exact', '3', 'warning',
+     'NEC 3-Phase', 'Transformers should be 3-phase'),
+    ('Transformer', 'primary_voltage', 'one_of', '["480V","480"]', 'warning',
+     'NEC Primary Voltage', 'Transformer primary should be 480V'),
+    ('Condensing Unit', 'refrigerant', 'exact', 'R-717', 'critical',
+     'IIAR-2 Ammonia System', 'Industrial refrigeration condensing units must use R-717 (ammonia)'),
+    ('Air Handling Unit', 'refrigerant', 'exact', 'R-717', 'critical',
+     'IIAR-2 Ammonia System', 'Refrigeration air handling units must use R-717 (ammonia)');

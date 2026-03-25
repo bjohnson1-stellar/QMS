@@ -160,13 +160,16 @@ def migrate_all():
                     ("equipment_master", "_legacy_equipment_master"),
                     ("equipment_appearances", "_legacy_equipment_appearances"),
                 ]:
-                    exists = eq_conn.execute(
-                        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
-                        (old_name,),
-                    ).fetchone()
-                    if exists:
-                        eq_conn.execute(f"ALTER TABLE [{old_name}] RENAME TO [{new_name}]")
-                        logger.info("Renamed %s → %s", old_name, new_name)
+                    try:
+                        exists = eq_conn.execute(
+                            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                            (old_name,),
+                        ).fetchone()
+                        if exists:
+                            eq_conn.execute(f"ALTER TABLE [{old_name}] RENAME TO [{new_name}]")
+                            logger.info("Renamed %s → %s", old_name, new_name)
+                    except Exception:
+                        pass  # Already renamed or target exists — safe to ignore
                 eq_conn.commit()
 
                 eq_conn.executescript(equip_schema.read_text(encoding="utf-8"))

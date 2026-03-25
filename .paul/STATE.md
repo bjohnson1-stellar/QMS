@@ -10,13 +10,13 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 20 of 22 (Conflict Detection & Negative Space) — Complete
-Plan: 20-01 complete
+Phase: 21 of 22 (Spec Compliance & Impact Chains) — Complete
+Plan: 21-01 complete
 Status: Loop closed, ready for next PLAN
-Last activity: 2026-03-25 — Phase 20 complete: 492 conflicts detected (2 attribute, 490 negative space)
+Last activity: 2026-03-25 — Phase 21 complete: spec compliance (9 requirements, 4 violations) + impact chains (524 relationships)
 
 Progress:
-- v0.4 Equipment-Centric Platform: [█████░░░░░] 50%
+- v0.4 Equipment-Centric Platform: [███████░░░] 75%
 - v0.3 Quality Manual Platform: [██████████] 100%
 - v0.2 License Compliance Platform: [██████████] 100%
 - v0.1 Quality Intelligence Platform: [████████░░] 80% (Phase 5 not started)
@@ -37,6 +37,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 |------|--------|-------------|------|
 | 19-01 | Complete | Equipment registry schema (10 tables), reconciler, 585 instances for Vital | 2026-03-24 |
 | 20-01 | Complete | Conflict detection engine, negative space scanner, CLI command (492 conflicts) | 2026-03-25 |
+| 21-01 | Complete | Spec compliance engine (9 requirements, 4 violations) + impact chain analyzer (BFS traversal) | 2026-03-25 |
 
 ### v0.3 Quality Manual Platform
 
@@ -122,9 +123,12 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Alias mapping for cross-discipline attribute names | v0.4 Phase 20 | hp_rating ↔ hp ↔ power_hp — enables attribute comparison without uniform naming |
 | Batch UPDATE for appearance attributes on re-run | v0.4 Phase 20 | INSERT OR IGNORE + UPDATE pattern for idempotent attribute enrichment |
 | Voltage normalization (primary value extraction) | v0.4 Phase 20 | "480/277V" → 480.0 to reduce false positives |
+| SQL seed for spec requirements (not Python migration) | v0.4 Phase 21 | INSERT OR IGNORE in schema file — consistent with conflict_rules pattern |
+| Advisory-only violation propagation | v0.4 Phase 21 | Impact analysis returns results, doesn't create new conflict records |
+| Extended _parse_numeric locally for AIC suffixes | v0.4 Phase 21 | Avoids modifying stable conflict_detector.py |
 
 ### Git State
-Last commit: `236f728` (feat(pipeline): equipment-centric registry — schema, reconciler, CLI (Phase 19-01))
+Last commit: `8b6e2e8` (feat(pipeline): cross-discipline conflict detection & negative space scanner (Phase 20-01))
 Branch: main
 
 ### Deferred Issues
@@ -143,9 +147,9 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-25
-Stopped at: Phase 20 complete, loop closed
-Next action: /paul:plan for Phase 21 (Spec Compliance & Impact Chains)
-Resume file: .paul/phases/20-conflict-detection/20-01-SUMMARY.md
+Stopped at: Phase 21 complete, loop closed
+Next action: /paul:plan for Phase 22 (Equipment Web UI)
+Resume file: .paul/phases/21-spec-compliance-impact/21-01-SUMMARY.md
 
 ---
 *STATE.md — Updated after every significant action*

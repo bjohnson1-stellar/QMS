@@ -483,6 +483,201 @@ def intake(
                 typer.echo(f"    {a.filename}: {a.notes}")
 
 
+@app.command("spec-check")
+def spec_check(
+    project: str = typer.Argument(..., help="Project number or name"),
+    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter: critical, warning, info"),
+):
+    """Check equipment spec compliance and report violations."""
+    from qms.core import get_db
+    from qms.pipeline.spec_checker import (
+        check_compliance,
+        get_compliance_summary,
+    )
+
+    # Resolve project
+    with get_db(readonly=True) as conn:
+        row = conn.execute(
+            "SELECT id, name FROM projects WHERE number = ? OR name = ?",
+            (project, project),
+        ).fetchone()
+        if not row:
+            typer.echo(f"Project not found: {project}")
+            raise typer.Exit(1)
+        project_id = row["id"]
+        project_name = row["name"]
+
+    typer.echo(f"Checking spec compliance for: {project_name}")
+    typer.echo("-" * 50)
+
+    result = check_compliance(project_id)
+
+    typer.echo(f"  Equipment checked:    {result.total_checked}")
+    typer.echo(f"  Violations found:     {result.violations}")
+    typer.echo(f"  Duration:             {result.duration_ms}ms")
+    if result.cleared:
+        typer.echo(f"  Cleared (prior):      {result.cleared}")
+    typer.echo()
+
+    if result.violations == 0:
+        typer.echo("No spec violations found.")
+        return
+
+    typer.echo("  By Severity:")
+    for sev in ["critical", "warning", "info"]:
+        cnt = result.by_severity.get(sev, 0)
+        if cnt:
+            typer.echo(f"    {sev.upper():<25} {cnt:>5}")
+
+    if result.by_type:
+        typer.echo()
+        typer.echo("  By Equipment Type:")
+        for tname, cnt in sorted(result.by_type.items(), key=lambda x: -x[1]):
+            typer.echo(f"    {tname:<25} {cnt:>5}")
+
+    # Show individual violations
+    summary = get_compliance_summary(project_id)
+    if summary.get("top_equipment"):
+        typer.echo()
+        typer.echo("  Top Equipment (most violations):")
+        for tag, cnt in summary["top_equipment"]:
+            typer.echo(f"    {tag:<25} {cnt:>5}")
+
+    if result.errors:
+        typer.echo()
+        for err in result.errors:
+            typer.echo(f"  ERROR: {err}")
+
+
+@app.command()
+def impact(
+    project: str = typer.Argument(..., help="Project number or name"),
+    tag: Optional[str] = typer.Argument(None, help="Equipment tag to analyze"),
+    drawing: Optional[str] = typer.Option(None, "--drawing", "-d", help="Drawing number for revision impact"),
+    violations: bool = typer.Option(False, "--violations", "-v", help="Show violation propagation"),
+    reverse: bool = typer.Option(False, "--reverse", "-r", help="Show upstream instead of downstream"),
+):
+    """Analyze equipment impact chains through relationship graph."""
+    from qms.core import get_db
+    from qms.pipeline.impact_analyzer import (
+        format_impact_tree,
+        get_drawing_impact,
+        get_forward_impact,
+        get_reverse_trace,
+        get_violation_impact,
+    )
+
+    # Resolve project
+    with get_db(readonly=True) as conn:
+        row = conn.execute(
+            "SELECT id, name FROM projects WHERE number = ? OR name = ?",
+            (project, project),
+        ).fetchone()
+        if not row:
+            typer.echo(f"Project not found: {project}")
+            raise typer.Exit(1)
+        project_id = row["id"]
+        project_name = row["name"]
+
+    # Mode: violation propagation
+    if violations:
+        typer.echo(f"Violation Impact Analysis: {project_name}")
+        typer.echo("=" * 50)
+
+        impacts = get_violation_impact(project_id)
+        if not impacts:
+            typer.echo("No spec violations with downstream impact found.")
+            return
+
+        for imp in impacts:
+            typer.echo()
+            typer.echo(f"  {imp['source_tag']}: {imp['violation_attribute']} violation "
+                       f"({imp['violation_severity'].upper()})")
+            typer.echo(f"    Expected: {imp['expected']}, Actual: {imp['actual']}")
+            typer.echo(f"    Downstream affected: {imp['downstream_count']} equipment")
+            for item in imp["downstream"][:10]:
+                indent = "    " + "  " * item["depth"]
+                typer.echo(f"{indent}{item['tag']} ({item.get('type_name', '')}) "
+                           f"[{item['relationship_type']}]")
+            if imp["downstream_count"] > 10:
+                typer.echo(f"    ... and {imp['downstream_count'] - 10} more")
+        return
+
+    # Mode: drawing impact
+    if drawing:
+        typer.echo(f"Drawing Impact Analysis: {drawing}")
+        typer.echo(f"Project: {project_name}")
+        typer.echo("=" * 50)
+
+        result = get_drawing_impact(project_id, drawing)
+        summary = result["summary"]
+
+        if summary["direct_count"] == 0:
+            typer.echo(f"No equipment found on drawing {drawing}.")
+            return
+
+        typer.echo(f"\n  Direct equipment on drawing: {summary['direct_count']}")
+        for equip in result["direct"]:
+            typer.echo(f"    {equip['tag']:<20} {equip.get('type_name', ''):<25} "
+                       f"({equip.get('discipline', '')})")
+
+        if result["indirect"]:
+            typer.echo(f"\n  Indirect downstream impact: {summary['indirect_count']}")
+            for item in result["indirect"]:
+                indent = "    " + "  " * (item["depth"] - 1)
+                typer.echo(f"{indent}{item['tag']:<20} {item.get('type_name', ''):<25} "
+                           f"[{item['relationship_type']}, depth={item['depth']}]")
+
+        typer.echo(f"\n  Total blast radius: {summary['total']} equipment")
+        return
+
+    # Mode: equipment tag impact (forward or reverse)
+    if not tag:
+        typer.echo("Specify an equipment tag or use --drawing/--violations.")
+        raise typer.Exit(1)
+
+    if reverse:
+        typer.echo(f"Upstream Trace: {tag}")
+        typer.echo(f"Project: {project_name}")
+        typer.echo("=" * 50)
+
+        items = get_reverse_trace(project_id, tag)
+        if not items:
+            typer.echo(f"  No upstream equipment found for {tag}.")
+            return
+
+        typer.echo(f"  {len(items)} upstream equipment:")
+        for item in items:
+            indent = "  " + "  " * item["depth"]
+            typer.echo(f"{indent}{item['tag']:<20} {item.get('type_name', ''):<25} "
+                       f"[{item['relationship_type']}, depth={item['depth']}]")
+    else:
+        # Forward impact (default)
+        with get_db(readonly=True) as conn:
+            root_type = _resolve_type_name(conn, project_id, tag)
+
+        items = get_forward_impact(project_id, tag)
+
+        typer.echo(f"Forward Impact: {tag}")
+        typer.echo(f"Project: {project_name}")
+        typer.echo("=" * 50)
+        typer.echo()
+        typer.echo(format_impact_tree(tag, items, root_type))
+
+        typer.echo(f"\n  Total downstream: {len(items)} equipment")
+
+
+def _resolve_type_name(conn, project_id: int, tag: str) -> str:
+    """Helper to get type name for a tag."""
+    row = conn.execute(
+        """SELECT et.name FROM equipment_instances ei
+           JOIN equipment_types et ON ei.type_id = et.id
+           WHERE ei.project_id = ? AND ei.tag = ?""",
+        (project_id, tag),
+    ).fetchone()
+    return row["name"] if row else ""
+
+
 @app.command("extract-electrical")
 def extract_electrical(
     sheet_ids: Optional[str] = typer.Option(None, "--sheets", "-s", help="Comma-separated sheet IDs"),
