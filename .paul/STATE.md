@@ -5,18 +5,18 @@
 See: .paul/PROJECT.md
 
 **Core value:** Unified quality management platform — quality intelligence (v0.1) + license compliance (v0.2) + quality manual platform (v0.3).
-**Current focus:** v0.4 Equipment-Centric Platform — Phase 19 (Equipment Master Schedule)
+**Current focus:** v0.4 Equipment-Centric Platform — Phase 21 (Spec Compliance & Impact Chains)
 
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 19 of 22 (Equipment Master Schedule) — Planning
-Plan: 19-01 complete
+Phase: 20 of 22 (Conflict Detection & Negative Space) — Complete
+Plan: 20-01 complete
 Status: Loop closed, ready for next PLAN
-Last activity: 2026-03-24 — Plan 19-01 complete: 585 equipment, 23 systems, 524 relationships
+Last activity: 2026-03-25 — Phase 20 complete: 492 conflicts detected (2 attribute, 490 negative space)
 
 Progress:
-- v0.4 Equipment-Centric Platform: [░░░░░░░░░░] 0%
+- v0.4 Equipment-Centric Platform: [█████░░░░░] 50%
 - v0.3 Quality Manual Platform: [██████████] 100%
 - v0.2 License Compliance Platform: [██████████] 100%
 - v0.1 Quality Intelligence Platform: [████████░░] 80% (Phase 5 not started)
@@ -30,6 +30,13 @@ PLAN ──▶ APPLY ──▶ UNIFY
 ```
 
 ## Execution Log
+
+### v0.4 Equipment-Centric Platform
+
+| Plan | Status | Description | Date |
+|------|--------|-------------|------|
+| 19-01 | Complete | Equipment registry schema (10 tables), reconciler, 585 instances for Vital | 2026-03-24 |
+| 20-01 | Complete | Conflict detection engine, negative space scanner, CLI command (492 conflicts) | 2026-03-25 |
 
 ### v0.3 Quality Manual Platform
 
@@ -112,9 +119,12 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | PDF document type (not vision) for classify | v0.3 Phase 18 | Better text extraction from PDFs |
 | CSRF token in FormData for multipart uploads | v0.3 Phase 18 | JSON API bypasses CSRF via Origin header; multipart needs explicit token |
 | Centralized hideAllM4Panels() navigation | v0.3 Phase 18 | Single function manages all M4 sub-view visibility |
+| Alias mapping for cross-discipline attribute names | v0.4 Phase 20 | hp_rating ↔ hp ↔ power_hp — enables attribute comparison without uniform naming |
+| Batch UPDATE for appearance attributes on re-run | v0.4 Phase 20 | INSERT OR IGNORE + UPDATE pattern for idempotent attribute enrichment |
+| Voltage normalization (primary value extraction) | v0.4 Phase 20 | "480/277V" → 480.0 to reduce false positives |
 
 ### Git State
-Last commit: `41cfdc9` (feat(qualitydocs): M4 SOP Intake & Approval UI — Phase 18 complete, v0.3 milestone complete)
+Last commit: `236f728` (feat(pipeline): equipment-centric registry — schema, reconciler, CLI (Phase 19-01))
 Branch: main
 
 ### Deferred Issues
@@ -132,10 +142,10 @@ Branch: main
 
 ## Session Continuity
 
-Last session: 2026-03-24
-Stopped at: Plan 19-01 loop closed
-Next action: /paul:plan for Plan 19-02 (Conflict Detection & Negative Space)
-Resume file: .paul/phases/19-equipment-master/19-01-SUMMARY.md
+Last session: 2026-03-25
+Stopped at: Phase 20 complete, loop closed
+Next action: /paul:plan for Phase 21 (Spec Compliance & Impact Chains)
+Resume file: .paul/phases/20-conflict-detection/20-01-SUMMARY.md
 
 ---
 *STATE.md — Updated after every significant action*

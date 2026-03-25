@@ -56,6 +56,9 @@ Procore quality intelligence with mobile capture. 4 of 5 phases complete. Phase 
 - [x] M4 SOP Intake backend — PDF upload, Claude classification, intake management, approve-to-SOP — v0.3 Phase 18
 - [x] M4 SOP Intake UI — upload modal, intake queue, classification review, approve/reject, lifecycle buttons — v0.3 Phase 18
 
+- [x] Equipment registry schema (10 tables), reconciliation engine, CLI command, Vital populated (585 instances, 23 systems) — v0.4 Phase 19
+- [x] Cross-discipline conflict detection (attribute + negative space), configurable rules, CLI with RFI output — v0.4 Phase 20
+
 ### Active
 (No active requirements)
 

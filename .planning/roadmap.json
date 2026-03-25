@@ -107,6 +107,22 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "v0.4 Phase 20 — Conflict Detection & Negative Space",
+          "desc": "Cross-discipline attribute conflict detection (rule-based with tolerance), missing-discipline negative space scanner, CLI command with summary and RFI output. 492 conflicts detected for Vital (2 attribute, 490 missing discipline).",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["equipment", "conflicts", "negative-space", "rfi", "v0.4"],
+          "completed": "2026-03-25"
+        },
+        {
+          "title": "v0.4 Phase 19 — Equipment Registry Schema & Reconciliation",
+          "desc": "10-table equipment registry with Type/Variant/Instance model, reconciliation engine scanning 11 extraction tables, system groupings, relationship graph. Vital populated with 585 instances, 23 systems, 524 relationships.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["equipment", "schema", "reconciliation", "v0.4"],
+          "completed": "2026-03-24"
+        },
+        {
           "title": "v0.3 Phase 14 — Schema & API Foundation (2 plans)",
           "desc": "M3 programs + M4 SOPs schema (7 tables), qualitydocs/db.py CRUD module with 22 functions, 15 seeded M4 categories, 12 REST API endpoints for programs/categories/SOPs/lifecycle/search.",
           "module": "qualitydocs",

@@ -17,8 +17,8 @@ Equipment-centric project data platform — unified registry consolidating all d
 
 | Phase | Name | Plans | Status | Completed |
 |-------|------|-------|--------|-----------|
-| 19 | Equipment Master Schedule — Schema & Reconciliation | 1 | Planning | — |
-| 20 | Conflict Detection & Negative Space | TBD | Not started | — |
+| 19 | Equipment Master Schedule — Schema & Reconciliation | 1 | Complete | 2026-03-24 |
+| 20 | Conflict Detection & Negative Space | 1 | Complete | 2026-03-25 |
 | 21 | Spec Compliance & Impact Chains | TBD | Not started | — |
 | 22 | Equipment Web UI | TBD | Not started | — |
 

@@ -71,6 +71,66 @@ EXPECTED_DISCIPLINES = {
 }
 
 
+# Attribute columns to capture per source table (for conflict detection)
+_ATTR_COLUMNS = {
+    "mechanical_equipment": {
+        "tag_col": "equipment_mark",
+        "attrs": [
+            "hp", "bhp", "voltage", "phase", "mca", "mocp", "weight_lbs",
+            "cfm", "airflow_cfm", "capacity_tons", "capacity_mbh",
+            "rpm", "static_pressure", "heating_kw", "frequency",
+        ],
+    },
+    "electrical_panels": {
+        "tag_col": "panel_name",
+        "attrs": [
+            "voltage", "phases", "bus_rating", "fed_from", "aic_rating",
+            "total_connected_kva", "total_demand_kva",
+            "total_connected_current", "total_demand_current", "demand_factor",
+        ],
+    },
+    "electrical_transformers": {
+        "tag_col": "tag",
+        "attrs": [
+            "kva_rating", "primary_voltage", "secondary_voltage",
+            "phases", "wires", "frequency",
+        ],
+    },
+    "electrical_switchgear": {
+        "tag_col": "tag",
+        "attrs": [
+            "voltage", "current_rating", "frame_size", "trip_rating",
+            "short_circuit_rating", "short_circuit_amps",
+        ],
+    },
+    "electrical_motors": {
+        "tag_col": "tag",
+        "attrs": ["hp_rating", "voltage"],
+    },
+    "electrical_disconnects": {
+        "tag_col": "disconnect_tag",
+        "attrs": ["amperage", "voltage", "fused", "serves_equipment"],
+    },
+    "utility_equipment": {
+        "tag_col": "equipment_mark",
+        "attrs": [
+            "capacity", "design_pressure", "weight_lbs", "operating_weight_lbs",
+            "power_voltage", "power_hp", "gpm",
+            "temperature_in", "temperature_out", "pressure_drop_psi",
+            "inlet_size", "outlet_size",
+        ],
+    },
+    "refrigeration_equipment": {
+        "tag_col": None,
+        "attrs": ["hp", "voltage", "capacity", "weight_lbs", "refrigerant"],
+    },
+    "fire_protection_equipment": {
+        "tag_col": None,
+        "attrs": ["size", "system_type"],
+    },
+}
+
+
 @dataclass
 class ReconcileResult:
     """Result of a project reconciliation run."""
@@ -188,7 +248,11 @@ def _scan_table(
     conn, project_id: int, tag_map: Dict, table_name: str,
     discipline_override: str = None,
 ):
-    """Scan a discipline-specific extraction table for equipment tags."""
+    """Scan a discipline-specific extraction table for equipment tags.
+
+    Uses _ATTR_COLUMNS config to determine the tag column name and which
+    attribute columns to capture from each table.
+    """
     # Check if table exists
     exists = conn.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
@@ -197,10 +261,17 @@ def _scan_table(
     if not exists:
         return
 
-    # Get column names to find tag-like columns
+    # Get column names
     cols = [c[1] for c in conn.execute(f"PRAGMA table_info({table_name})").fetchall()]
 
-    tag_col = "tag" if "tag" in cols else "name" if "name" in cols else None
+    # Determine tag column from config or auto-detect
+    table_config = _ATTR_COLUMNS.get(table_name, {})
+    configured_tag_col = table_config.get("tag_col")
+
+    if configured_tag_col and configured_tag_col in cols:
+        tag_col = configured_tag_col
+    else:
+        tag_col = "tag" if "tag" in cols else "name" if "name" in cols else None
     if not tag_col:
         return
 
@@ -208,19 +279,29 @@ def _scan_table(
     type_col = "equipment_type" if "equipment_type" in cols else "type" if "type" in cols else None
 
     has_sheet = "sheet_id" in cols
-
-    if has_sheet:
-        desc_expr = f"t.{desc_col} as description" if desc_col else "'' as description"
-        type_expr = f"t.{type_col} as equipment_type" if type_col else "'' as equipment_type"
-        sql = f"""SELECT t.id, t.sheet_id, t.{tag_col} as tag,
-                         {desc_expr}, {type_expr},
-                         s.discipline, s.drawing_number
-                  FROM {table_name} t
-                  JOIN sheets s ON t.sheet_id = s.id
-                  WHERE s.project_id = ?"""
-    else:
-        # Table without sheet_id — skip or handle differently
+    if not has_sheet:
         return
+
+    # Determine attribute columns to capture
+    attr_cols_wanted = table_config.get("attrs", [])
+    attr_cols = [c for c in attr_cols_wanted if c in cols]
+
+    # Build SELECT
+    desc_expr = f"t.{desc_col} as description" if desc_col else "'' as description"
+    type_expr = f"t.{type_col} as equipment_type" if type_col else "'' as equipment_type"
+
+    select_parts = [
+        "t.id", "t.sheet_id", f"t.{tag_col} as tag",
+        desc_expr, type_expr,
+    ]
+    for ac in attr_cols:
+        select_parts.append(f"t.{ac}")
+    select_parts.extend(["s.discipline", "s.drawing_number"])
+
+    sql = f"""SELECT {', '.join(select_parts)}
+              FROM {table_name} t
+              JOIN sheets s ON t.sheet_id = s.id
+              WHERE s.project_id = ?"""
 
     try:
         rows = conn.execute(sql, (project_id,)).fetchall()
@@ -234,6 +315,14 @@ def _scan_table(
         if not tag:
             continue
         disc = discipline_override or r.get("discipline", "Unknown")
+
+        # Build attributes dict from captured columns
+        attrs = {}
+        for c in attr_cols:
+            val = r.get(c)
+            if val is not None:
+                attrs[c] = val
+
         tag_map.setdefault(tag, []).append({
             "discipline": disc,
             "sheet_id": r.get("sheet_id"),
@@ -243,7 +332,7 @@ def _scan_table(
             "source_table": table_name,
             "source_id": r.get("id"),
             "confidence": 1.0,
-            "attrs": {},
+            "attrs": attrs,
         })
 
 
@@ -560,6 +649,7 @@ def reconcile_project(project_id: int, dry_run: bool = False) -> ReconcileResult
         conn.commit()
 
     # Step 3: Create equipment instances
+    attr_updates = []  # collect attribute updates for batch processing
     for tag, entries in tag_map.items():
         type_name, category = _infer_type_name(tag, entries)
         type_id = type_cache.get(category)
@@ -590,6 +680,27 @@ def reconcile_project(project_id: int, dry_run: bool = False) -> ReconcileResult
                 source_id=entry.get("source_id"),
             )
             result.appearances += 1
+
+            # Collect attribute updates (handles re-runs where INSERT OR
+            # IGNORE skips existing appearances that lack attributes)
+            attrs = entry.get("attrs", {})
+            if attrs:
+                attr_updates.append((
+                    json.dumps(attrs), instance_id,
+                    entry["discipline"], entry["sheet_id"],
+                ))
+
+    # Step 4b: Batch-update attributes on appearances
+    if attr_updates:
+        with get_db() as conn:
+            conn.executemany(
+                """UPDATE equipment_appearances
+                   SET attributes_on_sheet = ?
+                   WHERE instance_id = ? AND discipline = ? AND sheet_id = ?""",
+                attr_updates,
+            )
+            conn.commit()
+        logger.info("Updated attributes on %d appearances", len(attr_updates))
 
     # Step 5: Build systems
     with get_db(readonly=True) as conn:

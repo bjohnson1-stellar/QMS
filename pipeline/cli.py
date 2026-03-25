@@ -574,7 +574,7 @@ def reconcile(
     # Resolve project
     with get_db(readonly=True) as conn:
         row = conn.execute(
-            "SELECT id, name FROM projects WHERE project_number = ? OR name = ?",
+            "SELECT id, name FROM projects WHERE number = ? OR name = ?",
             (project, project),
         ).fetchone()
         if not row:
@@ -610,3 +610,89 @@ def reconcile(
         typer.echo("Equipment by discipline:")
         for disc, cnt in sorted(stats["by_discipline"].items(), key=lambda x: -x[1]):
             typer.echo(f"  {disc:<25} {cnt:>5}")
+
+
+@app.command()
+def conflicts(
+    project: str = typer.Argument(..., help="Project number or name"),
+    detect: bool = typer.Option(False, "--detect", help="Run conflict detection before reporting"),
+    rfi: bool = typer.Option(False, "--rfi", help="Output RFI-formatted text"),
+    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter: critical, warning, info"),
+    conflict_type: Optional[str] = typer.Option(None, "--type", "-t", help="Filter: attribute, missing_discipline"),
+):
+    """Show equipment conflicts or run conflict detection."""
+    from qms.core import get_db
+    from qms.pipeline.conflict_detector import (
+        detect_conflicts,
+        format_rfi,
+        get_conflict_summary,
+        get_conflicts,
+    )
+
+    # Resolve project
+    with get_db(readonly=True) as conn:
+        row = conn.execute(
+            "SELECT id, name FROM projects WHERE number = ? OR name = ?",
+            (project, project),
+        ).fetchone()
+        if not row:
+            typer.echo(f"Project not found: {project}")
+            raise typer.Exit(1)
+        project_id = row["id"]
+        project_name = row["name"]
+
+    # Run detection if requested
+    if detect:
+        typer.echo(f"Detecting conflicts for: {project_name}")
+        typer.echo("-" * 50)
+        result = detect_conflicts(project_id)
+        typer.echo(f"  Attribute conflicts:    {result.attribute_conflicts}")
+        typer.echo(f"  Missing discipline:     {result.missing_discipline_conflicts}")
+        typer.echo(f"  Total:                  {result.total}")
+        typer.echo(f"  Duration:               {result.duration_ms}ms")
+        if result.cleared:
+            typer.echo(f"  Cleared (prior 'new'):  {result.cleared}")
+        typer.echo()
+
+    # RFI output mode
+    if rfi:
+        items = get_conflicts(project_id, conflict_type=conflict_type,
+                              severity=severity, status="new")
+        typer.echo(format_rfi(items))
+        return
+
+    # Summary mode (default)
+    summary = get_conflict_summary(project_id)
+
+    if summary["total"] == 0:
+        typer.echo(f"No conflicts found for {project_name}.")
+        typer.echo("Run with --detect to scan for conflicts.")
+        return
+
+    typer.echo(f"Conflict Summary: {project_name}")
+    typer.echo("=" * 50)
+    typer.echo(f"  Total conflicts:  {summary['total']}")
+    typer.echo()
+
+    typer.echo("  By Type:")
+    for ctype, cnt in sorted(summary["by_type"].items()):
+        label = ctype.replace("_", " ").title()
+        typer.echo(f"    {label:<25} {cnt:>5}")
+
+    typer.echo()
+    typer.echo("  By Severity:")
+    for sev in ["critical", "warning", "info"]:
+        cnt = summary["by_severity"].get(sev, 0)
+        if cnt:
+            typer.echo(f"    {sev.upper():<25} {cnt:>5}")
+
+    typer.echo()
+    typer.echo("  By Status:")
+    for st, cnt in sorted(summary["by_status"].items()):
+        typer.echo(f"    {st:<25} {cnt:>5}")
+
+    if summary["top_equipment"]:
+        typer.echo()
+        typer.echo("  Top Equipment (most conflicts):")
+        for tag, cnt in summary["top_equipment"]:
+            typer.echo(f"    {tag:<25} {cnt:>5}")
