@@ -11,9 +11,9 @@ See: .paul/PROJECT.md
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
 Phase: 25 (Schedule-First Extraction) — Planning
-Plan: 25-01 created, awaiting approval
+Plan: 25-02 created, awaiting approval
 Status: PLAN created, ready for APPLY
-Last activity: 2026-03-26 — Created .paul/phases/25-schedule-first-extraction/25-01-PLAN.md
+Last activity: 2026-03-26 — Created .paul/phases/25-schedule-first-extraction/25-02-PLAN.md
 
 Progress:
 - v0.4 Equipment-Centric Platform: [████████░░] 80%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ○        ○     [Plan 25-01 created, awaiting approval]
+  ✓        ○        ○     [Plan 25-02 created, awaiting approval]
 ```
 
 Note: Phases 22-01, 23-01, 24-01 applied but UNIFY not yet run. Will batch-close after 25-01.
@@ -43,7 +43,8 @@ Note: Phases 22-01, 23-01, 24-01 applied but UNIFY not yet run. Will batch-close
 | 22-01 | Applied (pending UNIFY) | Equipment web UI — dashboard + detail page with tabs (6 routes, 4 API endpoints) | 2026-03-26 |
 | 23-01 | Applied (pending UNIFY) | Tag parser, dedup 124 reversed duplicates, grouped dashboard view | 2026-03-26 |
 | 24-01 | Applied (pending UNIFY) | System type taxonomy, consolidation engine, system dashboard view | 2026-03-26 |
-| 25-01 | Planning | Extraction order engine, Haiku schedule extractor, context builder | — |
+| 25-01 | Applied (pending UNIFY) | Extraction order engine, schedule extractor data layer, context builder | 2026-03-26 |
+| 25-02 | Planning | Extraction harness + Vital first batch (5 schedule sheets) | — |
 
 ### v0.3 Quality Manual Platform
 
@@ -157,9 +158,9 @@ Branch: main (uncommitted: Phase 22 equipment web UI files)
 ## Session Continuity
 
 Last session: 2026-03-26
-Stopped at: Plan 25-01 created
-Next action: Review and approve plan, then run /paul:apply .paul/phases/25-schedule-first-extraction/25-01-PLAN.md
-Resume file: .paul/phases/25-schedule-first-extraction/25-01-PLAN.md
+Stopped at: Plan 25-02 created
+Next action: Review and approve plan, then run /paul:apply .paul/phases/25-schedule-first-extraction/25-02-PLAN.md
+Resume file: .paul/phases/25-schedule-first-extraction/25-02-PLAN.md
 
 ---
 *STATE.md — Updated after every significant action*
