@@ -77,11 +77,11 @@
           "tags": ["equipment", "systems", "taxonomy", "v0.4"]
         },
         {
-          "title": "v0.4 Phase 25 — Multi-Pass Informed Extraction",
-          "desc": "Three-pass extraction pipeline: Pass 1 Sonnet (blind, current), Pass 2 Haiku (informed search with equipment registry context), Pass 3 Sonnet (conflict-driven verification on ~20-30% of sheets). Context builder for per-sheet equipment prompts. ~1.4x cost for 5x cross-discipline data.",
+          "title": "v0.4 Phase 25 — Schedule-First Multi-Pass Extraction",
+          "desc": "Schedule-first extraction strategy: (1a) Haiku extracts equipment schedules to build authoritative manifest, (1b) Haiku extracts legends/abbreviations, (2) Sonnet extracts floor plans/P&IDs with schedule-built checklist as context, (3) Haiku cross-discipline informed search, (4) Sonnet conflict verification on ~20-30%. Prevents hallucination by validating plan findings against schedule data.",
           "module": "pipeline",
           "priority": "high",
-          "tags": ["equipment", "extraction", "multi-pass", "model-routing", "v0.4"]
+          "tags": ["equipment", "extraction", "multi-pass", "schedule-first", "model-routing", "v0.4"]
         },
         {
           "title": "v0.4 Phase 26 — R0001 Legend Extraction & Type Refinement",
@@ -127,6 +127,14 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "v0.4 Phase 24 — System Model & Consolidation",
+          "desc": "System type taxonomy (15 types), equipment_system_members junction table, system builder consolidating 13 RS-* circuits into 5 real refrigeration systems, 5 plumbing systems, 3 mechanical systems. System assignment 23% to 82.8%. Dashboard System|Grouped|All three-mode toggle.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["equipment", "systems", "taxonomy", "consolidation", "v0.4"],
+          "completed": "2026-03-26"
+        },
         {
           "title": "v0.4 Phase 23 — Equipment Hierarchy & Tag Dedup",
           "desc": "Tag parser for parent-child hierarchy, reversed tag normalization, dedup 124 duplicate pairs (589→465), sub-component type reclassification (CV→Control Valve, etc.), grouped dashboard view toggle (Grouped|All) with expandable parent rows.",
