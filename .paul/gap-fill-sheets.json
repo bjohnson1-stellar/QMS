@@ -1,0 +1,128 @@
+[
+  {
+    "id": 1556,
+    "drawing_number": "R6001",
+    "discipline": "Refrigeration",
+    "file_path": "D:/qms/data/projects/07645-Vital/Refrigeration/R6001-REFRIGERATION-SCHEDULES-Rev.F.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1557,
+    "drawing_number": "R6002",
+    "discipline": "Refrigeration",
+    "file_path": "D:/qms/data/projects/07645-Vital/Refrigeration/R6002-REFRIGERATION-SCHEDULES-Rev.A.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1714,
+    "drawing_number": "U6001",
+    "discipline": "Utility",
+    "file_path": "D:/qms/data/projects/07645-Vital/Utility/U6001-UTILITIES-SCHEDULES-Rev.E.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 2706,
+    "drawing_number": "U6002-UTILITIES",
+    "discipline": "Utility",
+    "file_path": "D:/qms/data/projects/07645-Vital/Utility/U6002-UTILITIES-SCHEDULES-Rev.1.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1505,
+    "drawing_number": "M6003",
+    "discipline": "Mechanical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Mechanical/M6003-MECHANICAL-SCHEDULES-Rev.C.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1507,
+    "drawing_number": "M6004",
+    "discipline": "Mechanical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Mechanical/M6004-MECHANICAL-VENTILATION-CALCULATIONS-Rev.C.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1381,
+    "drawing_number": "E6001",
+    "discipline": "Electrical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Electrical/E6001-ELECTRICAL-CIRCUIT-SCHEDULE-Rev.D.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1383,
+    "drawing_number": "E6002",
+    "discipline": "Electrical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Electrical/E6002-ELECTRICAL-CIRCUIT-SCHEDULE-Rev.D.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1385,
+    "drawing_number": "E6101",
+    "discipline": "Electrical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Electrical/E6101-ELECTRICAL-SINGLE-LINE-DIAGRAM---SERVICE-1-Rev.E.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1387,
+    "drawing_number": "E6102",
+    "discipline": "Electrical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Electrical/E6102-PANEL-SCHEDULES---SERVICE-1-Rev.E.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1389,
+    "drawing_number": "E6103",
+    "discipline": "Electrical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Electrical/E6103-PANEL-SCHEDULES---SERVICE-1-Rev.E.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1391,
+    "drawing_number": "E6201",
+    "discipline": "Electrical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Electrical/E6201-ELECTRICAL-SINGLE-LINE-DIAGRAM---SERVICE-2-Rev.E.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1393,
+    "drawing_number": "E6202",
+    "discipline": "Electrical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Electrical/E6202-PANEL-SCHEDULES---SERVICE-2-Rev.E.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1395,
+    "drawing_number": "E6203",
+    "discipline": "Electrical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Electrical/E6203-PANEL-SCHEDULES---SERVICE-2-Rev.E.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1397,
+    "drawing_number": "E6301",
+    "discipline": "Electrical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Electrical/E6301-ELECTRICAL-SINGLE-LINE-DIAGRAM---SERVICE-3-Rev.E.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1399,
+    "drawing_number": "E6302",
+    "discipline": "Electrical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Electrical/E6302-PANEL-SCHEDULES---SERVICE-3-Rev.E.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1401,
+    "drawing_number": "E6303",
+    "discipline": "Electrical",
+    "file_path": "D:/qms/data/projects/07645-Vital/Electrical/E6303-PANEL-SCHEDULES---SERVICE-3-Rev.E.pdf",
+    "docling_entries": 0
+  },
+  {
+    "id": 1521,
+    "drawing_number": "P6001",
+    "discipline": "Plumbing",
+    "file_path": "D:/qms/data/projects/07645-Vital/Plumbing/P6001-PLUMBING-SCHEDULES-Rev.E.pdf",
+    "docling_entries": 2
+  }
+]

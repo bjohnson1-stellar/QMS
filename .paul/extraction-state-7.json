@@ -1,0 +1,183 @@
+{
+  "project_id": 7,
+  "phase": "schedules",
+  "batch_size": 50,
+  "skip_disciplines": [
+    "Architectural",
+    "Civil",
+    "Fire-Protection",
+    "General",
+    "Structural"
+  ],
+  "started_at": "2026-03-26T18:39:43.973181+00:00",
+  "sheets_completed": 4,
+  "sheets_total": 59,
+  "sheets_skipped": 37,
+  "sheets_pending": 18,
+  "batch_completed": 21,
+  "processed_sheet_ids": [
+    1381,
+    1383,
+    1385,
+    1387,
+    1389,
+    1391,
+    1393,
+    1395,
+    1397,
+    1399,
+    1401,
+    1501,
+    1503,
+    1505,
+    1507,
+    1521,
+    1556,
+    1557,
+    1714,
+    1715,
+    1717,
+    2706
+  ],
+  "errors": [
+    {
+      "sheet_id": 1717,
+      "drawing_number": "U6003",
+      "error": "'int' object has no attribute 'strip'",
+      "timestamp": "2026-03-26T18:41:33.238225+00:00",
+      "attempt": 1,
+      "action": "retry"
+    },
+    {
+      "sheet_id": 1717,
+      "drawing_number": "U6003",
+      "error": "'int' object has no attribute 'strip'",
+      "timestamp": "2026-03-26T18:41:38.776958+00:00",
+      "attempt": 2,
+      "action": "skipped"
+    }
+  ],
+  "sheet_times": [
+    {
+      "sheet_id": 1557,
+      "elapsed_seconds": 12.2,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1714,
+      "elapsed_seconds": 29.6,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1715,
+      "elapsed_seconds": 12.5,
+      "entries_stored": 35,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 2706,
+      "elapsed_seconds": 31.0,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1501,
+      "elapsed_seconds": 33.8,
+      "entries_stored": 15,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1503,
+      "elapsed_seconds": 11.8,
+      "entries_stored": 23,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1505,
+      "elapsed_seconds": 2.2,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1507,
+      "elapsed_seconds": 44.8,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1381,
+      "elapsed_seconds": 185.0,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1383,
+      "elapsed_seconds": 40.0,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1385,
+      "elapsed_seconds": 2.0,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1387,
+      "elapsed_seconds": 11.9,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1389,
+      "elapsed_seconds": 10.7,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1391,
+      "elapsed_seconds": 2.1,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1393,
+      "elapsed_seconds": 22.1,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1395,
+      "elapsed_seconds": 21.2,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1397,
+      "elapsed_seconds": 3.2,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1399,
+      "elapsed_seconds": 2.5,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1401,
+      "elapsed_seconds": 6.5,
+      "entries_stored": 0,
+      "model_used": "docling"
+    },
+    {
+      "sheet_id": 1521,
+      "elapsed_seconds": 7.8,
+      "entries_stored": 2,
+      "model_used": "docling"
+    }
+  ],
+  "saved_at": "2026-03-26T18:48:26.562680+00:00"
+}

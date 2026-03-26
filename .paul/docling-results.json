@@ -1,0 +1,203 @@
+[
+  {
+    "sheet_id": 1556,
+    "drawing_number": "R6001",
+    "discipline": "Refrigeration",
+    "tables_found": 2,
+    "entries_stored": 0,
+    "elapsed": 18.1,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1557,
+    "drawing_number": "R6002",
+    "discipline": "Refrigeration",
+    "tables_found": 1,
+    "entries_stored": 0,
+    "elapsed": 12.2,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1714,
+    "drawing_number": "U6001",
+    "discipline": "Utility",
+    "tables_found": 1,
+    "entries_stored": 0,
+    "elapsed": 29.6,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1715,
+    "drawing_number": "U6002",
+    "discipline": "Utility",
+    "tables_found": 9,
+    "entries_stored": 35,
+    "elapsed": 12.4,
+    "needs_gap_fill": false
+  },
+  {
+    "sheet_id": 2706,
+    "drawing_number": "U6002-UTILITIES",
+    "discipline": "Utility",
+    "tables_found": 1,
+    "entries_stored": 0,
+    "elapsed": 30.9,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1717,
+    "drawing_number": "U6003",
+    "discipline": "Utility",
+    "error": "'int' object has no attribute 'strip'"
+  },
+  {
+    "sheet_id": 1717,
+    "drawing_number": "U6003",
+    "discipline": "Utility",
+    "error": "'int' object has no attribute 'strip'"
+  },
+  {
+    "sheet_id": 1501,
+    "drawing_number": "M6001",
+    "discipline": "Mechanical",
+    "tables_found": 6,
+    "entries_stored": 15,
+    "elapsed": 33.8,
+    "needs_gap_fill": false
+  },
+  {
+    "sheet_id": 1503,
+    "drawing_number": "M6002",
+    "discipline": "Mechanical",
+    "tables_found": 3,
+    "entries_stored": 23,
+    "elapsed": 11.7,
+    "needs_gap_fill": false
+  },
+  {
+    "sheet_id": 1505,
+    "drawing_number": "M6003",
+    "discipline": "Mechanical",
+    "tables_found": 0,
+    "entries_stored": 0,
+    "elapsed": 2.2,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1507,
+    "drawing_number": "M6004",
+    "discipline": "Mechanical",
+    "tables_found": 7,
+    "entries_stored": 0,
+    "elapsed": 44.8,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1381,
+    "drawing_number": "E6001",
+    "discipline": "Electrical",
+    "tables_found": 1,
+    "entries_stored": 0,
+    "elapsed": 185.0,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1383,
+    "drawing_number": "E6002",
+    "discipline": "Electrical",
+    "tables_found": 1,
+    "entries_stored": 0,
+    "elapsed": 40.0,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1385,
+    "drawing_number": "E6101",
+    "discipline": "Electrical",
+    "tables_found": 0,
+    "entries_stored": 0,
+    "elapsed": 2.0,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1387,
+    "drawing_number": "E6102",
+    "discipline": "Electrical",
+    "tables_found": 1,
+    "entries_stored": 0,
+    "elapsed": 11.9,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1389,
+    "drawing_number": "E6103",
+    "discipline": "Electrical",
+    "tables_found": 2,
+    "entries_stored": 0,
+    "elapsed": 10.7,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1391,
+    "drawing_number": "E6201",
+    "discipline": "Electrical",
+    "tables_found": 0,
+    "entries_stored": 0,
+    "elapsed": 2.1,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1393,
+    "drawing_number": "E6202",
+    "discipline": "Electrical",
+    "tables_found": 4,
+    "entries_stored": 0,
+    "elapsed": 22.1,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1395,
+    "drawing_number": "E6203",
+    "discipline": "Electrical",
+    "tables_found": 6,
+    "entries_stored": 0,
+    "elapsed": 21.2,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1397,
+    "drawing_number": "E6301",
+    "discipline": "Electrical",
+    "tables_found": 1,
+    "entries_stored": 0,
+    "elapsed": 3.2,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1399,
+    "drawing_number": "E6302",
+    "discipline": "Electrical",
+    "tables_found": 0,
+    "entries_stored": 0,
+    "elapsed": 2.5,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1401,
+    "drawing_number": "E6303",
+    "discipline": "Electrical",
+    "tables_found": 1,
+    "entries_stored": 0,
+    "elapsed": 6.4,
+    "needs_gap_fill": true
+  },
+  {
+    "sheet_id": 1521,
+    "drawing_number": "P6001",
+    "discipline": "Plumbing",
+    "tables_found": 3,
+    "entries_stored": 2,
+    "elapsed": 7.8,
+    "needs_gap_fill": true
+  }
+]
