@@ -152,6 +152,7 @@ Branch: main (uncommitted: Phase 22 equipment web UI files)
 | Production Waitress template caching | New templates require server restart | Configure auto_reload or restart after deploys |
 | Parent program names on M4 cards depend on programsCache | Minor: empty if M3 not visited first | Will resolve naturally on use; could prefetch in init |
 | R0001 legend not extracted | Instrument abbreviations not from authoritative source | Phase 23-02 planned for legend extraction |
+| Drawing viewer in web UI | Side-by-side PDF + extracted data for human verification | Phase 26 — pdf.js viewer, page jump from extraction data |
 | Phase 22-01 UNIFY pending | Applied but not formally closed | Close after 23-01 or in next session |
 
 ### Blockers/Concerns
