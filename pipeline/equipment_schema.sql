@@ -72,6 +72,49 @@ CREATE TABLE IF NOT EXISTS equipment_systems (
     UNIQUE(project_id, system_tag)
 );
 
+-- System type taxonomy (standardized categories across disciplines)
+CREATE TABLE IF NOT EXISTS equipment_system_types (
+    id INTEGER PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    discipline TEXT NOT NULL,
+    typical_depth INTEGER DEFAULT 2,
+    description TEXT
+);
+
+-- Multi-system membership (secondary assignments for shared equipment)
+CREATE TABLE IF NOT EXISTS equipment_system_members (
+    id INTEGER PRIMARY KEY,
+    instance_id INTEGER NOT NULL REFERENCES equipment_instances(id),
+    system_id INTEGER NOT NULL REFERENCES equipment_systems(id),
+    role TEXT DEFAULT 'member',
+    notes TEXT,
+    UNIQUE(instance_id, system_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_system_members_instance
+    ON equipment_system_members(instance_id);
+CREATE INDEX IF NOT EXISTS idx_system_members_system
+    ON equipment_system_members(system_id);
+
+-- Seed system type taxonomy
+INSERT OR IGNORE INTO equipment_system_types (code, name, discipline, typical_depth, description) VALUES
+    ('REFRIG', 'Refrigeration System', 'Mechanical', 3, 'Industrial refrigeration — compressors, condensers, evaporators'),
+    ('HVAC-AIR', 'Air Handling System', 'Mechanical', 2, 'AHU with downstream terminal units (VAV, FPB)'),
+    ('HVAC-EXHAUST', 'Exhaust System', 'Mechanical', 1, 'Exhaust fans and gravity ventilators'),
+    ('HVAC-VENTILATION', 'Ventilation System', 'Mechanical', 1, 'HVLS fans, ERVs, louvers'),
+    ('HYDRO-CHW', 'Chilled Water Plant', 'Mechanical', 2, 'Chillers, chilled water pumps, cooling towers'),
+    ('HYDRO-HW', 'Hot Water Plant', 'Mechanical', 2, 'Boilers, hot water pumps, expansion tanks'),
+    ('PLUMB-DCW', 'Domestic Cold Water', 'Plumbing', 1, 'Service entrance, backflow, booster, softener'),
+    ('PLUMB-DHW', 'Domestic Hot Water', 'Plumbing', 1, 'Water heaters, storage tanks, recirc pumps'),
+    ('PLUMB-SAN', 'Sanitary Waste & Vent', 'Plumbing', 1, 'Floor drains, cleanouts, hub drains'),
+    ('PLUMB-FIX', 'Plumbing Fixtures', 'Plumbing', 1, 'Sinks, water closets, urinals, fountains'),
+    ('COMP-AIR', 'Compressed Air', 'Mechanical', 1, 'Air compressors, dryers, receivers'),
+    ('ELEC-NORMAL', 'Normal Power Distribution', 'Electrical', 4, 'Utility-fed switchboards, panels, transformers'),
+    ('ELEC-EMERG', 'Emergency Power', 'Electrical', 4, 'Generator-backed ATS, emergency panels'),
+    ('FIRE-SPRINK', 'Fire Sprinkler', 'Fire Protection', 2, 'Sprinkler risers, zones, devices'),
+    ('CONTROLS', 'Building Automation', 'Controls', 2, 'BAS controllers, sensors, actuators');
+
 -- Cross-discipline appearances (where each equipment shows up on drawings)
 CREATE TABLE IF NOT EXISTS equipment_appearances (
     id INTEGER PRIMARY KEY,

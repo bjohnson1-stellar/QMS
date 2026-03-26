@@ -121,9 +121,7 @@ class TrayApp:
                     )
                 except Exception:
                     self._notify("Stop failed", f"Could not kill PID {pid}.")
-                    return
-            else:
-                return
+            # Always reset external state (process may already be dead)
         else:
             return
         self._external = False

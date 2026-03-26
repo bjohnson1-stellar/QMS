@@ -64,6 +64,7 @@
         </select>
         <input type="text" id="filter-search" placeholder="Search by tag..." onkeyup="debounceSearch()" style="padding:6px 10px;border:1px solid var(--color-border,#d0d7de);border-radius:4px;min-width:180px;">
         <div style="margin-left:auto;display:flex;gap:0;">
+            <button id="viewSystem" class="toggle-btn" onclick="setViewMode('system')">System</button>
             <button id="viewGrouped" class="toggle-btn active" onclick="setViewMode('grouped')">Grouped</button>
             <button id="viewFlat" class="toggle-btn" onclick="setViewMode('flat')">All</button>
         </div>
@@ -106,6 +107,8 @@ let equipmentData = [];
 let searchTimer = null;
 let viewMode = 'grouped';
 let expandedGroups = new Set();
+let expandedSystems = new Set();
+let systemsData = null;
 
 const STAGE_COLORS = {
     design: '#0969da', submitted: '#8250df', approved: '#1a7f37',
@@ -123,6 +126,7 @@ function onProjectChange(projectId) {
         return;
     }
     currentProject = parseInt(projectId);
+    systemsData = null;
     document.getElementById('empty-state').style.display = 'none';
     document.getElementById('stats-grid').style.display = '';
     document.getElementById('conflict-card').style.display = '';
@@ -172,7 +176,7 @@ function renderConflictSummary(conflicts) {
     var typeLabels = {attribute: 'Attribute Mismatch', missing_discipline: 'Missing Discipline', spec_violation: 'Spec Violation'};
     var byType = conflicts.by_type || {};
     for (var t in byType) {
-        html += '<div style="padding:10px 14px;border-radius:6px;background:var(--color-bg-subtle,#f6f8fa);">' +
+        html += '<div style="padding:10px 14px;border-radius:6px;background:var(--color-surface-alt,#f6f8fa);">' +
             '<div style="font-size:1.3rem;font-weight:700;">' + byType[t] + '</div>' +
             '<div style="font-size:0.8rem;color:var(--color-text-muted,#656d76);">' + esc(typeLabels[t] || t) + '</div></div>';
     }
@@ -180,7 +184,7 @@ function renderConflictSummary(conflicts) {
     var bySev = conflicts.by_severity || {};
     for (var s in bySev) {
         if (bySev[s]) {
-            html += '<div style="padding:10px 14px;border-radius:6px;background:var(--color-bg-subtle,#f6f8fa);border-left:3px solid ' + (sevColors[s] || '#6e7681') + ';">' +
+            html += '<div style="padding:10px 14px;border-radius:6px;background:var(--color-surface-alt,#f6f8fa);border-left:3px solid ' + (sevColors[s] || '#6e7681') + ';">' +
                 '<div style="font-size:1.3rem;font-weight:700;color:' + (sevColors[s] || 'inherit') + ';">' + bySev[s] + '</div>' +
                 '<div style="font-size:0.8rem;color:var(--color-text-muted,#656d76);">' + esc(s.charAt(0).toUpperCase() + s.slice(1)) + '</div></div>';
         }
@@ -234,11 +238,19 @@ function setViewMode(mode) {
     viewMode = mode;
     document.getElementById('viewFlat').classList.toggle('active', mode === 'flat');
     document.getElementById('viewGrouped').classList.toggle('active', mode === 'grouped');
+    document.getElementById('viewSystem').classList.toggle('active', mode === 'system');
+    if (mode === 'system' && !systemsData && currentProject) {
+        fetch('/equipment/api/systems/' + currentProject).then(function(r) { return r.json(); })
+            .then(function(data) { systemsData = data; applyFilters(); });
+        return;
+    }
     applyFilters();
 }
 
 function renderTable(data) {
-    if (viewMode === 'grouped') {
+    if (viewMode === 'system' && systemsData) {
+        renderSystem(data, systemsData);
+    } else if (viewMode === 'grouped') {
         renderGrouped(data);
     } else {
         renderFlat(data);
@@ -319,7 +331,7 @@ function renderGrouped(data) {
         if (hasChildren && isExpanded) {
             children.forEach(function(c) {
                 var cStage = STAGE_COLORS[c.lifecycle_stage] || '#6e7681';
-                html += '<tr style="cursor:pointer;background:var(--color-bg-subtle,#f6f8fa);" onclick="goDetail(' + currentProject + ',\'' + esc(c.tag) + '\')">' +
+                html += '<tr style="cursor:pointer;background:var(--color-surface-alt,#f6f8fa);" onclick="goDetail(' + currentProject + ',\'' + esc(c.tag) + '\')">' +
                     '<td style="padding-left:36px;"><a href="/equipment/' + currentProject + '/' + encodeURIComponent(c.tag) + '" style="color:var(--color-primary);text-decoration:none;font-size:0.9em;" onclick="event.stopPropagation();">' + esc(c.tag) + '</a></td>' +
                     '<td style="color:var(--color-text-muted,#656d76);font-size:0.9em;">' + esc(c.component_type || c.type_name || '-') + '</td>' +
                     '<td style="font-size:0.9em;">' + esc(c.discipline_primary || '-') + '</td>' +
@@ -341,6 +353,153 @@ function toggleGroup(tag) {
         expandedGroups.add(tag);
     }
     applyFilters();
+}
+
+function toggleSystem(sysTag) {
+    if (expandedSystems.has(sysTag)) {
+        expandedSystems.delete(sysTag);
+    } else {
+        expandedSystems.add(sysTag);
+    }
+    applyFilters();
+}
+
+var DISC_COLORS = {
+    Refrigeration: '#0969da', Mechanical: '#8250df', Electrical: '#bf8700',
+    Plumbing: '#1a7f37', 'Fire Protection': '#cf222e', Controls: '#6e7681'
+};
+
+function renderSystem(data, systems) {
+    var tbody = document.getElementById('equipment-body');
+
+    // Group equipment by system_tag (already in list data from LEFT JOIN)
+    var eqBySystem = {};
+    data.forEach(function(e) {
+        var key = e.system_tag || '_unassigned';
+        if (!eqBySystem[key]) eqBySystem[key] = [];
+        eqBySystem[key].push(e);
+    });
+
+    // Filter systems by current filters
+    var disc = document.getElementById('filter-discipline').value;
+    var search = document.getElementById('filter-search').value.toLowerCase();
+    var stage = document.getElementById('filter-stage').value;
+
+    var totalShown = 0;
+    var html = '';
+
+    // Render each root system
+    systems.forEach(function(sys) {
+        var sysEquip = eqBySystem[sys.system_tag] || [];
+        // Include equipment from child systems
+        (sys.child_systems || []).forEach(function(child) {
+            var childEquip = eqBySystem[child.system_tag] || [];
+            sysEquip = sysEquip.concat(childEquip);
+        });
+
+        // Apply filters to this system's equipment
+        var filtered = sysEquip.filter(function(e) {
+            if (disc && e.discipline_primary !== disc) return false;
+            if (stage && e.lifecycle_stage !== stage) return false;
+            if (search && (e.tag || '').toLowerCase().indexOf(search) === -1) return false;
+            return true;
+        });
+
+        if (filtered.length === 0 && (search || disc || stage)) return; // Hide empty systems when any filter active
+
+        totalShown += filtered.length;
+        var isExpanded = expandedSystems.has(sys.system_tag);
+        var discColor = DISC_COLORS[sys.discipline] || '#6e7681';
+        var chevron = '<span style="display:inline-block;width:18px;font-size:0.75rem;color:var(--color-text-muted,#656d76);cursor:pointer;transition:transform 0.15s;transform:rotate(' + (isExpanded ? '90' : '0') + 'deg);">&#9654;</span>';
+
+        html += '<tr style="cursor:pointer;background:var(--color-surface-alt,#f6f8fa);border-left:3px solid ' + discColor + ';" onclick="toggleSystem(\'' + esc(sys.system_tag) + '\')">' +
+            '<td colspan="7" style="font-weight:700;font-size:0.95rem;padding:10px 12px;">' + chevron +
+            ' ' + esc(sys.system_name) +
+            ' <span style="padding:2px 8px;border-radius:10px;font-size:0.72rem;background:' + discColor + ';color:#fff;margin-left:8px;font-weight:500;">' + esc(sys.discipline || sys.system_category) + '</span>' +
+            ' <span style="padding:2px 7px;border-radius:10px;font-size:0.72rem;background:var(--color-primary-subtle,#ddf4ff);color:var(--color-primary);margin-left:4px;font-weight:500;">' + filtered.length + ' equipment</span>' +
+            (sys.child_systems && sys.child_systems.length ? ' <span style="font-size:0.75rem;color:var(--color-text-muted,#656d76);font-weight:400;margin-left:6px;">' + sys.child_systems.length + ' circuits</span>' : '') +
+            '</td></tr>';
+
+        if (isExpanded) {
+            // Separate into primary and children
+            var primary = filtered.filter(function(e) { return !e.parent_tag; });
+            var children = {};
+            filtered.forEach(function(e) {
+                if (e.parent_tag) {
+                    if (!children[e.parent_tag]) children[e.parent_tag] = [];
+                    children[e.parent_tag].push(e);
+                }
+            });
+
+            primary.forEach(function(e) {
+                var stageColor = STAGE_COLORS[e.lifecycle_stage] || '#6e7681';
+                var kids = children[e.tag] || [];
+                var hasKids = kids.length > 0;
+                var isGroupExp = expandedGroups.has(e.tag);
+                var eChev = hasKids ? '<span style="display:inline-block;width:14px;font-size:0.65rem;color:var(--color-text-muted);cursor:pointer;transform:rotate(' + (isGroupExp ? '90' : '0') + 'deg);" onclick="event.stopPropagation();toggleGroup(\'' + esc(e.tag) + '\')">&#9654;</span>' : '<span style="width:14px;display:inline-block;"></span>';
+                var badge = hasKids ? ' <span style="padding:1px 5px;border-radius:8px;font-size:0.68rem;background:var(--color-primary-subtle,#ddf4ff);color:var(--color-primary);">' + kids.length + '</span>' : '';
+
+                html += '<tr style="cursor:pointer;padding-left:24px;" onclick="goDetail(' + currentProject + ',\'' + esc(e.tag) + '\')">' +
+                    '<td style="padding-left:28px;">' + eChev + '<a href="/equipment/' + currentProject + '/' + encodeURIComponent(e.tag) + '" style="color:var(--color-primary);text-decoration:none;font-weight:600;" onclick="event.stopPropagation();">' + esc(e.tag) + '</a>' + badge + '</td>' +
+                    '<td>' + esc(e.type_name || '-') + '</td>' +
+                    '<td>' + esc(e.discipline_primary || '-') + '</td>' +
+                    '<td>' + esc(e.system_tag || '-') + '</td>' +
+                    '<td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.78rem;font-weight:500;color:#fff;background:' + stageColor + ';">' + esc(e.lifecycle_stage || '-') + '</span></td>' +
+                    '<td>' + esc(e.hp != null ? String(e.hp) : '-') + '</td>' +
+                    '<td>' + esc(e.voltage || '-') + '</td></tr>';
+
+                if (hasKids && isGroupExp) {
+                    kids.forEach(function(c) {
+                        var cStage = STAGE_COLORS[c.lifecycle_stage] || '#6e7681';
+                        html += '<tr style="cursor:pointer;background:var(--color-surface-alt,#f6f8fa);" onclick="goDetail(' + currentProject + ',\'' + esc(c.tag) + '\')">' +
+                            '<td style="padding-left:52px;"><a href="/equipment/' + currentProject + '/' + encodeURIComponent(c.tag) + '" style="color:var(--color-primary);text-decoration:none;font-size:0.88em;" onclick="event.stopPropagation();">' + esc(c.tag) + '</a></td>' +
+                            '<td style="color:var(--color-text-muted);font-size:0.88em;">' + esc(c.component_type || c.type_name || '-') + '</td>' +
+                            '<td style="font-size:0.88em;">' + esc(c.discipline_primary || '-') + '</td>' +
+                            '<td style="font-size:0.88em;">' + esc(c.system_tag || '-') + '</td>' +
+                            '<td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:500;color:#fff;background:' + cStage + ';">' + esc(c.lifecycle_stage || '-') + '</span></td>' +
+                            '<td style="font-size:0.88em;">' + esc(c.hp != null ? String(c.hp) : '-') + '</td>' +
+                            '<td style="font-size:0.88em;">' + esc(c.voltage || '-') + '</td></tr>';
+                    });
+                }
+            });
+        }
+    });
+
+    // Unassigned section
+    var unassignedEquip = eqBySystem['_unassigned'] || [];
+    if (unassignedEquip.length > 0) {
+        var uFiltered = unassignedEquip.filter(function(e) {
+            if (disc && e.discipline_primary !== disc) return false;
+            if (stage && e.lifecycle_stage !== stage) return false;
+            if (search && (e.tag || '').toLowerCase().indexOf(search) === -1) return false;
+            return true;
+        });
+        if (uFiltered.length > 0) {
+            totalShown += uFiltered.length;
+            var uExp = expandedSystems.has('_unassigned');
+            var uChev = '<span style="display:inline-block;width:18px;font-size:0.75rem;color:var(--color-text-muted);cursor:pointer;transform:rotate(' + (uExp ? '90' : '0') + 'deg);">&#9654;</span>';
+            html += '<tr style="cursor:pointer;background:var(--color-surface-alt,#f6f8fa);border-left:3px solid #6e7681;" onclick="toggleSystem(\'_unassigned\')">' +
+                '<td colspan="7" style="font-weight:600;color:var(--color-text-muted);padding:10px 12px;">' + uChev + ' Unassigned' +
+                ' <span style="padding:2px 7px;border-radius:10px;font-size:0.72rem;background:#eee;color:#656d76;margin-left:8px;">' + uFiltered.length + ' equipment</span></td></tr>';
+            if (uExp) {
+                uFiltered.forEach(function(e) {
+                    var stageColor = STAGE_COLORS[e.lifecycle_stage] || '#6e7681';
+                    html += '<tr style="cursor:pointer;" onclick="goDetail(' + currentProject + ',\'' + esc(e.tag) + '\')">' +
+                        '<td style="padding-left:28px;"><a href="/equipment/' + currentProject + '/' + encodeURIComponent(e.tag) + '" style="color:var(--color-primary);text-decoration:none;" onclick="event.stopPropagation();">' + esc(e.tag) + '</a></td>' +
+                        '<td>' + esc(e.type_name || '-') + '</td><td>' + esc(e.discipline_primary || '-') + '</td><td>-</td>' +
+                        '<td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.78rem;font-weight:500;color:#fff;background:' + stageColor + ';">' + esc(e.lifecycle_stage || '-') + '</span></td>' +
+                        '<td>' + esc(e.hp != null ? String(e.hp) : '-') + '</td><td>' + esc(e.voltage || '-') + '</td></tr>';
+                });
+            }
+        }
+    }
+
+    document.getElementById('result-count').textContent = systems.length + ' systems, ' + totalShown + ' equipment';
+    if (!html) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No systems match filters</td></tr>';
+        return;
+    }
+    tbody.innerHTML = html;
 }
 
 function goDetail(projectId, tag) {

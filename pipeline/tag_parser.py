@@ -174,6 +174,15 @@ def run_migration(conn=None):
             """CREATE INDEX IF NOT EXISTS idx_equipment_instances_parent
                ON equipment_instances(project_id, parent_tag)"""
         )
+
+        # Phase 24: system_type_id on equipment_systems
+        if not _column_exists(conn, "equipment_systems", "system_type_id"):
+            conn.execute(
+                "ALTER TABLE equipment_systems ADD COLUMN system_type_id "
+                "INTEGER REFERENCES equipment_system_types(id)"
+            )
+            logger.info("Added system_type_id column to equipment_systems")
+
         conn.commit()
     finally:
         if close:

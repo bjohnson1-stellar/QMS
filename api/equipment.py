@@ -111,6 +111,45 @@ def api_list(project_id):
     return jsonify([dict(r) for r in rows])
 
 
+@bp.route("/api/systems/<int:project_id>")
+def api_systems(project_id):
+    from qms.core import get_db
+
+    with get_db(readonly=True) as conn:
+        # Get all systems with type info and equipment counts
+        systems = conn.execute(
+            """SELECT es.id, es.system_tag, es.system_name,
+                      es.system_category, es.discipline,
+                      es.parent_system_id,
+                      est.code as type_code, est.name as type_name,
+                      (SELECT COUNT(*) FROM equipment_instances ei
+                       WHERE ei.system_id = es.id AND ei.project_id = es.project_id
+                      ) as equipment_count
+               FROM equipment_systems es
+               LEFT JOIN equipment_system_types est ON es.system_type_id = est.id
+               WHERE es.project_id = ?
+               ORDER BY es.system_category, es.system_tag""",
+            (project_id,),
+        ).fetchall()
+
+    # Build hierarchy: nest children under parents
+    by_id = {s["id"]: dict(s) for s in systems}
+    roots = []
+    for s in systems:
+        s = dict(s)
+        s["child_systems"] = []
+        by_id[s["id"]] = s
+
+    for s in by_id.values():
+        pid = s.get("parent_system_id")
+        if pid and pid in by_id:
+            by_id[pid]["child_systems"].append(s)
+        else:
+            roots.append(s)
+
+    return jsonify(roots)
+
+
 @bp.route("/api/conflicts/<int:project_id>")
 def api_conflicts(project_id):
     from qms.pipeline.conflict_detector import get_conflict_summary
