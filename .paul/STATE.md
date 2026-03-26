@@ -10,13 +10,13 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 25 (Schedule-First Extraction) — In Progress
-Plan: 25-03 APPLY — Tasks 1-4 complete, at checkpoint (Task 5)
-Status: CHECKPOINT — 452 entries extracted, shadow reviewed, ready for human verify
-Last activity: 2026-03-26 — All MEP sheets extracted, Opus shadow review complete
+Phase: 25 (Schedule-First Extraction) — Complete (3/3 plans)
+Plan: 25-03 UNIFY complete
+Status: Phase complete — ready for next phase
+Last activity: 2026-03-26 — Phase 25 closed, 452 entries, shadow reviewed
 
 Progress:
-- v0.4 Equipment-Centric Platform: [████████░░] 80%
+- v0.4 Equipment-Centric Platform: [█████████░] 85%
 - v0.3 Quality Manual Platform: [██████████] 100%
 - v0.2 License Compliance Platform: [██████████] 100%
 - v0.1 Quality Intelligence Platform: [████████░░] 80% (Phase 5 not started)
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ◐        ○     [Plan 25-03 — at human verify checkpoint (Task 5)]
+  ✓        ✓        ✓     [Phase 25 complete — ready for next phase]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -45,7 +45,7 @@ Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
 | 24-01 | Complete | System type taxonomy, consolidation engine, system dashboard view | 2026-03-26 |
 | 25-01 | Complete | Extraction order engine, schedule extractor data layer, context builder | 2026-03-26 |
 | 25-02 | Complete | Extraction harness + Vital first batch (5 schedule sheets, 203 entries) | 2026-03-26 |
-| 25-03 | Planning | Complete Vital schedule extraction (54 remaining sheets) | — |
+| 25-03 | Complete | Complete Vital MEP extraction: 452 entries, 19 sheets, Opus shadow QA | 2026-03-26 |
 
 ### v0.3 Quality Manual Platform
 
@@ -163,18 +163,16 @@ Branch: main (uncommitted: Phase 22 equipment web UI files)
 ## Session Continuity
 
 Last session: 2026-03-26
-Stopped at: Plan 25-03 — Tasks 1-4 complete, at human verify checkpoint
-Next action: Task 5 checkpoint — verify extraction quality, then /paul:unify
-Resume file: .paul/phases/25-schedule-first-extraction/25-03-PLAN.md
+Stopped at: Phase 25 complete — UNIFY closed
+Next action: /paul:plan for next phase (Phase 26 or reconciliation)
+Resume file: .paul/phases/25-schedule-first-extraction/25-03-SUMMARY.md
 Resume notes: |
-  Tasks 1-2: Schema + harness updates, docling_extractor.py created.
-  Task 3: 19 vision agents extracted all MEP sheets. 452 entries across 19 sheets.
-  Task 4: Opus shadow review on M6001, E6102, U6002-rev1.
-    - M6001: Shadow found 60 vs 15 Docling entries — CORRECTED (replaced with shadow data)
-    - E6102: 90% match, no correction needed
-    - U6002-rev1: 95% match, no correction needed
-  Commit: a56e39e
-  Discipline breakdown: Electrical=207, Mechanical=89, Plumbing=25, Refrigeration=43, Utility=88
+  Phase 25 complete (3/3 plans). 452 equipment entries across 19 MEP sheets.
+  Sources: 335 Sonnet vision (74%), 60 Opus shadow (13%), 57 Docling (13%).
+  Shadow review corrected M6001 (75% Docling gap).
+  Roadmap expanded: Submittal Builder, Spec/RFI Intake, Quality Doc Package Generator.
+  Commits: a56e39e (extraction), d02914f (roadmap), 01450be (builder), bcdd68e (quality docs), a69e746 (docs update)
+  Next candidates: Phase 26 (legend extraction), or reconcile 452 schedule entries into equipment_instances.
 
 ---
 *STATE.md — Updated after every significant action*
