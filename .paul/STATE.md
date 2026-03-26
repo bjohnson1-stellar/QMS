@@ -10,10 +10,10 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 25 (Schedule-First Extraction) — Planning
-Plan: 25-02 created, awaiting approval
-Status: PLAN created, ready for APPLY
-Last activity: 2026-03-26 — Created .paul/phases/25-schedule-first-extraction/25-02-PLAN.md
+Phase: 25 (Schedule-First Extraction) — Executing
+Plan: 25-02 applied, ready for UNIFY
+Status: APPLY complete, ready for UNIFY
+Last activity: 2026-03-26 — Applied 25-02: extraction harness + first 5 Vital schedule sheets
 
 Progress:
 - v0.4 Equipment-Centric Platform: [████████░░] 80%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ○        ○     [Plan 25-02 created, awaiting approval]
+  ✓        ✓        ○     [Plan 25-02 applied, ready for UNIFY]
 ```
 
 Note: Phases 22-01, 23-01, 24-01 applied but UNIFY not yet run. Will batch-close after 25-01.
@@ -44,7 +44,7 @@ Note: Phases 22-01, 23-01, 24-01 applied but UNIFY not yet run. Will batch-close
 | 23-01 | Applied (pending UNIFY) | Tag parser, dedup 124 reversed duplicates, grouped dashboard view | 2026-03-26 |
 | 24-01 | Applied (pending UNIFY) | System type taxonomy, consolidation engine, system dashboard view | 2026-03-26 |
 | 25-01 | Applied (pending UNIFY) | Extraction order engine, schedule extractor data layer, context builder | 2026-03-26 |
-| 25-02 | Planning | Extraction harness + Vital first batch (5 schedule sheets) | — |
+| 25-02 | Applied (pending UNIFY) | Extraction harness + Vital first batch (5 schedule sheets, 203 entries) | 2026-03-26 |
 
 ### v0.3 Quality Manual Platform
 
@@ -135,6 +135,9 @@ Note: Phases 22-01, 23-01, 24-01 applied but UNIFY not yet run. Will batch-close
 | Extended _parse_numeric locally for AIC suffixes | v0.4 Phase 21 | Avoids modifying stable conflict_detector.py |
 | Longest-parent-first tag matching | v0.4 Phase 23 | RAHU-20-CV2 → parent RAHU-20, not RAHU-2 — prevents false parent assignment |
 | Client-side grouping (not SQL GROUP BY) | v0.4 Phase 23 | API returns flat list with parent_tag; JS groups — simpler, filter-compatible |
+| Discipline priority: Refrig→Utility→Mech→Elec→Plumb | v0.4 Phase 25 | Refrigeration first (most complex), plumbing last (fixtures, not systems) |
+| Harness is session-stepped state machine | v0.4 Phase 25 | No API calls or subprocess spawning — Claude Code session drives extraction |
+| Expand grouped RAHU tags into individual entries | v0.4 Phase 25 | "RAHU-1 TO RAHU-3" stored as RAHU-1, RAHU-2, RAHU-3 individually |
 
 ### Git State
 Last commit: `24c0047` (feat(pipeline): spec compliance engine & impact chain analyzer (Phase 21-01))
@@ -158,8 +161,8 @@ Branch: main (uncommitted: Phase 22 equipment web UI files)
 ## Session Continuity
 
 Last session: 2026-03-26
-Stopped at: Plan 25-02 created
-Next action: Review and approve plan, then run /paul:apply .paul/phases/25-schedule-first-extraction/25-02-PLAN.md
+Stopped at: Plan 25-02 applied
+Next action: Run /paul:unify .paul/phases/25-schedule-first-extraction/25-02-PLAN.md
 Resume file: .paul/phases/25-schedule-first-extraction/25-02-PLAN.md
 
 ---

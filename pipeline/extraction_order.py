@@ -19,14 +19,15 @@ _SCHEDULE_NUMBER_RE = re.compile(r"^[A-Z]\d?6\d{2,3}", re.IGNORECASE)
 # Drawing number patterns for legend/notes detection
 _LEGEND_NUMBER_RE = re.compile(r"^[A-Z]\d?000[12]", re.IGNORECASE)
 
-# Discipline extraction priority (SIS preference)
+# Discipline extraction priority
+# Refrigeration first, then utility/mechanical, electrical, plumbing last
 DISCIPLINE_PRIORITY = {
-    "Plumbing": 1,
-    "Mechanical": 2,
-    "Refrigeration": 3,
-    "Refrigeration-Controls": 4,
+    "Refrigeration": 1,
+    "Refrigeration-Controls": 2,
+    "Utility": 3,
+    "Mechanical": 4,
     "Electrical": 5,
-    "Utility": 6,
+    "Plumbing": 6,
     "Architectural": 7,
     "Civil": 8,
     "Fire-Protection": 9,
