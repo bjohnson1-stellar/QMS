@@ -10,10 +10,10 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 25 (Schedule-First Extraction) — Executing
-Plan: 25-02 applied, ready for UNIFY
-Status: APPLY complete, ready for UNIFY
-Last activity: 2026-03-26 — Applied 25-02: extraction harness + first 5 Vital schedule sheets
+Phase: 25 (Schedule-First Extraction) — In Progress
+Plan: 25-02 complete (loop closed)
+Status: Ready for next plan (25-03 or continue extraction)
+Last activity: 2026-03-26 — Unified 25-02: extraction harness + 203 equipment entries from 5 sheets
 
 Progress:
 - v0.4 Equipment-Centric Platform: [████████░░] 80%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ○     [Plan 25-02 applied, ready for UNIFY]
+  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
 ```
 
 Note: Phases 22-01, 23-01, 24-01 applied but UNIFY not yet run. Will batch-close after 25-01.
@@ -44,7 +44,7 @@ Note: Phases 22-01, 23-01, 24-01 applied but UNIFY not yet run. Will batch-close
 | 23-01 | Applied (pending UNIFY) | Tag parser, dedup 124 reversed duplicates, grouped dashboard view | 2026-03-26 |
 | 24-01 | Applied (pending UNIFY) | System type taxonomy, consolidation engine, system dashboard view | 2026-03-26 |
 | 25-01 | Applied (pending UNIFY) | Extraction order engine, schedule extractor data layer, context builder | 2026-03-26 |
-| 25-02 | Applied (pending UNIFY) | Extraction harness + Vital first batch (5 schedule sheets, 203 entries) | 2026-03-26 |
+| 25-02 | Complete | Extraction harness + Vital first batch (5 schedule sheets, 203 entries) | 2026-03-26 |
 
 ### v0.3 Quality Manual Platform
 
@@ -161,9 +161,9 @@ Branch: main (uncommitted: Phase 22 equipment web UI files)
 ## Session Continuity
 
 Last session: 2026-03-26
-Stopped at: Plan 25-02 applied
-Next action: Run /paul:unify .paul/phases/25-schedule-first-extraction/25-02-PLAN.md
-Resume file: .paul/phases/25-schedule-first-extraction/25-02-PLAN.md
+Stopped at: Plan 25-02 unified (loop closed)
+Next action: Run /paul:plan for 25-03 (continue Vital extraction or reconciliation)
+Resume file: .paul/phases/25-schedule-first-extraction/25-02-SUMMARY.md
 
 ---
 *STATE.md — Updated after every significant action*
