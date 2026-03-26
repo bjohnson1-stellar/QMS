@@ -5,17 +5,18 @@ The harness handles bookkeeping (progress, checkpoints, error tracking) while th
 Claude Code session does the actual AI work (reading PDFs, extracting data).
 
 Design principle: The harness does NOT call the Anthropic API or spawn agents.
-It provides prompts and records results. The session orchestrates.
+It records results and tracks state. The session orchestrates.
 
 Usage from Claude Code session:
     from qms.pipeline.extraction_harness import ExtractionHarness
-    h = ExtractionHarness(7, phase="schedules")
+    h = ExtractionHarness(7, phase="schedules",
+                          skip_disciplines=["Architectural", "Civil", "General"])
     while sheet := h.next_sheet():
-        # Session reads PDF, extracts data
-        h.record_result(sheet["id"], entries)
+        # Session reads PDF via Docling or Claude vision
+        h.record_result(sheet["id"], entries, model_used="docling")
         if h.is_batch_complete():
             print(h.get_batch_summary())
-            break  # or continue
+            break
     h.save_checkpoint()
 
 Part of v0.4 Equipment-Centric Platform (Phase 25).
@@ -25,15 +26,14 @@ import json
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
-from qms.core import get_logger
+from qms.core import get_db, get_logger
 
 logger = get_logger("qms.pipeline.extraction_harness")
 
-# Default state file location
+# Default state directory
 _STATE_DIR = Path(".paul")
-_STATE_FILE = _STATE_DIR / "extraction-state.json"
 
 
 class ExtractionHarness:
@@ -45,27 +45,55 @@ class ExtractionHarness:
     """
 
     def __init__(self, project_id: int, phase: str = "schedules",
-                 batch_size: int = 5, state_file: Path = None):
+                 batch_size: int = 5, skip_disciplines: List[str] = None,
+                 state_file: Path = None):
         self.project_id = project_id
         self.phase = phase
         self.batch_size = batch_size
-        self.state_file = state_file or _STATE_FILE
+        self.skip_disciplines: Set[str] = set(skip_disciplines or [])
+        self.state_file = state_file or (_STATE_DIR / f"extraction-state-{project_id}.json")
 
         # Runtime counters (within this session)
         self._batch_completed = 0
         self._session_start = datetime.now(timezone.utc).isoformat()
         self._errors: List[Dict] = []
+        self._sheet_times: List[Dict] = []
+        self._current_sheet_start: float = 0
+        self._processed_sheet_ids: Set[int] = set()  # tracks ALL processed sheets (even empty)
+
+        # Cached counts (avoid re-classifying all sheets every call)
+        self._total_sheets: Optional[int] = None
+        self._skipped_sheet_ids: Optional[Set[int]] = None
+
+    def _get_all_schedule_sheets(self) -> List[Dict]:
+        """Get all schedule sheets (cached count on first call)."""
+        from qms.pipeline.extraction_order import get_schedule_sheets
+        sheets = get_schedule_sheets(self.project_id)
+        if self._total_sheets is None:
+            self._total_sheets = len(sheets)
+            # Identify skipped sheets by discipline
+            self._skipped_sheet_ids = {
+                s["id"] for s in sheets
+                if s.get("discipline") in self.skip_disciplines
+            }
+        return sheets
+
+    def _get_completed_count(self) -> int:
+        """Direct DB query for completed sheet count (fast)."""
+        with get_db(readonly=True) as conn:
+            return conn.execute(
+                "SELECT COUNT(DISTINCT sheet_id) FROM schedule_extractions WHERE project_id = ?",
+                (self.project_id,),
+            ).fetchone()[0]
 
     def get_status(self) -> Dict[str, Any]:
-        """Current extraction progress from the database."""
-        from qms.pipeline.extraction_order import get_schedule_sheets
-        from qms.pipeline.schedule_extractor import get_pending_schedules
+        """Current extraction progress."""
+        # Ensure cache is populated
+        self._get_all_schedule_sheets()
 
-        all_sheets = get_schedule_sheets(self.project_id)
-        pending = get_pending_schedules(self.project_id)
-
-        total = len(all_sheets)
-        completed = total - len(pending)
+        completed = self._get_completed_count()
+        skipped = len(self._skipped_sheet_ids)
+        pending = self._total_sheets - completed - skipped
 
         # Load state file for error history
         state = self._load_state()
@@ -74,25 +102,40 @@ class ExtractionHarness:
         return {
             "project_id": self.project_id,
             "phase": self.phase,
-            "total": total,
+            "total": self._total_sheets,
             "completed": completed,
-            "pending": len(pending),
+            "pending": max(0, pending),
+            "skipped": skipped,
             "batch_completed": self._batch_completed,
             "batch_size": self.batch_size,
+            "skip_disciplines": sorted(self.skip_disciplines),
             "errors": errors,
             "session_start": self._session_start,
         }
 
     def next_sheet(self) -> Optional[Dict]:
-        """Get the next sheet to process. Returns None if phase complete."""
+        """Get the next sheet to process. Returns None if phase complete.
+
+        Skips sheets whose discipline is in skip_disciplines and sheets
+        already processed in this session (even if they had 0 entries).
+        """
         from qms.pipeline.schedule_extractor import get_pending_schedules
 
         pending = get_pending_schedules(self.project_id)
+
+        # Filter out skipped disciplines and already-processed sheets
+        pending = [
+            s for s in pending
+            if s.get("discipline") not in self.skip_disciplines
+            and s["id"] not in self._processed_sheet_ids
+        ]
+
         if not pending:
-            logger.info("All schedule sheets processed for project %d", self.project_id)
+            logger.info("All eligible schedule sheets processed for project %d", self.project_id)
             return None
 
         sheet = pending[0]
+        self._current_sheet_start = time.monotonic()
         logger.info(
             "Next sheet: %s (id=%d, discipline=%s)",
             sheet["drawing_number"], sheet["id"], sheet.get("discipline", "?"),
@@ -100,27 +143,43 @@ class ExtractionHarness:
         return sheet
 
     def record_result(self, sheet_id: int, entries: List[Dict],
-                      status: str = "success") -> Dict[str, int]:
+                      model_used: str = "docling",
+                      confidence: float = None) -> Dict[str, int]:
         """Record extraction result for a sheet.
 
-        Calls store_schedule_data() and updates progress tracking.
+        Args:
+            sheet_id: Sheet ID
+            entries: Equipment dicts (each should include page_number if available)
+            model_used: "docling", "claude-sonnet-vision", or "claude-opus-shadow"
+            confidence: Override confidence (None = derive from model_used)
 
         Returns:
-            Stats dict from store_schedule_data: {"stored": N, "skipped": N, "errors": N}
+            Stats dict: {"stored": N, "skipped": N, "errors": N}
         """
         from qms.pipeline.schedule_extractor import store_schedule_data
 
-        stats = store_schedule_data(sheet_id, self.project_id, entries)
+        stats = store_schedule_data(
+            sheet_id, self.project_id, entries,
+            model_used=model_used, confidence=confidence,
+        )
         self._batch_completed += 1
+        self._processed_sheet_ids.add(sheet_id)
+
+        # Track timing
+        elapsed = time.monotonic() - self._current_sheet_start if self._current_sheet_start else 0
+        self._sheet_times.append({
+            "sheet_id": sheet_id,
+            "elapsed_seconds": round(elapsed, 1),
+            "entries_stored": stats["stored"],
+            "model_used": model_used,
+        })
 
         logger.info(
-            "Recorded result for sheet %d: %d stored, %d skipped, %d errors",
-            sheet_id, stats["stored"], stats["skipped"], stats["errors"],
+            "Recorded result for sheet %d: %d stored, %d skipped, %d errors (%.1fs)",
+            sheet_id, stats["stored"], stats["skipped"], stats["errors"], elapsed,
         )
 
-        # Auto-save checkpoint after each sheet
         self.save_checkpoint()
-
         return stats
 
     def record_error(self, sheet_id: int, error_msg: str):
@@ -133,7 +192,6 @@ class ExtractionHarness:
         sheet_info = get_schedule_sheet_info(sheet_id)
         drawing_number = sheet_info["drawing_number"] if sheet_info else f"sheet_{sheet_id}"
 
-        # Check if this sheet already has an error (retry tracking)
         prior_errors = [e for e in self._errors if e["sheet_id"] == sheet_id]
 
         error_entry = {
@@ -146,6 +204,7 @@ class ExtractionHarness:
 
         if len(prior_errors) >= 1:
             error_entry["action"] = "skipped"
+            self._processed_sheet_ids.add(sheet_id)
             logger.warning(
                 "Sheet %s (id=%d) failed twice — skipping. Error: %s",
                 drawing_number, sheet_id, error_msg,
@@ -162,18 +221,27 @@ class ExtractionHarness:
 
     def save_checkpoint(self):
         """Save current state for session resumption."""
-        status = self.get_status()
+        # Use cached total + direct query (no full reclassification)
+        if self._total_sheets is None:
+            self._get_all_schedule_sheets()
+
+        completed = self._get_completed_count()
+        skipped = len(self._skipped_sheet_ids) if self._skipped_sheet_ids else 0
 
         state = {
             "project_id": self.project_id,
             "phase": self.phase,
             "batch_size": self.batch_size,
+            "skip_disciplines": sorted(self.skip_disciplines),
             "started_at": self._session_start,
-            "sheets_completed": status["completed"],
-            "sheets_total": status["total"],
-            "sheets_pending": status["pending"],
+            "sheets_completed": completed,
+            "sheets_total": self._total_sheets,
+            "sheets_skipped": skipped,
+            "sheets_pending": max(0, self._total_sheets - completed - skipped),
             "batch_completed": self._batch_completed,
+            "processed_sheet_ids": sorted(self._processed_sheet_ids),
             "errors": self._errors,
+            "sheet_times": self._sheet_times[-20:],  # last 20 for size control
             "saved_at": datetime.now(timezone.utc).isoformat(),
         }
 
@@ -188,24 +256,38 @@ class ExtractionHarness:
     def get_batch_summary(self) -> str:
         """Human-readable summary of current batch progress."""
         status = self.get_status()
+
+        # Average time per sheet
+        if self._sheet_times:
+            avg_time = sum(t["elapsed_seconds"] for t in self._sheet_times) / len(self._sheet_times)
+            est_remaining = avg_time * status["pending"] / 60
+            time_line = f"Avg time/sheet: {avg_time:.1f}s, est remaining: {est_remaining:.0f}min"
+        else:
+            time_line = ""
+
         lines = [
             f"Batch complete: {self._batch_completed} sheets processed this session",
             f"Overall progress: {status['completed']}/{status['total']} schedule sheets",
+            f"Skipped (non-MEP): {status['skipped']}",
             f"Remaining: {status['pending']} sheets",
         ]
+        if time_line:
+            lines.append(time_line)
         if self._errors:
-            skipped = [e for e in self._errors if e.get("action") == "skipped"]
+            error_skipped = [e for e in self._errors if e.get("action") == "skipped"]
             retryable = [e for e in self._errors if e.get("action") == "retry"]
-            if skipped:
-                lines.append(f"Skipped (2 failures): {len(skipped)}")
+            if error_skipped:
+                lines.append(f"Failed (2 attempts): {len(error_skipped)}")
             if retryable:
                 lines.append(f"Will retry: {len(retryable)}")
         return "\n".join(lines)
 
     def should_skip(self, sheet_id: int) -> bool:
         """Check if a sheet should be skipped (failed twice)."""
-        prior_errors = [e for e in self._errors if e["sheet_id"] == sheet_id]
-        return any(e.get("action") == "skipped" for e in prior_errors)
+        return any(
+            e["sheet_id"] == sheet_id and e.get("action") == "skipped"
+            for e in self._errors
+        )
 
     def _load_state(self) -> Optional[Dict]:
         """Load state file if it exists."""
@@ -221,29 +303,26 @@ class ExtractionHarness:
 
 
 def start_extraction(project_id: int, phase: str = "schedules",
-                     batch_size: int = 5) -> Dict[str, Any]:
-    """Create a new extraction harness and return initial status.
-
-    Returns: {"harness": ExtractionHarness, "status": dict}
-    """
-    harness = ExtractionHarness(project_id, phase=phase, batch_size=batch_size)
+                     batch_size: int = 5,
+                     skip_disciplines: List[str] = None) -> Dict[str, Any]:
+    """Create a new extraction harness and return initial status."""
+    harness = ExtractionHarness(
+        project_id, phase=phase, batch_size=batch_size,
+        skip_disciplines=skip_disciplines,
+    )
     status = harness.get_status()
     harness.save_checkpoint()
 
     logger.info(
-        "Started %s extraction for project %d: %d sheets (%d pending)",
-        phase, project_id, status["total"], status["pending"],
+        "Started %s extraction for project %d: %d sheets (%d pending, %d skipped)",
+        phase, project_id, status["total"], status["pending"], status["skipped"],
     )
     return {"harness": harness, "status": status}
 
 
 def resume_extraction(project_id: int) -> Dict[str, Any]:
-    """Resume extraction from saved checkpoint.
-
-    Loads state file, creates harness at checkpoint position.
-    Returns: {"harness": ExtractionHarness, "status": dict, "resumed_from": dict}
-    """
-    state_file = _STATE_FILE
+    """Resume extraction from saved checkpoint."""
+    state_file = _STATE_DIR / f"extraction-state-{project_id}.json"
     if not state_file.exists():
         logger.info("No checkpoint found, starting fresh")
         return start_extraction(project_id)
@@ -256,17 +335,21 @@ def resume_extraction(project_id: int) -> Dict[str, Any]:
 
     phase = state.get("phase", "schedules")
     batch_size = state.get("batch_size", 5)
+    skip_disciplines = state.get("skip_disciplines", [])
 
-    harness = ExtractionHarness(project_id, phase=phase, batch_size=batch_size)
-
-    # Restore error history from checkpoint
+    harness = ExtractionHarness(
+        project_id, phase=phase, batch_size=batch_size,
+        skip_disciplines=skip_disciplines,
+    )
     harness._errors = state.get("errors", [])
+    harness._processed_sheet_ids = set(state.get("processed_sheet_ids", []))
 
     status = harness.get_status()
 
     logger.info(
-        "Resumed %s extraction for project %d: %d/%d complete (%d pending)",
-        phase, project_id, status["completed"], status["total"], status["pending"],
+        "Resumed %s extraction for project %d: %d/%d complete (%d pending, %d skipped)",
+        phase, project_id, status["completed"], status["total"],
+        status["pending"], status["skipped"],
     )
 
     return {
@@ -277,48 +360,3 @@ def resume_extraction(project_id: int) -> Dict[str, Any]:
             "sheets_completed_at_save": state.get("sheets_completed"),
         },
     }
-
-
-def get_extraction_prompt(sheet: Dict) -> str:
-    """Generate the extraction prompt for a schedule sheet.
-
-    This is the bridge between the harness and the Claude Code session.
-    The harness generates the prompt text; the session reads the PDF and applies it.
-
-    Args:
-        sheet: Sheet dict from next_sheet() with drawing_number, discipline, file_path
-
-    Returns:
-        Formatted prompt string for the session to use when reading the PDF.
-    """
-    drawing_number = sheet.get("drawing_number", "Unknown")
-    discipline = sheet.get("discipline", "Unknown")
-
-    return f"""Extract all equipment from this schedule drawing.
-
-Drawing: {drawing_number} ({discipline})
-
-Instructions:
-1. Identify every equipment schedule table on this sheet
-2. For each row in each schedule table, extract:
-   - tag: Equipment tag/identifier (REQUIRED — skip rows without tags)
-   - description: Equipment description or name
-   - equipment_type: Type of equipment (e.g., "Panel", "Fan", "Pump", "Water Heater")
-   - hp: Horsepower rating (numeric, e.g., 1.5)
-   - kva: KVA rating (numeric)
-   - voltage: Voltage (e.g., "480/277V", "208V")
-   - amperage: Amperage rating (numeric)
-   - phase_count: Number of phases (1 or 3)
-   - circuit: Circuit identifier
-   - panel_source: Source panel (e.g., "LP-1A")
-   - manufacturer: Manufacturer name
-   - model_number: Model number
-   - weight_lbs: Weight in pounds (numeric)
-   - cfm: Airflow in CFM (numeric)
-
-3. Return a JSON array of equipment objects
-4. Only extract what is ACTUALLY shown in the schedule tables
-5. Do NOT fabricate or hallucinate equipment — if a cell is empty, omit that field
-6. If the drawing has no schedule tables, return an empty array []
-
-Return ONLY the JSON array, no other text."""

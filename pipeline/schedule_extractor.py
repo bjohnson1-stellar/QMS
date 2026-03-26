@@ -62,11 +62,31 @@ def get_schedule_sheet_info(sheet_id: int) -> Optional[Dict]:
         return dict(row) if row else None
 
 
+def _default_confidence(model_used: str) -> float:
+    """Confidence tier based on extraction method."""
+    return {
+        "docling": 0.95,
+        "claude-sonnet-vision": 0.85,
+        "claude-opus-shadow": 0.98,
+    }.get(model_used, 0.9)
+
+
+def _ensure_page_number_column():
+    """Migration: add page_number column if missing."""
+    with get_db() as conn:
+        cols = [r["name"] for r in conn.execute("PRAGMA table_info(schedule_extractions)").fetchall()]
+        if "page_number" not in cols:
+            conn.execute("ALTER TABLE schedule_extractions ADD COLUMN page_number INTEGER")
+            conn.commit()
+            logger.info("Migration: added page_number column to schedule_extractions")
+
+
 def store_schedule_data(
     sheet_id: int,
     project_id: int,
     entries: List[Dict],
     model_used: str = "claude-code",
+    confidence: float = None,
 ) -> Dict[str, int]:
     """Store extracted schedule data in the staging table.
 
@@ -77,20 +97,28 @@ def store_schedule_data(
             Each dict should have: tag (required), plus optional:
             description, equipment_type, hp, kva, voltage, amperage,
             phase_count, circuit, panel_source, manufacturer, model_number,
-            weight_lbs, cfm
-        model_used: Model identifier for tracking
+            weight_lbs, cfm, page_number
+        model_used: Extraction method ("docling", "claude-sonnet-vision",
+            "claude-opus-shadow", or "claude-code")
+        confidence: Override confidence score. If None, derived from model_used.
 
     Returns:
         {"stored": N, "skipped": N, "errors": N}
     """
+    _ensure_page_number_column()
+
     stats = {"stored": 0, "skipped": 0, "errors": 0}
 
     if not entries:
         return stats
 
+    conf = confidence if confidence is not None else _default_confidence(model_used)
+
     with get_db() as conn:
         for entry in entries:
             tag = entry.get("tag")
+            if tag is not None and not isinstance(tag, str):
+                tag = str(tag)  # coerce numeric tags to string
             if not tag or not isinstance(tag, str) or not tag.strip():
                 stats["skipped"] += 1
                 continue
@@ -100,7 +128,7 @@ def store_schedule_data(
                 "tag", "description", "equipment_type", "hp", "kva",
                 "voltage", "amperage", "phase_count", "circuit",
                 "panel_source", "manufacturer", "model_number",
-                "weight_lbs", "cfm",
+                "weight_lbs", "cfm", "page_number",
             }
             additional = {
                 k: v for k, v in entry.items()
@@ -113,8 +141,9 @@ def store_schedule_data(
                        (sheet_id, project_id, tag, description, equipment_type,
                         hp, kva, voltage, amperage, phase_count, circuit,
                         panel_source, manufacturer, model_number, weight_lbs,
-                        cfm, additional_attributes, confidence, extraction_model)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        cfm, additional_attributes, confidence, extraction_model,
+                        page_number)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         sheet_id, project_id,
                         tag.strip(),
@@ -132,8 +161,9 @@ def store_schedule_data(
                         entry.get("weight_lbs"),
                         entry.get("cfm"),
                         json.dumps(additional) if additional else None,
-                        0.9,
+                        conf,
                         model_used,
+                        entry.get("page_number"),
                     ),
                 )
                 stats["stored"] += 1

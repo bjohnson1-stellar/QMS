@@ -281,6 +281,7 @@ CREATE TABLE IF NOT EXISTS schedule_extractions (
     additional_attributes TEXT,
     confidence REAL DEFAULT 0.9,
     extraction_model TEXT,
+    page_number INTEGER,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(sheet_id, tag)
 );
