@@ -11,9 +11,9 @@ See: .paul/PROJECT.md
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
 Phase: 25 (Schedule-First Extraction) — In Progress
-Plan: 25-02 complete (loop closed)
-Status: Ready for next plan (25-03 or continue extraction)
-Last activity: 2026-03-26 — Unified 25-02: extraction harness + 203 equipment entries from 5 sheets
+Plan: 25-03 created, awaiting approval
+Status: PLAN created, ready for APPLY
+Last activity: 2026-03-26 — Created .paul/phases/25-schedule-first-extraction/25-03-PLAN.md
 
 Progress:
 - v0.4 Equipment-Centric Platform: [████████░░] 80%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
+  ✓        ○        ○     [Plan 25-03 created, awaiting approval]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -45,6 +45,7 @@ Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
 | 24-01 | Complete | System type taxonomy, consolidation engine, system dashboard view | 2026-03-26 |
 | 25-01 | Complete | Extraction order engine, schedule extractor data layer, context builder | 2026-03-26 |
 | 25-02 | Complete | Extraction harness + Vital first batch (5 schedule sheets, 203 entries) | 2026-03-26 |
+| 25-03 | Planning | Complete Vital schedule extraction (54 remaining sheets) | — |
 
 ### v0.3 Quality Manual Platform
 
@@ -161,9 +162,9 @@ Branch: main (uncommitted: Phase 22 equipment web UI files)
 ## Session Continuity
 
 Last session: 2026-03-26
-Stopped at: Plan 25-02 unified (loop closed)
-Next action: Run /paul:plan for 25-03 (continue Vital extraction or reconciliation)
-Resume file: .paul/phases/25-schedule-first-extraction/25-02-SUMMARY.md
+Stopped at: Plan 25-03 created
+Next action: Review and approve plan, then run /paul:apply .paul/phases/25-schedule-first-extraction/25-03-PLAN.md
+Resume file: .paul/phases/25-schedule-first-extraction/25-03-PLAN.md
 
 ---
 *STATE.md — Updated after every significant action*
