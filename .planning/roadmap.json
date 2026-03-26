@@ -70,6 +70,27 @@
           ]
         },
         {
+          "title": "v0.4 Phase 24 — Equipment System Model & Consolidation",
+          "desc": "System type taxonomy (20 types), equipment_system_members junction table for multi-system membership, consolidate refrigeration circuits into real systems, create plumbing/HVAC/compressed air systems, assign 77% of unassigned equipment, system view on dashboard.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["equipment", "systems", "taxonomy", "v0.4"]
+        },
+        {
+          "title": "v0.4 Phase 25 — Multi-Pass Informed Extraction",
+          "desc": "Three-pass extraction pipeline: Pass 1 Sonnet (blind, current), Pass 2 Haiku (informed search with equipment registry context), Pass 3 Sonnet (conflict-driven verification on ~20-30% of sheets). Context builder for per-sheet equipment prompts. ~1.4x cost for 5x cross-discipline data.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["equipment", "extraction", "multi-pass", "model-routing", "v0.4"]
+        },
+        {
+          "title": "v0.4 Phase 26 — R0001 Legend Extraction & Type Refinement",
+          "desc": "Extract P&ID legend from R0001 Rev E via Claude vision, store in drawing_abbreviations table, use as authoritative lookup for instrument/component classification, resolve naming inconsistencies (Control Valve vs Electronic Expansion Valve).",
+          "module": "pipeline",
+          "priority": "medium",
+          "tags": ["equipment", "legend", "extraction", "classification", "v0.4"]
+        },
+        {
           "title": "Windows Service (nssm)",
           "desc": "Run Waitress as auto-start Windows service instead of manual qms serve.",
           "module": "core",
@@ -106,6 +127,22 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "v0.4 Phase 23 — Equipment Hierarchy & Tag Dedup",
+          "desc": "Tag parser for parent-child hierarchy, reversed tag normalization, dedup 124 duplicate pairs (589→465), sub-component type reclassification (CV→Control Valve, etc.), grouped dashboard view toggle (Grouped|All) with expandable parent rows.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["equipment", "hierarchy", "dedup", "tag-parser", "v0.4"],
+          "completed": "2026-03-26"
+        },
+        {
+          "title": "v0.4 Phase 22 — Equipment Web UI",
+          "desc": "Equipment dashboard with project selector, 6 stats cards, conflict summary, filterable equipment table. Detail page with tabbed view (Overview, Connections, Conflicts). Blueprint with 2 page routes + 4 JSON API endpoints.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["equipment", "web-ui", "dashboard", "v0.4"],
+          "completed": "2026-03-26"
+        },
         {
           "title": "v0.4 Phase 21 — Spec Compliance & Impact Chains",
           "desc": "Spec compliance engine with 9 configurable requirements (6 check types), equipment impact chain analyzer via BFS graph traversal (524 relationships), drawing revision impact assessment, violation propagation tracing. 4 spec violations detected for Vital.",
