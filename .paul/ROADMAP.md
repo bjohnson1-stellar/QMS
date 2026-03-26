@@ -22,6 +22,8 @@ Equipment-centric project data platform — unified registry consolidating all d
 | 21 | Spec Compliance & Impact Chains | 1 | Complete | 2026-03-25 |
 | 22 | Equipment Web UI | 1 | Applied | 2026-03-26 |
 | 23 | Equipment Hierarchy | 2 | Planning | — |
+| 25 | Schedule-First Extraction | 3 | Complete | 2026-03-26 |
+| 26 | Schedule Reconciliation | 1 | Planning | — |
 
 ### Phase 19: Equipment Master Schedule — Schema & Reconciliation
 

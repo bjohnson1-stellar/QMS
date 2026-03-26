@@ -10,10 +10,10 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 25 (Schedule-First Extraction) — Complete (3/3 plans)
-Plan: 25-03 UNIFY complete
-Status: Phase complete — ready for next phase
-Last activity: 2026-03-26 — Phase 25 closed, 452 entries, shadow reviewed
+Phase: 26 (Schedule Reconciliation) — Planning
+Plan: 26-01 created, awaiting approval
+Status: PLAN created, ready for APPLY
+Last activity: 2026-03-26 — Created 26-01-PLAN.md
 
 Progress:
 - v0.4 Equipment-Centric Platform: [█████████░] 85%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Phase 25 complete — ready for next phase]
+  ✓        ○        ○     [Plan 26-01 created, awaiting approval]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -163,16 +163,13 @@ Branch: main (uncommitted: Phase 22 equipment web UI files)
 ## Session Continuity
 
 Last session: 2026-03-26
-Stopped at: Phase 25 complete — UNIFY closed
-Next action: /paul:plan for next phase (Phase 26 or reconciliation)
-Resume file: .paul/phases/25-schedule-first-extraction/25-03-SUMMARY.md
+Stopped at: Plan 26-01 created
+Next action: Review and approve plan, then run /paul:apply
+Resume file: .paul/phases/26-schedule-reconciliation/26-01-PLAN.md
 Resume notes: |
-  Phase 25 complete (3/3 plans). 452 equipment entries across 19 MEP sheets.
-  Sources: 335 Sonnet vision (74%), 60 Opus shadow (13%), 57 Docling (13%).
-  Shadow review corrected M6001 (75% Docling gap).
-  Roadmap expanded: Submittal Builder, Spec/RFI Intake, Quality Doc Package Generator.
-  Commits: a56e39e (extraction), d02914f (roadmap), 01450be (builder), bcdd68e (quality docs), a69e746 (docs update)
-  Next candidates: Phase 26 (legend extraction), or reconcile 452 schedule entries into equipment_instances.
+  Phase 26: Reconcile 452 schedule entries into equipment_instances.
+  Two tasks: (1) Add schedule_extractions as 12th source in reconciler, (2) Run reconciliation + enrichment + conflict refresh.
+  Checkpoint: verify enriched instances and updated conflict counts.
 
 ---
 *STATE.md — Updated after every significant action*
