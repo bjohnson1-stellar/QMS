@@ -29,7 +29,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
   ✓        ✓        ✓     [Loop complete — ready for next PLAN]
 ```
 
-Note: Phases 22-01, 23-01, 24-01 applied but UNIFY not yet run. Will batch-close after 25-01.
+Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
 
 ## Execution Log
 
@@ -40,10 +40,10 @@ Note: Phases 22-01, 23-01, 24-01 applied but UNIFY not yet run. Will batch-close
 | 19-01 | Complete | Equipment registry schema (10 tables), reconciler, 585 instances for Vital | 2026-03-24 |
 | 20-01 | Complete | Conflict detection engine, negative space scanner, CLI command (492 conflicts) | 2026-03-25 |
 | 21-01 | Complete | Spec compliance engine (9 requirements, 4 violations) + impact chain analyzer (BFS traversal) | 2026-03-25 |
-| 22-01 | Applied (pending UNIFY) | Equipment web UI — dashboard + detail page with tabs (6 routes, 4 API endpoints) | 2026-03-26 |
-| 23-01 | Applied (pending UNIFY) | Tag parser, dedup 124 reversed duplicates, grouped dashboard view | 2026-03-26 |
-| 24-01 | Applied (pending UNIFY) | System type taxonomy, consolidation engine, system dashboard view | 2026-03-26 |
-| 25-01 | Applied (pending UNIFY) | Extraction order engine, schedule extractor data layer, context builder | 2026-03-26 |
+| 22-01 | Complete | Equipment web UI — dashboard + detail page with tabs (6 routes, 4 API endpoints) | 2026-03-26 |
+| 23-01 | Complete | Tag parser, dedup 124 reversed duplicates, grouped dashboard view | 2026-03-26 |
+| 24-01 | Complete | System type taxonomy, consolidation engine, system dashboard view | 2026-03-26 |
+| 25-01 | Complete | Extraction order engine, schedule extractor data layer, context builder | 2026-03-26 |
 | 25-02 | Complete | Extraction harness + Vital first batch (5 schedule sheets, 203 entries) | 2026-03-26 |
 
 ### v0.3 Quality Manual Platform
