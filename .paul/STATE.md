@@ -11,9 +11,9 @@ See: .paul/PROJECT.md
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
 Phase: 25 (Schedule-First Extraction) — In Progress
-Plan: 25-03 APPLY in progress (Task 3 partial)
-Status: APPLY — Tasks 1-2 complete, Task 3 mid-extraction (vision gap-fill)
-Last activity: 2026-03-26 — Docling pass done, 5 of 18 vision gap-fill agents complete
+Plan: 25-03 APPLY — Tasks 1-4 complete, at checkpoint (Task 5)
+Status: CHECKPOINT — 452 entries extracted, shadow reviewed, ready for human verify
+Last activity: 2026-03-26 — All MEP sheets extracted, Opus shadow review complete
 
 Progress:
 - v0.4 Equipment-Centric Platform: [████████░░] 80%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ◐        ○     [Plan 25-03 APPLY in progress — Task 3 vision gap-fill]
+  ✓        ◐        ○     [Plan 25-03 — at human verify checkpoint (Task 5)]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -163,18 +163,18 @@ Branch: main (uncommitted: Phase 22 equipment web UI files)
 ## Session Continuity
 
 Last session: 2026-03-26
-Stopped at: Plan 25-03 APPLY Task 3 — vision gap-fill in progress
-Next action: Continue Task 3 — store R6001/R6002/U6001/U6003/P6001 results, then run vision agents for M6003, M6004, 11 electrical sheets, U6002-UTILITIES(rev1). Then Task 4 (Opus shadow), Task 5 (checkpoint).
+Stopped at: Plan 25-03 — Tasks 1-4 complete, at human verify checkpoint
+Next action: Task 5 checkpoint — verify extraction quality, then /paul:unify
 Resume file: .paul/phases/25-schedule-first-extraction/25-03-PLAN.md
 Resume notes: |
-  Tasks 1-2 complete (schema/harness updates + docling_extractor.py).
-  Task 3 Docling pass: 75 entries from 22 MEP sheets (U6002=35, M6001=15, M6002=23, others=2).
-  Task 3 vision gap-fill agents returned for: R6001(43), R6002(43 same data), U6001(pipe specs only), U6003(13), P6001(25).
-  NEED TO: store those 5 agent results via harness, then run agents for remaining 13 gap-fill sheets.
-  Gap-fill list: .paul/gap-fill-sheets.json
-  Sheets still needing vision agents: M6003, M6004, E6001-E6303 (11 electrical), U6002-UTILITIES(rev1)
-  E6101/E6201/E6301 are single-line diagrams — likely empty (no schedules).
-  M6004 is ventilation calculations — likely empty.
+  Tasks 1-2: Schema + harness updates, docling_extractor.py created.
+  Task 3: 19 vision agents extracted all MEP sheets. 452 entries across 19 sheets.
+  Task 4: Opus shadow review on M6001, E6102, U6002-rev1.
+    - M6001: Shadow found 60 vs 15 Docling entries — CORRECTED (replaced with shadow data)
+    - E6102: 90% match, no correction needed
+    - U6002-rev1: 95% match, no correction needed
+  Commit: a56e39e
+  Discipline breakdown: Electrical=207, Mechanical=89, Plumbing=25, Refrigeration=43, Utility=88
 
 ---
 *STATE.md — Updated after every significant action*

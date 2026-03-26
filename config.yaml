@@ -191,6 +191,23 @@ document_types:
     destination: "{quality_documents}/Welding/Production-Logs/{year}"
     handler: "weld-weekly-import"
 
+  submittals:
+    patterns:
+      - "(?i)^.*submittal.*\\.pdf$"
+      - "(?i)^.*shop.?draw.*\\.pdf$"
+      - "(?i)^SUB-\\d+"
+      - "(?i)^\\d{2,4}[-_.]\\d{2,4}[-_.].*submittal"
+    destination: "{projects}/{project}/Submittals"
+    handler: "submittal-intake"
+
+  rfis:
+    prefix: "RFI"
+    patterns:
+      - "(?i)^RFI[-_#]?\\d+"
+      - "(?i)^.*RFI.*\\.pdf$"
+    destination: "{projects}/{project}/RFIs"
+    handler: "rfi-intake"
+
   field_locations:
     patterns:
       - "^FIELD LOCATIONS"

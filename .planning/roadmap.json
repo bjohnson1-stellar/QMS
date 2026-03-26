@@ -91,6 +91,27 @@
           "tags": ["equipment", "legend", "extraction", "classification", "v0.4"]
         },
         {
+          "title": "Submittal Intake & Cross-Reference",
+          "desc": "AI-powered submittal processing: extract manufacturer, model, spec section, approved/rejected status from submittal PDFs. Cross-reference against schedule_extractions to verify submitted equipment matches design specs. Flag mismatches (wrong model, missing submittals, unapproved substitutions). Schema: submittals table + submittal_items with FK to equipment.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["submittals", "intake", "cross-reference", "equipment", "quality"]
+        },
+        {
+          "title": "Specification Intake & Requirements Extraction",
+          "desc": "Parse project specification PDFs by CSI division. Extract: approved manufacturers, material requirements, test/inspection requirements, submittal requirements per section. Link spec sections to equipment types for automated compliance checking. Build on existing sis-spec-intake foundation.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["specifications", "intake", "requirements", "compliance"]
+        },
+        {
+          "title": "RFI Intake & Tracking",
+          "desc": "Process RFI PDFs: extract question, response, referenced drawings/specs, status, dates, responsible parties. Link RFIs to affected equipment tags and drawing sheets. Track open/closed status, response time metrics. Web UI for RFI log with filters and search.",
+          "module": "pipeline",
+          "priority": "medium",
+          "tags": ["rfis", "intake", "tracking", "coordination"]
+        },
+        {
           "title": "Windows Service (nssm)",
           "desc": "Run Waitress as auto-start Windows service instead of manual qms serve.",
           "module": "core",
@@ -127,6 +148,14 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "v0.4 Phase 25 — Schedule-First Extraction (3 plans)",
+          "desc": "Complete Vital MEP schedule extraction: Docling structural + 19 Sonnet vision agents + Opus shadow QA. 452 equipment entries across 19 sheets, 5 disciplines (Electrical=207, Mechanical=89, Utility=88, Refrigeration=43, Plumbing=25). Shadow review caught M6001 75% Docling gap. Source tracking + tiered confidence on all entries.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["equipment", "extraction", "schedule-first", "docling", "shadow-review", "v0.4"],
+          "completed": "2026-03-26"
+        },
         {
           "title": "v0.4 Phase 24 — System Model & Consolidation",
           "desc": "System type taxonomy (15 types), equipment_system_members junction table, system builder consolidating 13 RS-* circuits into 5 real refrigeration systems, 5 plumbing systems, 3 mechanical systems. System assignment 23% to 82.8%. Dashboard System|Grouped|All three-mode toggle.",
