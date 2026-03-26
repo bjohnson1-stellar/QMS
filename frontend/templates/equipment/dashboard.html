@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}Equipment Registry — {{ theme.app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <div>
+        <h1 style="margin:0;">Equipment Registry</h1>
+        <p class="subtitle" style="margin:4px 0 0;">Cross-discipline equipment coordination dashboard</p>
+    </div>
+    <div>
+        <select id="project-select" onchange="onProjectChange(this.value)" style="min-width:220px;padding:8px 12px;font-size:0.9rem;border:1px solid var(--color-border,#d0d7de);border-radius:6px;background:var(--color-bg,#fff);">
+            <option value="">Select Project</option>
+            {% for p in projects %}
+            <option value="{{ p.id }}" {{ 'selected' if selected_project == p.id }}>{{ p.number }} — {{ p.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid" id="stats-grid" style="display:none;">
+    <div class="stat-card">
+        <div class="stat-value" id="stat-equipment">-</div>
+        <div class="stat-label">Total Equipment</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-types">-</div>
+        <div class="stat-label">Types</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-systems">-</div>
+        <div class="stat-label">Systems</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-relationships">-</div>
+        <div class="stat-label">Relationships</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-conflicts" style="color:var(--color-danger,#da3633);">-</div>
+        <div class="stat-label">Conflicts</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-violations" style="color:var(--color-warning,#d29922);">-</div>
+        <div class="stat-label">Spec Violations</div>
+    </div>
+</div>
+
+<!-- Conflict Summary -->
+<div class="card" id="conflict-card" style="display:none;padding:20px;margin-bottom:20px;">
+    <h3 style="margin:0 0 12px;border:none;padding:0;">Conflict Summary</h3>
+    <div id="conflict-summary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;"></div>
+</div>
+
+<!-- Equipment List -->
+<div class="card" id="equipment-card" style="display:none;">
+    <h2 style="margin:0 0 12px;">Equipment List</h2>
+    <div class="filter-bar" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+        <select id="filter-discipline" onchange="applyFilters()" style="padding:6px 10px;border:1px solid var(--color-border,#d0d7de);border-radius:4px;background:var(--color-bg,#fff);">
+            <option value="">All Disciplines</option>
+        </select>
+        <select id="filter-stage" onchange="applyFilters()" style="padding:6px 10px;border:1px solid var(--color-border,#d0d7de);border-radius:4px;background:var(--color-bg,#fff);">
+            <option value="">All Stages</option>
+        </select>
+        <input type="text" id="filter-search" placeholder="Search by tag..." onkeyup="debounceSearch()" style="padding:6px 10px;border:1px solid var(--color-border,#d0d7de);border-radius:4px;min-width:180px;">
+        <div style="margin-left:auto;display:flex;gap:0;">
+            <button id="viewGrouped" class="toggle-btn active" onclick="setViewMode('grouped')">Grouped</button>
+            <button id="viewFlat" class="toggle-btn" onclick="setViewMode('flat')">All</button>
+        </div>
+        <span id="result-count" style="align-self:center;font-size:0.85rem;color:var(--color-text-muted,#656d76);"></span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tag</th>
+                    <th>Type</th>
+                    <th>Discipline</th>
+                    <th>System</th>
+                    <th>Stage</th>
+                    <th>HP</th>
+                    <th>Voltage</th>
+                </tr>
+            </thead>
+            <tbody id="equipment-body">
+                <tr><td colspan="7" class="empty-state">Select a project to load equipment</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Empty state -->
+<div id="empty-state" class="card" style="padding:40px;text-align:center;">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted,#656d76)" stroke-width="1.5" style="margin-bottom:12px;">
+        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+        <line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
+    </svg>
+    <p style="color:var(--color-text-muted,#656d76);margin:0;">Select a project above to view equipment data</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentProject = null;
+let equipmentData = [];
+let searchTimer = null;
+let viewMode = 'grouped';
+let expandedGroups = new Set();
+
+const STAGE_COLORS = {
+    design: '#0969da', submitted: '#8250df', approved: '#1a7f37',
+    procured: '#bf8700', received: '#cf222e', installed: '#238636',
+    connected: '#1f883d', startup: '#d4a72c', tested: '#0550ae',
+    punch: '#cf222e', commissioned: '#1a7f37', turned_over: '#6e7681'
+};
+
+function onProjectChange(projectId) {
+    if (!projectId) {
+        document.getElementById('stats-grid').style.display = 'none';
+        document.getElementById('conflict-card').style.display = 'none';
+        document.getElementById('equipment-card').style.display = 'none';
+        document.getElementById('empty-state').style.display = 'block';
+        return;
+    }
+    currentProject = parseInt(projectId);
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('stats-grid').style.display = '';
+    document.getElementById('conflict-card').style.display = '';
+    document.getElementById('equipment-card').style.display = '';
+    loadDashboard(currentProject);
+}
+
+function loadDashboard(projectId) {
+    Promise.all([
+        fetch('/equipment/api/stats/' + projectId).then(r => r.json()),
+        fetch('/equipment/api/list/' + projectId).then(r => r.json()),
+        fetch('/equipment/api/conflicts/' + projectId).then(r => r.json()),
+    ]).then(function(results) {
+        var stats = results[0];
+        var equipment = results[1];
+        var conflicts = results[2];
+        renderStats(stats, conflicts);
+        equipmentData = equipment;
+        populateFilters(equipment);
+        renderTable(equipment);
+        renderConflictSummary(conflicts);
+    }).catch(function(err) {
+        document.getElementById('equipment-body').innerHTML =
+            '<tr><td colspan="7" class="empty-state">Failed to load: ' + esc(String(err)) + '</td></tr>';
+    });
+}
+
+function renderStats(stats, conflicts) {
+    document.getElementById('stat-equipment').textContent = stats.instances || 0;
+    document.getElementById('stat-types').textContent = stats.types || 0;
+    document.getElementById('stat-systems').textContent = stats.systems || 0;
+    document.getElementById('stat-relationships').textContent = stats.relationships || 0;
+    var criticalCount = (conflicts.by_severity || {}).critical || 0;
+    document.getElementById('stat-conflicts').textContent =
+        (conflicts.total || 0) + (criticalCount ? ' (' + criticalCount + ' critical)' : '');
+    var specViolations = (conflicts.by_type || {}).spec_violation || 0;
+    document.getElementById('stat-violations').textContent = specViolations;
+}
+
+function renderConflictSummary(conflicts) {
+    var el = document.getElementById('conflict-summary');
+    if (!conflicts.total) {
+        el.innerHTML = '<div style="color:var(--color-success,#1a7f37);font-weight:500;">No conflicts detected</div>';
+        return;
+    }
+    var html = '';
+    var typeLabels = {attribute: 'Attribute Mismatch', missing_discipline: 'Missing Discipline', spec_violation: 'Spec Violation'};
+    var byType = conflicts.by_type || {};
+    for (var t in byType) {
+        html += '<div style="padding:10px 14px;border-radius:6px;background:var(--color-bg-subtle,#f6f8fa);">' +
+            '<div style="font-size:1.3rem;font-weight:700;">' + byType[t] + '</div>' +
+            '<div style="font-size:0.8rem;color:var(--color-text-muted,#656d76);">' + esc(typeLabels[t] || t) + '</div></div>';
+    }
+    var sevColors = {critical: 'var(--color-danger,#da3633)', warning: 'var(--color-warning,#d29922)', info: 'var(--color-text-muted,#656d76)'};
+    var bySev = conflicts.by_severity || {};
+    for (var s in bySev) {
+        if (bySev[s]) {
+            html += '<div style="padding:10px 14px;border-radius:6px;background:var(--color-bg-subtle,#f6f8fa);border-left:3px solid ' + (sevColors[s] || '#6e7681') + ';">' +
+                '<div style="font-size:1.3rem;font-weight:700;color:' + (sevColors[s] || 'inherit') + ';">' + bySev[s] + '</div>' +
+                '<div style="font-size:0.8rem;color:var(--color-text-muted,#656d76);">' + esc(s.charAt(0).toUpperCase() + s.slice(1)) + '</div></div>';
+        }
+    }
+    el.innerHTML = html;
+}
+
+function populateFilters(equipment) {
+    var disciplines = {};
+    var stages = {};
+    equipment.forEach(function(e) {
+        if (e.discipline_primary) disciplines[e.discipline_primary] = true;
+        if (e.lifecycle_stage) stages[e.lifecycle_stage] = true;
+    });
+    var dSel = document.getElementById('filter-discipline');
+    var current = dSel.value;
+    dSel.innerHTML = '<option value="">All Disciplines</option>';
+    Object.keys(disciplines).sort().forEach(function(d) {
+        dSel.innerHTML += '<option value="' + esc(d) + '">' + esc(d) + '</option>';
+    });
+    dSel.value = current;
+
+    var sSel = document.getElementById('filter-stage');
+    var sCurrent = sSel.value;
+    sSel.innerHTML = '<option value="">All Stages</option>';
+    Object.keys(stages).sort().forEach(function(s) {
+        sSel.innerHTML += '<option value="' + esc(s) + '">' + esc(s) + '</option>';
+    });
+    sSel.value = sCurrent;
+}
+
+function applyFilters() {
+    var disc = document.getElementById('filter-discipline').value;
+    var stage = document.getElementById('filter-stage').value;
+    var search = document.getElementById('filter-search').value.toLowerCase();
+    var filtered = equipmentData.filter(function(e) {
+        if (disc && e.discipline_primary !== disc) return false;
+        if (stage && e.lifecycle_stage !== stage) return false;
+        if (search && (e.tag || '').toLowerCase().indexOf(search) === -1) return false;
+        return true;
+    });
+    renderTable(filtered);
+}
+
+function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(applyFilters, 200);
+}
+
+function setViewMode(mode) {
+    viewMode = mode;
+    document.getElementById('viewFlat').classList.toggle('active', mode === 'flat');
+    document.getElementById('viewGrouped').classList.toggle('active', mode === 'grouped');
+    applyFilters();
+}
+
+function renderTable(data) {
+    if (viewMode === 'grouped') {
+        renderGrouped(data);
+    } else {
+        renderFlat(data);
+    }
+}
+
+function renderFlat(data) {
+    var tbody = document.getElementById('equipment-body');
+    document.getElementById('result-count').textContent = data.length + ' equipment';
+    if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No equipment matches filters</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map(function(e) {
+        var stageColor = STAGE_COLORS[e.lifecycle_stage] || '#6e7681';
+        return '<tr style="cursor:pointer;" onclick="goDetail(' + currentProject + ',\'' + esc(e.tag) + '\')">' +
+            '<td><a href="/equipment/' + currentProject + '/' + encodeURIComponent(e.tag) + '" style="color:var(--color-primary);text-decoration:none;font-weight:600;" onclick="event.stopPropagation();">' + esc(e.tag) + '</a></td>' +
+            '<td>' + esc(e.type_name || '-') + '</td>' +
+            '<td>' + esc(e.discipline_primary || '-') + '</td>' +
+            '<td>' + esc(e.system_tag || '-') + '</td>' +
+            '<td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.78rem;font-weight:500;color:#fff;background:' + stageColor + ';">' + esc(e.lifecycle_stage || '-') + '</span></td>' +
+            '<td>' + esc(e.hp != null ? String(e.hp) : '-') + '</td>' +
+            '<td>' + esc(e.voltage || '-') + '</td>' +
+            '</tr>';
+    }).join('');
+}
+
+function renderGrouped(data) {
+    var tbody = document.getElementById('equipment-body');
+    // Separate primary and children
+    var primary = [];
+    var childMap = {};
+    data.forEach(function(e) {
+        if (e.parent_tag) {
+            if (!childMap[e.parent_tag]) childMap[e.parent_tag] = [];
+            childMap[e.parent_tag].push(e);
+        } else {
+            primary.push(e);
+        }
+    });
+    // Also include children whose parent is filtered out (show as standalone)
+    var primaryTags = new Set(primary.map(function(e) { return e.tag; }));
+    for (var pt in childMap) {
+        if (!primaryTags.has(pt)) {
+            childMap[pt].forEach(function(c) { primary.push(c); });
+            delete childMap[pt];
+        }
+    }
+    var totalShown = primary.length;
+    for (var k in childMap) totalShown += childMap[k].length;
+    document.getElementById('result-count').textContent = primary.length + ' primary, ' + totalShown + ' total';
+
+    if (!primary.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No equipment matches filters</td></tr>';
+        return;
+    }
+    var html = '';
+    primary.forEach(function(e) {
+        var stageColor = STAGE_COLORS[e.lifecycle_stage] || '#6e7681';
+        var children = childMap[e.tag] || [];
+        var hasChildren = children.length > 0;
+        var isExpanded = expandedGroups.has(e.tag);
+        var chevron = hasChildren ?
+            '<span style="display:inline-block;width:16px;font-size:0.7rem;color:var(--color-text-muted,#656d76);cursor:pointer;transition:transform 0.15s;transform:rotate(' + (isExpanded ? '90' : '0') + 'deg);">&#9654;</span>' : '<span style="display:inline-block;width:16px;"></span>';
+        var badge = hasChildren ?
+            ' <span style="display:inline-block;padding:1px 5px;border-radius:8px;font-size:0.7rem;background:var(--color-primary-subtle,#ddf4ff);color:var(--color-primary);margin-left:4px;">' + children.length + '</span>' : '';
+
+        html += '<tr style="cursor:pointer;' + (hasChildren ? 'font-weight:600;' : '') + '" onclick="' + (hasChildren ? 'toggleGroup(\'' + esc(e.tag) + '\')' : 'goDetail(' + currentProject + ',\'' + esc(e.tag) + '\')') + '">' +
+            '<td>' + chevron + '<a href="/equipment/' + currentProject + '/' + encodeURIComponent(e.tag) + '" style="color:var(--color-primary);text-decoration:none;font-weight:600;" onclick="event.stopPropagation();">' + esc(e.tag) + '</a>' + badge + '</td>' +
+            '<td>' + esc(e.type_name || '-') + '</td>' +
+            '<td>' + esc(e.discipline_primary || '-') + '</td>' +
+            '<td>' + esc(e.system_tag || '-') + '</td>' +
+            '<td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.78rem;font-weight:500;color:#fff;background:' + stageColor + ';">' + esc(e.lifecycle_stage || '-') + '</span></td>' +
+            '<td>' + esc(e.hp != null ? String(e.hp) : '-') + '</td>' +
+            '<td>' + esc(e.voltage || '-') + '</td>' +
+            '</tr>';
+
+        if (hasChildren && isExpanded) {
+            children.forEach(function(c) {
+                var cStage = STAGE_COLORS[c.lifecycle_stage] || '#6e7681';
+                html += '<tr style="cursor:pointer;background:var(--color-bg-subtle,#f6f8fa);" onclick="goDetail(' + currentProject + ',\'' + esc(c.tag) + '\')">' +
+                    '<td style="padding-left:36px;"><a href="/equipment/' + currentProject + '/' + encodeURIComponent(c.tag) + '" style="color:var(--color-primary);text-decoration:none;font-size:0.9em;" onclick="event.stopPropagation();">' + esc(c.tag) + '</a></td>' +
+                    '<td style="color:var(--color-text-muted,#656d76);font-size:0.9em;">' + esc(c.component_type || c.type_name || '-') + '</td>' +
+                    '<td style="font-size:0.9em;">' + esc(c.discipline_primary || '-') + '</td>' +
+                    '<td style="font-size:0.9em;">' + esc(c.system_tag || '-') + '</td>' +
+                    '<td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:500;color:#fff;background:' + cStage + ';">' + esc(c.lifecycle_stage || '-') + '</span></td>' +
+                    '<td style="font-size:0.9em;">' + esc(c.hp != null ? String(c.hp) : '-') + '</td>' +
+                    '<td style="font-size:0.9em;">' + esc(c.voltage || '-') + '</td>' +
+                    '</tr>';
+            });
+        }
+    });
+    tbody.innerHTML = html;
+}
+
+function toggleGroup(tag) {
+    if (expandedGroups.has(tag)) {
+        expandedGroups.delete(tag);
+    } else {
+        expandedGroups.add(tag);
+    }
+    applyFilters();
+}
+
+function goDetail(projectId, tag) {
+    window.location.href = '/equipment/' + projectId + '/' + encodeURIComponent(tag);
+}
+
+function esc(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+// Auto-load if project selected
+(function() {
+    var sel = document.getElementById('project-select');
+    if (sel.value) onProjectChange(sel.value);
+})();
+</script>
+{% endblock %}

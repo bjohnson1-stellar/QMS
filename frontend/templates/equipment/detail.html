@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tag }} — Equipment — {{ theme.app_name }}{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div style="margin-bottom:16px;font-size:0.85rem;color:var(--color-text-muted,#656d76);">
+    <a href="{{ url_for('equipment.dashboard', project=project.id) }}" style="color:var(--color-primary);text-decoration:none;">Equipment</a>
+    <span style="margin:0 6px;">/</span>
+    <a href="{{ url_for('equipment.dashboard', project=project.id) }}" style="color:var(--color-primary);text-decoration:none;">{{ project.name }}</a>
+    <span style="margin:0 6px;">/</span>
+    <span>{{ tag }}</span>
+</div>
+
+<!-- Header -->
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <div>
+        <h1 style="margin:0;" id="detail-title">{{ tag }}</h1>
+        <span id="detail-subtitle" style="font-size:0.9rem;color:var(--color-text-muted,#656d76);"></span>
+        <span id="detail-stage-badge" style="display:inline-block;margin-left:8px;padding:2px 10px;border-radius:12px;font-size:0.78rem;font-weight:500;color:#fff;"></span>
+    </div>
+    <a href="{{ url_for('equipment.dashboard', project=project.id) }}" style="padding:6px 14px;border:1px solid var(--color-border,#d0d7de);border-radius:6px;text-decoration:none;color:var(--color-text,#1f2328);font-size:0.85rem;">Back to Dashboard</a>
+</div>
+
+<!-- Tab bar -->
+<div style="display:flex;gap:0;border-bottom:2px solid var(--color-border,#d0d7de);margin-bottom:20px;">
+    <button class="eq-tab active" data-tab="overview" onclick="switchTab('overview')" style="padding:10px 20px;border:none;background:none;cursor:pointer;font-size:0.9rem;font-weight:600;color:var(--color-text-muted,#656d76);border-bottom:2px solid transparent;margin-bottom:-2px;">Overview</button>
+    <button class="eq-tab" data-tab="connections" onclick="switchTab('connections')" style="padding:10px 20px;border:none;background:none;cursor:pointer;font-size:0.9rem;font-weight:600;color:var(--color-text-muted,#656d76);border-bottom:2px solid transparent;margin-bottom:-2px;">Connections <span id="conn-badge" style="display:none;padding:1px 6px;border-radius:10px;font-size:0.75rem;background:var(--color-primary-subtle,#ddf4ff);color:var(--color-primary);margin-left:4px;"></span></button>
+    <button class="eq-tab" data-tab="conflicts" onclick="switchTab('conflicts')" style="padding:10px 20px;border:none;background:none;cursor:pointer;font-size:0.9rem;font-weight:600;color:var(--color-text-muted,#656d76);border-bottom:2px solid transparent;margin-bottom:-2px;">Conflicts <span id="conflict-badge" style="display:none;padding:1px 6px;border-radius:10px;font-size:0.75rem;background:var(--color-danger-subtle,#ffebe9);color:var(--color-danger,#da3633);margin-left:4px;"></span></button>
+</div>
+
+<!-- Overview Tab -->
+<div id="tab-overview" class="eq-tab-panel">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+        <!-- Equipment Info -->
+        <div class="card" style="padding:20px;">
+            <h3 style="margin:0 0 16px;border:none;padding:0;">Equipment Info</h3>
+            <div id="info-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.9rem;"></div>
+        </div>
+        <!-- Attributes -->
+        <div class="card" style="padding:20px;">
+            <h3 style="margin:0 0 16px;border:none;padding:0;">Attributes</h3>
+            <div id="attrs-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.9rem;"></div>
+        </div>
+    </div>
+
+    <!-- Lifecycle Timeline -->
+    <div class="card" style="padding:20px;margin-bottom:20px;">
+        <h3 style="margin:0 0 16px;border:none;padding:0;">Lifecycle Stage</h3>
+        <div id="lifecycle-bar" style="display:flex;gap:2px;overflow-x:auto;"></div>
+    </div>
+
+    <!-- Appearances -->
+    <div class="card" style="padding:20px;">
+        <h3 style="margin:0 0 16px;border:none;padding:0;">Cross-Discipline Appearances</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr><th>Discipline</th><th>Drawing</th><th>Attributes on Sheet</th></tr>
+                </thead>
+                <tbody id="appearances-body">
+                    <tr><td colspan="3" class="loading">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Connections Tab -->
+<div id="tab-connections" class="eq-tab-panel" style="display:none;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="card" style="padding:20px;">
+            <h3 style="margin:0 0 12px;border:none;padding:0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><polyline points="15 18 9 12 15 6"/></svg>
+                Upstream
+            </h3>
+            <p style="font-size:0.8rem;color:var(--color-text-muted,#656d76);margin:0 0 12px;">Equipment that feeds/serves this one</p>
+            <div id="upstream-list"></div>
+        </div>
+        <div class="card" style="padding:20px;">
+            <h3 style="margin:0 0 12px;border:none;padding:0;">
+                Downstream
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-left:4px;"><polyline points="9 18 15 12 9 6"/></svg>
+            </h3>
+            <p style="font-size:0.8rem;color:var(--color-text-muted,#656d76);margin:0 0 12px;">Equipment this one feeds/serves</p>
+            <div id="downstream-list"></div>
+        </div>
+    </div>
+    <div id="conn-summary" style="margin-top:16px;font-size:0.85rem;color:var(--color-text-muted,#656d76);"></div>
+</div>
+
+<!-- Conflicts Tab -->
+<div id="tab-conflicts" class="eq-tab-panel" style="display:none;">
+    <div class="card" style="padding:20px;">
+        <div id="conflicts-content"></div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" style="text-align:center;padding:40px;color:var(--color-text-muted,#656d76);">Loading equipment data...</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var PROJECT_ID = {{ project.id }};
+var TAG = {{ tag | tojson }};
+var detailData = null;
+
+var LIFECYCLE_STAGES = [
+    'design','submitted','approved','procured','received',
+    'installed','connected','startup','tested','punch',
+    'commissioned','turned_over'
+];
+var STAGE_COLORS = {
+    design:'#0969da', submitted:'#8250df', approved:'#1a7f37',
+    procured:'#bf8700', received:'#cf222e', installed:'#238636',
+    connected:'#1f883d', startup:'#d4a72c', tested:'#0550ae',
+    punch:'#cf222e', commissioned:'#1a7f37', turned_over:'#6e7681'
+};
+var SEV_COLORS = {critical:'#da3633', warning:'#d29922', info:'#656d76'};
+
+function loadDetail() {
+    fetch('/equipment/api/instance/' + PROJECT_ID + '/' + encodeURIComponent(TAG))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                document.getElementById('loading-overlay').textContent = 'Equipment not found.';
+                return;
+            }
+            detailData = data;
+            document.getElementById('loading-overlay').style.display = 'none';
+            renderHeader(data);
+            renderInfo(data);
+            renderAttributes(data);
+            renderLifecycle(data.instance.lifecycle_stage);
+            renderAppearances(data.appearances);
+            renderConnections(data);
+            renderConflicts(data.conflicts);
+            applyHash();
+        })
+        .catch(function(err) {
+            document.getElementById('loading-overlay').textContent = 'Failed to load: ' + err;
+        });
+}
+
+function renderHeader(data) {
+    var subtitle = data.type_name || '';
+    if (data.system) subtitle += (subtitle ? ' — ' : '') + 'System: ' + data.system.system_tag;
+    document.getElementById('detail-subtitle').textContent = subtitle;
+    var badge = document.getElementById('detail-stage-badge');
+    var stage = data.instance.lifecycle_stage || 'design';
+    badge.textContent = stage;
+    badge.style.background = STAGE_COLORS[stage] || '#6e7681';
+}
+
+function renderInfo(data) {
+    var inst = data.instance;
+    var fields = [
+        ['Type', data.type_name || '-'],
+        ['Discipline', inst.discipline_primary || '-'],
+        ['System', data.system ? data.system.system_tag + ' — ' + data.system.system_name : '-'],
+        ['Serial Number', inst.serial_number || '-'],
+        ['Location Area', inst.location_area || '-'],
+        ['Location Room', inst.location_room || '-'],
+    ];
+    var html = '';
+    fields.forEach(function(f) {
+        html += '<div><div style="color:var(--color-text-muted,#656d76);font-size:0.8rem;">' + esc(f[0]) + '</div>' +
+                '<div style="font-weight:600;">' + esc(f[1]) + '</div></div>';
+    });
+    document.getElementById('info-grid').innerHTML = html;
+}
+
+function renderAttributes(data) {
+    var inst = data.instance;
+    var attrs = [
+        ['HP', inst.hp],
+        ['Voltage', inst.voltage],
+        ['Amperage', inst.amperage],
+        ['Weight (lbs)', inst.weight_lbs],
+        ['Pipe Size', inst.pipe_size],
+    ];
+    // Add overflow attributes
+    var overflow = data.overflow_attributes || {};
+    for (var k in overflow) {
+        attrs.push([k.replace(/_/g, ' '), overflow[k]]);
+    }
+    var html = '';
+    attrs.forEach(function(a) {
+        var val = a[1] != null ? String(a[1]) : '-';
+        html += '<div><div style="color:var(--color-text-muted,#656d76);font-size:0.8rem;">' + esc(a[0]) + '</div>' +
+                '<div style="font-weight:600;">' + esc(val) + '</div></div>';
+    });
+    document.getElementById('attrs-grid').innerHTML = html;
+}
+
+function renderLifecycle(currentStage) {
+    var bar = document.getElementById('lifecycle-bar');
+    var passed = true;
+    bar.innerHTML = LIFECYCLE_STAGES.map(function(s) {
+        var isCurrent = s === currentStage;
+        var bg = passed ? (STAGE_COLORS[s] || '#6e7681') : 'var(--color-bg-subtle,#f6f8fa)';
+        var color = passed ? '#fff' : 'var(--color-text-muted,#656d76)';
+        var border = isCurrent ? '2px solid var(--color-primary)' : '1px solid var(--color-border,#d0d7de)';
+        if (isCurrent) passed = false;
+        return '<div style="flex:1;min-width:70px;text-align:center;padding:6px 4px;border-radius:4px;font-size:0.7rem;font-weight:' + (isCurrent ? '700' : '400') + ';background:' + bg + ';color:' + color + ';border:' + border + ';">' + esc(s.replace(/_/g, ' ')) + '</div>';
+    }).join('');
+}
+
+function renderAppearances(appearances) {
+    var tbody = document.getElementById('appearances-body');
+    if (!appearances || !appearances.length) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No cross-discipline appearances</td></tr>';
+        return;
+    }
+    tbody.innerHTML = appearances.map(function(a) {
+        var attrs = a.attributes_on_sheet || {};
+        var chips = Object.keys(attrs).map(function(k) {
+            return '<span style="display:inline-block;padding:2px 8px;margin:2px;border-radius:12px;font-size:0.75rem;background:var(--color-primary-subtle,#ddf4ff);color:var(--color-primary);">' + esc(k) + ': ' + esc(String(attrs[k])) + '</span>';
+        }).join('');
+        return '<tr>' +
+            '<td><strong>' + esc(a.discipline) + '</strong></td>' +
+            '<td>' + esc(a.drawing_number || '-') + '</td>' +
+            '<td>' + (chips || '<span style="color:var(--color-text-muted,#656d76);">—</span>') + '</td>' +
+            '</tr>';
+    }).join('');
+}
+
+function renderConnections(data) {
+    var upstream = data.reverse_trace || [];
+    var downstream = data.forward_impact || [];
+
+    // Connection badge
+    var total = upstream.length + downstream.length;
+    var badge = document.getElementById('conn-badge');
+    if (total > 0) {
+        badge.style.display = 'inline';
+        badge.textContent = total;
+    }
+
+    renderConnectionList('upstream-list', upstream, 'No upstream equipment');
+    renderConnectionList('downstream-list', downstream, 'No downstream equipment');
+    document.getElementById('conn-summary').textContent =
+        upstream.length + ' upstream, ' + downstream.length + ' downstream equipment';
+}
+
+function renderConnectionList(elementId, items, emptyMsg) {
+    var el = document.getElementById(elementId);
+    if (!items.length) {
+        el.innerHTML = '<div style="color:var(--color-text-muted,#656d76);padding:12px 0;">' + esc(emptyMsg) + '</div>';
+        return;
+    }
+    el.innerHTML = items.map(function(item) {
+        var relBadge = item.relationship_type ?
+            '<span style="display:inline-block;padding:1px 6px;border-radius:10px;font-size:0.72rem;background:var(--color-bg-subtle,#f6f8fa);color:var(--color-text-muted,#656d76);margin-left:6px;">' + esc(item.relationship_type) + '</span>' : '';
+        return '<div style="padding:8px 0;border-bottom:1px solid var(--color-border,#d0d7de);">' +
+            '<a href="/equipment/' + PROJECT_ID + '/' + encodeURIComponent(item.tag) + '" style="color:var(--color-primary);text-decoration:none;font-weight:600;">' + esc(item.tag) + '</a>' +
+            (item.type_name ? ' <span style="color:var(--color-text-muted,#656d76);font-size:0.85rem;">(' + esc(item.type_name) + ')</span>' : '') +
+            relBadge +
+            '</div>';
+    }).join('');
+}
+
+function renderConflicts(conflicts) {
+    var el = document.getElementById('conflicts-content');
+    var badge = document.getElementById('conflict-badge');
+
+    if (!conflicts || !conflicts.length) {
+        el.innerHTML = '<div style="text-align:center;padding:24px;">' +
+            '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a7f37" stroke-width="2" style="margin-bottom:8px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+            '<p style="color:var(--color-success,#1a7f37);margin:0;">No conflicts found for this equipment</p></div>';
+        return;
+    }
+
+    badge.style.display = 'inline';
+    badge.textContent = conflicts.length;
+
+    var typeLabels = {attribute: 'Attribute Mismatch', missing_discipline: 'Missing Discipline', spec_violation: 'Spec Violation'};
+    var html = '<table><thead><tr><th>Type</th><th>Attribute</th><th>Disc A</th><th>Value A</th><th>Disc B</th><th>Value B</th><th>Severity</th><th>Status</th></tr></thead><tbody>';
+    conflicts.forEach(function(c) {
+        var sevColor = SEV_COLORS[c.severity] || '#6e7681';
+        html += '<tr>' +
+            '<td>' + esc(typeLabels[c.conflict_type] || c.conflict_type) + '</td>' +
+            '<td><strong>' + esc(c.attribute_name) + '</strong></td>' +
+            '<td>' + esc(c.discipline_a || '-') + '</td>' +
+            '<td>' + esc(c.value_a || '-') + '</td>' +
+            '<td>' + esc(c.discipline_b || '-') + '</td>' +
+            '<td>' + esc(c.value_b || '-') + '</td>' +
+            '<td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.78rem;font-weight:500;color:#fff;background:' + sevColor + ';">' + esc(c.severity) + '</span></td>' +
+            '<td>' + esc(c.status || '-') + '</td>' +
+            '</tr>';
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.eq-tab-panel').forEach(function(p) { p.style.display = 'none'; });
+    document.querySelectorAll('.eq-tab').forEach(function(t) {
+        t.classList.remove('active');
+        t.style.color = 'var(--color-text-muted,#656d76)';
+        t.style.borderBottomColor = 'transparent';
+    });
+    document.getElementById('tab-' + tab).style.display = '';
+    var btn = document.querySelector('.eq-tab[data-tab="' + tab + '"]');
+    if (btn) {
+        btn.classList.add('active');
+        btn.style.color = 'var(--color-primary)';
+        btn.style.borderBottomColor = 'var(--color-primary)';
+    }
+    window.location.hash = tab;
+}
+
+function applyHash() {
+    var hash = window.location.hash.replace('#', '');
+    if (hash && document.getElementById('tab-' + hash)) {
+        switchTab(hash);
+    } else {
+        switchTab('overview');
+    }
+}
+
+function esc(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+window.addEventListener('hashchange', applyHash);
+loadDetail();
+</script>
+{% endblock %}

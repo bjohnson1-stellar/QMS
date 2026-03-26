@@ -219,6 +219,9 @@ def create_app() -> Flask:
     from qms.api.pipeline import bp as pipeline_bp
     app.register_blueprint(pipeline_bp)
 
+    from qms.api.equipment import bp as equipment_bp
+    app.register_blueprint(equipment_bp)
+
     from qms.api.automation import bp as automation_bp
     app.register_blueprint(automation_bp)
 

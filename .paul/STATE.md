@@ -4,19 +4,19 @@
 
 See: .paul/PROJECT.md
 
-**Core value:** Unified quality management platform — quality intelligence (v0.1) + license compliance (v0.2) + quality manual platform (v0.3).
-**Current focus:** v0.4 Equipment-Centric Platform — Phase 21 (Spec Compliance & Impact Chains)
+**Core value:** Unified quality management platform — quality intelligence (v0.1) + license compliance (v0.2) + quality manual platform (v0.3) + equipment-centric platform (v0.4).
+**Current focus:** v0.4 Equipment-Centric Platform — Phase 23 (Equipment Hierarchy)
 
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 21 of 22 (Spec Compliance & Impact Chains) — Complete
-Plan: 21-01 complete
-Status: Loop closed, ready for next PLAN
-Last activity: 2026-03-25 — Phase 21 complete: spec compliance (9 requirements, 4 violations) + impact chains (524 relationships)
+Phase: 23 (Equipment Hierarchy) — Planning
+Plan: 23-01 created, awaiting approval
+Status: PLAN created, ready for APPLY
+Last activity: 2026-03-26 — Created .paul/phases/23-equipment-hierarchy/23-01-PLAN.md
 
 Progress:
-- v0.4 Equipment-Centric Platform: [███████░░░] 75%
+- v0.4 Equipment-Centric Platform: [████████░░] 80%
 - v0.3 Quality Manual Platform: [██████████] 100%
 - v0.2 License Compliance Platform: [██████████] 100%
 - v0.1 Quality Intelligence Platform: [████████░░] 80% (Phase 5 not started)
@@ -26,8 +26,10 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
+  ✓        ○        ○     [Plan created, awaiting approval]
 ```
+
+Note: Phase 22-01 (Equipment Web UI) was applied but UNIFY not yet run. Will close that loop after 23-01.
 
 ## Execution Log
 
@@ -38,6 +40,8 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 19-01 | Complete | Equipment registry schema (10 tables), reconciler, 585 instances for Vital | 2026-03-24 |
 | 20-01 | Complete | Conflict detection engine, negative space scanner, CLI command (492 conflicts) | 2026-03-25 |
 | 21-01 | Complete | Spec compliance engine (9 requirements, 4 violations) + impact chain analyzer (BFS traversal) | 2026-03-25 |
+| 22-01 | Applied (pending UNIFY) | Equipment web UI — dashboard + detail page with tabs (6 routes, 4 API endpoints) | 2026-03-26 |
+| 23-01 | Planning | Tag parser, dedup 124 reversed duplicates, grouped dashboard view | — |
 
 ### v0.3 Quality Manual Platform
 
@@ -126,10 +130,12 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | SQL seed for spec requirements (not Python migration) | v0.4 Phase 21 | INSERT OR IGNORE in schema file — consistent with conflict_rules pattern |
 | Advisory-only violation propagation | v0.4 Phase 21 | Impact analysis returns results, doesn't create new conflict records |
 | Extended _parse_numeric locally for AIC suffixes | v0.4 Phase 21 | Avoids modifying stable conflict_detector.py |
+| Longest-parent-first tag matching | v0.4 Phase 23 | RAHU-20-CV2 → parent RAHU-20, not RAHU-2 — prevents false parent assignment |
+| Client-side grouping (not SQL GROUP BY) | v0.4 Phase 23 | API returns flat list with parent_tag; JS groups — simpler, filter-compatible |
 
 ### Git State
-Last commit: `8b6e2e8` (feat(pipeline): cross-discipline conflict detection & negative space scanner (Phase 20-01))
-Branch: main
+Last commit: `24c0047` (feat(pipeline): spec compliance engine & impact chain analyzer (Phase 21-01))
+Branch: main (uncommitted: Phase 22 equipment web UI files)
 
 ### Deferred Issues
 | Issue | Impact | Resolution Path |
@@ -138,18 +144,20 @@ Branch: main
 | CE requirement type matching | Seeded types don't exactly match existing license_type values | Data cleanup when relevant |
 | Production Waitress template caching | New templates require server restart | Configure auto_reload or restart after deploys |
 | Parent program names on M4 cards depend on programsCache | Minor: empty if M3 not visited first | Will resolve naturally on use; could prefetch in init |
+| R0001 legend not extracted | Instrument abbreviations not from authoritative source | Phase 23-02 planned for legend extraction |
+| Phase 22-01 UNIFY pending | Applied but not formally closed | Close after 23-01 or in next session |
 
 ### Blockers/Concerns
 | Blocker | Impact | Resolution Path |
 |---------|--------|-----------------|
-| None currently | - | - |
+| Production server needs restart for new blueprint | Equipment module 404 on production | User must restart Waitress (zombie PID 79740 blocking port) |
 
 ## Session Continuity
 
-Last session: 2026-03-25
-Stopped at: Phase 21 complete, loop closed
-Next action: /paul:plan for Phase 22 (Equipment Web UI)
-Resume file: .paul/phases/21-spec-compliance-impact/21-01-SUMMARY.md
+Last session: 2026-03-26
+Stopped at: Plan 23-01 created
+Next action: Review and approve plan, then run /paul:apply .paul/phases/23-equipment-hierarchy/23-01-PLAN.md
+Resume file: .paul/phases/23-equipment-hierarchy/23-01-PLAN.md
 
 ---
 *STATE.md — Updated after every significant action*

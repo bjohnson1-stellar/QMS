@@ -521,6 +521,9 @@ web_modules:
   pipeline:
     label: "Pipeline"
     default_endpoint: "pipeline.intake_dashboard"
+  equipment:
+    label: "Equipment"
+    default_endpoint: "equipment.dashboard"
   automation:
     label: "Automation"
     default_endpoint: "automation.preview"

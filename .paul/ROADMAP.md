@@ -10,7 +10,7 @@ Modular quality management platform for construction. Two completed milestones: 
 
 **v0.4 Equipment-Centric Platform**
 Status: In Progress
-Phases: 4 planned (19-22)
+Phases: 5 planned (19-23)
 Started: 2026-03-24
 
 Equipment-centric project data platform — unified registry consolidating all discipline connections, cross-discipline conflict detection, negative space analysis, spec compliance checking, and lifecycle tracking. Piloted on Vital (07645).
@@ -20,7 +20,8 @@ Equipment-centric project data platform — unified registry consolidating all d
 | 19 | Equipment Master Schedule — Schema & Reconciliation | 1 | Complete | 2026-03-24 |
 | 20 | Conflict Detection & Negative Space | 1 | Complete | 2026-03-25 |
 | 21 | Spec Compliance & Impact Chains | 1 | Complete | 2026-03-25 |
-| 22 | Equipment Web UI | TBD | Not started | — |
+| 22 | Equipment Web UI | 1 | Applied | 2026-03-26 |
+| 23 | Equipment Hierarchy | 2 | Planning | — |
 
 ### Phase 19: Equipment Master Schedule — Schema & Reconciliation
 
@@ -37,6 +38,10 @@ Focus: Cross-reference extracted attributes against spec requirements, drawing r
 ### Phase 22: Equipment Web UI
 
 Focus: Equipment dashboard, filterable equipment list, equipment detail page (tabs: Overview, Connections, Documents, Conflicts, History), system view, conflict dashboard.
+
+### Phase 23: Equipment Hierarchy
+
+Focus: Tag parser for parent-child relationships, deduplication of 124 reversed instrument tags, sub-component type reclassification (CV→Control Valve, etc.), grouped dashboard view. Plan 23-02 (future): R0001 P&ID legend extraction for authoritative component classification.
 
 ---
 

@@ -177,3 +177,12 @@ def migrate_all():
             logger.info("Equipment registry schema applied")
     except Exception as exc:
         logger.warning("Equipment schema step failed (non-fatal): %s", exc)
+
+    # Equipment hierarchy columns (Phase 23 migration)
+    try:
+        from qms.pipeline.tag_parser import run_migration as run_equipment_migration
+        with get_db() as eq_mig_conn:
+            run_equipment_migration(eq_mig_conn)
+        logger.info("Equipment hierarchy migration applied")
+    except Exception as exc:
+        logger.warning("Equipment hierarchy migration failed (non-fatal): %s", exc)
