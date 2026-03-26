@@ -91,8 +91,15 @@
           "tags": ["equipment", "legend", "extraction", "classification", "v0.4"]
         },
         {
+          "title": "Submittal Builder (PM/Vendor Tool)",
+          "desc": "Web-based submittal creation tool for PMs and vendors. Pre-populates from schedule_extractions: equipment tags, spec sections, required manufacturers, quantities. Wizard flow: (1) Select project + spec section, (2) System shows required equipment from drawings, (3) Vendor uploads product data sheets/cut sheets per item, (4) System validates completeness (all required items covered, spec section matches), (5) Generates formatted submittal package with standardized naming (project-spec_section-revision), cover sheet, table of contents, and item cross-reference matrix. Enforces consistent structure so downstream submittal intake/review is predictable. Supports resubmittal workflow (track revisions, reviewer comments, approval status). Vendor portal option for external access without full QMS login.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["submittals", "builder", "vendor-portal", "equipment", "standardization"]
+        },
+        {
           "title": "Submittal Intake & Cross-Reference",
-          "desc": "AI-powered submittal processing: extract manufacturer, model, spec section, approved/rejected status from submittal PDFs. Cross-reference against schedule_extractions to verify submitted equipment matches design specs. Flag mismatches (wrong model, missing submittals, unapproved substitutions). Schema: submittals table + submittal_items with FK to equipment.",
+          "desc": "AI-powered submittal processing: extract manufacturer, model, spec section, approved/rejected status from submittal PDFs. Cross-reference against schedule_extractions to verify submitted equipment matches design specs. Flag mismatches (wrong model, missing submittals, unapproved substitutions). Schema: submittals table + submittal_items with FK to equipment. Builder-generated submittals get fast-tracked (structure already known); external submittals get full AI extraction.",
           "module": "pipeline",
           "priority": "high",
           "tags": ["submittals", "intake", "cross-reference", "equipment", "quality"]
