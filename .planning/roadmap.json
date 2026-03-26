@@ -112,6 +112,13 @@
           "tags": ["specifications", "intake", "requirements", "compliance"]
         },
         {
+          "title": "Quality Documentation Matrix & Test Package Builder",
+          "desc": "Generates a project-specific quality documentation matrix by cross-referencing three sources: (1) Quality Manual M3 program requirements (inspection hold points, witness points, test types per discipline), (2) Project specifications (test/inspection requirements per CSI section — hydrostatic tests, weld inspections, insulation resistance, balancing, etc.), (3) Equipment registry (what's installed, by system and discipline). Produces a master matrix: for each piece of equipment or system, what QA/QC documents are required, at what project stage (pre-install, install, startup, commissioning, closeout), and current status (not started, in progress, complete, deficient). Test Package Builder assembles closeout documentation per system: collects completed test reports, inspection records, certifications, calibration certs, and O&M manuals into structured turnover packages. Tracks readiness per system — 'System X is 85% documentation complete, missing: hydro test report for P-H1, startup report for CH-1'. Supports both self-perform QC (SIS crews) and subcontractor QC document collection. Web UI with system-level and equipment-level drill-down, stage gates, and percent-complete dashboards.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["quality", "testing", "documentation-matrix", "turnover", "closeout", "commissioning", "itp"]
+        },
+        {
           "title": "RFI Intake & Tracking",
           "desc": "Process RFI PDFs: extract question, response, referenced drawings/specs, status, dates, responsible parties. Link RFIs to affected equipment tags and drawing sheets. Track open/closed status, response time metrics. Web UI for RFI log with filters and search.",
           "module": "pipeline",
