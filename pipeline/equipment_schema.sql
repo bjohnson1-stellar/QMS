@@ -259,6 +259,35 @@ CREATE TABLE IF NOT EXISTS equipment_spec_requirements (
 CREATE INDEX IF NOT EXISTS idx_spec_req_type ON equipment_spec_requirements(type_id);
 CREATE INDEX IF NOT EXISTS idx_spec_req_name ON equipment_spec_requirements(type_name);
 
+-- Schedule extraction staging table (raw data before reconciliation)
+CREATE TABLE IF NOT EXISTS schedule_extractions (
+    id INTEGER PRIMARY KEY,
+    sheet_id INTEGER NOT NULL REFERENCES sheets(id),
+    project_id INTEGER NOT NULL REFERENCES projects(id),
+    tag TEXT NOT NULL,
+    description TEXT,
+    equipment_type TEXT,
+    hp REAL,
+    kva REAL,
+    voltage TEXT,
+    amperage REAL,
+    phase_count INTEGER,
+    circuit TEXT,
+    panel_source TEXT,
+    manufacturer TEXT,
+    model_number TEXT,
+    weight_lbs REAL,
+    cfm REAL,
+    additional_attributes TEXT,
+    confidence REAL DEFAULT 0.9,
+    extraction_model TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(sheet_id, tag)
+);
+
+CREATE INDEX IF NOT EXISTS idx_schedule_extractions_project
+    ON schedule_extractions(project_id, tag);
+
 -- Seed default conflict rules
 INSERT OR IGNORE INTO conflict_rules (attribute_name, comparison_type, tolerance_value, tolerance_type, severity, description) VALUES
     ('hp', 'numeric_tolerance', 10, 'percent', 'warning', 'Horsepower mismatch >10% between disciplines'),

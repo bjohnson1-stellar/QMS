@@ -145,27 +145,33 @@ def select_model(drawing_type: str, complexity: str) -> str:
         return "sonnet"
 
 
-def build_extraction_prompt(text: str, drawing_type: str) -> str:
+def build_extraction_prompt(text: str, drawing_type: str, context: str = None) -> str:
     """
     Build extraction prompt based on drawing type.
 
     Args:
         text: Extracted text from drawing.
         drawing_type: Type of drawing to extract.
+        context: Optional equipment checklist from context_builder (Phase 25).
 
     Returns:
         Extraction prompt for AI model.
     """
     if drawing_type == "P&ID":
-        return _build_pid_prompt(text)
+        prompt = _build_pid_prompt(text)
     elif drawing_type == "Isometric":
-        return _build_iso_prompt(text)
+        prompt = _build_iso_prompt(text)
     elif drawing_type in ("Refrigeration Plan", "Refrigeration"):
-        return _build_refrig_prompt(text)
+        prompt = _build_refrig_prompt(text)
     elif drawing_type == "GA":
-        return _build_ga_prompt(text)
+        prompt = _build_ga_prompt(text)
     else:
-        return _build_generic_prompt(text)
+        prompt = _build_generic_prompt(text)
+
+    if context:
+        prompt += "\n\n" + context
+
+    return prompt
 
 
 def _build_refrig_prompt(text: str) -> str:
