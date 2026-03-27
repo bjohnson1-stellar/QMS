@@ -10,10 +10,10 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 26 (Schedule Reconciliation) — Complete
-Plan: 26-01 complete
-Status: Loop closed, phase complete — ready for transition
-Last activity: 2026-03-27 — Plan 26-01 unified
+Phase: 27 (Floor Plan Extraction) — Planning
+Plan: 27-01 created, awaiting approval
+Status: PLAN created, ready for APPLY
+Last activity: 2026-03-27 — Created 27-01-PLAN.md
 
 Progress:
 - v0.4 Equipment-Centric Platform: [█████████░] 90%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — Phase 26 done]
+  ✓        ○        ○     [Plan 27-01 created, awaiting approval]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -167,12 +167,13 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-27
-Stopped at: Phase 26 complete, transition pending
-Next action: Transition phase or start next phase planning
-Resume file: .paul/phases/26-schedule-reconciliation/26-01-SUMMARY.md
+Stopped at: Plan 27-01 created
+Next action: Review and approve plan, then run /paul:apply
+Resume file: .paul/phases/27-floor-plan-extraction/27-01-PLAN.md
 Resume notes: |
-  Phase 26 complete. 661 equipment instances, 296 enriched from schedules.
-  Next: transition to Phase 27 or check roadmap for next priority.
+  Phase 27: Floor plan extraction infrastructure.
+  Two tasks: (1) Create floor_plan_extractions table + storage module, (2) Build context-aware vision prompts + harness integration.
+  Checkpoint: verify infrastructure before batch extraction in 27-02.
 
 ---
 *STATE.md — Updated after every significant action*
