@@ -6,38 +6,25 @@
       "icon": "&#9881;",
       "items": [
         {
-          "title": "v0.3 Quality Manual Platform",
-          "desc": "Unified tabbed UI for M1-M4, AI-powered SOP intake, draft/approval workflow. Phases 14-16 complete (schema, API, tabbed UI shell, M3 programs UI), 2 phases remaining.",
-          "module": "qualitydocs",
+          "title": "v0.4 Phase 27 — Floor Plan Extraction",
+          "desc": "Context-aware vision extraction of floor plans, P&IDs, and details. Anti-hallucination prompts inject schedule-built equipment checklist. Plan 27-01 (infrastructure) complete, 27-02 (Refrigeration P&IDs) next, 27-03 (remaining MEP disciplines).",
+          "module": "pipeline",
           "priority": "high",
-          "tags": [
-            "milestone",
-            "qualitydocs",
-            "quality-manual",
-            "v0.3"
-          ]
+          "tags": ["equipment", "extraction", "floor-plans", "vision", "v0.4"]
         },
         {
           "title": "Procore Drawing Zip Import",
           "desc": "Extract PDFs from Procore zip exports and route to project discipline folders. Handle revision superseding.",
           "module": "pipeline",
           "priority": "high",
-          "tags": [
-            "intake",
-            "procore",
-            "drawings"
-          ]
+          "tags": ["intake", "procore", "drawings"]
         },
         {
           "title": "Batch WPQ/WPS Extraction",
           "desc": "Extract ~500 welding PDFs from D:\\RAW_DATA\\ using dual Sonnet + Opus shadow review pipeline.",
           "module": "welding",
           "priority": "high",
-          "tags": [
-            "extraction",
-            "welding",
-            "batch"
-          ]
+          "tags": ["extraction", "welding", "batch"]
         }
       ]
     },
@@ -47,48 +34,39 @@
       "icon": "&#9998;",
       "items": [
         {
-          "title": "Quality Manual Module 3 XML Authoring",
-          "desc": "Author module3_output.xml from planning doc. 8 sections: Program Framework (3.1), Welding Quality (3.2), Training & Workforce (3.3), Testing & Calibration (3.4), CI/CAPA (3.5), Field Operations Manual (3.6), Vendor & Subcontractor Quality (3.7), Internal Audit (3.8).",
-          "module": "qualitydocs",
-          "priority": "high",
-          "tags": [
-            "docs",
-            "quality-manual",
-            "authoring"
-          ]
-        },
-        {
-          "title": "Quality Manual Module 4 XML Authoring",
-          "desc": "Author module4_output.xml from planning doc. ~50 SOPs across 11 categories with dual ID system (section 4.X + SOP-XXX-NNN). Reserved section ranges per category.",
-          "module": "qualitydocs",
-          "priority": "high",
-          "tags": [
-            "docs",
-            "quality-manual",
-            "authoring",
-            "sops"
-          ]
-        },
-        {
-          "title": "v0.4 Phase 24 — Equipment System Model & Consolidation",
-          "desc": "System type taxonomy (20 types), equipment_system_members junction table for multi-system membership, consolidate refrigeration circuits into real systems, create plumbing/HVAC/compressed air systems, assign 77% of unassigned equipment, system view on dashboard.",
+          "title": "Drawing Viewer (pdf.js)",
+          "desc": "Side-by-side PDF viewer with extracted data overlay. pdf.js renders drawing pages in browser, equipment tags link to page/location, click-to-jump from equipment detail or conflict. Split-pane layout: drawing on left, extracted data/conflicts on right. Per-sheet review status tracking. Critical for making the system a usable review tool rather than just a database.",
           "module": "pipeline",
           "priority": "high",
-          "tags": ["equipment", "systems", "taxonomy", "v0.4"]
+          "tags": ["drawing-viewer", "pdf-js", "review", "equipment", "ui"]
         },
         {
-          "title": "v0.4 Phase 25 — Schedule-First Multi-Pass Extraction",
-          "desc": "Schedule-first extraction strategy: (1a) Haiku extracts equipment schedules to build authoritative manifest, (1b) Haiku extracts legends/abbreviations, (2) Sonnet extracts floor plans/P&IDs with schedule-built checklist as context, (3) Haiku cross-discipline informed search, (4) Sonnet conflict verification on ~20-30%. Prevents hallucination by validating plan findings against schedule data.",
+          "title": "Conflict Resolution UI",
+          "desc": "Make conflicts actionable: resolve (with note), mark false positive, assign to reviewer, generate RFI draft. Bulk actions for batch resolution. Resolution audit trail. Filter by status (new/confirmed/assigned/resolved/false_positive). Currently conflicts are view-only on dashboard — this adds the workflow to close them out.",
           "module": "pipeline",
           "priority": "high",
-          "tags": ["equipment", "extraction", "multi-pass", "schedule-first", "model-routing", "v0.4"]
+          "tags": ["conflicts", "resolution", "workflow", "rfi", "ui"]
         },
         {
-          "title": "v0.4 Phase 26 — R0001 Legend Extraction & Type Refinement",
-          "desc": "Extract P&ID legend from R0001 Rev E via Claude vision, store in drawing_abbreviations table, use as authoritative lookup for instrument/component classification, resolve naming inconsistencies (Control Valve vs Electronic Expansion Valve).",
+          "title": "Remaining Schedule Extraction (40 sheets)",
+          "desc": "19 of 59 Vital schedule sheets extracted. 40 remaining include architectural, civil, structural, fire protection, and additional MEP sheets. Would increase equipment registry coverage and improve conflict detection accuracy.",
           "module": "pipeline",
           "priority": "medium",
-          "tags": ["equipment", "legend", "extraction", "classification", "v0.4"]
+          "tags": ["extraction", "schedules", "completeness"]
+        },
+        {
+          "title": "Legend Extraction (11 sheets)",
+          "desc": "Extract P&ID legends, abbreviation tables, and symbol keys from 11 legend/notes sheets. Store in drawing_abbreviations table for authoritative instrument/component classification. Resolves naming inconsistencies (Control Valve vs Electronic Expansion Valve). Was originally planned as Phase 26 before schedule reconciliation took priority.",
+          "module": "pipeline",
+          "priority": "medium",
+          "tags": ["extraction", "legend", "abbreviations", "classification"]
+        },
+        {
+          "title": "Specification Intake & Requirements Extraction",
+          "desc": "Parse project specification PDFs by CSI division. Extract: approved manufacturers, material requirements, test/inspection requirements, submittal requirements per section. Link spec sections to equipment types for automated compliance checking. Build on existing sis-spec-intake foundation.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["specifications", "intake", "requirements", "compliance"]
         },
         {
           "title": "Submittal Builder (PM/Vendor Tool)",
@@ -105,18 +83,25 @@
           "tags": ["submittals", "intake", "cross-reference", "equipment", "quality"]
         },
         {
-          "title": "Specification Intake & Requirements Extraction",
-          "desc": "Parse project specification PDFs by CSI division. Extract: approved manufacturers, material requirements, test/inspection requirements, submittal requirements per section. Link spec sections to equipment types for automated compliance checking. Build on existing sis-spec-intake foundation.",
-          "module": "pipeline",
-          "priority": "high",
-          "tags": ["specifications", "intake", "requirements", "compliance"]
-        },
-        {
           "title": "Quality Documentation Package Generator & Tracker",
-          "desc": "Quality department deliverable to operations: generates pre-filled test and inspection documents for every piece of equipment on the project, organized by system and project stage. Philosophy: QA provides the field with ready-to-execute packages where all the hard parts (equipment tags, spec references, acceptance criteria, design values, related drawing numbers) are already filled in — the field only needs to record actual test results and sign. This removes the documentation burden from operations while ensuring QA gets complete, high-quality data back. Three phases: (1) GENERATE — Cross-reference quality manual M3 programs, project specifications (test/inspection requirements per CSI section), and equipment registry to produce a master documentation matrix. For each equipment tag or system, determine every required document (hydrostatic test, insulation resistance, weld inspection, pressure test, balancing report, startup checklist, etc.) and at which project stage it's needed (pre-install, install, startup, commissioning, closeout). Generate pre-filled PDF/form packages per system with equipment-specific data populated from the drawing database (tag, location, design pressure, design temp, voltage, HP, flow rates, acceptance criteria from specs). (2) TRACK — Web dashboard showing overall project quality documentation status. System-level drill-down: 'Chilled Water System: 14 of 18 documents complete'. Equipment-level: 'CH-1: startup report pending, hydro test complete'. Stage gates: cannot mark system commissioning-ready until all install-stage docs are complete. Supports self-perform QC (SIS crews) and subcontractor document collection with the same pre-filled templates. (3) CLOSE — Completed documents are processed back into the project quality database. System assembles final turnover packages per system for owner delivery: all test reports, inspection records, certifications, calibration certs, O&M manuals, and as-built data in structured format. Turnover package generation is automated — when all documents for a system are marked complete, the package is ready to print/export. The real value: the quality department can hand operations a box of pre-filled documents at project kickoff and say 'fill in the blanks and return these as you go' instead of hoping they figure out what's required from a 500-page spec. Field employees get clear, specific forms. QA gets complete, consistent data. The owner gets a professional turnover package.",
+          "desc": "Quality department deliverable to operations: generates pre-filled test and inspection documents for every piece of equipment on the project, organized by system and project stage. Philosophy: QA provides the field with ready-to-execute packages where all the hard parts (equipment tags, spec references, acceptance criteria, design values, related drawing numbers) are already filled in — the field only needs to record actual test results and sign. This removes the documentation burden from operations while ensuring QA gets complete, high-quality data back. Three phases: (1) GENERATE — Cross-reference quality manual M3 programs, project specifications (test/inspection requirements per CSI section), and equipment registry to produce a master documentation matrix. For each equipment tag or system, determine every required document (hydrostatic test, insulation resistance, weld inspection, pressure test, balancing report, startup checklist, etc.) and at which project stage it's needed (pre-install, install, startup, commissioning, closeout). Generate pre-filled PDF/form packages per system with equipment-specific data populated from the drawing database (tag, location, design pressure, design temp, voltage, HP, flow rates, acceptance criteria from specs). (2) TRACK — Web dashboard showing overall project quality documentation status. System-level drill-down: 'Chilled Water System: 14 of 18 documents complete'. Equipment-level: 'CH-1: startup report pending, hydro test complete'. Stage gates: cannot mark system commissioning-ready until all install-stage docs are complete. Supports self-perform QC (SIS crews) and subcontractor document collection with the same pre-filled templates. (3) CLOSE — Completed documents are processed back into the project quality database. System assembles final turnover packages per system for owner delivery: all test reports, inspection records, certifications, calibration certs, O&M manuals, and as-built data in structured format. Turnover package generation is automated — when all documents for a system are marked complete, the package is ready to print/export.",
           "module": "pipeline",
           "priority": "high",
           "tags": ["quality", "testing", "documentation-matrix", "turnover", "closeout", "commissioning", "itp", "prefilled-forms", "field-support"]
+        },
+        {
+          "title": "Export & Reports",
+          "desc": "Downloadable deliverables from the equipment registry: conflict report PDF (grouped by severity, with drawing references), equipment register CSV/Excel export, system summary report, discipline coverage matrix. WeasyPrint for PDFs, openpyxl for Excel. Needed for coordination meetings and owner deliverables.",
+          "module": "pipeline",
+          "priority": "medium",
+          "tags": ["export", "reports", "pdf", "csv", "deliverables"]
+        },
+        {
+          "title": "Multi-Project Onboarding",
+          "desc": "Streamlined workflow to add a new project to the equipment platform: import drawings, run schedule extraction, reconcile, detect conflicts. Currently only Vital (07645) is onboarded. Need to prove the system works across projects. Includes project template, discipline auto-detection, extraction queue management.",
+          "module": "pipeline",
+          "priority": "medium",
+          "tags": ["onboarding", "multi-project", "workflow"]
         },
         {
           "title": "RFI Intake & Tracking",
@@ -126,34 +111,25 @@
           "tags": ["rfis", "intake", "tracking", "coordination"]
         },
         {
+          "title": "Quality Manual Module 3 XML Authoring",
+          "desc": "Author module3_output.xml from planning doc. 8 sections: Program Framework (3.1), Welding Quality (3.2), Training & Workforce (3.3), Testing & Calibration (3.4), CI/CAPA (3.5), Field Operations Manual (3.6), Vendor & Subcontractor Quality (3.7), Internal Audit (3.8).",
+          "module": "qualitydocs",
+          "priority": "medium",
+          "tags": ["docs", "quality-manual", "authoring"]
+        },
+        {
+          "title": "Quality Manual Module 4 XML Authoring",
+          "desc": "Author module4_output.xml from planning doc. ~50 SOPs across 11 categories with dual ID system (section 4.X + SOP-XXX-NNN). Reserved section ranges per category.",
+          "module": "qualitydocs",
+          "priority": "medium",
+          "tags": ["docs", "quality-manual", "authoring", "sops"]
+        },
+        {
           "title": "Windows Service (nssm)",
           "desc": "Run Waitress as auto-start Windows service instead of manual qms serve.",
           "module": "core",
-          "priority": "medium",
-          "tags": [
-            "devops",
-            "deployment"
-          ]
-        },
-        {
-          "title": "Scheduled OneDrive Sync",
-          "desc": "Auto-run qms pipeline intake --sync on a schedule via Task Scheduler or service.",
-          "module": "pipeline",
-          "priority": "medium",
-          "tags": [
-            "automation",
-            "onedrive"
-          ]
-        },
-        {
-          "title": "P-Number Prefix Disambiguation",
-          "desc": "P- prefix maps to Mechanical but should be Plumbing for some projects. Need project-level override or smarter resolution.",
-          "module": "pipeline",
           "priority": "low",
-          "tags": [
-            "intake",
-            "classifier"
-          ]
+          "tags": ["devops", "deployment"]
         }
       ]
     },
@@ -162,6 +138,14 @@
       "color": "#3fb950",
       "icon": "&#10003;",
       "items": [
+        {
+          "title": "v0.4 Phase 27-01 — Floor Plan Extraction Infrastructure",
+          "desc": "floor_plan_extractions table (15 columns, appearance_type tracking), floor_plan_extractor.py with context-aware vision prompts (anti-hallucination checklist from schedules), harness phase='plans' support. 344 pending sheets for Vital.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["equipment", "extraction", "infrastructure", "v0.4"],
+          "completed": "2026-03-27"
+        },
         {
           "title": "v0.4 Phase 26 — Schedule Reconciliation",
           "desc": "Integrated 452 schedule extraction entries as 12th reconciler data source. 661 instances (was 465), 296 enriched with manufacturer/model/HP/voltage/weight from schedules, conflicts reduced 496→473. enrich_from_schedules() with full attribute_log audit trail.",
@@ -231,14 +215,7 @@
           "desc": "M3 programs + M4 SOPs schema (7 tables), qualitydocs/db.py CRUD module with 22 functions, 15 seeded M4 categories, 12 REST API endpoints for programs/categories/SOPs/lifecycle/search.",
           "module": "qualitydocs",
           "priority": "high",
-          "tags": [
-            "qualitydocs",
-            "schema",
-            "api",
-            "m3",
-            "m4",
-            "sops"
-          ],
+          "tags": ["qualitydocs", "schema", "api", "m3", "m4", "sops"],
           "completed": "2026-03-10"
         },
         {
@@ -246,458 +223,9 @@
           "desc": "8 phases, 18 plans over 5 days. Harbor-like multi-state license compliance: foundation hardening, renewal workflows, notifications, document management, entity registration, regulatory intelligence, CE catalog, integrations/automation. Git tag: v0.2.0.",
           "module": "licenses",
           "priority": "high",
-          "tags": [
-            "milestone",
-            "licenses",
-            "compliance",
-            "v0.2"
-          ],
+          "tags": ["milestone", "licenses", "compliance", "v0.2"],
           "completed": "2026-03-09"
-        },
-        {
-          "title": "v0.2 Phase 13 — Integrations & Automation (3 plans)",
-          "desc": "Dashboard widgets + iCal calendar feed, cross-module credentials + bulk operations, license verification tracking with state board lookup, token-authenticated external API at /api/v1/. Completes v0.2 milestone.",
-          "module": "licenses",
-          "priority": "high",
-          "tags": [
-            "licenses",
-            "compliance",
-            "integrations",
-            "verification",
-            "api"
-          ],
-          "completed": "2026-03-09"
-        },
-        {
-          "title": "System Tray App for Waitress Server Control",
-          "desc": "pystray-based system tray icon with Start/Stop/Restart server, Open in Browser, health monitoring. Subprocess isolation, port conflict detection, external server awareness. CLI: qms tray.",
-          "module": "core",
-          "priority": "medium",
-          "tags": [
-            "devops",
-            "tray",
-            "server",
-            "ui"
-          ],
-          "completed": "2026-03-09"
-        },
-        {
-          "title": "v0.2 Phase 12 \u00e2\u20ac\u201d Advanced CE & Multi-Credential (2 plans)",
-          "desc": "CE provider & course catalog with cross-state applicability, CRUD modals, course browser with state/format filters. Employee credential portfolio with master-detail layout, CE progress bars. Catalog-linked credit entry.",
-          "module": "licenses",
-          "priority": "high",
-          "tags": [
-            "licenses",
-            "compliance",
-            "ce",
-            "catalog",
-            "credentials",
-            "portfolio",
-            "ui"
-          ],
-          "completed": "2026-03-06"
-        },
-        {
-          "title": "v0.2 Phase 8 \u00e2\u20ac\u201d Notifications & Task Management (2 plans)",
-          "desc": "Rule-driven notification engine with 3 generators (expiration, CE deadline, renewal), CLI with 6 ops, 5 notification API endpoints, Teams webhook for critical alerts (Adaptive Card format), task queue UI panel on licenses dashboard with acknowledge/resolve actions.",
-          "module": "licenses",
-          "priority": "high",
-          "tags": [
-            "licenses",
-            "compliance",
-            "notifications",
-            "teams",
-            "webhook",
-            "api",
-            "ui"
-          ],
-          "completed": "2026-03-06"
-        },
-        {
-          "title": "v0.2 Phase 7 \u00e2\u20ac\u201d Renewal Workflow & Events (2 plans)",
-          "desc": "license_events table with 7 event types, fee tracking, auto-expire CLI, renewal API endpoint, event timeline UI on detail page, renewal modal, add-event modal. 25 tests.",
-          "module": "licenses",
-          "priority": "high",
-          "tags": [
-            "licenses",
-            "compliance",
-            "renewal",
-            "events",
-            "workflow",
-            "ui"
-          ],
-          "completed": "2026-03-06"
-        },
-        {
-          "title": "v0.1 Phase 4 Plan 02 \u00e2\u20ac\u201d Voice Transcription + Capture Review UI",
-          "desc": "OpenAI Whisper voice transcription, Claude transcript analysis, capture review page at /quality/captures with inline editing. Completes phone-to-database pipeline (photos + voice notes). 9 new tests (26 total capture tests).",
-          "module": "quality",
-          "priority": "high",
-          "tags": [
-            "mobile",
-            "quality",
-            "voice",
-            "transcription",
-            "whisper",
-            "ui",
-            "review"
-          ],
-          "completed": "2026-03-05"
-        },
-        {
-          "title": "v0.2 Phase 6 \u00e2\u20ac\u201d Foundation Hardening (3 plans)",
-          "desc": "N+1 query fixes + audit trail, server-side pagination + input validation, API rate limiting (60/min per IP) + CSRF hardening (PUT/DELETE/PATCH + Origin validation). Completes security foundation for v0.2 License Compliance Platform.",
-          "module": "licenses",
-          "priority": "high",
-          "tags": [
-            "licenses",
-            "security",
-            "performance",
-            "pagination",
-            "validation",
-            "rate-limiting",
-            "csrf"
-          ],
-          "completed": "2026-03-05"
-        },
-        {
-          "title": "Licenses Phase 3 \u00e2\u20ac\u201d CE Workflow, Reporting & Compliance Dashboard",
-          "desc": "Period-aware CE tracking (renewal window scoping), seed CE requirements for 9 key states, certificate file upload/download, CSV exports (licenses + CE compliance), compliance dashboard with health score cards, action items queue, and Chart.js horizontal stacked bar chart for CE progress by state. 3 new db functions, 5 new API routes, multipart file upload support.",
-          "module": "licenses",
-          "priority": "medium",
-          "tags": [
-            "licenses",
-            "compliance",
-            "ce-tracking",
-            "dashboard",
-            "export",
-            "upload"
-          ],
-          "completed": "2026-03-05"
-        },
-        {
-          "title": "Licenses Phase 2 \u00e2\u20ac\u201d Drill-Down Navigation, Scope Mapping, CE Tracking",
-          "desc": "State detail pages with board info and CE requirements. License detail pages with scope tags and CE credit progress tracking. 5 new schema tables (boards, scope_categories, license_scope_map, ce_requirements, ce_credits). Drill-down navigation: Map \u00e2\u2020\u2019 State \u00e2\u2020\u2019 License. Employee \u00e2\u2020\u2019 Qualifying Party terminology. Scope-to-license compliance gap detection. ~20 new DB functions, ~15 new API routes, 2 new templates.",
-          "module": "licenses",
-          "priority": "medium",
-          "tags": [
-            "ui",
-            "licenses",
-            "compliance",
-            "ce-tracking",
-            "drill-down",
-            "scopes"
-          ],
-          "completed": "2026-03-05"
-        },
-        {
-          "title": "License Schema \u00e2\u20ac\u201d Business Entity + Employee Model",
-          "desc": "Added business_entity column to state_licenses, separating company identity from employee link. Migration backfills from holder_name. Updated import specs, API, modal form, table, stats cards, and renewal timeline.",
-          "module": "licenses",
-          "priority": "medium",
-          "tags": [
-            "schema",
-            "licenses",
-            "refactor"
-          ],
-          "completed": "2026-03-05"
-        },
-        {
-          "title": "Mobile Capture Photo Pipeline (Phase 4, Plan 01)",
-          "desc": "Claude vision photo analysis pipeline \u00e2\u20ac\u201d scan OneDrive folder for construction photos, analyze with AI, create structured quality issues with attached images. CLI command with dry-run, folder override, project assignment. capture_log dedup table. 17 tests.",
-          "module": "quality",
-          "priority": "high",
-          "tags": [
-            "mobile",
-            "quality",
-            "claude-vision",
-            "ai",
-            "onedrive"
-          ],
-          "completed": "2026-03-05"
-        },
-        {
-          "title": "State Licenses Module \u00e2\u20ac\u201d Phase 1 Expansion",
-          "desc": "Bulk CSV import via shared import engine (10 columns, 2-level match), US state SVG map with click-to-filter, expiration alerts (30/60/90 day bands), Chart.js renewal timeline. Builds on base CRUD module.",
-          "module": "licenses",
-          "priority": "medium",
-          "tags": [
-            "ui",
-            "licenses",
-            "compliance",
-            "import",
-            "dashboard",
-            "map"
-          ],
-          "completed": "2026-03-05"
-        },
-        {
-          "title": "Quality Intelligence Dashboard (Phase 3)",
-          "desc": "Chart.js analytics (by type/status/trade), filterable browse page with semantic search (vectordb + SQL LIKE fallback), 4 new API endpoints, sub-nav integration. Completes Phase 3 of Quality Intelligence Platform milestone.",
-          "module": "quality",
-          "priority": "high",
-          "tags": [
-            "ui",
-            "quality",
-            "dashboard",
-            "chartjs",
-            "search",
-            "analytics"
-          ],
-          "completed": "2026-02-27"
-        },
-        {
-          "title": "Quality Intelligence Dashboard (Phase 3, Plan 01)",
-          "desc": "Flask blueprint at /quality/ with stats cards (total/open/in-progress/critical), recent issues table, issues-by-project breakdown, JSON APIs (/api/stats, /api/issues with filters), BU filtering, shield+checkmark nav icon. Zero custom CSS.",
-          "module": "quality",
-          "priority": "high",
-          "tags": [
-            "ui",
-            "quality",
-            "dashboard",
-            "api"
-          ],
-          "completed": "2026-02-27"
-        },
-        {
-          "title": "Procore Bulk Import Pipeline (Phase 2)",
-          "desc": "CSV import engine with header auto-mapping, normalization, dedup. Batch import with project-from-filename resolution. Attachment URL capture. Quality issues vector indexing. Pipeline auto-detection for observation CSVs. 44 tests.",
-          "module": "quality",
-          "priority": "high",
-          "tags": [
-            "import",
-            "procore",
-            "quality",
-            "vectordb",
-            "batch"
-          ],
-          "completed": "2026-02-26"
-        },
-        {
-          "title": "Quality Issues Foundation (Phase 1)",
-          "desc": "Unified quality issues schema (8 tables), root cause taxonomy, normalization config, audit trail, issue linking, tagging, corrective actions. Quality module registered in SCHEMA_ORDER.",
-          "module": "quality",
-          "priority": "high",
-          "tags": [
-            "schema",
-            "quality",
-            "foundation"
-          ],
-          "completed": "2026-02-25"
-        },
-        {
-          "title": "Unified QR Code System",
-          "desc": "Shared QR utility in core/ for encoding self-contained metadata on welding forms (WPS/PQR/WPQ/BPS/BPQ/BPQR) and quality manual exports. Branded with nav_bg color, field ordering per doc type.",
-          "module": "core",
-          "priority": "medium",
-          "tags": [
-            "qr",
-            "welding",
-            "qualitydocs",
-            "export"
-          ],
-          "completed": "2026-02-26"
-        },
-        {
-          "title": "Pre-Approved Coupons + AWS SWPS Import",
-          "desc": "Quick-select bar for 11 pre-approved coupon configs (W1-W7 welding, B1-B2 brazing, S1-S2 structural) that auto-fill all cascade fields. Imported 2 AWS Standard WPS records (SWPS-B2.1-1-022 SMAW, SWPS-B2.1-1-020 FCAW-G) with full child data. New schema table, seed functions, API endpoint.",
-          "module": "welding",
-          "completed": "2026-02-25",
-          "tags": [
-            "welding",
-            "cert-requests",
-            "swps",
-            "seed-data"
-          ]
-        },
-        {
-          "title": "Welding Certification Request Web Form",
-          "desc": "Web-based WCR intake form replacing Power Automate. Material-first cascade (Material \u00e2\u2020\u2019 Process \u00e2\u2020\u2019 WPS \u00e2\u2020\u2019 Position), welder search with auto-fill, 1-4 coupons per request, duplicate qualification warnings, project search, new welder registration toggle. List view with status badges. 9 new API endpoints, 2 templates.",
-          "module": "welding",
-          "completed": "2026-02-25",
-          "tags": [
-            "ui",
-            "welding",
-            "forms",
-            "cert-requests"
-          ]
-        },
-        {
-          "title": "Quality Manual PDF Export",
-          "desc": "WeasyPrint-based PDF export for quality manual modules. Professional cover page, TOC with page numbers, all content block types, SIS branding. CLI (qms docs export), web download endpoint, and in-page PDF button. Customizable via standalone Jinja2+CSS template.",
-          "module": "qualitydocs",
-          "completed": "2026-02-20",
-          "tags": [
-            "export",
-            "pdf",
-            "quality-manual",
-            "weasyprint"
-          ]
-        },
-        {
-          "title": "Contextualized Document Import \u00e2\u20ac\u201d Workforce MVP",
-          "desc": "4-step import wizard (Upload \u00e2\u2020\u2019 Map Columns \u00e2\u2020\u2019 Review Action Plan \u00e2\u2020\u2019 Execute) with shared import engine, workforce-specific specs (15 columns, 4-level match, separation detection), and full web UI. Dark mode hover contrast fix included.",
-          "module": "workforce",
-          "completed": "2026-02-20",
-          "tags": [
-            "import",
-            "workforce",
-            "ui",
-            "infrastructure"
-          ]
-        },
-        {
-          "title": "UI Restructure: Time Tracker + Project Hub + Home Dashboard",
-          "desc": "Major restructure: extracted Time Tracker module (admin-only), moved BU CRUD to Settings, added project hub detail pages, operational home dashboard with activity feed, linked users to employees, cleaned up EMP- numbering.",
-          "module": "projects",
-          "completed": "2026-02-20",
-          "tags": [
-            "ui",
-            "restructure",
-            "timetracker",
-            "dashboard"
-          ]
-        },
-        {
-          "title": "Scheduled Publishing for The Observatory",
-          "desc": "Draft/scheduled/published workflow for blog posts. Datetime picker in editor, auto-publish on read (lazy), three-state badges, mutual exclusion between Published toggle and schedule picker.",
-          "module": "blog",
-          "completed": "2026-02-20",
-          "tags": [
-            "blog",
-            "scheduling",
-            "ui"
-          ]
-        },
-        {
-          "title": "Landing Page + The Observatory Blog",
-          "desc": "Branded landing page with Navigator Penguin mascot, module quick-link cards, and The Observatory astronomy-themed blog. Blog admin in Settings. Markdown support.",
-          "module": "blog",
-          "completed": "2026-02-20",
-          "tags": [
-            "ui",
-            "blog",
-            "landing-page",
-            "branding"
-          ]
-        },
-        {
-          "title": "07609 Freshpet Full Drawing Extraction",
-          "desc": "286 sheets across 11 disciplines extracted via SIS pipeline. 72 equipment, 673 lines, 372 instruments. Cross-checker module created.",
-          "module": "pipeline",
-          "completed": "2026-02-20",
-          "tags": [
-            "extraction",
-            "pipeline",
-            "batch"
-          ]
-        },
-        {
-          "title": "Pipeline Cross-Checker Module",
-          "desc": "Reusable cross_checker.py for detecting material mismatches, size discrepancies, and duplicate tags across drawings.",
-          "module": "pipeline",
-          "completed": "2026-02-20",
-          "tags": [
-            "pipeline",
-            "validation"
-          ]
-        },
-        {
-          "title": "Admin System Architecture Map",
-          "desc": "Secret /admin/system-map page with live DB stats, full system visual, roadmap tracker.",
-          "module": "admin",
-          "completed": "2026-02-19",
-          "tags": [
-            "admin",
-            "ui"
-          ]
-        },
-        {
-          "title": "Workforce Employee Sheet UI",
-          "desc": "Web UI for viewing employee data from SIS imports.",
-          "module": "workforce",
-          "completed": "2026-02-18",
-          "tags": [
-            "ui",
-            "workforce"
-          ]
-        },
-        {
-          "title": "Fillable WPQ PDF Extraction",
-          "desc": "Form-field extraction for fillable WPQ PDFs using extraction pipeline.",
-          "module": "welding",
-          "completed": "2026-02-18",
-          "tags": [
-            "extraction",
-            "welding"
-          ]
-        },
-        {
-          "title": "SIS Import Employee Number Fix",
-          "desc": "Preserve real employee numbers during SIS field location imports.",
-          "module": "pipeline",
-          "completed": "2026-02-19",
-          "tags": [
-            "bugfix",
-            "pipeline"
-          ]
-        },
-        {
-          "title": "Welder Profile Archive/Restore",
-          "desc": "Admin-only archive and restore button on welder profile pages.",
-          "module": "welding",
-          "completed": "2026-02-17",
-          "tags": [
-            "ui",
-            "welding"
-          ]
-        },
-        {
-          "title": "Module 4 SOP Architecture Planning",
-          "desc": "Comprehensive Module 4 architecture: 50 SOPs across 11 categories, dual ID system (4.X + SOP-XXX-NNN), reserved section ranges, standard XML template, cross-reference maps from M2/M3, 4-phase authoring plan.",
-          "module": "qualitydocs",
-          "completed": "2026-02-20",
-          "tags": [
-            "docs",
-            "quality-manual",
-            "planning",
-            "sops"
-          ]
-        },
-        {
-          "title": "Module 3 Quality Programs Architecture",
-          "desc": "Expanded Module 3 from welding-only to 7 independent quality programs (3.2-3.8) with program framework (3.1). Bridge between M2 project procedures and M4 SOPs. Programs: Welding, Training, Testing & Calibration, CI/CAPA, Field Manual, Vendor Quality, Internal Audit.",
-          "module": "qualitydocs",
-          "completed": "2026-02-20",
-          "tags": [
-            "docs",
-            "quality-manual",
-            "planning"
-          ]
-        },
-        {
-          "title": "Federated Documentation (CLAUDE.md Restructure)",
-          "desc": "Split CLAUDE.md from 276 lines to 59-line contract + 3 reference files in .planning/ (architecture.md, cli-reference.md, development-guide.md). Corrected stale facts, deleted 651-line RESTRUCTURE_PLANNING_PROMPT.md.",
-          "module": "core",
-          "completed": "2026-02-23",
-          "tags": [
-            "docs",
-            "developer-experience"
-          ]
         }
-      ]
-    }
-  ],
-  "recently_completed": [
-    {
-      "feature": "Tray App Server Operations",
-      "module": "tray",
-      "description": "Auto-restart on crash, icon color states, double-click browser open, log file output, startup toast notification",
-      "completed": "2026-03-09",
-      "tags": [
-        "tray",
-        "ops",
-        "polish"
       ]
     }
   ]
