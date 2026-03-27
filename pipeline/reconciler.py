@@ -241,6 +241,9 @@ def _extract_all_equipment_tags(conn, project_id: int) -> Dict[str, List[Dict]]:
             "attrs": {"service": r.get("service"), "loop_number": r.get("loop_number")},
         })
 
+    # 12. Schedule extractions (schedule-first data)
+    _scan_schedule_extractions(conn, project_id, tag_map)
+
     return tag_map
 
 
@@ -334,6 +337,64 @@ def _scan_table(
             "confidence": 1.0,
             "attrs": attrs,
         })
+
+
+def _scan_schedule_extractions(conn, project_id: int, tag_map: Dict):
+    """Scan schedule_extractions table for equipment tags.
+
+    Schedule data is high-confidence (engineer's design intent) with rich
+    attributes: manufacturer, model, HP, voltage, weight, CFM.
+    """
+    exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schedule_extractions'",
+    ).fetchone()
+    if not exists:
+        return
+
+    rows = conn.execute(
+        """SELECT se.*, s.discipline, s.drawing_number
+           FROM schedule_extractions se
+           JOIN sheets s ON se.sheet_id = s.id
+           WHERE se.project_id = ?""",
+        (project_id,),
+    ).fetchall()
+
+    for row in rows:
+        r = dict(row)
+        tag = r.get("tag")
+        if not tag:
+            continue
+
+        # Build attributes from schedule columns
+        attrs = {}
+        for col in ("hp", "kva", "voltage", "amperage", "phase_count",
+                     "weight_lbs", "cfm", "circuit", "panel_source",
+                     "manufacturer", "model_number"):
+            val = r.get(col)
+            if val is not None:
+                attrs[col] = val
+
+        # Include additional_attributes overflow
+        extra = r.get("additional_attributes")
+        if extra:
+            try:
+                attrs.update(json.loads(extra))
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        tag_map.setdefault(tag, []).append({
+            "discipline": r.get("discipline", "Unknown"),
+            "sheet_id": r.get("sheet_id"),
+            "drawing_number": r.get("drawing_number", ""),
+            "description": r.get("description", ""),
+            "equipment_type": r.get("equipment_type", ""),
+            "source_table": "schedule_extractions",
+            "source_id": r.get("id"),
+            "confidence": r.get("confidence", 0.9),
+            "attrs": attrs,
+        })
+
+    logger.info("Scanned %d schedule extraction entries", len(rows))
 
 
 def _infer_type_name(tag: str, entries: List[Dict]) -> Tuple[str, str]:
@@ -730,3 +791,134 @@ def reconcile_project(project_id: int, dry_run: bool = False) -> ReconcileResult
     )
 
     return result
+
+
+def enrich_from_schedules(project_id: int) -> Dict[str, int]:
+    """Enrich existing equipment_instances with schedule-authoritative attributes.
+
+    Fills NULL fields on equipment_instances from schedule_extractions data:
+    manufacturer, model_number, hp, voltage, amperage, weight_lbs, cfm.
+    Non-NULL conflicts are logged but not overwritten.
+
+    Returns: {enriched: N, new_attributes: N, conflicts_found: N}
+    """
+    stats = {"enriched": 0, "new_attributes": 0, "conflicts_found": 0}
+
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT se.tag, se.manufacturer, se.model_number, se.hp, se.voltage,
+                      se.amperage, se.weight_lbs, se.cfm, se.description,
+                      s.discipline, s.drawing_number
+               FROM schedule_extractions se
+               JOIN sheets s ON se.sheet_id = s.id
+               WHERE se.project_id = ?""",
+            (project_id,),
+        ).fetchall()
+
+        # Group by tag (take first non-null value per attribute)
+        tag_attrs: Dict[str, Dict] = {}
+        tag_source: Dict[str, Tuple[str, str]] = {}
+        for row in rows:
+            r = dict(row)
+            tag = r["tag"]
+            if tag not in tag_attrs:
+                tag_attrs[tag] = {}
+                tag_source[tag] = (r.get("discipline", ""), r.get("drawing_number", ""))
+            for col in ("manufacturer", "model_number", "hp", "voltage",
+                        "amperage", "weight_lbs", "cfm"):
+                val = r.get(col)
+                if val is not None and col not in tag_attrs[tag]:
+                    tag_attrs[tag][col] = val
+
+        # Columns that map directly to equipment_instances columns
+        direct_cols = {"hp", "voltage", "amperage", "weight_lbs"}
+        # Columns stored in attributes JSON
+        json_cols = {"manufacturer", "model_number", "cfm"}
+
+        for tag, sched_vals in tag_attrs.items():
+            instance = conn.execute(
+                "SELECT * FROM equipment_instances WHERE project_id = ? AND tag = ?",
+                (project_id, tag),
+            ).fetchone()
+            if not instance:
+                continue
+
+            inst = dict(instance)
+            updates = {}
+            json_updates = {}
+            tag_enriched = False
+
+            for col, sched_val in sched_vals.items():
+                if col in json_cols:
+                    json_updates[col] = sched_val
+                    tag_enriched = True
+                    stats["new_attributes"] += 1
+                    conn.execute(
+                        """INSERT INTO equipment_attribute_log
+                           (instance_id, attribute_name, old_value, new_value,
+                            source_discipline, source_drawing, reason)
+                           VALUES (?, ?, NULL, ?, ?, ?, 'schedule_enrichment')""",
+                        (inst["id"], col, str(sched_val),
+                         tag_source[tag][0], tag_source[tag][1]),
+                    )
+                    continue
+
+                if col not in direct_cols:
+                    continue
+
+                inst_val = inst.get(col)
+                if inst_val is None:
+                    updates[col] = sched_val
+                    stats["new_attributes"] += 1
+                    tag_enriched = True
+                    conn.execute(
+                        """INSERT INTO equipment_attribute_log
+                           (instance_id, attribute_name, old_value, new_value,
+                            source_discipline, source_drawing, reason)
+                           VALUES (?, ?, NULL, ?, ?, ?, 'schedule_enrichment')""",
+                        (inst["id"], col, str(sched_val),
+                         tag_source[tag][0], tag_source[tag][1]),
+                    )
+                else:
+                    if str(inst_val) != str(sched_val):
+                        stats["conflicts_found"] += 1
+                        conn.execute(
+                            """INSERT INTO equipment_attribute_log
+                               (instance_id, attribute_name, old_value, new_value,
+                                source_discipline, source_drawing, reason)
+                               VALUES (?, ?, ?, ?, ?, ?, 'schedule_conflict_not_overwritten')""",
+                            (inst["id"], col, str(inst_val), str(sched_val),
+                             tag_source[tag][0], tag_source[tag][1]),
+                        )
+
+            if updates:
+                set_clause = ", ".join(f"{k} = ?" for k in updates)
+                values = list(updates.values()) + [inst["id"]]
+                conn.execute(
+                    f"UPDATE equipment_instances SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    values,
+                )
+
+            if json_updates:
+                existing_attrs = {}
+                if inst.get("attributes"):
+                    try:
+                        existing_attrs = json.loads(inst["attributes"])
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                existing_attrs.update(json_updates)
+                conn.execute(
+                    "UPDATE equipment_instances SET attributes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (json.dumps(existing_attrs), inst["id"]),
+                )
+
+            if tag_enriched:
+                stats["enriched"] += 1
+
+        conn.commit()
+
+    logger.info(
+        "Schedule enrichment: %d instances enriched, %d new attributes, %d conflicts logged",
+        stats["enriched"], stats["new_attributes"], stats["conflicts_found"],
+    )
+    return stats
