@@ -10,10 +10,10 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 27 (Floor Plan Extraction) — APPLY complete
-Plan: 27-01 executed
-Status: APPLY complete, ready for UNIFY
-Last activity: 2026-03-27 — Executed 27-01-PLAN.md
+Phase: 27 (Floor Plan Extraction) — In Progress
+Plan: 27-01 complete, 27-02 next
+Status: Loop closed, ready for next plan
+Last activity: 2026-03-27 — Plan 27-01 unified
 
 Progress:
 - v0.4 Equipment-Centric Platform: [█████████░] 90%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ○     [Plan 27-01 applied, ready for UNIFY]
+  ✓        ✓        ✓     [Loop complete — Plan 27-01 done, 27-02 next]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -47,6 +47,7 @@ Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
 | 25-02 | Complete | Extraction harness + Vital first batch (5 schedule sheets, 203 entries) | 2026-03-26 |
 | 25-03 | Complete | Complete Vital MEP extraction: 452 entries, 19 sheets, Opus shadow QA | 2026-03-26 |
 | 26-01 | Complete | Schedule reconciliation: 12th data source, 661 instances, 296 enriched, conflicts 496→473 | 2026-03-27 |
+| 27-01 | Complete | Floor plan extraction infrastructure: table, prompts, harness, 344 pending sheets | 2026-03-27 |
 
 ### v0.3 Quality Manual Platform
 
@@ -145,7 +146,7 @@ Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
 | Two-pass reconciliation (scan+create, then enrich) | v0.4 Phase 26 | Can re-run enrichment independently from full reconciliation |
 
 ### Git State
-Last commit: `0508653` (feat(reconciler): integrate schedule_extractions as 12th data source (Phase 26-01))
+Last commit: `c3ccf33` (feat(pipeline): floor plan extraction infrastructure (Phase 27-01))
 Branch: main
 
 ### Deferred Issues
@@ -167,13 +168,13 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-27
-Stopped at: Plan 27-01 created
-Next action: Review and approve plan, then run /paul:apply
-Resume file: .paul/phases/27-floor-plan-extraction/27-01-PLAN.md
+Stopped at: Plan 27-01 complete
+Next action: Plan 27-02 (Refrigeration P&ID batch extraction)
+Resume file: .paul/phases/27-floor-plan-extraction/27-01-SUMMARY.md
 Resume notes: |
-  Phase 27: Floor plan extraction infrastructure.
-  Two tasks: (1) Create floor_plan_extractions table + storage module, (2) Build context-aware vision prompts + harness integration.
-  Checkpoint: verify infrastructure before batch extraction in 27-02.
+  Phase 27-01 complete. Infrastructure ready: floor_plan_extractions table, context-aware prompts, harness.
+  Next: Plan 27-02 — extract 10 Refrigeration P&IDs (highest-value first batch).
+  344 total floor plan sheets pending (141 after skipping Arch/Civil/Structural/General).
 
 ---
 *STATE.md — Updated after every significant action*
