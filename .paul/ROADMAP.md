@@ -2,7 +2,7 @@
 
 ## Overview
 
-Modular quality management platform for construction. Two completed milestones: v0.1 (Procore quality intelligence) and v0.2 (Harbor-like license compliance platform). Current: v0.3 Quality Manual Platform.
+Modular quality management platform for construction. Three completed milestones: v0.1 (Procore quality intelligence), v0.2 (Harbor-like license compliance), v0.3 (Quality Manual Platform). Current: v0.4 Equipment-Centric Platform.
 
 ---
 
@@ -25,7 +25,7 @@ Equipment-centric project data platform — unified registry consolidating all d
 | 24 | System Model & Consolidation | 1 | Complete | 2026-03-26 |
 | 25 | Schedule-First Extraction | 3 | Complete | 2026-03-26 |
 | 26 | Schedule Reconciliation | 1 | Complete | 2026-03-27 |
-| 27 | Floor Plan Extraction | 3 | Planning | — |
+| 27 | Floor Plan Extraction | 3 | In Progress | — |
 
 ### Phase 19: Equipment Master Schedule — Schema & Reconciliation
 
@@ -46,6 +46,22 @@ Focus: Equipment dashboard, filterable equipment list, equipment detail page (ta
 ### Phase 23: Equipment Hierarchy
 
 Focus: Tag parser for parent-child relationships, deduplication of 124 reversed instrument tags, sub-component type reclassification (CV→Control Valve, etc.), grouped dashboard view. Plan 23-02 (future): R0001 P&ID legend extraction for authoritative component classification.
+
+### Phase 24: System Model & Consolidation
+
+Focus: System type taxonomy (15 types), equipment_system_members junction table, consolidate refrigeration circuits into real systems, create plumbing/HVAC/compressed air systems, system dashboard view.
+
+### Phase 25: Schedule-First Extraction
+
+Focus: Extraction order engine (schedules→legends→plans), Docling structural + Sonnet vision, Opus shadow QA. 452 equipment entries across 19 MEP schedule sheets for Vital. Session-stepped harness pattern.
+
+### Phase 26: Schedule Reconciliation
+
+Focus: Integrate 452 schedule entries as 12th reconciler data source, enrich existing instances with manufacturer/model/HP/voltage/weight, re-run conflict detection. 661 instances, 296 enriched, conflicts 496→473.
+
+### Phase 27: Floor Plan Extraction
+
+Focus: Context-aware vision extraction of floor plans, P&IDs, and details. Anti-hallucination prompts inject schedule-built equipment checklist. Plan 27-01 (infrastructure), 27-02 (Refrigeration P&IDs first batch), 27-03 (remaining MEP disciplines).
 
 ---
 
@@ -123,4 +139,4 @@ Focus: PDF upload, Claude-powered analysis (category, scope, program, codes), re
 
 ---
 *Roadmap created: 2026-02-25*
-*Last updated: 2026-03-11 — Phase 18 (M4 SOP Intake & Classification) complete — v0.3 milestone complete*
+*Last updated: 2026-03-27 — Phase 27 (Floor Plan Extraction) in progress, Plan 27-01 complete*

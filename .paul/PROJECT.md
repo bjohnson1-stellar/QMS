@@ -12,13 +12,16 @@ Centralized quality and compliance management for MEP contractors — replacing 
 
 | Attribute | Value |
 |-----------|-------|
-| Version | 0.3.0 |
-| Status | Complete |
-| Last Updated | 2026-03-11 (v0.3 milestone complete) |
+| Version | 0.4.0-dev |
+| Status | In Progress |
+| Last Updated | 2026-03-27 (v0.4 Phase 27 in progress) |
 
 **Production URL:** http://L004470-CAD:5000
 
 ## Milestones
+
+### v0.4 Equipment-Centric Platform (In Progress - started 2026-03-24)
+Unified equipment registry consolidating all discipline extraction data, cross-discipline conflict detection, spec compliance, schedule-first extraction with context-aware AI prompts, and lifecycle tracking. 9 phases (19-27), piloted on Vital (07645). 661 equipment instances, 473 conflicts, 36 systems, 1404 relationships.
 
 ### v0.3 Quality Manual Platform (Complete - 2026-03-11)
 Unified tabbed UI for M1-M4 quality manual modules with cross-module search, AI-powered SOP intake and classification, draft/approval workflow, and SOP lifecycle management. 5 phases (7 plans) over 2 days.
@@ -59,9 +62,15 @@ Procore quality intelligence with mobile capture. 4 of 5 phases complete. Phase 
 - [x] Equipment registry schema (10 tables), reconciliation engine, CLI command, Vital populated (585 instances, 23 systems) — v0.4 Phase 19
 - [x] Cross-discipline conflict detection (attribute + negative space), configurable rules, CLI with RFI output — v0.4 Phase 20
 - [x] Spec compliance engine (9 configurable requirements, 6 check types), impact chain analyzer (BFS graph traversal, drawing impact, violation propagation) — v0.4 Phase 21
+- [x] Equipment web UI — dashboard, detail page with tabs, filterable list, system view, conflict dashboard — v0.4 Phase 22
+- [x] Tag parser, parent-child hierarchy, dedup 124 reversed duplicates, grouped dashboard view — v0.4 Phase 23
+- [x] System type taxonomy (15 types), consolidation engine, system dashboard view — v0.4 Phase 24
+- [x] Schedule-first extraction: extraction order engine, Docling + Sonnet vision, Opus shadow QA, 452 entries across 19 sheets — v0.4 Phase 25
+- [x] Schedule reconciliation: 12th data source in reconciler, 661 instances, 296 enriched with manufacturer/model/HP/voltage/weight — v0.4 Phase 26
+- [x] Floor plan extraction infrastructure: staging table, context-aware vision prompts, harness support — v0.4 Phase 27-01
 
 ### Active
-(No active requirements)
+- [ ] Floor plan batch extraction — Refrigeration P&IDs first, then MEP disciplines (344 sheets pending) — v0.4 Phase 27-02/03
 
 ### Paused (v0.1 remaining)
 - [ ] Procore push (Phase 5)
@@ -125,4 +134,4 @@ SIS manages professional and business licenses across multiple states for MEP co
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-11 after v0.3 Phase 18 (M4 SOP Intake & Classification) complete — v0.3 milestone complete*
+*Last updated: 2026-03-27 — v0.4 Phase 27 (Floor Plan Extraction) in progress*
