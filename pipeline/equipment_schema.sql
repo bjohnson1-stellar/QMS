@@ -289,6 +289,30 @@ CREATE TABLE IF NOT EXISTS schedule_extractions (
 CREATE INDEX IF NOT EXISTS idx_schedule_extractions_project
     ON schedule_extractions(project_id, tag);
 
+-- Floor plan extraction staging table (equipment locations from floor plans/P&IDs)
+CREATE TABLE IF NOT EXISTS floor_plan_extractions (
+    id INTEGER PRIMARY KEY,
+    sheet_id INTEGER NOT NULL REFERENCES sheets(id),
+    project_id INTEGER NOT NULL REFERENCES projects(id),
+    tag TEXT NOT NULL,
+    location_area TEXT,
+    location_room TEXT,
+    grid_reference TEXT,
+    appearance_type TEXT DEFAULT 'physically_shown'
+        CHECK(appearance_type IN ('physically_shown', 'referenced', 'legend')),
+    description TEXT,
+    equipment_type TEXT,
+    confidence REAL DEFAULT 0.85,
+    extraction_model TEXT,
+    page_number INTEGER,
+    additional_attributes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(sheet_id, tag)
+);
+
+CREATE INDEX IF NOT EXISTS idx_floor_plan_extractions_project
+    ON floor_plan_extractions(project_id, tag);
+
 -- Seed default conflict rules
 INSERT OR IGNORE INTO conflict_rules (attribute_name, comparison_type, tolerance_value, tolerance_type, severity, description) VALUES
     ('hp', 'numeric_tolerance', 10, 'percent', 'warning', 'Horsepower mismatch >10% between disciplines'),

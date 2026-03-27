@@ -140,3 +140,9 @@ def get_legend_sheets(project_id: int) -> List[Dict]:
     """Convenience: return just the legend/notes sheets for a project."""
     order = get_extraction_order(project_id)
     return order[1]["sheets"] if len(order) > 1 else []
+
+
+def get_plan_sheets(project_id: int) -> List[Dict]:
+    """Convenience: return just the floor plan/P&ID/detail sheets for a project."""
+    order = get_extraction_order(project_id)
+    return order[2]["sheets"] if len(order) > 2 else []

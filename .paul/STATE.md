@@ -10,10 +10,10 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 27 (Floor Plan Extraction) — Planning
-Plan: 27-01 created, awaiting approval
-Status: PLAN created, ready for APPLY
-Last activity: 2026-03-27 — Created 27-01-PLAN.md
+Phase: 27 (Floor Plan Extraction) — APPLY complete
+Plan: 27-01 executed
+Status: APPLY complete, ready for UNIFY
+Last activity: 2026-03-27 — Executed 27-01-PLAN.md
 
 Progress:
 - v0.4 Equipment-Centric Platform: [█████████░] 90%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ○        ○     [Plan 27-01 created, awaiting approval]
+  ✓        ✓        ○     [Plan 27-01 applied, ready for UNIFY]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.

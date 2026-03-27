@@ -65,24 +65,31 @@ class ExtractionHarness:
         self._total_sheets: Optional[int] = None
         self._skipped_sheet_ids: Optional[Set[int]] = None
 
-    def _get_all_schedule_sheets(self) -> List[Dict]:
-        """Get all schedule sheets (cached count on first call)."""
-        from qms.pipeline.extraction_order import get_schedule_sheets
-        sheets = get_schedule_sheets(self.project_id)
+    def _get_all_phase_sheets(self) -> List[Dict]:
+        """Get all sheets for the current phase (cached count on first call)."""
+        if self.phase == "plans":
+            from qms.pipeline.extraction_order import get_plan_sheets
+            sheets = get_plan_sheets(self.project_id)
+        else:
+            from qms.pipeline.extraction_order import get_schedule_sheets
+            sheets = get_schedule_sheets(self.project_id)
         if self._total_sheets is None:
             self._total_sheets = len(sheets)
-            # Identify skipped sheets by discipline
             self._skipped_sheet_ids = {
                 s["id"] for s in sheets
                 if s.get("discipline") in self.skip_disciplines
             }
         return sheets
 
+    # Backward compatibility alias
+    _get_all_schedule_sheets = _get_all_phase_sheets
+
     def _get_completed_count(self) -> int:
         """Direct DB query for completed sheet count (fast)."""
+        table = "floor_plan_extractions" if self.phase == "plans" else "schedule_extractions"
         with get_db(readonly=True) as conn:
             return conn.execute(
-                "SELECT COUNT(DISTINCT sheet_id) FROM schedule_extractions WHERE project_id = ?",
+                f"SELECT COUNT(DISTINCT sheet_id) FROM {table} WHERE project_id = ?",
                 (self.project_id,),
             ).fetchone()[0]
 
@@ -119,9 +126,12 @@ class ExtractionHarness:
         Skips sheets whose discipline is in skip_disciplines and sheets
         already processed in this session (even if they had 0 entries).
         """
-        from qms.pipeline.schedule_extractor import get_pending_schedules
-
-        pending = get_pending_schedules(self.project_id)
+        if self.phase == "plans":
+            from qms.pipeline.floor_plan_extractor import get_pending_floor_plans
+            pending = get_pending_floor_plans(self.project_id)
+        else:
+            from qms.pipeline.schedule_extractor import get_pending_schedules
+            pending = get_pending_schedules(self.project_id)
 
         # Filter out skipped disciplines and already-processed sheets
         pending = [
@@ -156,12 +166,18 @@ class ExtractionHarness:
         Returns:
             Stats dict: {"stored": N, "skipped": N, "errors": N}
         """
-        from qms.pipeline.schedule_extractor import store_schedule_data
-
-        stats = store_schedule_data(
-            sheet_id, self.project_id, entries,
-            model_used=model_used, confidence=confidence,
-        )
+        if self.phase == "plans":
+            from qms.pipeline.floor_plan_extractor import store_floor_plan_data
+            stats = store_floor_plan_data(
+                sheet_id, self.project_id, entries,
+                model_used=model_used, confidence=confidence,
+            )
+        else:
+            from qms.pipeline.schedule_extractor import store_schedule_data
+            stats = store_schedule_data(
+                sheet_id, self.project_id, entries,
+                model_used=model_used, confidence=confidence,
+            )
         self._batch_completed += 1
         self._processed_sheet_ids.add(sheet_id)
 
@@ -189,7 +205,7 @@ class ExtractionHarness:
         """
         from qms.pipeline.schedule_extractor import get_schedule_sheet_info
 
-        sheet_info = get_schedule_sheet_info(sheet_id)
+        sheet_info = get_schedule_sheet_info(sheet_id)  # works for any sheet type
         drawing_number = sheet_info["drawing_number"] if sheet_info else f"sheet_{sheet_id}"
 
         prior_errors = [e for e in self._errors if e["sheet_id"] == sheet_id]
