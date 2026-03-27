@@ -163,6 +163,14 @@
       "icon": "&#10003;",
       "items": [
         {
+          "title": "v0.4 Phase 26 — Schedule Reconciliation",
+          "desc": "Integrated 452 schedule extraction entries as 12th reconciler data source. 661 instances (was 465), 296 enriched with manufacturer/model/HP/voltage/weight from schedules, conflicts reduced 496→473. enrich_from_schedules() with full attribute_log audit trail.",
+          "module": "pipeline",
+          "priority": "high",
+          "tags": ["equipment", "reconciler", "enrichment", "schedule-data", "v0.4"],
+          "completed": "2026-03-27"
+        },
+        {
           "title": "v0.4 Phase 25 — Schedule-First Extraction (3 plans)",
           "desc": "Complete Vital MEP schedule extraction: Docling structural + 19 Sonnet vision agents + Opus shadow QA. 452 equipment entries across 19 sheets, 5 disciplines (Electrical=207, Mechanical=89, Utility=88, Refrigeration=43, Plumbing=25). Shadow review caught M6001 75% Docling gap. Source tracking + tiered confidence on all entries.",
           "module": "pipeline",

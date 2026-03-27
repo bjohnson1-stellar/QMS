@@ -10,13 +10,13 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 26 (Schedule Reconciliation) — APPLY complete
-Plan: 26-01 executed
-Status: APPLY complete, ready for UNIFY
-Last activity: 2026-03-27 — Executed 26-01-PLAN.md
+Phase: 26 (Schedule Reconciliation) — Complete
+Plan: 26-01 complete
+Status: Loop closed, phase complete — ready for transition
+Last activity: 2026-03-27 — Plan 26-01 unified
 
 Progress:
-- v0.4 Equipment-Centric Platform: [█████████░] 85%
+- v0.4 Equipment-Centric Platform: [█████████░] 90%
 - v0.3 Quality Manual Platform: [██████████] 100%
 - v0.2 License Compliance Platform: [██████████] 100%
 - v0.1 Quality Intelligence Platform: [████████░░] 80% (Phase 5 not started)
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ○     [Plan 26-01 applied, ready for UNIFY]
+  ✓        ✓        ✓     [Loop complete — Phase 26 done]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -46,6 +46,7 @@ Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
 | 25-01 | Complete | Extraction order engine, schedule extractor data layer, context builder | 2026-03-26 |
 | 25-02 | Complete | Extraction harness + Vital first batch (5 schedule sheets, 203 entries) | 2026-03-26 |
 | 25-03 | Complete | Complete Vital MEP extraction: 452 entries, 19 sheets, Opus shadow QA | 2026-03-26 |
+| 26-01 | Complete | Schedule reconciliation: 12th data source, 661 instances, 296 enriched, conflicts 496→473 | 2026-03-27 |
 
 ### v0.3 Quality Manual Platform
 
@@ -139,10 +140,13 @@ Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
 | Discipline priority: Refrig→Utility→Mech→Elec→Plumb | v0.4 Phase 25 | Refrigeration first (most complex), plumbing last (fixtures, not systems) |
 | Harness is session-stepped state machine | v0.4 Phase 25 | No API calls or subprocess spawning — Claude Code session drives extraction |
 | Expand grouped RAHU tags into individual entries | v0.4 Phase 25 | "RAHU-1 TO RAHU-3" stored as RAHU-1, RAHU-2, RAHU-3 individually |
+| manufacturer/model in attributes JSON (not direct columns) | v0.4 Phase 26 | Future queries use JSON extraction; schema boundary respected |
+| Non-NULL conflicts logged, not overwritten | v0.4 Phase 26 | Schedule doesn't trump drawing data; audit trail in attribute_log |
+| Two-pass reconciliation (scan+create, then enrich) | v0.4 Phase 26 | Can re-run enrichment independently from full reconciliation |
 
 ### Git State
-Last commit: `24c0047` (feat(pipeline): spec compliance engine & impact chain analyzer (Phase 21-01))
-Branch: main (uncommitted: Phase 22 equipment web UI files)
+Last commit: `0508653` (feat(reconciler): integrate schedule_extractions as 12th data source (Phase 26-01))
+Branch: main
 
 ### Deferred Issues
 | Issue | Impact | Resolution Path |
@@ -162,14 +166,13 @@ Branch: main (uncommitted: Phase 22 equipment web UI files)
 
 ## Session Continuity
 
-Last session: 2026-03-26
-Stopped at: Plan 26-01 created
-Next action: Review and approve plan, then run /paul:apply
-Resume file: .paul/phases/26-schedule-reconciliation/26-01-PLAN.md
+Last session: 2026-03-27
+Stopped at: Phase 26 complete, transition pending
+Next action: Transition phase or start next phase planning
+Resume file: .paul/phases/26-schedule-reconciliation/26-01-SUMMARY.md
 Resume notes: |
-  Phase 26: Reconcile 452 schedule entries into equipment_instances.
-  Two tasks: (1) Add schedule_extractions as 12th source in reconciler, (2) Run reconciliation + enrichment + conflict refresh.
-  Checkpoint: verify enriched instances and updated conflict counts.
+  Phase 26 complete. 661 equipment instances, 296 enriched from schedules.
+  Next: transition to Phase 27 or check roadmap for next priority.
 
 ---
 *STATE.md — Updated after every significant action*
