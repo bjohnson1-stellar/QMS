@@ -11,9 +11,9 @@ See: .paul/PROJECT.md
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
 Phase: 27 of 9 (Floor Plan Extraction) — In Progress
-Plan: 27-03 created, awaiting approval
-Status: PLAN created, ready for APPLY
-Last activity: 2026-03-28 — Created 27-03-PLAN.md (complete MEP extraction)
+Plan: 27-03 APPLY in progress — Tasks 1-5 complete, checkpoint pending
+Status: APPLY in progress
+Last activity: 2026-03-28 — 5 MEP disciplines extracted: 98/344 sheets, 1074 entries
 
 Progress:
 - v0.4 Equipment-Centric Platform: [█████████░] 90%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ○        ○     [27-03 planned, awaiting approval]
+  ✓        ◐        ○     [27-03 APPLY in progress — final checkpoint]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
