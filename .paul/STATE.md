@@ -10,10 +10,10 @@ See: .paul/PROJECT.md
 ## Current Position
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
-Phase: 27 of 9 (Floor Plan Extraction) — Planning
-Plan: 27-02 created, awaiting approval
-Status: PLAN created, ready for APPLY
-Last activity: 2026-03-27 — Created .paul/phases/27-floor-plan-extraction/27-02-PLAN.md
+Phase: 27 of 9 (Floor Plan Extraction) — In Progress
+Plan: 27-02a APPLY complete, ready for UNIFY
+Status: APPLY complete, UNIFY pending
+Last activity: 2026-03-28 — Plan 27-02a executed: text-layer preprocessor + Sonnet validation (100% recall)
 
 Progress:
 - v0.4 Equipment-Centric Platform: [█████████░] 90%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ○        ○     [Plan created, awaiting approval]
+  ✓        ✓        ○     [27-02a APPLY complete, ready for UNIFY]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -48,6 +48,7 @@ Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
 | 25-03 | Complete | Complete Vital MEP extraction: 452 entries, 19 sheets, Opus shadow QA | 2026-03-26 |
 | 26-01 | Complete | Schedule reconciliation: 12th data source, 661 instances, 296 enriched, conflicts 496→473 | 2026-03-27 |
 | 27-01 | Complete | Floor plan extraction infrastructure: table, prompts, harness, 344 pending sheets | 2026-03-27 |
+| 27-02a | Complete | Text-layer preprocessor: PyMuPDF text extraction, prompt integration, Sonnet+text 100% recall on R1101 | 2026-03-28 |
 
 ### v0.3 Quality Manual Platform
 
@@ -146,7 +147,7 @@ Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
 | Two-pass reconciliation (scan+create, then enrich) | v0.4 Phase 26 | Can re-run enrichment independently from full reconciliation |
 
 ### Git State
-Last commit: `c3ccf33` (feat(pipeline): floor plan extraction infrastructure (Phase 27-01))
+Last commit: `229b294` (feat(pipeline): text-layer preprocessor for floor plan extraction (Phase 27-02a))
 Branch: main
 
 ### Deferred Issues
@@ -167,16 +168,18 @@ Branch: main
 
 ## Session Continuity
 
-Last session: 2026-03-27
-Stopped at: Plan 27-02 APPLY in progress — Phase 2 discovery complete on all 19 Refrigeration sheets (213 entries, 64 unique tags)
-Next action: Run /paul:apply .paul/phases/27-floor-plan-extraction/27-02a-PLAN.md
+Last session: 2026-03-28
+Stopped at: Plan 27-02a APPLY complete — text-layer preprocessor built and validated
+Next action: Run /paul:unify to close 27-02a, then resume 27-02 (Phases 3-4 + scale remaining MEP)
 Resume file: .paul/phases/27-floor-plan-extraction/27-02a-PLAN.md
 Resume notes: |
-  Phase 2 discovery DONE for Refrigeration. Key calibration finding: Sonnet 14.6% vs Opus 100% on large floor plans due to image resolution limits. Root cause: Sonnet sees downscaled image, can't read small tags. Fix: extract embedded text+coordinates from CAD PDFs via PyMuPDF BEFORE vision pass — gives any model perfect tag visibility.
-  Next: (1) Build text-layer preprocessor, (2) validate on R1101 (compare Sonnet+text vs Opus baseline), (3) scale to 27-03 with Sonnet+text instead of Opus.
-  Phases 3 (Haiku detail) and 4 (conflict verification) not yet run — Phase 2 only complete.
-  Model routing recorded in routing_changes table. QA data in shadow_reviews, extraction_misses.
-  Obsidian SOP at D:\QM-Obsidian\Module 4\SIS-4.12.001 — needs sync when text-layer approach is added.
+  27-02a DONE: pipeline/text_layer.py (PyMuPDF extraction), build_floor_plan_prompt() enhanced.
+  Sonnet+text-layer validated at 100% recall on R1101 (41/41 vs Opus baseline). Zero hallucinations.
+  Routing change recorded: floor plans → Sonnet+text-layer (replaces Opus at ~10x cost reduction).
+  27-02 still in progress: Phase 2 discovery done (213 entries, 19 sheets). Phases 3 (Haiku detail),
+  4 (conflict verification), and remaining shadow reviews not yet run.
+  Next: Close 27-02a loop, then plan 27-03 to scale remaining MEP disciplines with Sonnet+text.
+  Obsidian SOP at D:\QM-Obsidian\Module 4\SIS-4.12.001 — needs sync with text-layer approach.
 
 ---
 *STATE.md — Updated after every significant action*
