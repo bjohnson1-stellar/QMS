@@ -169,8 +169,8 @@ Branch: main
 
 Last session: 2026-03-27
 Stopped at: Plan 27-02 APPLY in progress — Phase 2 discovery complete on all 19 Refrigeration sheets (213 entries, 64 unique tags)
-Next action: Build text-layer preprocessor (PyMuPDF text extraction) as Plan 27-02a infrastructure, then scale to 27-03 remaining MEP disciplines
-Resume file: .paul/phases/27-floor-plan-extraction/27-02-PLAN.md
+Next action: Run /paul:apply .paul/phases/27-floor-plan-extraction/27-02a-PLAN.md
+Resume file: .paul/phases/27-floor-plan-extraction/27-02a-PLAN.md
 Resume notes: |
   Phase 2 discovery DONE for Refrigeration. Key calibration finding: Sonnet 14.6% vs Opus 100% on large floor plans due to image resolution limits. Root cause: Sonnet sees downscaled image, can't read small tags. Fix: extract embedded text+coordinates from CAD PDFs via PyMuPDF BEFORE vision pass — gives any model perfect tag visibility.
   Next: (1) Build text-layer preprocessor, (2) validate on R1101 (compare Sonnet+text vs Opus baseline), (3) scale to 27-03 with Sonnet+text instead of Opus.
