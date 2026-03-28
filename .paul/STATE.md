@@ -11,9 +11,9 @@ See: .paul/PROJECT.md
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
 Phase: 27 of 9 (Floor Plan Extraction) — In Progress
-Plan: 27-02a APPLY complete, ready for UNIFY
-Status: APPLY complete, UNIFY pending
-Last activity: 2026-03-28 — Plan 27-02a executed: text-layer preprocessor + Sonnet validation (100% recall)
+Plan: 27-02a complete (loop closed)
+Status: Ready for next PLAN
+Last activity: 2026-03-28 — Plan 27-02a UNIFY complete
 
 Progress:
 - v0.4 Equipment-Centric Platform: [█████████░] 90%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ○     [27-02a APPLY complete, ready for UNIFY]
+  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -169,16 +169,14 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-28
-Stopped at: Plan 27-02a APPLY complete — text-layer preprocessor built and validated
-Next action: Run /paul:unify to close 27-02a, then resume 27-02 (Phases 3-4 + scale remaining MEP)
-Resume file: .paul/phases/27-floor-plan-extraction/27-02a-PLAN.md
+Stopped at: Plan 27-02a loop closed — text-layer preprocessor complete
+Next action: Resume 27-02 (close remaining phases) or plan 27-03 (scale MEP with Sonnet+text)
+Resume file: .paul/phases/27-floor-plan-extraction/27-02a-SUMMARY.md
 Resume notes: |
-  27-02a DONE: pipeline/text_layer.py (PyMuPDF extraction), build_floor_plan_prompt() enhanced.
-  Sonnet+text-layer validated at 100% recall on R1101 (41/41 vs Opus baseline). Zero hallucinations.
-  Routing change recorded: floor plans → Sonnet+text-layer (replaces Opus at ~10x cost reduction).
-  27-02 still in progress: Phase 2 discovery done (213 entries, 19 sheets). Phases 3 (Haiku detail),
-  4 (conflict verification), and remaining shadow reviews not yet run.
-  Next: Close 27-02a loop, then plan 27-03 to scale remaining MEP disciplines with Sonnet+text.
+  27-02a COMPLETE: pipeline/text_layer.py + enhanced build_floor_plan_prompt(). Sonnet+text 100% recall.
+  27-02 partially complete: Phase 2 discovery done (213 entries, 19 sheets). Phases 3 (Haiku detail),
+  4 (conflict verification), and remaining shadow reviews not yet run. Needs SUMMARY to close.
+  Phase 27 progress: 2/3 plans complete (27-01, 27-02a). 27-02 still open.
   Obsidian SOP at D:\QM-Obsidian\Module 4\SIS-4.12.001 — needs sync with text-layer approach.
 
 ---
