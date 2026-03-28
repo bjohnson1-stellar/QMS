@@ -11,9 +11,9 @@ See: .paul/PROJECT.md
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
 Phase: 27 of 9 (Floor Plan Extraction) — In Progress
-Plan: 27-02 + 27-02a closed. Planning 27-03.
-Status: Ready for next PLAN (27-03)
-Last activity: 2026-03-28 — Plans 27-02 and 27-02a UNIFY complete
+Plan: 27-03 created, awaiting approval
+Status: PLAN created, ready for APPLY
+Last activity: 2026-03-28 — Created 27-03-PLAN.md (complete MEP extraction)
 
 Progress:
 - v0.4 Equipment-Centric Platform: [█████████░] 90%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
+  ✓        ○        ○     [27-03 planned, awaiting approval]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -170,16 +170,14 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-28
-Stopped at: Plans 27-02 + 27-02a closed. Planning 27-03.
-Next action: Create 27-03-PLAN.md (complete Refrigeration Phases 3-4 + scale remaining MEP)
-Resume file: .paul/phases/27-floor-plan-extraction/27-02-SUMMARY.md
+Stopped at: Plan 27-03 created, awaiting approval
+Next action: Run /paul:apply to execute 27-03
+Resume file: .paul/phases/27-floor-plan-extraction/27-03-PLAN.md
 Resume notes: |
-  All prior plans closed: 27-01 (infra), 27-02 (calibration), 27-02a (text-layer).
-  Refrigeration Phase 2 discovery done (213 entries, 11 sheets). Carried forward to 27-03:
-  - Phase 3 (Haiku detail) + Phase 4 (conflict verification) on Refrigeration
-  - Shadow reviews on remaining high-value sheets
-  - Gold standard, accuracy_log, model_runs population
-  - Scale to remaining MEP disciplines (Utility, Mechanical, Electrical, Plumbing) with Sonnet+text
+  27-03 scope: Complete Refrigeration (Phases 3-4, shadow, gold standard) + scale Phase 2 to
+  Utility (53), Mechanical (20), Electrical (32), Plumbing (15) = 120 new sheets with Sonnet+text.
+  Calibrate 3 per discipline before scaling. 10% shadow on scale batches.
+  Target: ~131 of 344 plan sheets extracted (~38% coverage).
   Obsidian SOP at D:\QM-Obsidian\Module 4\SIS-4.12.001 — needs sync with text-layer approach.
 
 ---
