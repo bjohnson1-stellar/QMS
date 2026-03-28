@@ -270,8 +270,10 @@ def build_floor_plan_prompt(
 ) -> str:
     """Build a context-aware vision prompt for floor plan extraction.
 
-    Injects the schedule-built equipment checklist so the AI asks
-    "which of these known tags appear here?" instead of "what do you see?"
+    Injects the schedule-built equipment checklist and text layer data
+    so the AI asks "which of these known tags appear here?" instead of
+    "what do you see?" The text layer provides embedded PDF text with
+    coordinates, ensuring tags are readable regardless of image resolution.
     """
     from qms.pipeline.context_builder import get_context_for_extraction
 
@@ -285,12 +287,38 @@ def build_floor_plan_prompt(
 
     drawing_label = drawing_number or f"sheet {sheet_id}"
 
+    # Extract text layer from PDF (graceful degradation)
+    text_layer_section = ""
+    try:
+        from qms.pipeline.text_layer import (
+            extract_text_layer,
+            format_text_layer_for_prompt,
+        )
+
+        file_path = None
+        with get_db(readonly=True) as conn:
+            row = conn.execute(
+                "SELECT file_path FROM sheets WHERE id = ?", (sheet_id,)
+            ).fetchone()
+            if row:
+                file_path = row["file_path"]
+
+        if file_path:
+            text_data = extract_text_layer(file_path)
+            if text_data["text_blocks"]:
+                text_layer_section = (
+                    "\n\n" + format_text_layer_for_prompt(text_data)
+                )
+    except Exception as e:
+        logger.warning("Text layer extraction failed for sheet %d: %s", sheet_id, e)
+
     prompt = f"""You are analyzing a {discipline} drawing ({drawing_label}).
 
 {disc_notes}
 
 KNOWN EQUIPMENT FOR THIS PROJECT (from schedules):
 {checklist}
+{text_layer_section}
 
 TASK: Examine this drawing and identify which of the known equipment tags
 are PHYSICALLY SHOWN on this drawing (not just referenced in notes/legends).
