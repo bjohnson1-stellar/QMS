@@ -2,15 +2,16 @@
 
 Uses PyMuPDF (fitz) to extract every text string with bounding box coordinates
 from CAD-generated PDFs. This data supplements the vision prompt so the AI model
-can identify equipment tags regardless of image resolution.
+can identify equipment tags regardless of image resolution. Also provides
+cross-validation of Docling schedule extractions.
 
-Part of v0.4 Equipment-Centric Platform (Phase 27-02a).
+Part of v0.4 Equipment-Centric Platform (Phases 27-02a, 27-03).
 """
 
 import re
 from typing import Dict, List
 
-from qms.core import get_logger
+from qms.core import get_db, get_logger
 
 logger = get_logger("qms.pipeline.text_layer")
 
@@ -172,3 +173,202 @@ def format_text_layer_for_prompt(text_data: dict, max_lines: int = 200) -> str:
     )
 
     return header + "\n".join(lines) + instruction
+
+
+def extract_all_pages_tags(file_path: str) -> set:
+    """Extract equipment tags from ALL pages of a PDF."""
+    import fitz
+
+    tags = set()
+    try:
+        doc = fitz.open(file_path)
+        for page_num in range(doc.page_count):
+            page = doc[page_num]
+            data = page.get_text("dict")
+            for block in data.get("blocks", []):
+                if block.get("type") != 0:
+                    continue
+                for line in block.get("lines", []):
+                    for span in line.get("spans", []):
+                        text = span.get("text", "").strip()
+                        if text and _is_equipment_tag(text):
+                            tags.add(text.upper())
+        doc.close()
+    except Exception as e:
+        logger.warning("Failed to extract tags from %s: %s", file_path, e)
+    return tags
+
+
+def _extract_all_text_strings(file_path: str) -> set:
+    """Extract ALL non-empty text strings from all pages of a PDF (uppercase)."""
+    import fitz
+
+    texts = set()
+    try:
+        doc = fitz.open(file_path)
+        for page_num in range(doc.page_count):
+            page = doc[page_num]
+            data = page.get_text("dict")
+            for block in data.get("blocks", []):
+                if block.get("type") != 0:
+                    continue
+                for line in block.get("lines", []):
+                    for span in line.get("spans", []):
+                        text = span.get("text", "").strip()
+                        if text:
+                            texts.add(text.upper())
+        doc.close()
+    except Exception as e:
+        logger.warning("Failed to extract text from %s: %s", file_path, e)
+    return texts
+
+
+def _find_near_matches(tag: str, candidates: set, max_dist: int = 1) -> List[str]:
+    """Find tags in candidates within edit distance max_dist of tag."""
+    matches = []
+    for c in candidates:
+        if c == tag:
+            continue
+        if abs(len(c) - len(tag)) > max_dist:
+            continue
+        # Simple single-char difference check
+        if len(c) == len(tag):
+            diffs = sum(1 for a, b in zip(c, tag) if a != b)
+            if diffs <= max_dist:
+                matches.append(c)
+        elif abs(len(c) - len(tag)) == 1:
+            # Insertion/deletion — check if removing one char makes them equal
+            longer, shorter = (c, tag) if len(c) > len(tag) else (tag, c)
+            for i in range(len(longer)):
+                if longer[:i] + longer[i + 1:] == shorter:
+                    matches.append(c)
+                    break
+    return matches
+
+
+def validate_schedule_against_text_layer(project_id: int) -> dict:
+    """Cross-reference Docling schedule extractions against PDF text layer.
+
+    For each schedule sheet:
+    1. Extract ALL text strings from the PDF (not just regex-matched tags)
+    2. Query schedule_extractions for Docling-extracted tags
+    3. Check if each Docling tag appears anywhere in the PDF text
+    4. Also detect equipment tags in PDF text that Docling didn't extract
+
+    Returns:
+        {
+            "sheets_checked": int,
+            "total_docling_tags": int,
+            "confirmed": int,
+            "docling_only": [{"sheet_id": int, "tag": str, "drawing": str}, ...],
+            "text_only": [{"sheet_id": int, "tag": str, "drawing": str}, ...],
+            "misread_candidates": [{"sheet_id": int, "docling": str, "text": str, "drawing": str}, ...],
+            "per_sheet": [...],
+            "no_text_sheets": [str],  # Scanned PDFs with no embedded text
+        }
+    """
+    with get_db(readonly=True) as conn:
+        sheets = conn.execute(
+            """SELECT DISTINCT se.sheet_id, s.drawing_number, s.file_path
+               FROM schedule_extractions se
+               JOIN sheets s ON s.id = se.sheet_id
+               WHERE se.project_id = ?
+               ORDER BY s.drawing_number""",
+            (project_id,),
+        ).fetchall()
+
+        results = {
+            "sheets_checked": 0,
+            "total_docling_tags": 0,
+            "confirmed": 0,
+            "docling_only": [],
+            "text_only": [],
+            "misread_candidates": [],
+            "per_sheet": [],
+            "no_text_sheets": [],
+        }
+
+        for sheet in sheets:
+            sheet_id = sheet["sheet_id"]
+            drawing = sheet["drawing_number"]
+            file_path = sheet["file_path"]
+
+            # Get Docling tags
+            docling_rows = conn.execute(
+                "SELECT tag FROM schedule_extractions WHERE sheet_id = ? AND project_id = ?",
+                (sheet_id, project_id),
+            ).fetchall()
+            docling_tags = {row["tag"].upper() for row in docling_rows}
+
+            # Get ALL text strings from the PDF (not just regex-matched tags)
+            all_text = _extract_all_text_strings(file_path)
+
+            if not all_text:
+                results["no_text_sheets"].append(drawing)
+                results["sheets_checked"] += 1
+                results["total_docling_tags"] += len(docling_tags)
+                results["per_sheet"].append({
+                    "sheet_id": sheet_id,
+                    "drawing": drawing,
+                    "docling": len(docling_tags),
+                    "text": 0,
+                    "confirmed": 0,
+                    "note": "scanned PDF — no embedded text",
+                })
+                continue
+
+            # Check each Docling tag against raw PDF text
+            confirmed = set()
+            d_only = set()
+            for tag in docling_tags:
+                if tag in all_text:
+                    confirmed.add(tag)
+                else:
+                    d_only.add(tag)
+
+            # Also find equipment tags in text that Docling missed
+            equip_tags = extract_all_pages_tags(file_path)
+            t_only = equip_tags - docling_tags
+
+            results["sheets_checked"] += 1
+            results["total_docling_tags"] += len(docling_tags)
+            results["confirmed"] += len(confirmed)
+
+            for tag in sorted(d_only):
+                near = _find_near_matches(tag, all_text)
+                if near:
+                    results["misread_candidates"].append({
+                        "sheet_id": sheet_id,
+                        "docling": tag,
+                        "text": near[0],
+                        "drawing": drawing,
+                    })
+                else:
+                    results["docling_only"].append({
+                        "sheet_id": sheet_id,
+                        "tag": tag,
+                        "drawing": drawing,
+                    })
+
+            for tag in sorted(t_only):
+                results["text_only"].append({
+                    "sheet_id": sheet_id,
+                    "tag": tag,
+                    "drawing": drawing,
+                })
+
+            results["per_sheet"].append({
+                "sheet_id": sheet_id,
+                "drawing": drawing,
+                "docling": len(docling_tags),
+                "text": len(equip_tags),
+                "confirmed": len(confirmed),
+            })
+
+    logger.info(
+        "Schedule validation: %d sheets, %d confirmed, %d docling-only, %d text-only, %d misread candidates",
+        results["sheets_checked"], results["confirmed"],
+        len(results["docling_only"]), len(results["text_only"]),
+        len(results["misread_candidates"]),
+    )
+    return results
