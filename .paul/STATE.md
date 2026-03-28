@@ -11,9 +11,9 @@ See: .paul/PROJECT.md
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
 Phase: 27 of 9 (Floor Plan Extraction) — In Progress
-Plan: 27-02a complete (loop closed)
-Status: Ready for next PLAN
-Last activity: 2026-03-28 — Plan 27-02a UNIFY complete
+Plan: 27-02 + 27-02a closed. Planning 27-03.
+Status: Ready for next PLAN (27-03)
+Last activity: 2026-03-28 — Plans 27-02 and 27-02a UNIFY complete
 
 Progress:
 - v0.4 Equipment-Centric Platform: [█████████░] 90%
@@ -48,6 +48,7 @@ Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
 | 25-03 | Complete | Complete Vital MEP extraction: 452 entries, 19 sheets, Opus shadow QA | 2026-03-26 |
 | 26-01 | Complete | Schedule reconciliation: 12th data source, 661 instances, 296 enriched, conflicts 496→473 | 2026-03-27 |
 | 27-01 | Complete | Floor plan extraction infrastructure: table, prompts, harness, 344 pending sheets | 2026-03-27 |
+| 27-02 | Complete | Refrigeration calibration: Phase 2 on 19 sheets (213 entries), Sonnet 14.6% finding, shadow on 3 sheets | 2026-03-28 |
 | 27-02a | Complete | Text-layer preprocessor: PyMuPDF text extraction, prompt integration, Sonnet+text 100% recall on R1101 | 2026-03-28 |
 
 ### v0.3 Quality Manual Platform
@@ -169,14 +170,16 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-28
-Stopped at: Plan 27-02a loop closed — text-layer preprocessor complete
-Next action: Resume 27-02 (close remaining phases) or plan 27-03 (scale MEP with Sonnet+text)
-Resume file: .paul/phases/27-floor-plan-extraction/27-02a-SUMMARY.md
+Stopped at: Plans 27-02 + 27-02a closed. Planning 27-03.
+Next action: Create 27-03-PLAN.md (complete Refrigeration Phases 3-4 + scale remaining MEP)
+Resume file: .paul/phases/27-floor-plan-extraction/27-02-SUMMARY.md
 Resume notes: |
-  27-02a COMPLETE: pipeline/text_layer.py + enhanced build_floor_plan_prompt(). Sonnet+text 100% recall.
-  27-02 partially complete: Phase 2 discovery done (213 entries, 19 sheets). Phases 3 (Haiku detail),
-  4 (conflict verification), and remaining shadow reviews not yet run. Needs SUMMARY to close.
-  Phase 27 progress: 2/3 plans complete (27-01, 27-02a). 27-02 still open.
+  All prior plans closed: 27-01 (infra), 27-02 (calibration), 27-02a (text-layer).
+  Refrigeration Phase 2 discovery done (213 entries, 11 sheets). Carried forward to 27-03:
+  - Phase 3 (Haiku detail) + Phase 4 (conflict verification) on Refrigeration
+  - Shadow reviews on remaining high-value sheets
+  - Gold standard, accuracy_log, model_runs population
+  - Scale to remaining MEP disciplines (Utility, Mechanical, Electrical, Plumbing) with Sonnet+text
   Obsidian SOP at D:\QM-Obsidian\Module 4\SIS-4.12.001 — needs sync with text-layer approach.
 
 ---
