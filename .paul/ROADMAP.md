@@ -61,7 +61,16 @@ Focus: Integrate 452 schedule entries as 12th reconciler data source, enrich exi
 
 ### Phase 27: Floor Plan Extraction
 
-Focus: Context-aware vision extraction of floor plans, P&IDs, and details. Anti-hallucination prompts inject schedule-built equipment checklist. Plan 27-01 (infrastructure), 27-02 (Refrigeration P&IDs first batch), 27-03 (remaining MEP disciplines).
+Focus: Context-aware vision extraction of floor plans, P&IDs, and details. Anti-hallucination prompts inject schedule-built equipment checklist. Text-layer preprocessor (PyMuPDF) for tag visibility. Plan 27-01 (infrastructure), 27-02/02a (Refrigeration calibration + text layer), 27-03 (MEP scale), 27-04 (remaining disciplines).
+
+---
+
+## Future Phases (v0.4 continued)
+
+| Phase | Name | Status | Notes |
+|-------|------|--------|-------|
+| 28 | Schedule Notes & Spec Text Extraction | Planned | Extract spec notes/requirements from schedule drawings into structured storage. PyMuPDF text layer captures notes like "FLUID: WATER WITH 30% PROPYLENE GLYCOL", "PROVIDE VFD STARTER WITH HARMONIC FILTER" — useful for spec compliance but currently filtered out of tag pipeline. New `schedule_notes` table keyed to sheet_id with equipment tag references. Feeds Phase 21 spec compliance engine. |
+| 29 | Floor Plan Reconciliation | Planned | Reconcile 1,074+ floor plan extraction entries into equipment_instances. Deduplicate cross-sheet appearances, merge with schedule data, re-run conflict detection. |
 
 ---
 
