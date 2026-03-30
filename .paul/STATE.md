@@ -11,9 +11,9 @@ See: .paul/PROJECT.md
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
 Phase: 27 of 9 (Floor Plan Extraction) — In Progress
-Plan: 27-03 complete (loop closed)
-Status: Ready for next PLAN
-Last activity: 2026-03-30 — Plan 27-03 UNIFY complete: 5 MEP disciplines, 1074 entries
+Plan: 27-04 created, awaiting approval
+Status: PLAN created, ready for APPLY
+Last activity: 2026-03-30 — Created 27-04-PLAN.md (remaining 246 non-MEP sheets)
 
 Progress:
 - v0.4 Equipment-Centric Platform: [█████████░] 90%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
+  ✓        ○        ○     [27-04 planned, awaiting approval]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -171,14 +171,12 @@ Branch: main
 ## Session Continuity
 
 Last session: 2026-03-30
-Stopped at: Plan 27-03 loop closed — 5 MEP disciplines complete
-Next action: Plan 27-04 (Architectural/Structural/Civil extraction) or reconciliation
-Resume file: .paul/phases/27-floor-plan-extraction/27-03-SUMMARY.md
+Stopped at: Plan 27-04 created, awaiting approval
+Next action: Run /paul:apply to execute 27-04
+Resume file: .paul/phases/27-floor-plan-extraction/27-04-PLAN.md
 Resume notes: |
-  27-03 COMPLETE: 98/344 sheets extracted, 1074 entries across 5 MEP disciplines.
-  Refrigeration fully through 4-phase pipeline (100% shadow accuracy).
-  Utility, Mechanical, Electrical, Plumbing Phase 2 complete.
-  246 remaining sheets: Architectural (100), Structural (53), Civil (41), General (10), Fire Protection (1).
+  27-04 scope: Process remaining 246 non-MEP sheets (Architectural 100, Structural 53, Civil 41, General 10, Fire Protection 1).
+  Most expected empty — goal is 100% coverage (344/344 sheets). No code changes, execution only.
   Obsidian SOP at D:\QM-Obsidian\Module 4\SIS-4.12.001 — needs sync with text-layer approach.
 
 ---
