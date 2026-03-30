@@ -125,6 +125,10 @@ def format_text_layer_for_prompt(text_data: dict, max_lines: int = 200) -> str:
     if not blocks:
         return ""
 
+    # Filter out long prose blocks — spec notes, descriptions, legal text
+    # Real equipment labels are short (< 50 chars)
+    blocks = [b for b in blocks if len(b["text"]) <= 50]
+
     tags_set = set(text_data.get("equipment_tags", []))
 
     # Partition: tag-bearing blocks first, then rest by position

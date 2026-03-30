@@ -15,9 +15,15 @@ Part of v0.4 Equipment-Centric Platform (Phase 27).
 """
 
 import json
+import re
 from typing import Any, Dict, List, Optional
 
 from qms.core import get_db, get_logger
+
+# Max tag length — real equipment tags are short (RAHU-1, 1HH041, VAV-2-1)
+_MAX_TAG_LENGTH = 25
+# Tags must look like equipment identifiers, not prose
+_TAG_PATTERN = re.compile(r"^[A-Za-z0-9][\w\-./]+$")
 
 logger = get_logger("qms.pipeline.floor_plan_extractor")
 
@@ -379,6 +385,7 @@ def format_vision_result(
             known_tags.add(row["tag"].upper())
 
     validated = []
+    rejected = 0
     for entry in raw_entries:
         tag = entry.get("tag")
         if not tag:
@@ -387,6 +394,16 @@ def format_vision_result(
             tag = str(tag)
         tag = tag.strip()
         if not tag:
+            continue
+
+        # Reject tags that are clearly not equipment identifiers
+        if len(tag) > _MAX_TAG_LENGTH:
+            logger.debug("Rejected tag (too long, %d chars): %.40s...", len(tag), tag)
+            rejected += 1
+            continue
+        if not _TAG_PATTERN.match(tag):
+            logger.debug("Rejected tag (bad format): %s", tag)
+            rejected += 1
             continue
 
         result = {
@@ -409,4 +426,6 @@ def format_vision_result(
 
         validated.append(result)
 
+    if rejected:
+        logger.info("Rejected %d invalid tags (too long or bad format)", rejected)
     return validated
