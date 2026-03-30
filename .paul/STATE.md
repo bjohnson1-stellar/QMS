@@ -11,9 +11,9 @@ See: .paul/PROJECT.md
 
 Milestone: v0.4 Equipment-Centric Platform — In Progress
 Phase: 27 of 9 (Floor Plan Extraction) — In Progress
-Plan: 27-03 APPLY in progress — Tasks 1-5 complete, checkpoint pending
-Status: APPLY in progress
-Last activity: 2026-03-28 — 5 MEP disciplines extracted: 98/344 sheets, 1074 entries
+Plan: 27-03 complete (loop closed)
+Status: Ready for next PLAN
+Last activity: 2026-03-30 — Plan 27-03 UNIFY complete: 5 MEP disciplines, 1074 entries
 
 Progress:
 - v0.4 Equipment-Centric Platform: [█████████░] 90%
@@ -26,7 +26,7 @@ Progress:
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ◐        ○     [27-03 APPLY in progress — final checkpoint]
+  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
 ```
 
 Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
@@ -50,6 +50,7 @@ Note: Phases 22-01, 23-01, 24-01, 25-01 batch-closed on 2026-03-26.
 | 27-01 | Complete | Floor plan extraction infrastructure: table, prompts, harness, 344 pending sheets | 2026-03-27 |
 | 27-02 | Complete | Refrigeration calibration: Phase 2 on 19 sheets (213 entries), Sonnet 14.6% finding, shadow on 3 sheets | 2026-03-28 |
 | 27-02a | Complete | Text-layer preprocessor: PyMuPDF text extraction, prompt integration, Sonnet+text 100% recall on R1101 | 2026-03-28 |
+| 27-03 | Complete | MEP extraction: 5 disciplines, 98 sheets, 1074 entries, schedule validation, Refrigeration 4-phase complete | 2026-03-30 |
 
 ### v0.3 Quality Manual Platform
 
@@ -169,15 +170,15 @@ Branch: main
 
 ## Session Continuity
 
-Last session: 2026-03-28
-Stopped at: Plan 27-03 created, awaiting approval
-Next action: Run /paul:apply to execute 27-03
-Resume file: .paul/phases/27-floor-plan-extraction/27-03-PLAN.md
+Last session: 2026-03-30
+Stopped at: Plan 27-03 loop closed — 5 MEP disciplines complete
+Next action: Plan 27-04 (Architectural/Structural/Civil extraction) or reconciliation
+Resume file: .paul/phases/27-floor-plan-extraction/27-03-SUMMARY.md
 Resume notes: |
-  27-03 scope: Complete Refrigeration (Phases 3-4, shadow, gold standard) + scale Phase 2 to
-  Utility (53), Mechanical (20), Electrical (32), Plumbing (15) = 120 new sheets with Sonnet+text.
-  Calibrate 3 per discipline before scaling. 10% shadow on scale batches.
-  Target: ~131 of 344 plan sheets extracted (~38% coverage).
+  27-03 COMPLETE: 98/344 sheets extracted, 1074 entries across 5 MEP disciplines.
+  Refrigeration fully through 4-phase pipeline (100% shadow accuracy).
+  Utility, Mechanical, Electrical, Plumbing Phase 2 complete.
+  246 remaining sheets: Architectural (100), Structural (53), Civil (41), General (10), Fire Protection (1).
   Obsidian SOP at D:\QM-Obsidian\Module 4\SIS-4.12.001 — needs sync with text-layer approach.
 
 ---
