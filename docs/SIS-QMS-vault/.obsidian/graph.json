@@ -1,0 +1,65 @@
+{
+  "collapse-filter": true,
+  "search": "",
+  "showTags": true,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": true,
+  "colorGroups": [
+    {
+      "query": "path:01-QMS-Modules",
+      "color": {
+        "a": 1,
+        "rgb": 5025616
+      }
+    },
+    {
+      "query": "path:00-Dashboard",
+      "color": {
+        "a": 1,
+        "rgb": 2201331
+      }
+    },
+    {
+      "query": "path:03-Architecture",
+      "color": {
+        "a": 1,
+        "rgb": 10170623
+      }
+    },
+    {
+      "query": "path:05-Database",
+      "color": {
+        "a": 1,
+        "rgb": 16744448
+      }
+    },
+    {
+      "query": "path:04-API",
+      "color": {
+        "a": 1,
+        "rgb": 8388863
+      }
+    },
+    {
+      "query": "path:07-Troubleshooting",
+      "color": {
+        "a": 1,
+        "rgb": 16711680
+      }
+    }
+  ],
+  "collapse-display": false,
+  "showArrow": true,
+  "textFadeMultiplier": -0.8,
+  "nodeSizeMultiplier": 1.17857046162177,
+  "lineSizeMultiplier": 2.49461215649113,
+  "collapse-forces": false,
+  "centerStrength": 0.71395695140111,
+  "repelStrength": 20,
+  "linkStrength": 0.571003113577907,
+  "linkDistance": 174,
+  "scale": 0.4461091112502679,
+  "close": true
+}

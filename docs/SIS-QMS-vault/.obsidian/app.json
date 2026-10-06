@@ -1,0 +1,15 @@
+{
+  "defaultViewMode": "preview",
+  "attachmentFolderPath": "Attachments",
+  "newFileLocation": "folder",
+  "newFileFolderPath": "06-Dev-Journal",
+  "alwaysUpdateLinks": true,
+  "showFrontmatter": true,
+  "foldHeading": true,
+  "foldIndent": true,
+  "showLineNumber": true,
+  "strictLineBreaks": false,
+  "readableLineLength": true,
+  "promptDelete": true,
+  "trashOption": "local"
+}

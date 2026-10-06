@@ -1,0 +1,205 @@
+App:
+  Properties:
+    StartScreen: =Home
+    Formulas: |-
+      =// === Theme constants — clean industrial palette ===
+      ThemeNavy = RGBA(20, 36, 64, 1);
+      ThemeNavyDeep = RGBA(12, 22, 42, 1);
+      ThemeSteel = RGBA(46, 78, 122, 1);
+      ThemeAccent = RGBA(0, 120, 212, 1);
+      ThemeBgPage = RGBA(247, 249, 252, 1);
+      ThemeBgCard = RGBA(255, 255, 255, 1);
+      ThemeBgSubtle = RGBA(238, 242, 247, 1);
+      ThemeBorder = RGBA(214, 222, 232, 1);
+      ThemeText = RGBA(28, 36, 50, 1);
+      ThemeTextMuted = RGBA(96, 110, 130, 1);
+      ThemeTextSubtle = RGBA(140, 152, 170, 1);
+      StatusCurrent = RGBA(16, 124, 16, 1);
+      StatusExpiringSoon = RGBA(202, 128, 12, 1);
+      StatusExpired = RGBA(196, 49, 75, 1);
+      StatusInactive = RGBA(140, 152, 170, 1);
+      CodeASMEColor = RGBA(0, 90, 158, 1);
+      CodeAWSColor = RGBA(168, 75, 12, 1);
+      WarningWindow30 = 30;
+      WarningWindow60 = 60;
+      WarningWindow90 = 90;
+      ContinuityWindowDays = 183;
+      DocLibraryUrl = "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/Forms/AllItems.aspx"
+    OnStart: |-
+      =ClearCollect(
+        colWPS,
+        {
+          WPSNumber: "WPS-001",
+          Title: "GTAW Carbon Steel Pipe - F6 / P1",
+          Code: "ASME IX",
+          Process: "GTAW",
+          BaseMetalPNumber: "P1",
+          FillerFNumber: "F6",
+          ThicknessRange: "1/16in - 3/4in",
+          DiameterRange: "1in - 24in",
+          PositionRange: "All",
+          PQRNumbers: "PQR-001",
+          Revision: "Rev 3",
+          IssuedDate: Date(2023, 4, 12),
+          DocumentUrl: "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/WPS/WPS-001.pdf"
+        },
+        {
+          WPSNumber: "WPS-002",
+          Title: "SMAW Structural Steel - F4 / P1",
+          Code: "AWS D1.1",
+          Process: "SMAW",
+          BaseMetalPNumber: "P1",
+          FillerFNumber: "F4",
+          ThicknessRange: "1/8in - 1in",
+          DiameterRange: "N/A",
+          PositionRange: "1G, 2G, 3G, 4G",
+          PQRNumbers: "PQR-002, PQR-003",
+          Revision: "Rev 1",
+          IssuedDate: Date(2024, 1, 8),
+          DocumentUrl: "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/WPS/WPS-002.pdf"
+        },
+        {
+          WPSNumber: "WPS-003",
+          Title: "GMAW Stainless 304/316 - F6 / P8",
+          Code: "ASME IX",
+          Process: "GMAW",
+          BaseMetalPNumber: "P8",
+          FillerFNumber: "F6",
+          ThicknessRange: "1/16in - 1/2in",
+          DiameterRange: "1/2in - 12in",
+          PositionRange: "All",
+          PQRNumbers: "PQR-004",
+          Revision: "Rev 2",
+          IssuedDate: Date(2024, 7, 22),
+          DocumentUrl: "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/WPS/WPS-003.pdf"
+        },
+        {
+          WPSNumber: "WPS-004",
+          Title: "FCAW Carbon Steel - F6 / P1",
+          Code: "AWS D1.1",
+          Process: "FCAW",
+          BaseMetalPNumber: "P1",
+          FillerFNumber: "F6",
+          ThicknessRange: "1/8in - 2in",
+          DiameterRange: "N/A",
+          PositionRange: "1G, 2G",
+          PQRNumbers: "PQR-005",
+          Revision: "Rev 1",
+          IssuedDate: Date(2024, 10, 3),
+          DocumentUrl: "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/WPS/WPS-004.pdf"
+        },
+        {
+          WPSNumber: "BPS-101",
+          Title: "Brazing - Copper Tubing - Refrigeration",
+          Code: "ASME IX",
+          Process: "Torch Braze",
+          BaseMetalPNumber: "P107",
+          FillerFNumber: "BAg-5",
+          ThicknessRange: "0.025in - 0.250in",
+          DiameterRange: "1/4in - 4-1/8in",
+          PositionRange: "All",
+          PQRNumbers: "BPQ-101",
+          Revision: "Rev 1",
+          IssuedDate: Date(2023, 11, 1),
+          DocumentUrl: "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/BPS/BPS-101.pdf"
+        }
+      );
+      ClearCollect(
+        colPQR,
+        {
+          PQRNumber: "PQR-001",
+          Title: "GTAW Carbon Steel - Test Coupon 6in Sch 80",
+          Code: "ASME IX",
+          Process: "GTAW",
+          BaseMetal: "SA-106 Gr B",
+          FillerMetal: "ER70S-2 (F6)",
+          TestThickness: "0.432in",
+          TestDiameter: "6in",
+          TensileResult: "72,400 psi - Pass",
+          BendResult: "All Pass",
+          QualifiedBy: "Brandon Johnson, P.E.",
+          TestDate: Date(2023, 3, 28),
+          LinkedWPS: "WPS-001",
+          DocumentUrl: "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/PQR/PQR-001.pdf"
+        },
+        {
+          PQRNumber: "PQR-002",
+          Title: "SMAW Plate Test - 3/4in 1G",
+          Code: "AWS D1.1",
+          Process: "SMAW",
+          BaseMetal: "A572 Gr 50",
+          FillerMetal: "E7018 (F4)",
+          TestThickness: "0.750in",
+          TestDiameter: "N/A",
+          TensileResult: "78,900 psi - Pass",
+          BendResult: "All Pass",
+          QualifiedBy: "Brandon Johnson, P.E.",
+          TestDate: Date(2023, 12, 11),
+          LinkedWPS: "WPS-002",
+          DocumentUrl: "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/PQR/PQR-002.pdf"
+        },
+        {
+          PQRNumber: "PQR-003",
+          Title: "SMAW Plate Test - 3/8in 4G Overhead",
+          Code: "AWS D1.1",
+          Process: "SMAW",
+          BaseMetal: "A36",
+          FillerMetal: "E7018 (F4)",
+          TestThickness: "0.375in",
+          TestDiameter: "N/A",
+          TensileResult: "76,200 psi - Pass",
+          BendResult: "All Pass",
+          QualifiedBy: "Brandon Johnson, P.E.",
+          TestDate: Date(2023, 12, 14),
+          LinkedWPS: "WPS-002",
+          DocumentUrl: "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/PQR/PQR-003.pdf"
+        },
+        {
+          PQRNumber: "PQR-004",
+          Title: "GMAW Stainless 304L - 4in Sch 10",
+          Code: "ASME IX",
+          Process: "GMAW",
+          BaseMetal: "SA-312 TP304L",
+          FillerMetal: "ER308LSi (F6)",
+          TestThickness: "0.120in",
+          TestDiameter: "4in",
+          TensileResult: "85,100 psi - Pass",
+          BendResult: "All Pass",
+          QualifiedBy: "Brandon Johnson, P.E.",
+          TestDate: Date(2024, 6, 30),
+          LinkedWPS: "WPS-003",
+          DocumentUrl: "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/PQR/PQR-004.pdf"
+        },
+        {
+          PQRNumber: "PQR-005",
+          Title: "FCAW Plate Test - 1in 2G",
+          Code: "AWS D1.1",
+          Process: "FCAW",
+          BaseMetal: "A572 Gr 50",
+          FillerMetal: "E71T-1 (F6)",
+          TestThickness: "1.000in",
+          TestDiameter: "N/A",
+          TensileResult: "81,400 psi - Pass",
+          BendResult: "All Pass",
+          QualifiedBy: "Brandon Johnson, P.E.",
+          TestDate: Date(2024, 9, 15),
+          LinkedWPS: "WPS-004",
+          DocumentUrl: "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/PQR/PQR-005.pdf"
+        },
+        {
+          PQRNumber: "BPQ-101",
+          Title: "Brazed Joint - 7/8in OD Cu Tube",
+          Code: "ASME IX",
+          Process: "Torch Braze",
+          BaseMetal: "Cu (P107)",
+          FillerMetal: "BAg-5",
+          TestThickness: "0.045in",
+          TestDiameter: "7/8in",
+          TensileResult: "Pull Test - Pass",
+          BendResult: "Section - No defects",
+          QualifiedBy: "Brandon Johnson, P.E.",
+          TestDate: Date(2023, 10, 18),
+          LinkedWPS: "BPS-101",
+          DocumentUrl: "https://1stellar.sharepoint.com/teams/PackagedRefrigerationSystems/Shared%20Documents/BPQ/BPQ-101.pdf"
+        }
+      )

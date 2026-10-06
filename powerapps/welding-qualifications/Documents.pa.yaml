@@ -1,0 +1,1250 @@
+Screens:
+  Documents:
+    Properties:
+      Fill: =ThemeBgPage
+      OnVisible: |-
+        =Set(activeNav, "Documents");
+        Set(docFolderFilter, "All");
+        Set(docSearch, "");
+        ClearCollect(
+            colDocs,
+            ForAll(
+                colWPS,
+                {Type: "WPS", DocNumber: WPSNumber, Title: Title, Url: DocumentUrl, Code: Code}
+            ),
+            ForAll(
+                colPQR,
+                {Type: "PQR", DocNumber: PQRNumber, Title: Title, Url: DocumentUrl, Code: Code}
+            )
+        );
+        If(IsBlank(selectedDoc), Set(selectedDoc, First(colDocs)))
+    Children:
+      - Dc_NavRail:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =0
+            Y: =0
+            Width: =160
+            Height: =Parent.Height
+            Fill: =ThemeNavyDeep
+            BorderThickness: =0
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+          Children:
+            - Dc_NavBtnHome:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =24
+                  Width: =144
+                  Height: =48
+                  Icon: ="Home"
+                  Text: ="Home"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="Home"
+                  OnSelect: =Navigate(Home)
+            - Dc_NavBtnWelders:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =84
+                  Width: =144
+                  Height: =48
+                  Icon: ="Person"
+                  Text: ="Welders"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="Welders"
+                  OnSelect: =Navigate(Welders)
+            - Dc_NavBtnWPS:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =144
+                  Width: =144
+                  Height: =48
+                  Icon: ="DocumentBulletList"
+                  Text: ="WPS"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="WPS"
+                  OnSelect: =Navigate(WPS)
+            - Dc_NavBtnPQR:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =204
+                  Width: =144
+                  Height: =48
+                  Icon: ="DocumentEdit"
+                  Text: ="PQR"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="PQR"
+                  OnSelect: =Navigate(PQR)
+            - Dc_NavBtnWPQ:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =264
+                  Width: =144
+                  Height: =48
+                  Icon: ="Ribbon"
+                  Text: ="WPQ"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="WPQ"
+                  OnSelect: =Navigate(WPQ)
+            - Dc_NavBtnDocuments:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =324
+                  Width: =144
+                  Height: =48
+                  Icon: ="Folder"
+                  Text: ="Documents"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Primary
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="Documents"
+                  OnSelect: =false
+            - Dc_NavBtnSettings:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =384
+                  Width: =144
+                  Height: =48
+                  Icon: ="Settings"
+                  Text: ="Settings"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="Settings"
+                  OnSelect: =Navigate(Settings)
+      - Dc_PageShell:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            X: =160
+            Y: =0
+            Width: =Parent.Width - 160
+            Height: =Parent.Height
+            Fill: =ThemeBgPage
+            BorderThickness: =0
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =0
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+          Children:
+            - Dc_PageHeader:
+                Control: GroupContainer
+                Variant: ManualLayout
+                Properties:
+                  Height: =64
+                  Fill: =ThemeNavy
+                  BorderThickness: =0
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =24
+                  PaddingRight: =24
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                Children:
+                  - Dc_HeaderTitle:
+                      Control: ModernText
+                      Properties:
+                        X: =24
+                        Y: =14
+                        Width: =400
+                        Height: =36
+                        Text: ="Documents"
+                        Size: =22
+                        FontWeight: =FontWeight.Bold
+                        Color: =RGBA(255, 255, 255, 1)
+                        Font: =Font.'Segoe UI'
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - Dc_HeaderSubtitle:
+                      Control: ModernText
+                      Properties:
+                        X: =440
+                        Y: =22
+                        Width: =500
+                        Height: =22
+                        Text: ="SharePoint document library — WPS, PQR, WPQ, reports"
+                        Size: =13
+                        FontWeight: =FontWeight.Normal
+                        Color: =RGBA(214, 222, 232, 1)
+                        Font: =Font.'Segoe UI'
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - Dc_HeaderOpenLibraryBtn:
+                      Control: Button
+                      Properties:
+                        X: =Parent.Width - 296
+                        Y: =14
+                        Width: =216
+                        Height: =36
+                        Text: ="Open Library Root"
+                        Icon: ="Open"
+                        Layout: ='ButtonCanvas.Layout'.IconBefore
+                        Appearance: ='ButtonCanvas.Appearance'.Primary
+                        BasePaletteColor: =ThemeAccent
+                        OnSelect: =Launch(DocLibraryUrl)
+                  - Dc_NotifBell:
+                      Control: Button
+                      Properties:
+                        X: =Parent.Width - 104
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Icon: ="Alert"
+                        Layout: ='ButtonCanvas.Layout'.IconOnly
+                        IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                        Appearance: ='ButtonCanvas.Appearance'.Transparent
+                        FontColor: =ThemeBgCard
+                        BasePaletteColor: =ThemeAccent
+                        AccessibleLabel: ="Expiring qualifications"
+                        OnSelect: |-
+                          =Set(showNotifications, !showNotifications); Set(showProfileMenu, false)
+                  - Dc_NotifBadge:
+                      Control: Rectangle
+                      Properties:
+                        X: =Parent.Width - 86
+                        Y: =10
+                        Width: =22
+                        Height: =18
+                        Fill: =StatusExpired
+                        BorderThickness: =0
+                        DisplayMode: =DisplayMode.View
+                        Visible: |-
+                          =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) > 0
+                  - Dc_NotifBadgeText:
+                      Control: ModernText
+                      Properties:
+                        X: =Parent.Width - 86
+                        Y: =10
+                        Width: =22
+                        Height: =18
+                        Text: |-
+                          =Text(CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())))
+                        Color: =RGBA(255, 255, 255, 1)
+                        Size: =11
+                        FontWeight: =FontWeight.Semibold
+                        Font: =Font.'Segoe UI'
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        Visible: |-
+                          =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) > 0
+                  - Dc_UserAvatar:
+                      Control: Avatar
+                      Properties:
+                        X: =Parent.Width - 56
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Name: =User().FullName
+                        Image: =User().Image
+                        Shape: ='Avatar.Shape'.Circular
+                        Appearance: ='Avatar.Appearance'.Colorful
+                        AccessibleLabel: ="Current user — " & User().FullName
+                  - Dc_UserAvatarClick:
+                      Control: Button
+                      Properties:
+                        X: =Parent.Width - 56
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Text: =""
+                        Appearance: ='ButtonCanvas.Appearance'.Transparent
+                        BasePaletteColor: =RGBA(0, 0, 0, 0.001)
+                        BorderThickness: =0
+                        BorderRadius: =20
+                        AccessibleLabel: ="Open user menu"
+                        OnSelect: |-
+                          =Set(showProfileMenu, !showProfileMenu); Set(showNotifications, false)
+            - Dc_FolderTabsBar:
+                Control: GroupContainer
+                Variant: ManualLayout
+                Properties:
+                  Height: =56
+                  Fill: =ThemeBgCard
+                  BorderColor: =ThemeBorder
+                  BorderThickness: =1
+                  PaddingTop: =8
+                  PaddingBottom: =8
+                  PaddingLeft: =24
+                  PaddingRight: =24
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                Children:
+                  - Dc_DocFolderTabs:
+                      Control: ModernTabList
+                      Properties:
+                        X: =16
+                        Y: =8
+                        Width: =720
+                        Height: =40
+                        Items: |-
+                          =Table(
+                              {Value: "All"},
+                              {Value: "WPS"},
+                              {Value: "PQR"},
+                              {Value: "WPQ"},
+                              {Value: "BPS"},
+                              {Value: "BPQ"},
+                              {Value: "Reports"}
+                          )
+                        ItemDisplayText: =ThisItem.Value
+                        Default: '={Value: "All"}'
+                        Appearance: ='TabListAppearance'.Subtle
+                        TabSize: =TabSize.Medium
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Color: =ThemeText
+                        BasePaletteColor: =ThemeAccent
+                        OnChange: =Set(docFolderFilter, Self.Selected.Value)
+                  - Dc_DocSearchInput:
+                      Control: Classic/TextInput
+                      Properties:
+                        Fill: =RGBA(255, 255, 255, 1)
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        X: =Parent.Width - 320
+                        Y: =8
+                        Width: =296
+                        Height: =40
+                        HintText: ="Search documents…"
+                        Size: =14
+                        Color: =ThemeText
+                        Font: =Font.'Segoe UI'
+                        OnChange: =Set(docSearch, Self.Text)
+                        Mode: =TextMode.SingleLine
+            - Dc_DocSplit:
+                Control: GroupContainer
+                Variant: AutoLayout
+                Properties:
+                  Fill: =ThemeBgPage
+                  BorderThickness: =0
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =16
+                  LayoutAlignItems: =LayoutAlignItems.Stretch
+                  LayoutJustifyContent: =LayoutJustifyContent.Start
+                  PaddingTop: =16
+                  PaddingBottom: =16
+                  PaddingLeft: =24
+                  PaddingRight: =24
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                Children:
+                  - Dc_DocListPane:
+                      Control: GroupContainer
+                      Variant: ManualLayout
+                      Properties:
+                        Width: =440
+                        Fill: =ThemeBgCard
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        FillPortions: =0
+                        AlignInContainer: =AlignInContainer.Stretch
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                      Children:
+                        - Dc_DocListHeader:
+                            Control: ModernText
+                            Properties:
+                              X: =16
+                              Y: =14
+                              Width: =408
+                              Height: =22
+                              Text: |-
+                                ="Documents (" & CountRows(
+                                    Filter(
+                                        colDocs,
+                                        ((IsBlank(docFolderFilter) || docFolderFilter = "All") || docFolderFilter = "" || Type = docFolderFilter) &&
+                                        ((IsBlank(docSearch) || docSearch = "") || StartsWith(DocNumber, docSearch) || docSearch in Title)
+                                    )
+                                ) & ")"
+                              Size: =13
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeTextMuted
+                              Font: =Font.'Segoe UI'
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - Dc_DocListDivider:
+                            Control: Rectangle
+                            Properties:
+                              X: =0
+                              Y: =48
+                              Width: =Parent.Width
+                              Height: =1
+                              Fill: =ThemeBorder
+                              BorderThickness: =0
+                        - Dc_DocGallery:
+                            Control: Gallery
+                            Variant: Vertical
+                            Properties:
+                              X: =0
+                              Y: =50
+                              Width: =Parent.Width
+                              Height: =Parent.Height - 50
+                              TemplateSize: =72
+                              TemplatePadding: =0
+                              ShowScrollbar: =true
+                              Selectable: =true
+                              Fill: =ThemeBgCard
+                              BorderThickness: =0
+                              Items: |-
+                                =SortByColumns(
+                                    Filter(
+                                        colDocs,
+                                        ((IsBlank(docFolderFilter) || docFolderFilter = "All") || docFolderFilter = "" || Type = docFolderFilter) &&
+                                        ((IsBlank(docSearch) || docSearch = "") || StartsWith(DocNumber, docSearch) || docSearch in Title)
+                                    ),
+                                    "DocNumber",
+                                    SortOrder.Ascending
+                                )
+                            Children:
+                              - Dc_DocRowBg:
+                                  Control: Rectangle
+                                  Properties:
+                                    X: =0
+                                    Y: =0
+                                    Width: =Parent.TemplateWidth
+                                    Height: =72
+                                    Fill: |-
+                                      =If(
+                                          ThisItem.DocNumber = selectedDoc.DocNumber && ThisItem.Type = selectedDoc.Type,
+                                          ThemeBgSubtle,
+                                          ThemeBgCard
+                                      )
+                                    HoverFill: =ThemeBgSubtle
+                                    BorderThickness: =0
+                                    OnSelect: =Set(selectedDoc, ThisItem)
+                              - Dc_DocRowAccent:
+                                  Control: Rectangle
+                                  Properties:
+                                    X: =0
+                                    Y: =0
+                                    Width: =4
+                                    Height: =72
+                                    Fill: |-
+                                      =If(
+                                          ThisItem.DocNumber = selectedDoc.DocNumber && ThisItem.Type = selectedDoc.Type,
+                                          ThemeAccent,
+                                          RGBA(0, 0, 0, 0)
+                                      )
+                                    BorderThickness: =0
+                              - Dc_DocRowIcon:
+                                  Control: Icon
+                                  Properties:
+                                    X: =16
+                                    Y: =22
+                                    Width: =28
+                                    Height: =28
+                                    Icon: ="DocumentPdf"
+                                    IconStyle: ='Icon.IconStyle'.Outline
+                                    IconColor: =ThemeAccent
+                              - Dc_DocRowNumber:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =56
+                                    Y: =12
+                                    Width: =220
+                                    Height: =22
+                                    Text: =ThisItem.Type & " — " & ThisItem.DocNumber
+                                    Size: =15
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeText
+                                    Font: =Font.'Segoe UI'
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Dc_DocRowTitle:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =56
+                                    Y: =36
+                                    Width: =Parent.TemplateWidth - 168
+                                    Height: =22
+                                    Text: =ThisItem.Title
+                                    Size: =12
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Font: =Font.'Segoe UI'
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Dc_DocRowCodeBadge:
+                                  Control: Badge
+                                  Properties:
+                                    X: =Parent.TemplateWidth - 104
+                                    Y: =24
+                                    Width: =88
+                                    Height: =24
+                                    Content: =ThisItem.Code
+                                    Appearance: ='BadgeCanvas.Appearance'.Tint
+                                    Shape: ='BadgeCanvas.Shape'.Rounded
+                                    BasePaletteColor: |-
+                                      =If(
+                                          ThisItem.Code = "AWS D1.1",
+                                          CodeAWSColor,
+                                          CodeASMEColor
+                                      )
+                                    FontSize: =11
+                                    FontWeight: =FontWeight.Semibold
+                        - Dc_DocEmpty:
+                            Control: ModernText
+                            Properties:
+                              Height: =48
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Visible: =Dc_DocGallery.AllItemsCount = 0
+                              Text: ="No documents match your search."
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Align: =Align.Center
+                              VerticalAlign: =VerticalAlign.Middle
+                              Wrap: =true
+                              PaddingTop: =12
+                              PaddingBottom: =12
+                              PaddingLeft: =12
+                              PaddingRight: =12
+                  - Dc_DocPreviewPane:
+                      Control: GroupContainer
+                      Variant: AutoLayout
+                      Properties:
+                        Fill: =ThemeBgCard
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =0
+                        LayoutAlignItems: =LayoutAlignItems.Stretch
+                        LayoutJustifyContent: =LayoutJustifyContent.Start
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        FillPortions: =1
+                        AlignInContainer: =AlignInContainer.Stretch
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                      Children:
+                        - Dc_PreviewHeader:
+                            Control: GroupContainer
+                            Variant: ManualLayout
+                            Properties:
+                              Height: =80
+                              Fill: =ThemeBgCard
+                              BorderColor: =ThemeBorder
+                              BorderThickness: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutMinWidth: =0
+                              LayoutMinHeight: =0
+                            Children:
+                              - Dc_PreviewTitle:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =20
+                                    Y: =14
+                                    Width: =Parent.Width - 280
+                                    Height: =26
+                                    Text: |-
+                                      =If(
+                                          IsBlank(selectedDoc),
+                                          "Select a document",
+                                          selectedDoc.Type & " — " & selectedDoc.DocNumber
+                                      )
+                                    Size: =18
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeText
+                                    Font: =Font.'Segoe UI'
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Dc_PreviewSubtitle:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =20
+                                    Y: =42
+                                    Width: =Parent.Width - 280
+                                    Height: =22
+                                    Text: |-
+                                      =If(
+                                          IsBlank(selectedDoc),
+                                          "Pick a file from the list to preview",
+                                          selectedDoc.Title
+                                      )
+                                    Size: =13
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Font: =Font.'Segoe UI'
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Dc_PreviewOpenBtn:
+                                  Control: Button
+                                  Properties:
+                                    X: =Parent.Width - 244
+                                    Y: =22
+                                    Width: =224
+                                    Height: =36
+                                    Text: ="Open in SharePoint"
+                                    Icon: ="Open"
+                                    Layout: ='ButtonCanvas.Layout'.IconBefore
+                                    Appearance: ='ButtonCanvas.Appearance'.Primary
+                                    BasePaletteColor: =ThemeAccent
+                                    DisplayMode: |-
+                                      =If(
+                                          IsBlank(selectedDoc) || IsBlank(selectedDoc.Url),
+                                          DisplayMode.Disabled,
+                                          DisplayMode.Edit
+                                      )
+                                    OnSelect: |-
+                                      =If(
+                                          !IsBlank(selectedDoc) && !IsBlank(selectedDoc.Url),
+                                          Launch(selectedDoc.Url)
+                                      )
+                        - Dc_PreviewDivider:
+                            Control: Rectangle
+                            Properties:
+                              Height: =1
+                              Fill: =ThemeBorder
+                              BorderThickness: =0
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                        - Dc_PreviewBody:
+                            Control: GroupContainer
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =ThemeBgSubtle
+                              BorderThickness: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              FillPortions: =1
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutMinWidth: =0
+                              LayoutMinHeight: =0
+                            Children:
+                              - Dc_PreviewMetaCard:
+                                  Control: GroupContainer
+                                  Variant: ManualLayout
+                                  Properties:
+                                    X: =20
+                                    Y: =16
+                                    Width: =Parent.Width - 40
+                                    Height: =160
+                                    Fill: =ThemeBgCard
+                                    BorderColor: =ThemeBorder
+                                    BorderThickness: =1
+                                    RadiusTopLeft: =8
+                                    RadiusTopRight: =8
+                                    RadiusBottomLeft: =8
+                                    RadiusBottomRight: =8
+                                    DropShadow: =DropShadow.Light
+                                    PaddingTop: =16
+                                    PaddingBottom: =16
+                                    PaddingLeft: =20
+                                    PaddingRight: =20
+                                    LayoutMinWidth: =0
+                                    LayoutMinHeight: =0
+                                  Children:
+                                    - Dc_MetaSectionLabel:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =20
+                                          Y: =16
+                                          Width: =300
+                                          Height: =18
+                                          Text: ="Document details"
+                                          Size: =11
+                                          FontWeight: =FontWeight.Semibold
+                                          Color: =ThemeTextMuted
+                                          Font: =Font.'Segoe UI'
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Dc_MetaTypeLabel:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =20
+                                          Y: =44
+                                          Width: =140
+                                          Height: =20
+                                          Text: ="Type"
+                                          Size: =11
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextSubtle
+                                          Font: =Font.'Segoe UI'
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Dc_MetaTypeValue:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =160
+                                          Y: =44
+                                          Width: =Parent.Width - 200
+                                          Height: =20
+                                          Text: =If(IsBlank(selectedDoc), "—", selectedDoc.Type)
+                                          Size: =13
+                                          FontWeight: =FontWeight.Semibold
+                                          Color: =ThemeText
+                                          Font: =Font.'Segoe UI'
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Dc_MetaNumberLabel:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =20
+                                          Y: =72
+                                          Width: =140
+                                          Height: =20
+                                          Text: ="DocNumber"
+                                          Size: =11
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextSubtle
+                                          Font: =Font.'Segoe UI'
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Dc_MetaNumberValue:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =160
+                                          Y: =72
+                                          Width: =Parent.Width - 200
+                                          Height: =20
+                                          Text: =If(IsBlank(selectedDoc), "—", selectedDoc.DocNumber)
+                                          Size: =13
+                                          FontWeight: =FontWeight.Semibold
+                                          Color: =ThemeText
+                                          Font: =Font.'Segoe UI'
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Dc_MetaCodeLabel:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =20
+                                          Y: =100
+                                          Width: =140
+                                          Height: =20
+                                          Text: ="Code"
+                                          Size: =11
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextSubtle
+                                          Font: =Font.'Segoe UI'
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Dc_MetaCodeBadge:
+                                        Control: Badge
+                                        Properties:
+                                          X: =160
+                                          Y: =98
+                                          Width: =96
+                                          Height: =24
+                                          Content: =If(IsBlank(selectedDoc), "—", selectedDoc.Code)
+                                          Appearance: ='BadgeCanvas.Appearance'.Tint
+                                          Shape: ='BadgeCanvas.Shape'.Rounded
+                                          BasePaletteColor: |-
+                                            =If(
+                                                IsBlank(selectedDoc),
+                                                ThemeTextSubtle,
+                                                If(
+                                                    selectedDoc.Code = "AWS D1.1",
+                                                    CodeAWSColor,
+                                                    CodeASMEColor
+                                                )
+                                            )
+                                          FontSize: =11
+                                          FontWeight: =FontWeight.Semibold
+                                          Visible: =!IsBlank(selectedDoc) && !IsBlank(selectedDoc.Code)
+                                    - Dc_MetaUrlLabel:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =20
+                                          Y: =128
+                                          Width: =140
+                                          Height: =20
+                                          Text: ="URL"
+                                          Size: =11
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextSubtle
+                                          Font: =Font.'Segoe UI'
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Dc_MetaUrlValue:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =160
+                                          Y: =128
+                                          Width: =Parent.Width - 200
+                                          Height: =20
+                                          Text: |-
+                                            =If(
+                                                IsBlank(selectedDoc) || IsBlank(selectedDoc.Url),
+                                                "(no link)",
+                                                selectedDoc.Url
+                                            )
+                                          Size: =12
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextMuted
+                                          Font: =Font.'Segoe UI'
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                              - Dc_PreviewEmptyState:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =20
+                                    Y: =192
+                                    Width: =Parent.Width - 40
+                                    Height: =Parent.Height - 212
+                                    Text: |-
+                                      ="No preview available." & Char(10) &
+                                      "Use the Open in SharePoint button above to view this document in the browser."
+                                    Size: =14
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Font: =Font.'Segoe UI'
+                                    Align: =Align.Center
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Visible: =IsBlank(selectedDoc) || IsBlank(selectedDoc.Url)
+      - Dc_NotifScrim:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Text: =""
+            Visible: =showNotifications
+            Appearance: ='ButtonCanvas.Appearance'.Transparent
+            BasePaletteColor: =RGBA(0,0,0,0.001)
+            BorderThickness: =0
+            AccessibleLabel: ="Close notifications"
+            OnSelect: =Set(showNotifications, false)
+      - Dc_NotifPopover:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =Parent.Width - 392
+            Y: =76
+            Width: =376
+            Height: =440
+            Fill: =ThemeBgCard
+            BorderColor: =ThemeBorder
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Visible: =showNotifications
+          Children:
+            - Dc_NotifTitle:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =16
+                  Width: =280
+                  Height: =26
+                  Text: ="Expiring Qualifications"
+                  Font: =Font.'Segoe UI'
+                  Size: =16
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeText
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Dc_NotifSubtitle:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =42
+                  Width: =280
+                  Height: =18
+                  Text: ="Within 30 days"
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Dc_NotifClose:
+                Control: Button
+                Properties:
+                  X: =Parent.Width - 44
+                  Y: =12
+                  Width: =32
+                  Height: =32
+                  Icon: ="Dismiss"
+                  Layout: ='ButtonCanvas.Layout'.IconOnly
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeTextMuted
+                  AccessibleLabel: ="Close"
+                  OnSelect: =Set(showNotifications, false)
+            - Dc_NotifDivider:
+                Control: Rectangle
+                Properties:
+                  X: =0
+                  Y: =72
+                  Width: =Parent.Width
+                  Height: =1
+                  Fill: =ThemeBorder
+                  BorderThickness: =0
+            - Dc_NotifGallery:
+                Control: Gallery
+                Variant: Vertical
+                Properties:
+                  X: =0
+                  Y: =73
+                  Width: =Parent.Width
+                  Height: =Parent.Height - 73
+                  TemplateSize: =64
+                  TemplatePadding: =0
+                  Fill: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+                  ShowScrollbar: =true
+                  Items: |-
+                    =SortByColumns(
+                      Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today()),
+                      "ExpirationDate", SortOrder.Ascending
+                    )
+                Children:
+                  - Dc_NotifRowDivider:
+                      Control: Rectangle
+                      Properties:
+                        X: =0
+                        Y: =Parent.TemplateHeight - 1
+                        Width: =Parent.TemplateWidth
+                        Height: =1
+                        Fill: =ThemeBgSubtle
+                        BorderThickness: =0
+                  - Dc_NotifRowName:
+                      Control: ModernText
+                      Properties:
+                        X: =20
+                        Y: =10
+                        Width: =220
+                        Height: =22
+                        Text: =Coalesce(ThisItem.Title, "(Unknown)")
+                        Font: =Font.'Segoe UI'
+                        Size: =13
+                        FontWeight: =FontWeight.Semibold
+                        Color: =ThemeText
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - Dc_NotifRowSub:
+                      Control: ModernText
+                      Properties:
+                        X: =20
+                        Y: =34
+                        Width: =220
+                        Height: =18
+                        Text: =Coalesce(ThisItem.WPSNumber, "")
+                        Font: =Font.'Segoe UI'
+                        Size: =11
+                        FontWeight: =FontWeight.Normal
+                        Color: =ThemeTextMuted
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - Dc_NotifRowDate:
+                      Control: ModernText
+                      Properties:
+                        X: =Parent.TemplateWidth - 96
+                        Y: =22
+                        Width: =84
+                        Height: =22
+                        Text: =Text(ThisItem.ExpirationDate, "mmm d, yyyy") & " (" & If(IsBlank(ThisItem.ExpirationDate), "—", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) < 0, Abs(DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days)) & " days ago", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) & " days") & ")"
+                        Font: =Font.'Segoe UI'
+                        Size: =12
+                        FontWeight: =FontWeight.Semibold
+                        Color: =StatusExpiringSoon
+                        Align: =Align.Right
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+            - Dc_NotifEmpty:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =180
+                  Width: =Parent.Width - 40
+                  Height: =40
+                  Text: ="No qualifications expiring in the next 30 days."
+                  Font: =Font.'Segoe UI'
+                  Size: =13
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Align: =Align.Center
+                  Wrap: =true
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Visible: |-
+                    =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) = 0
+      - Dc_ProfileScrim:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Text: =""
+            Visible: =showProfileMenu
+            Appearance: ='ButtonCanvas.Appearance'.Transparent
+            BasePaletteColor: =RGBA(0,0,0,0.001)
+            BorderThickness: =0
+            AccessibleLabel: ="Close profile menu"
+            OnSelect: =Set(showProfileMenu, false)
+      - Dc_ProfilePopover:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =Parent.Width - 296
+            Y: =76
+            Width: =280
+            Height: =220
+            Fill: =ThemeBgCard
+            BorderColor: =ThemeBorder
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Visible: =showProfileMenu
+          Children:
+            - Dc_ProfileAvatarBig:
+                Control: Avatar
+                Properties:
+                  X: =16
+                  Y: =16
+                  Width: =56
+                  Height: =56
+                  Name: =User().FullName
+                  Image: =User().Image
+                  Shape: ='Avatar.Shape'.Circular
+                  Appearance: ='Avatar.Appearance'.Colorful
+                  FontSize: =22
+            - Dc_ProfileNameBig:
+                Control: ModernText
+                Properties:
+                  X: =84
+                  Y: =18
+                  Width: =180
+                  Height: =22
+                  Text: =User().FullName
+                  Font: =Font.'Segoe UI'
+                  Size: =14
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeText
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Dc_PopProfileEmail:
+                Control: ModernText
+                Properties:
+                  X: =84
+                  Y: =42
+                  Width: =180
+                  Height: =22
+                  Text: =User().Email
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Dc_ProfileDivider:
+                Control: Rectangle
+                Properties:
+                  X: =16
+                  Y: =92
+                  Width: =Parent.Width - 32
+                  Height: =1
+                  Fill: =ThemeBorder
+                  BorderThickness: =0
+            - Dc_ProfileBtnAccount:
+                Control: Button
+                Properties:
+                  X: =16
+                  Y: =104
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  Text: ="View Microsoft account"
+                  Icon: ="Person"
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeAccent
+                  Align: =Align.Left
+                  OnSelect: |-
+                    =Launch("https://myaccount.microsoft.com"); Set(showProfileMenu, false)
+            - Dc_ProfileBtnAbout:
+                Control: Button
+                Properties:
+                  X: =16
+                  Y: =152
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  Text: ="About this app"
+                  Icon: ="Info"
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeAccent
+                  Align: =Align.Left
+                  OnSelect: =Set(showProfileMenu, false); Navigate(Settings)

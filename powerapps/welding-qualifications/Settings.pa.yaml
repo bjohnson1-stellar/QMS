@@ -1,0 +1,1583 @@
+Screens:
+  Settings:
+    Properties:
+      Fill: =ThemeBgPage
+      OnVisible: =Set(activeNav, "Settings")
+    Children:
+      - St_NavRail:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =0
+            Y: =0
+            Width: =160
+            Height: =Parent.Height
+            Fill: =ThemeNavyDeep
+            BorderThickness: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+          Children:
+            - St_NavBtnHome:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =24
+                  Width: =144
+                  Height: =48
+                  Icon: ="Home"
+                  Text: ="Home"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="Home"
+                  OnSelect: =Navigate(Home)
+            - St_NavBtnWelders:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =84
+                  Width: =144
+                  Height: =48
+                  Icon: ="Person"
+                  Text: ="Welders"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="Welders"
+                  OnSelect: =Navigate(Welders)
+            - St_NavBtnWPS:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =144
+                  Width: =144
+                  Height: =48
+                  Icon: ="DocumentBulletList"
+                  Text: ="WPS"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="WPS"
+                  OnSelect: =Navigate(WPS)
+            - St_NavBtnPQR:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =204
+                  Width: =144
+                  Height: =48
+                  Icon: ="DocumentEdit"
+                  Text: ="PQR"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="PQR"
+                  OnSelect: =Navigate(PQR)
+            - St_NavBtnWPQ:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =264
+                  Width: =144
+                  Height: =48
+                  Icon: ="Ribbon"
+                  Text: ="WPQ"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="WPQ"
+                  OnSelect: =Navigate(WPQ)
+            - St_NavBtnDocuments:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =324
+                  Width: =144
+                  Height: =48
+                  Icon: ="Folder"
+                  Text: ="Documents"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="Documents"
+                  OnSelect: =Navigate(Documents)
+            - St_NavBtnSettings:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =384
+                  Width: =144
+                  Height: =48
+                  Icon: ="Settings"
+                  Text: ="Settings"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Filled
+                  Appearance: ='ButtonCanvas.Appearance'.Primary
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  AccessibleLabel: ="Settings"
+                  OnSelect: =false
+      - St_PageShell:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            X: =160
+            Y: =0
+            Width: =Parent.Width - 160
+            Height: =Parent.Height
+            Fill: =ThemeBgPage
+            BorderThickness: =0
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =0
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+          Children:
+            - St_PageHeader:
+                Control: GroupContainer
+                Variant: ManualLayout
+                Properties:
+                  Height: =64
+                  FillPortions: =0
+                  Fill: =ThemeNavy
+                  BorderThickness: =0
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                Children:
+                  - St_PageTitle:
+                      Control: ModernText
+                      Properties:
+                        X: =24
+                        Y: =16
+                        Width: =400
+                        Height: =32
+                        Text: ="Settings"
+                        Font: =Font.'Segoe UI'
+                        Size: =22
+                        FontWeight: =FontWeight.Bold
+                        Color: =RGBA(255, 255, 255, 1)
+                        VerticalAlign: =VerticalAlign.Middle
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - St_PageSubtitle:
+                      Control: ModernText
+                      Properties:
+                        X: =24
+                        Y: =40
+                        Width: =600
+                        Height: =20
+                        Text: ="App configuration, code references, and about info"
+                        Font: =Font.'Segoe UI'
+                        Size: =12
+                        FontWeight: =FontWeight.Normal
+                        Color: =ThemeTextSubtle
+                        VerticalAlign: =VerticalAlign.Top
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - St_NotifBell:
+                      Control: Button
+                      Properties:
+                        X: =Parent.Width - 104
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Icon: ="Alert"
+                        Layout: ='ButtonCanvas.Layout'.IconOnly
+                        IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                        Appearance: ='ButtonCanvas.Appearance'.Transparent
+                        FontColor: =ThemeBgCard
+                        BasePaletteColor: =ThemeAccent
+                        AccessibleLabel: ="Expiring qualifications"
+                        OnSelect: |-
+                          =Set(showNotifications, !showNotifications); Set(showProfileMenu, false)
+                  - St_NotifBadge:
+                      Control: Rectangle
+                      Properties:
+                        X: =Parent.Width - 86
+                        Y: =10
+                        Width: =22
+                        Height: =18
+                        Fill: =StatusExpired
+                        BorderThickness: =0
+                        DisplayMode: =DisplayMode.View
+                        Visible: |-
+                          =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) > 0
+                  - St_NotifBadgeText:
+                      Control: ModernText
+                      Properties:
+                        X: =Parent.Width - 86
+                        Y: =10
+                        Width: =22
+                        Height: =18
+                        Text: |-
+                          =Text(CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())))
+                        Color: =RGBA(255, 255, 255, 1)
+                        Size: =11
+                        FontWeight: =FontWeight.Semibold
+                        Font: =Font.'Segoe UI'
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        Visible: |-
+                          =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) > 0
+                  - St_UserAvatar:
+                      Control: Avatar
+                      Properties:
+                        X: =Parent.Width - 56
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Name: =User().FullName
+                        Image: =User().Image
+                        Shape: ='Avatar.Shape'.Circular
+                        Appearance: ='Avatar.Appearance'.Colorful
+                        AccessibleLabel: ="Current user — " & User().FullName
+                  - St_UserAvatarClick:
+                      Control: Button
+                      Properties:
+                        X: =Parent.Width - 56
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Text: =""
+                        Appearance: ='ButtonCanvas.Appearance'.Transparent
+                        BasePaletteColor: =RGBA(0, 0, 0, 0.001)
+                        BorderThickness: =0
+                        BorderRadius: =20
+                        AccessibleLabel: ="Open user menu"
+                        OnSelect: |-
+                          =Set(showProfileMenu, !showProfileMenu); Set(showNotifications, false)
+            - St_PageContent:
+                Control: GroupContainer
+                Variant: AutoLayout
+                Properties:
+                  FillPortions: =1
+                  Fill: =ThemeBgPage
+                  BorderThickness: =0
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =16
+                  LayoutAlignItems: =LayoutAlignItems.Stretch
+                  LayoutJustifyContent: =LayoutJustifyContent.Start
+                  LayoutOverflowY: =LayoutOverflow.Scroll
+                  PaddingTop: =24
+                  PaddingBottom: =24
+                  PaddingLeft: =24
+                  PaddingRight: =24
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                Children:
+                  - St_ProfileCard:
+                      Control: GroupContainer
+                      Variant: ManualLayout
+                      Properties:
+                        Height: =120
+                        FillPortions: =0
+                        Fill: =ThemeBgCard
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        BorderStyle: =BorderStyle.Solid
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                        PaddingTop: =16
+                        PaddingBottom: =16
+                        PaddingLeft: =20
+                        PaddingRight: =20
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        AlignInContainer: =AlignInContainer.Stretch
+                      Children:
+                        - St_ProfileSectionLabel:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =16
+                              Width: =200
+                              Height: =16
+                              Text: ="PROFILE"
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_ProfileAvatar:
+                            Control: Avatar
+                            Properties:
+                              X: =20
+                              Y: =40
+                              Width: =56
+                              Height: =56
+                              Name: ="Brandon Johnson"
+                              Shape: ='Avatar.Shape'.Circular
+                              Appearance: ='Avatar.Appearance'.Colorful
+                              FontSize: =20
+                              FontWeight: =FontWeight.Semibold
+                        - St_ProfileName:
+                            Control: ModernText
+                            Properties:
+                              X: =92
+                              Y: =44
+                              Width: =400
+                              Height: =22
+                              Text: ="Brandon Johnson"
+                              Font: =Font.'Segoe UI'
+                              Size: =16
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_PopProfileEmail:
+                            Control: ModernText
+                            Properties:
+                              X: =92
+                              Y: =68
+                              Width: =400
+                              Height: =18
+                              Text: ="brandon@133solutions.com"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_ProfileRoleBadge:
+                            Control: Badge
+                            Properties:
+                              X: =92
+                              Y: =90
+                              Width: =80
+                              Height: =22
+                              Content: ="Admin"
+                              Appearance: ='BadgeCanvas.Appearance'.Filled
+                              Shape: ='BadgeCanvas.Shape'.Rounded
+                              ThemeColor: ='BadgeCanvas.ThemeColor'.Brand
+                              BasePaletteColor: =ThemeAccent
+                              FontSize: =11
+                              FontWeight: =FontWeight.Semibold
+                  - St_DataSourcesCard:
+                      Control: GroupContainer
+                      Variant: ManualLayout
+                      Properties:
+                        Height: =260
+                        FillPortions: =0
+                        Fill: =ThemeBgCard
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        BorderStyle: =BorderStyle.Solid
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                        PaddingTop: =16
+                        PaddingBottom: =16
+                        PaddingLeft: =20
+                        PaddingRight: =20
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        AlignInContainer: =AlignInContainer.Stretch
+                      Children:
+                        - St_DataSourcesLabel:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =16
+                              Width: =300
+                              Height: =16
+                              Text: ="DATA SOURCES"
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_DataSourcesTitle:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =36
+                              Width: =500
+                              Height: =24
+                              Text: ="Connected SharePoint Lists"
+                              Font: =Font.'Segoe UI'
+                              Size: =16
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_DataSourceRow1Name:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =72
+                              Width: =400
+                              Height: =22
+                              Text: ="Welder Registry"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_DataSourceRow1Badge:
+                            Control: Badge
+                            Properties:
+                              X: =440
+                              Y: =72
+                              Width: =100
+                              Height: =22
+                              Content: ="Connected"
+                              Appearance: ='BadgeCanvas.Appearance'.Tint
+                              Shape: ='BadgeCanvas.Shape'.Rounded
+                              ThemeColor: ='BadgeCanvas.ThemeColor'.Success
+                              BasePaletteColor: =StatusCurrent
+                              FontSize: =11
+                              FontWeight: =FontWeight.Semibold
+                        - St_DataSourceRow2Name:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =104
+                              Width: =400
+                              Height: =22
+                              Text: ="WPQ Qualifications"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_DataSourceRow2Badge:
+                            Control: Badge
+                            Properties:
+                              X: =440
+                              Y: =104
+                              Width: =100
+                              Height: =22
+                              Content: ="Connected"
+                              Appearance: ='BadgeCanvas.Appearance'.Tint
+                              Shape: ='BadgeCanvas.Shape'.Rounded
+                              ThemeColor: ='BadgeCanvas.ThemeColor'.Success
+                              BasePaletteColor: =StatusCurrent
+                              FontSize: =11
+                              FontWeight: =FontWeight.Semibold
+                        - St_DataSourceRow3Name:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =136
+                              Width: =400
+                              Height: =22
+                              Text: ="Continuity Log"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_DataSourceRow3Badge:
+                            Control: Badge
+                            Properties:
+                              X: =440
+                              Y: =136
+                              Width: =100
+                              Height: =22
+                              Content: ="Connected"
+                              Appearance: ='BadgeCanvas.Appearance'.Tint
+                              Shape: ='BadgeCanvas.Shape'.Rounded
+                              ThemeColor: ='BadgeCanvas.ThemeColor'.Success
+                              BasePaletteColor: =StatusCurrent
+                              FontSize: =11
+                              FontWeight: =FontWeight.Semibold
+                        - St_DataSourceRow4Name:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =168
+                              Width: =400
+                              Height: =22
+                              Text: ="Continuity Schedule"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_DataSourceRow4Badge:
+                            Control: Badge
+                            Properties:
+                              X: =440
+                              Y: =168
+                              Width: =100
+                              Height: =22
+                              Content: ="Connected"
+                              Appearance: ='BadgeCanvas.Appearance'.Tint
+                              Shape: ='BadgeCanvas.Shape'.Rounded
+                              ThemeColor: ='BadgeCanvas.ThemeColor'.Success
+                              BasePaletteColor: =StatusCurrent
+                              FontSize: =11
+                              FontWeight: =FontWeight.Semibold
+                        - St_DataSourceRow5Name:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =200
+                              Width: =400
+                              Height: =22
+                              Text: ="Customer List"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_DataSourceRow5Badge:
+                            Control: Badge
+                            Properties:
+                              X: =440
+                              Y: =200
+                              Width: =100
+                              Height: =22
+                              Content: ="Connected"
+                              Appearance: ='BadgeCanvas.Appearance'.Tint
+                              Shape: ='BadgeCanvas.Shape'.Rounded
+                              ThemeColor: ='BadgeCanvas.ThemeColor'.Success
+                              BasePaletteColor: =StatusCurrent
+                              FontSize: =11
+                              FontWeight: =FontWeight.Semibold
+                        - St_DataSourceNote:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =228
+                              Width: =700
+                              Height: =18
+                              Text: ="WPS and PQR run from in-app collections (colWPS / colPQR) until SharePoint lists are created."
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              FontWeight: =FontWeight.Normal
+                              Italic: =true
+                              Color: =ThemeTextSubtle
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                  - St_ExpirationConfigCard:
+                      Control: GroupContainer
+                      Variant: ManualLayout
+                      Properties:
+                        Height: =180
+                        FillPortions: =0
+                        Fill: =ThemeBgCard
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        BorderStyle: =BorderStyle.Solid
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                        PaddingTop: =16
+                        PaddingBottom: =16
+                        PaddingLeft: =20
+                        PaddingRight: =20
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        AlignInContainer: =AlignInContainer.Stretch
+                      Children:
+                        - St_ExpConfigLabel:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =16
+                              Width: =400
+                              Height: =16
+                              Text: ="EXPIRATION WINDOWS"
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_ExpConfigTitle:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =36
+                              Width: =500
+                              Height: =24
+                              Text: ="Warning thresholds (read-only)"
+                              Font: =Font.'Segoe UI'
+                              Size: =16
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_ExpWindow30Label:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =76
+                              Width: =220
+                              Height: =20
+                              Text: ="Critical (Expiring Soon)"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_ExpWindow30Value:
+                            Control: ModernText
+                            Properties:
+                              X: =250
+                              Y: =76
+                              Width: =200
+                              Height: =20
+                              Text: =Concatenate(Text(WarningWindow30), " days")
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Semibold
+                              Color: =StatusExpiringSoon
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_ExpWindow60Label:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =104
+                              Width: =220
+                              Height: =20
+                              Text: ="Notice"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_ExpWindow60Value:
+                            Control: ModernText
+                            Properties:
+                              X: =250
+                              Y: =104
+                              Width: =200
+                              Height: =20
+                              Text: =Concatenate(Text(WarningWindow60), " days")
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_ExpWindow90Label:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =132
+                              Width: =220
+                              Height: =20
+                              Text: ="Dashboard horizon"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_ExpWindow90Value:
+                            Control: ModernText
+                            Properties:
+                              X: =250
+                              Y: =132
+                              Width: =200
+                              Height: =20
+                              Text: =Concatenate(Text(WarningWindow90), " days")
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_ContinuityWindowLabel:
+                            Control: ModernText
+                            Properties:
+                              X: =480
+                              Y: =76
+                              Width: =220
+                              Height: =20
+                              Text: ="ASME IX continuity window"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_ContinuityWindowValue:
+                            Control: ModernText
+                            Properties:
+                              X: =710
+                              Y: =76
+                              Width: =160
+                              Height: =20
+                              Text: =Concatenate(Text(ContinuityWindowDays), " days")
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                  - St_CodeReferenceCard:
+                      Control: GroupContainer
+                      Variant: ManualLayout
+                      Properties:
+                        Height: =320
+                        FillPortions: =0
+                        Fill: =ThemeBgCard
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        BorderStyle: =BorderStyle.Solid
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                        PaddingTop: =16
+                        PaddingBottom: =16
+                        PaddingLeft: =20
+                        PaddingRight: =20
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        AlignInContainer: =AlignInContainer.Stretch
+                      Children:
+                        - St_CodeRefLabel:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =16
+                              Width: =400
+                              Height: =16
+                              Text: ="CODE REFERENCE"
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_CodeRefTitle:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =36
+                              Width: =500
+                              Height: =24
+                              Text: ="Welder continuity rules"
+                              Font: =Font.'Segoe UI'
+                              Size: =16
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AsmeBadge:
+                            Control: Badge
+                            Properties:
+                              X: =20
+                              Y: =76
+                              Width: =100
+                              Height: =22
+                              Content: ="ASME IX"
+                              Appearance: ='BadgeCanvas.Appearance'.Filled
+                              Shape: ='BadgeCanvas.Shape'.Rounded
+                              ThemeColor: ='BadgeCanvas.ThemeColor'.Brand
+                              BasePaletteColor: =CodeASMEColor
+                              FontSize: =11
+                              FontWeight: =FontWeight.Semibold
+                        - St_AsmeRuleHeading:
+                            Control: ModernText
+                            Properties:
+                              X: =136
+                              Y: =76
+                              Width: =700
+                              Height: =22
+                              Text: ="QW-322 - Period of Effectiveness"
+                              Font: =Font.'Segoe UI'
+                              Size: =14
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AsmeRuleBody:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =104
+                              Width: =900
+                              Height: =56
+                              Text: ="A welder's qualification expires when the process is not used for a period of more than 6 months. Requalification is required by welding a test coupon (QW-301.4) or by demonstrating proficiency on production work."
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeText
+                              Wrap: =true
+                              AutoHeight: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AwsBadge:
+                            Control: Badge
+                            Properties:
+                              X: =20
+                              Y: =180
+                              Width: =100
+                              Height: =22
+                              Content: ="AWS D1.1"
+                              Appearance: ='BadgeCanvas.Appearance'.Filled
+                              Shape: ='BadgeCanvas.Shape'.Rounded
+                              ThemeColor: ='BadgeCanvas.ThemeColor'.Warning
+                              BasePaletteColor: =CodeAWSColor
+                              FontSize: =11
+                              FontWeight: =FontWeight.Semibold
+                        - St_AwsRuleHeading:
+                            Control: ModernText
+                            Properties:
+                              X: =136
+                              Y: =180
+                              Width: =700
+                              Height: =22
+                              Text: ="Section 4.20 - Period of Qualification"
+                              Font: =Font.'Segoe UI'
+                              Size: =14
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AwsRuleBody:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =208
+                              Width: =900
+                              Height: =80
+                              Text: ="A welder's qualification remains in effect indefinitely unless (1) not engaged in a given process for more than 6 months, in which case requalification is required, or (2) there is specific reason to question the welder's ability. AWS D1.1 also requires periodic reaffirmation per the engineer's discretion."
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeText
+                              Wrap: =true
+                              AutoHeight: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                  - St_DocLibraryCard:
+                      Control: GroupContainer
+                      Variant: ManualLayout
+                      Properties:
+                        Height: =140
+                        FillPortions: =0
+                        Fill: =ThemeBgCard
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        BorderStyle: =BorderStyle.Solid
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                        PaddingTop: =16
+                        PaddingBottom: =16
+                        PaddingLeft: =20
+                        PaddingRight: =20
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        AlignInContainer: =AlignInContainer.Stretch
+                      Children:
+                        - St_DocLibLabel:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =16
+                              Width: =400
+                              Height: =16
+                              Text: ="DOCUMENT LIBRARY"
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_DocLibTitle:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =36
+                              Width: =700
+                              Height: =24
+                              Text: ="SharePoint - Packaged Refrigeration Systems"
+                              Font: =Font.'Segoe UI'
+                              Size: =16
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_DocLibSub:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =64
+                              Width: =900
+                              Height: =20
+                              Text: ="Backing library for WPS, PQR, WPQ, BPS, BPQ, and supporting test reports."
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_DocLibButton:
+                            Control: Button
+                            Properties:
+                              X: =20
+                              Y: =92
+                              Width: =220
+                              Height: =36
+                              Text: ="Open SharePoint Library"
+                              Icon: ="Open"
+                              Layout: ='ButtonCanvas.Layout'.IconBefore
+                              IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                              Appearance: ='ButtonCanvas.Appearance'.Primary
+                              BasePaletteColor: =ThemeAccent
+                              FontSize: =13
+                              FontWeight: =FontWeight.Semibold
+                              OnSelect: =Launch(DocLibraryUrl)
+                  - St_AboutCard:
+                      Control: GroupContainer
+                      Variant: ManualLayout
+                      Properties:
+                        Height: =200
+                        FillPortions: =0
+                        Fill: =ThemeBgCard
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        BorderStyle: =BorderStyle.Solid
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                        PaddingTop: =16
+                        PaddingBottom: =16
+                        PaddingLeft: =20
+                        PaddingRight: =20
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        AlignInContainer: =AlignInContainer.Stretch
+                      Children:
+                        - St_AboutLabel:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =16
+                              Width: =400
+                              Height: =16
+                              Text: ="ABOUT"
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AboutAppName:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =36
+                              Width: =700
+                              Height: =28
+                              Text: ="Welding Qualifications Manager"
+                              Font: =Font.'Segoe UI'
+                              Size: =18
+                              FontWeight: =FontWeight.Bold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AboutVersionLabel:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =76
+                              Width: =160
+                              Height: =20
+                              Text: ="Version"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AboutVersionValue:
+                            Control: ModernText
+                            Properties:
+                              X: =200
+                              Y: =76
+                              Width: =400
+                              Height: =20
+                              Text: ="1.0.0"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AboutBuildLabel:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =100
+                              Width: =160
+                              Height: =20
+                              Text: ="Build date"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AboutBuildValue:
+                            Control: ModernText
+                            Properties:
+                              X: =200
+                              Y: =100
+                              Width: =400
+                              Height: =20
+                              Text: ="2026-04-30"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AboutContactLabel:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =124
+                              Width: =160
+                              Height: =20
+                              Text: ="Contact"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AboutContactValue:
+                            Control: ModernText
+                            Properties:
+                              X: =200
+                              Y: =124
+                              Width: =500
+                              Height: =20
+                              Text: ="brandon@133solutions.com"
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeAccent
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - St_AboutFooter:
+                            Control: ModernText
+                            Properties:
+                              X: =20
+                              Y: =156
+                              Width: =900
+                              Height: =18
+                              Text: ="Made for SIS Packaged Refrigeration Systems."
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              FontWeight: =FontWeight.Normal
+                              Italic: =true
+                              Color: =ThemeTextSubtle
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+      - St_NotifScrim:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Text: =""
+            Visible: =showNotifications
+            Appearance: ='ButtonCanvas.Appearance'.Transparent
+            BasePaletteColor: =RGBA(0,0,0,0.001)
+            BorderThickness: =0
+            AccessibleLabel: ="Close notifications"
+            OnSelect: =Set(showNotifications, false)
+      - St_NotifPopover:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =Parent.Width - 392
+            Y: =76
+            Width: =376
+            Height: =440
+            Fill: =ThemeBgCard
+            BorderColor: =ThemeBorder
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Visible: =showNotifications
+          Children:
+            - St_NotifTitle:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =16
+                  Width: =280
+                  Height: =26
+                  Text: ="Expiring Qualifications"
+                  Font: =Font.'Segoe UI'
+                  Size: =16
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeText
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - St_NotifSubtitle:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =42
+                  Width: =280
+                  Height: =18
+                  Text: ="Within 30 days"
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - St_NotifClose:
+                Control: Button
+                Properties:
+                  X: =Parent.Width - 44
+                  Y: =12
+                  Width: =32
+                  Height: =32
+                  Icon: ="Dismiss"
+                  Layout: ='ButtonCanvas.Layout'.IconOnly
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeTextMuted
+                  AccessibleLabel: ="Close"
+                  OnSelect: =Set(showNotifications, false)
+            - St_NotifDivider:
+                Control: Rectangle
+                Properties:
+                  X: =0
+                  Y: =72
+                  Width: =Parent.Width
+                  Height: =1
+                  Fill: =ThemeBorder
+                  BorderThickness: =0
+            - St_NotifGallery:
+                Control: Gallery
+                Variant: Vertical
+                Properties:
+                  X: =0
+                  Y: =73
+                  Width: =Parent.Width
+                  Height: =Parent.Height - 73
+                  TemplateSize: =64
+                  TemplatePadding: =0
+                  Fill: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+                  ShowScrollbar: =true
+                  Items: |-
+                    =SortByColumns(
+                      Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today()),
+                      "ExpirationDate", SortOrder.Ascending
+                    )
+                Children:
+                  - St_NotifRowDivider:
+                      Control: Rectangle
+                      Properties:
+                        X: =0
+                        Y: =Parent.TemplateHeight - 1
+                        Width: =Parent.TemplateWidth
+                        Height: =1
+                        Fill: =ThemeBgSubtle
+                        BorderThickness: =0
+                  - St_NotifRowName:
+                      Control: ModernText
+                      Properties:
+                        X: =20
+                        Y: =10
+                        Width: =220
+                        Height: =22
+                        Text: =Coalesce(ThisItem.Title, "(Unknown)")
+                        Font: =Font.'Segoe UI'
+                        Size: =13
+                        FontWeight: =FontWeight.Semibold
+                        Color: =ThemeText
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - St_NotifRowSub:
+                      Control: ModernText
+                      Properties:
+                        X: =20
+                        Y: =34
+                        Width: =220
+                        Height: =18
+                        Text: =Coalesce(ThisItem.WPSNumber, "")
+                        Font: =Font.'Segoe UI'
+                        Size: =11
+                        FontWeight: =FontWeight.Normal
+                        Color: =ThemeTextMuted
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - St_NotifRowDate:
+                      Control: ModernText
+                      Properties:
+                        X: =Parent.TemplateWidth - 96
+                        Y: =22
+                        Width: =84
+                        Height: =22
+                        Text: =Text(ThisItem.ExpirationDate, "mmm d, yyyy") & " (" & If(IsBlank(ThisItem.ExpirationDate), "—", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) < 0, Abs(DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days)) & " days ago", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) & " days") & ")"
+                        Font: =Font.'Segoe UI'
+                        Size: =12
+                        FontWeight: =FontWeight.Semibold
+                        Color: =StatusExpiringSoon
+                        Align: =Align.Right
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+            - St_NotifEmpty:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =180
+                  Width: =Parent.Width - 40
+                  Height: =40
+                  Text: ="No qualifications expiring in the next 30 days."
+                  Font: =Font.'Segoe UI'
+                  Size: =13
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Align: =Align.Center
+                  Wrap: =true
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Visible: |-
+                    =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) = 0
+      - St_ProfileScrim:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Text: =""
+            Visible: =showProfileMenu
+            Appearance: ='ButtonCanvas.Appearance'.Transparent
+            BasePaletteColor: =RGBA(0,0,0,0.001)
+            BorderThickness: =0
+            AccessibleLabel: ="Close profile menu"
+            OnSelect: =Set(showProfileMenu, false)
+      - St_ProfilePopover:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =Parent.Width - 296
+            Y: =76
+            Width: =280
+            Height: =220
+            Fill: =ThemeBgCard
+            BorderColor: =ThemeBorder
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Visible: =showProfileMenu
+          Children:
+            - St_ProfileAvatarBig:
+                Control: Avatar
+                Properties:
+                  X: =16
+                  Y: =16
+                  Width: =56
+                  Height: =56
+                  Name: =User().FullName
+                  Image: =User().Image
+                  Shape: ='Avatar.Shape'.Circular
+                  Appearance: ='Avatar.Appearance'.Colorful
+                  FontSize: =22
+            - St_ProfileNameBig:
+                Control: ModernText
+                Properties:
+                  X: =84
+                  Y: =18
+                  Width: =180
+                  Height: =22
+                  Text: =User().FullName
+                  Font: =Font.'Segoe UI'
+                  Size: =14
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeText
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - St_MenuEmail:
+                Control: ModernText
+                Properties:
+                  X: =84
+                  Y: =42
+                  Width: =180
+                  Height: =22
+                  Text: =User().Email
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - St_ProfileDivider:
+                Control: Rectangle
+                Properties:
+                  X: =16
+                  Y: =92
+                  Width: =Parent.Width - 32
+                  Height: =1
+                  Fill: =ThemeBorder
+                  BorderThickness: =0
+            - St_ProfileBtnAccount:
+                Control: Button
+                Properties:
+                  X: =16
+                  Y: =104
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  Text: ="View Microsoft account"
+                  Icon: ="Person"
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeAccent
+                  Align: =Align.Left
+                  OnSelect: |-
+                    =Launch("https://myaccount.microsoft.com"); Set(showProfileMenu, false)
+            - St_ProfileBtnAbout:
+                Control: Button
+                Properties:
+                  X: =16
+                  Y: =152
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  Text: ="About this app"
+                  Icon: ="Info"
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeAccent
+                  Align: =Align.Left
+                  OnSelect: =Set(showProfileMenu, false); Navigate(Settings)

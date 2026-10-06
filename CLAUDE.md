@@ -1,6 +1,9 @@
 # QMS — Quality Management System
 
-Modular Python package at `D:\qms\` for construction quality management, drawing review, and engineering calculations.
+> **ARCHIVED 2026-10-06 — read [`ARCHIVED.md`](ARCHIVED.md) first.** Now at `D:\_Archive\qms\`.
+> The live Quality Manual database moved to `D:\QM-Obsidian\_Data\quality.db`; `data/` here is a frozen snapshot.
+
+Modular Python package at `D:\qms\` (originally) for construction quality management, drawing review, and engineering calculations.
 
 ## Git Workflow (MANDATORY)
 

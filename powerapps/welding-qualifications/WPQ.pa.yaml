@@ -1,0 +1,1247 @@
+Screens:
+  WPQ:
+    Properties:
+      Fill: =ThemeBgPage
+      OnVisible: |-
+        =Set(activeNav, "WPQ");
+        Set(wpqStatusFilter, "");
+        Set(wpqSearch, "");
+        If(IsBlank(selectedWPQ), Set(selectedWPQ, First('WPQ Qualifications')))
+    Children:
+      - Wpq_NavRail:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =0
+            Y: =0
+            Width: =160
+            Height: =Parent.Height
+            Fill: =ThemeNavyDeep
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+          Children:
+            - Wpq_NavHome:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =24
+                  Width: =144
+                  Height: =48
+                  Icon: ="Home"
+                  Text: ="Home"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  OnSelect: =Navigate(Home)
+                  AccessibleLabel: ="Home"
+            - Wpq_NavWelders:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =84
+                  Width: =144
+                  Height: =48
+                  Icon: ="Person"
+                  Text: ="Welders"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  OnSelect: =Navigate(Welders)
+                  AccessibleLabel: ="Welders"
+            - Wpq_NavWPS:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =144
+                  Width: =144
+                  Height: =48
+                  Icon: ="DocumentBulletList"
+                  Text: ="WPS"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  OnSelect: =Navigate(WPS)
+                  AccessibleLabel: ="WPS"
+            - Wpq_NavPQR:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =204
+                  Width: =144
+                  Height: =48
+                  Icon: ="DocumentEdit"
+                  Text: ="PQR"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  OnSelect: =Navigate(PQR)
+                  AccessibleLabel: ="PQR"
+            - Wpq_NavWPQ:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =264
+                  Width: =144
+                  Height: =48
+                  Icon: ="Ribbon"
+                  Text: ="WPQ"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Primary
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  OnSelect: =false
+                  AccessibleLabel: ="WPQ"
+            - Wpq_NavDocuments:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =324
+                  Width: =144
+                  Height: =48
+                  Icon: ="Folder"
+                  Text: ="Documents"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  OnSelect: =Navigate(Documents)
+                  AccessibleLabel: ="Documents"
+            - Wpq_NavSettings:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =384
+                  Width: =144
+                  Height: =48
+                  Icon: ="Settings"
+                  Text: ="Settings"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  BasePaletteColor: =ThemeAccent
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  OnSelect: =Navigate(Settings)
+                  AccessibleLabel: ="Settings"
+      - Wpq_PageShell:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            X: =160
+            Y: =0
+            Width: =Parent.Width - 160
+            Height: =Parent.Height
+            Fill: =ThemeBgPage
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =0
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+          Children:
+            - Wpq_PageHeader:
+                Control: GroupContainer
+                Variant: ManualLayout
+                Properties:
+                  Height: =64
+                  FillPortions: =0
+                  Fill: =ThemeBgCard
+                  BorderColor: =ThemeBorder
+                  BorderThickness: =1
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                Children:
+                  - Wpq_PageTitle:
+                      Control: ModernText
+                      Properties:
+                        X: =24
+                        Y: =16
+                        Width: =400
+                        Height: =32
+                        Text: ="Welder Performance Qualifications"
+                        Size: =22
+                        FontWeight: =FontWeight.Bold
+                        Color: =ThemeText
+                        Font: =Font.'Segoe UI'
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        Wrap: =false
+                  - Wpq_PageSubtitle:
+                      Control: ModernText
+                      Properties:
+                        X: =430
+                        Y: =24
+                        Width: =400
+                        Height: =20
+                        Text: ="ASME IX QW-322 / AWS D1.1 §4.20"
+                        Size: =13
+                        FontWeight: =FontWeight.Normal
+                        Color: =ThemeTextMuted
+                        Font: =Font.'Segoe UI'
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        Wrap: =false
+                  - Wpq_NotifBell:
+                      Control: Button
+                      Properties:
+                        X: =Parent.Width - 104
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Icon: ="Alert"
+                        Layout: ='ButtonCanvas.Layout'.IconOnly
+                        IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                        Appearance: ='ButtonCanvas.Appearance'.Transparent
+                        FontColor: =ThemeBgCard
+                        BasePaletteColor: =ThemeAccent
+                        AccessibleLabel: ="Expiring qualifications"
+                        OnSelect: |-
+                          =Set(showNotifications, !showNotifications); Set(showProfileMenu, false)
+                  - Wpq_NotifBadge:
+                      Control: Rectangle
+                      Properties:
+                        X: =Parent.Width - 86
+                        Y: =10
+                        Width: =22
+                        Height: =18
+                        Fill: =StatusExpired
+                        BorderThickness: =0
+                        DisplayMode: =DisplayMode.View
+                        Visible: |-
+                          =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) > 0
+                  - Wpq_NotifBadgeText:
+                      Control: ModernText
+                      Properties:
+                        X: =Parent.Width - 86
+                        Y: =10
+                        Width: =22
+                        Height: =18
+                        Text: |-
+                          =Text(CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())))
+                        Color: =RGBA(255, 255, 255, 1)
+                        Size: =11
+                        FontWeight: =FontWeight.Semibold
+                        Font: =Font.'Segoe UI'
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        Visible: |-
+                          =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) > 0
+                  - Wpq_UserAvatar:
+                      Control: Avatar
+                      Properties:
+                        X: =Parent.Width - 56
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Name: =User().FullName
+                        Image: =User().Image
+                        Shape: ='Avatar.Shape'.Circular
+                        Appearance: ='Avatar.Appearance'.Colorful
+                        AccessibleLabel: ="Current user — " & User().FullName
+                  - Wpq_UserAvatarClick:
+                      Control: Button
+                      Properties:
+                        X: =Parent.Width - 56
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Text: =""
+                        Appearance: ='ButtonCanvas.Appearance'.Transparent
+                        BasePaletteColor: =RGBA(0, 0, 0, 0.001)
+                        BorderThickness: =0
+                        BorderRadius: =20
+                        AccessibleLabel: ="Open user menu"
+                        OnSelect: |-
+                          =Set(showProfileMenu, !showProfileMenu); Set(showNotifications, false)
+            - Wpq_PageContent:
+                Control: GroupContainer
+                Variant: AutoLayout
+                Properties:
+                  FillPortions: =1
+                  Fill: =ThemeBgPage
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =16
+                  LayoutAlignItems: =LayoutAlignItems.Stretch
+                  PaddingTop: =16
+                  PaddingBottom: =16
+                  PaddingLeft: =16
+                  PaddingRight: =16
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                Children:
+                  - Wpq_LeftPane:
+                      Control: GroupContainer
+                      Variant: AutoLayout
+                      Properties:
+                        Width: =440
+                        FillPortions: =0
+                        Fill: =ThemeBgCard
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =12
+                        LayoutAlignItems: =LayoutAlignItems.Stretch
+                        PaddingTop: =16
+                        PaddingBottom: =16
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        AlignInContainer: =AlignInContainer.Stretch
+                      Children:
+                        - Wpq_LeftHeader:
+                            Control: ModernText
+                            Properties:
+                              Height: =24
+                              FillPortions: =0
+                              Text: ="Qualifications"
+                              Size: =16
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Wrap: =false
+                              AlignInContainer: =AlignInContainer.Stretch
+                        - Wpq_StatusTabs:
+                            Control: ModernTabList
+                            Properties:
+                              Height: =40
+                              FillPortions: =0
+                              Items: |-
+                                =Table(
+                                  {Value: ""},
+                                  {Value: "Current"},
+                                  {Value: "Expiring Soon"},
+                                  {Value: "Expired"}
+                                )
+                              ItemDisplayText: =If(ThisItem.Value = "", "All", ThisItem.Value)
+                              Default: '={Value: ""}'
+                              Appearance: ='TabListAppearance'.Subtle
+                              TabSize: =TabSize.Small
+                              Size: =13
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              OnChange: =Set(wpqStatusFilter, Self.Selected.Value)
+                              AlignInContainer: =AlignInContainer.Stretch
+                        - Wpq_SearchInput:
+                            Control: Classic/TextInput
+                            Properties:
+                              Fill: =RGBA(255, 255, 255, 1)
+                              RadiusTopLeft: =6
+                              RadiusTopRight: =6
+                              RadiusBottomLeft: =6
+                              RadiusBottomRight: =6
+                              Size: =13
+                              Height: =40
+                              FillPortions: =0
+                              HintText: ="Search by stamp, WPS#, or title…"
+                              Font: =Font.'Segoe UI'
+                              BorderColor: =ThemeBorder
+                              BorderThickness: =1
+                              OnChange: =Set(wpqSearch, Self.Text)
+                              AlignInContainer: =AlignInContainer.Stretch
+
+                              Mode: =TextMode.SingleLine
+                        - Wpq_WPQGallery:
+                            Control: Gallery
+                            Variant: Vertical
+                            Properties:
+                              FillPortions: =1
+                              Items: |-
+                                =SortByColumns(
+                                  Filter(
+                                    'WPQ Qualifications',
+                                    (wpqStatusFilter = "" || wpqStatusFilter = If(IsBlank(ExpirationDate), "Unknown", DateDiff(Today(), ExpirationDate, TimeUnit.Days) < 0, "Expired", DateDiff(Today(), ExpirationDate, TimeUnit.Days) <= 30, "Expiring Soon", "Current"))
+                                    && ((IsBlank(wpqSearch) || wpqSearch = "")
+                                        || WelderStamp in wpqSearch
+                                        || WPSNumber in wpqSearch
+                                        || Title in wpqSearch)
+                                  ),
+                                  "ExpirationDate",
+                                  SortOrder.Ascending
+                                )
+                              TemplateSize: =84
+                              TemplatePadding: =4
+                              ShowScrollbar: =true
+                              Selectable: =true
+                              Fill: =ThemeBgCard
+                              BorderColor: =ThemeBorder
+                              BorderThickness: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                            Children:
+                              - Wpq_RowBg:
+                                  Control: Rectangle
+                                  Properties:
+                                    X: =0
+                                    Y: =2
+                                    Width: =Parent.TemplateWidth - 4
+                                    Height: =Parent.TemplateHeight - 4
+                                    Fill: =If(selectedWPQ.ID = ThisItem.ID, ThemeBgSubtle, ThemeBgCard)
+                                    HoverFill: =ThemeBgSubtle
+                                    PressedFill: =ThemeBgSubtle
+                                    BorderColor: =ThemeBorder
+                                    BorderThickness: =1
+                                    OnSelect: =Set(selectedWPQ, ThisItem)
+                              - Wpq_RowStampWPS:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =12
+                                    Y: =10
+                                    Width: =260
+                                    Height: =22
+                                    Text: =ThisItem.WelderStamp & "  •  " & ThisItem.WPSNumber
+                                    Size: =14
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeText
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                              - Wpq_RowTitle:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =12
+                                    Y: =34
+                                    Width: =260
+                                    Height: =18
+                                    Text: =ThisItem.Title
+                                    Size: =12
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                              - Wpq_RowExpDate:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =12
+                                    Y: =54
+                                    Width: =260
+                                    Height: =16
+                                    Text: '="Exp: " & Text(ThisItem.ExpirationDate, "mmm d, yyyy") & " (" & If(IsBlank(ThisItem.ExpirationDate), "—", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) < 0, Abs(DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days)) & " days ago", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) & " days") & ")"'
+                                    Size: =11
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextSubtle
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                              - Wpq_RowStatusBadge:
+                                  Control: Badge
+                                  Properties:
+                                    X: =Parent.TemplateWidth - 130
+                                    Y: =26
+                                    Width: =116
+                                    Height: =28
+                                    Content: ="Current"
+                                    Appearance: ='BadgeCanvas.Appearance'.Tint
+                                    Shape: ='BadgeCanvas.Shape'.Rounded
+                                    BasePaletteColor: =StatusCurrent
+                                    FontSize: =11
+                                    FontWeight: =FontWeight.Semibold
+                                    Font: =Font.'Segoe UI'
+                        - Wpq_WPQEmpty:
+                            Control: ModernText
+                            Properties:
+                              Height: =48
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Visible: =Wpq_WPQGallery.AllItemsCount = 0
+                              Text: ="No qualifications match your search."
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Align: =Align.Center
+                              VerticalAlign: =VerticalAlign.Middle
+                              Wrap: =true
+                              PaddingTop: =12
+                              PaddingBottom: =12
+                              PaddingLeft: =12
+                              PaddingRight: =12
+                  - Wpq_RightPane:
+                      Control: GroupContainer
+                      Variant: AutoLayout
+                      Properties:
+                        FillPortions: =1
+                        Fill: =ThemeBgCard
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =16
+                        LayoutAlignItems: =LayoutAlignItems.Stretch
+                        LayoutOverflowY: =LayoutOverflow.Scroll
+                        PaddingTop: =24
+                        PaddingBottom: =24
+                        PaddingLeft: =24
+                        PaddingRight: =24
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        AlignInContainer: =AlignInContainer.Stretch
+                      Children:
+                        - Wpq_DetailHeaderRow:
+                            Control: GroupContainer
+                            Variant: AutoLayout
+                            Properties:
+                              Height: =64
+                              FillPortions: =0
+                              Fill: =RGBA(0, 0, 0, 0)
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =16
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutJustifyContent: =LayoutJustifyContent.SpaceBetween
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              LayoutMinWidth: =0
+                              LayoutMinHeight: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                            Children:
+                              - Wpq_DetailTitleGroup:
+                                  Control: GroupContainer
+                                  Variant: AutoLayout
+                                  Properties:
+                                    FillPortions: =1
+                                    Fill: =RGBA(0, 0, 0, 0)
+                                    LayoutDirection: =LayoutDirection.Vertical
+                                    LayoutGap: =4
+                                    LayoutAlignItems: =LayoutAlignItems.Start
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    LayoutMinWidth: =0
+                                    LayoutMinHeight: =0
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                  Children:
+                                    - Wpq_DetailTitle:
+                                        Control: ModernText
+                                        Properties:
+                                          Height: =32
+                                          FillPortions: =0
+                                          Text: =If(IsBlank(selectedWPQ), "Select a qualification", selectedWPQ.WelderStamp & " — " & selectedWPQ.WPSNumber)
+                                          Size: =22
+                                          FontWeight: =FontWeight.Bold
+                                          Color: =ThemeText
+                                          Font: =Font.'Segoe UI'
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          Wrap: =false
+                                          AlignInContainer: =AlignInContainer.Stretch
+                                    - Wpq_DetailSubtitle:
+                                        Control: ModernText
+                                        Properties:
+                                          Height: =20
+                                          FillPortions: =0
+                                          Text: =If(IsBlank(selectedWPQ), "", selectedWPQ.Title)
+                                          Size: =13
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextMuted
+                                          Font: =Font.'Segoe UI'
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          Wrap: =false
+                                          AlignInContainer: =AlignInContainer.Stretch
+                              - Wpq_DetailStatusBadge:
+                                  Control: Badge
+                                  Properties:
+                                    Width: =160
+                                    Height: =40
+                                    FillPortions: =0
+                                    Content: =If(IsBlank(selectedWPQ), "—", If(IsBlank(selectedWPQ.ExpirationDate), "Unknown", DateDiff(Today(), selectedWPQ.ExpirationDate, TimeUnit.Days) < 0, "Expired", DateDiff(Today(), selectedWPQ.ExpirationDate, TimeUnit.Days) <= 30, "Expiring Soon", "Current"))
+                                    Appearance: ='BadgeCanvas.Appearance'.Filled
+                                    Shape: ='BadgeCanvas.Shape'.Rounded
+                                    BasePaletteColor: =If(IsBlank(selectedWPQ), StatusInactive, If(IsBlank(selectedWPQ.ExpirationDate), StatusInactive, DateDiff(Today(), selectedWPQ.ExpirationDate, TimeUnit.Days) < 0, StatusExpired, DateDiff(Today(), selectedWPQ.ExpirationDate, TimeUnit.Days) <= 30, StatusExpiringSoon, StatusCurrent))
+                                    FontSize: =14
+                                    FontWeight: =FontWeight.Semibold
+                                    Font: =Font.'Segoe UI'
+                                    AlignInContainer: =AlignInContainer.Center
+                        - Wpq_DetailDivider:
+                            Control: Rectangle
+                            Properties:
+                              Height: =1
+                              FillPortions: =0
+                              Fill: =ThemeBorder
+                              BorderThickness: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                        - Wpq_SummaryGrid:
+                            Control: GroupContainer
+                            Variant: GridLayout
+                            Properties:
+                              Height: =220
+                              FillPortions: =0
+                              Fill: =ThemeBgSubtle
+                              BorderColor: =ThemeBorder
+                              BorderThickness: =1
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              LayoutGridColumns: =2
+                              LayoutGridRows: =5
+                              LayoutGap: =0
+                              LayoutGridColumnMinWidth: =200
+                              LayoutGridRowMinHeight: =40
+                              PaddingTop: =12
+                              PaddingBottom: =12
+                              PaddingLeft: =16
+                              PaddingRight: =16
+                              LayoutMinWidth: =0
+                              LayoutMinHeight: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                            Children:
+                              - Wpq_LblWelder:
+                                  Control: ModernText
+                                  Properties:
+                                    Text: ="Welder Stamp"
+                                    Size: =11
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - Wpq_ValWelder:
+                                  Control: ModernText
+                                  Properties:
+                                    Text: =If(IsBlank(selectedWPQ), "—", selectedWPQ.WelderStamp)
+                                    Size: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeText
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - Wpq_LblWPS:
+                                  Control: ModernText
+                                  Properties:
+                                    Text: ="Linked WPS"
+                                    Size: =11
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - Wpq_ValWPS:
+                                  Control: ModernText
+                                  Properties:
+                                    Text: =If(IsBlank(selectedWPQ), "—", selectedWPQ.WPSNumber)
+                                    Size: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeAccent
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - Wpq_LblProcess:
+                                  Control: ModernText
+                                  Properties:
+                                    Text: ="Process"
+                                    Size: =11
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - Wpq_ValProcess:
+                                  Control: ModernText
+                                  Properties:
+                                    Text: =If(IsBlank(selectedWPQ), "—", selectedWPQ.Process.Value)
+                                    Size: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeText
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - Wpq_LblQualDate:
+                                  Control: ModernText
+                                  Properties:
+                                    Text: ="Qualification Date"
+                                    Size: =11
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - Wpq_ValQualDate:
+                                  Control: ModernText
+                                  Properties:
+                                    Text: =If(IsBlank(selectedWPQ) || IsBlank(selectedWPQ.QualificationDate), "—", Text(selectedWPQ.QualificationDate, "mmm d, yyyy"))
+                                    Size: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeText
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - Wpq_LblExpDate:
+                                  Control: ModernText
+                                  Properties:
+                                    Text: ="Expiration Date"
+                                    Size: =11
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - Wpq_ValExpDate:
+                                  Control: ModernText
+                                  Properties:
+                                    Text: =If(IsBlank(selectedWPQ) || IsBlank(selectedWPQ.ExpirationDate), "—", Text(selectedWPQ.ExpirationDate, "mmm d, yyyy") & " (" & If(IsBlank(selectedWPQ.ExpirationDate), "—", DateDiff(Today(), selectedWPQ.ExpirationDate, TimeUnit.Days) < 0, Abs(DateDiff(Today(), selectedWPQ.ExpirationDate, TimeUnit.Days)) & " days ago", DateDiff(Today(), selectedWPQ.ExpirationDate, TimeUnit.Days) & " days") & ")")
+                                    Size: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =If(IsBlank(selectedWPQ), ThemeText, If(IsBlank(selectedWPQ.ExpirationDate), StatusInactive, DateDiff(Today(), selectedWPQ.ExpirationDate, TimeUnit.Days) < 0, StatusExpired, DateDiff(Today(), selectedWPQ.ExpirationDate, TimeUnit.Days) <= 30, StatusExpiringSoon, StatusCurrent))
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                                    AlignInContainer: =AlignInContainer.Stretch
+                        - Wpq_ActionRow:
+                            Control: GroupContainer
+                            Variant: AutoLayout
+                            Properties:
+                              Height: =48
+                              FillPortions: =0
+                              Fill: =RGBA(0, 0, 0, 0)
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =12
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutJustifyContent: =LayoutJustifyContent.Start
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              LayoutMinWidth: =0
+                              LayoutMinHeight: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                            Children:
+                              - Wpq_OpenWPSButton:
+                                  Control: Button
+                                  Properties:
+                                    Width: =200
+                                    Height: =40
+                                    FillPortions: =0
+                                    Text: ="Open Linked WPS"
+                                    Icon: ="Open"
+                                    Layout: ='ButtonCanvas.Layout'.IconBefore
+                                    Appearance: ='ButtonCanvas.Appearance'.Primary
+                                    BasePaletteColor: =ThemeAccent
+                                    FontSize: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Font: =Font.'Segoe UI'
+                                    DisplayMode: =If(IsBlank(selectedWPQ) || IsBlank(selectedWPQ.WPSNumber), DisplayMode.Disabled, DisplayMode.Edit)
+                                    OnSelect: |-
+                                      =If(!IsBlank(selectedWPQ) && !IsBlank(selectedWPQ.WPSNumber),
+                                        Set(selectedWPS, LookUp(colWPS, WPSNumber = selectedWPQ.WPSNumber));
+                                        Navigate(WPS)
+                                      )
+                                    AlignInContainer: =AlignInContainer.Center
+                              - Wpq_OpenSharePointButton:
+                                  Control: Button
+                                  Properties:
+                                    Width: =220
+                                    Height: =40
+                                    FillPortions: =0
+                                    Text: ="Open in SharePoint"
+                                    Icon: ="FolderOpen"
+                                    Layout: ='ButtonCanvas.Layout'.IconBefore
+                                    Appearance: ='ButtonCanvas.Appearance'.Subtle
+                                    BasePaletteColor: =ThemeSteel
+                                    FontSize: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Font: =Font.'Segoe UI'
+                                    OnSelect: =Launch(DocLibraryUrl)
+                                    AlignInContainer: =AlignInContainer.Center
+                        - Wpq_ContinuityCard:
+                            Control: GroupContainer
+                            Variant: AutoLayout
+                            Properties:
+                              Height: =128
+                              FillPortions: =0
+                              Fill: =RGBA(255, 248, 230, 1)
+                              BorderColor: =StatusExpiringSoon
+                              BorderThickness: =1
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =6
+                              LayoutAlignItems: =LayoutAlignItems.Start
+                              PaddingTop: =14
+                              PaddingBottom: =14
+                              PaddingLeft: =16
+                              PaddingRight: =16
+                              LayoutMinWidth: =0
+                              LayoutMinHeight: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                            Children:
+                              - Wpq_ContinuityHeader:
+                                  Control: ModernText
+                                  Properties:
+                                    Height: =22
+                                    FillPortions: =0
+                                    Text: ="Continuity Reminder — ASME IX QW-322"
+                                    Size: =14
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =StatusExpiringSoon
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Wrap: =false
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - Wpq_ContinuityBody:
+                                  Control: ModernText
+                                  Properties:
+                                    FillPortions: =1
+                                    Text: ="Inactivity exceeding 6 months invalidates a welder's qualification per ASME IX QW-322. AWS D1.1 §4.20 requires periodic requalification — see Continuity Log for verification activity. Maintain ongoing weld activity records and re-test before the expiration date above."
+                                    Size: =12
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeText
+                                    Font: =Font.'Segoe UI'
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    AlignInContainer: =AlignInContainer.Stretch
+                        - Wpq_DocsHeader:
+                            Control: ModernText
+                            Properties:
+                              Height: =24
+                              FillPortions: =0
+                              Text: ="Supporting Documents"
+                              Size: =16
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Wrap: =false
+                              AlignInContainer: =AlignInContainer.Stretch
+                        - Wpq_DocsBody:
+                            Control: ModernText
+                            Properties:
+                              Height: =40
+                              FillPortions: =0
+                              Text: ="Test certificates, radiograph reports, and qualification records are stored in the SharePoint document library. Use the button above to open the library and navigate to the WPQ folder for this welder."
+                              Size: =12
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+      - Wpq_NotifScrim:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Text: =""
+            Visible: =showNotifications
+            Appearance: ='ButtonCanvas.Appearance'.Transparent
+            BasePaletteColor: =RGBA(0,0,0,0.001)
+            BorderThickness: =0
+            AccessibleLabel: ="Close notifications"
+            OnSelect: =Set(showNotifications, false)
+      - Wpq_NotifPopover:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =Parent.Width - 392
+            Y: =76
+            Width: =376
+            Height: =440
+            Fill: =ThemeBgCard
+            BorderColor: =ThemeBorder
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Visible: =showNotifications
+          Children:
+            - Wpq_NotifTitle:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =16
+                  Width: =280
+                  Height: =26
+                  Text: ="Expiring Qualifications"
+                  Font: =Font.'Segoe UI'
+                  Size: =16
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeText
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wpq_NotifSubtitle:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =42
+                  Width: =280
+                  Height: =18
+                  Text: ="Within 30 days"
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wpq_NotifClose:
+                Control: Button
+                Properties:
+                  X: =Parent.Width - 44
+                  Y: =12
+                  Width: =32
+                  Height: =32
+                  Icon: ="Dismiss"
+                  Layout: ='ButtonCanvas.Layout'.IconOnly
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeTextMuted
+                  AccessibleLabel: ="Close"
+                  OnSelect: =Set(showNotifications, false)
+            - Wpq_NotifDivider:
+                Control: Rectangle
+                Properties:
+                  X: =0
+                  Y: =72
+                  Width: =Parent.Width
+                  Height: =1
+                  Fill: =ThemeBorder
+                  BorderThickness: =0
+            - Wpq_NotifGallery:
+                Control: Gallery
+                Variant: Vertical
+                Properties:
+                  X: =0
+                  Y: =73
+                  Width: =Parent.Width
+                  Height: =Parent.Height - 73
+                  TemplateSize: =64
+                  TemplatePadding: =0
+                  Fill: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+                  ShowScrollbar: =true
+                  Items: |-
+                    =SortByColumns(
+                      Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today()),
+                      "ExpirationDate", SortOrder.Ascending
+                    )
+                Children:
+                  - Wpq_NotifRowDivider:
+                      Control: Rectangle
+                      Properties:
+                        X: =0
+                        Y: =Parent.TemplateHeight - 1
+                        Width: =Parent.TemplateWidth
+                        Height: =1
+                        Fill: =ThemeBgSubtle
+                        BorderThickness: =0
+                  - Wpq_NotifRowName:
+                      Control: ModernText
+                      Properties:
+                        X: =20
+                        Y: =10
+                        Width: =220
+                        Height: =22
+                        Text: =Coalesce(ThisItem.Title, "(Unknown)")
+                        Font: =Font.'Segoe UI'
+                        Size: =13
+                        FontWeight: =FontWeight.Semibold
+                        Color: =ThemeText
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - Wpq_NotifRowSub:
+                      Control: ModernText
+                      Properties:
+                        X: =20
+                        Y: =34
+                        Width: =220
+                        Height: =18
+                        Text: =Coalesce(ThisItem.WPSNumber, "")
+                        Font: =Font.'Segoe UI'
+                        Size: =11
+                        FontWeight: =FontWeight.Normal
+                        Color: =ThemeTextMuted
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - Wpq_NotifRowDate:
+                      Control: ModernText
+                      Properties:
+                        X: =Parent.TemplateWidth - 96
+                        Y: =22
+                        Width: =84
+                        Height: =22
+                        Text: =Text(ThisItem.ExpirationDate, "mmm d, yyyy") & " (" & If(IsBlank(ThisItem.ExpirationDate), "—", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) < 0, Abs(DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days)) & " days ago", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) & " days") & ")"
+                        Font: =Font.'Segoe UI'
+                        Size: =12
+                        FontWeight: =FontWeight.Semibold
+                        Color: =StatusExpiringSoon
+                        Align: =Align.Right
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+            - Wpq_NotifEmpty:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =180
+                  Width: =Parent.Width - 40
+                  Height: =40
+                  Text: ="No qualifications expiring in the next 30 days."
+                  Font: =Font.'Segoe UI'
+                  Size: =13
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Align: =Align.Center
+                  Wrap: =true
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Visible: |-
+                    =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) = 0
+      - Wpq_ProfileScrim:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Text: =""
+            Visible: =showProfileMenu
+            Appearance: ='ButtonCanvas.Appearance'.Transparent
+            BasePaletteColor: =RGBA(0,0,0,0.001)
+            BorderThickness: =0
+            AccessibleLabel: ="Close profile menu"
+            OnSelect: =Set(showProfileMenu, false)
+      - Wpq_ProfilePopover:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =Parent.Width - 296
+            Y: =76
+            Width: =280
+            Height: =220
+            Fill: =ThemeBgCard
+            BorderColor: =ThemeBorder
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Visible: =showProfileMenu
+          Children:
+            - Wpq_ProfileAvatarBig:
+                Control: Avatar
+                Properties:
+                  X: =16
+                  Y: =16
+                  Width: =56
+                  Height: =56
+                  Name: =User().FullName
+                  Image: =User().Image
+                  Shape: ='Avatar.Shape'.Circular
+                  Appearance: ='Avatar.Appearance'.Colorful
+                  FontSize: =22
+            - Wpq_ProfileNameBig:
+                Control: ModernText
+                Properties:
+                  X: =84
+                  Y: =18
+                  Width: =180
+                  Height: =22
+                  Text: =User().FullName
+                  Font: =Font.'Segoe UI'
+                  Size: =14
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeText
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wpq_PopProfileEmail:
+                Control: ModernText
+                Properties:
+                  X: =84
+                  Y: =42
+                  Width: =180
+                  Height: =22
+                  Text: =User().Email
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wpq_ProfileDivider:
+                Control: Rectangle
+                Properties:
+                  X: =16
+                  Y: =92
+                  Width: =Parent.Width - 32
+                  Height: =1
+                  Fill: =ThemeBorder
+                  BorderThickness: =0
+            - Wpq_ProfileBtnAccount:
+                Control: Button
+                Properties:
+                  X: =16
+                  Y: =104
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  Text: ="View Microsoft account"
+                  Icon: ="Person"
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeAccent
+                  Align: =Align.Left
+                  OnSelect: |-
+                    =Launch("https://myaccount.microsoft.com"); Set(showProfileMenu, false)
+            - Wpq_ProfileBtnAbout:
+                Control: Button
+                Properties:
+                  X: =16
+                  Y: =152
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  Text: ="About this app"
+                  Icon: ="Info"
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeAccent
+                  Align: =Align.Left
+                  OnSelect: =Set(showProfileMenu, false); Navigate(Settings)

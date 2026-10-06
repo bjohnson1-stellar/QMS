@@ -1,0 +1,56 @@
+{
+  "templates_folder": "Templates",
+  "templates_pairs": [
+    ["", ""]
+  ],
+  "trigger_on_file_creation": true,
+  "auto_jump_to_cursor": true,
+  "blank_file_template": "",
+  "syntax_highlighting": true,
+  "syntax_highlighting_mobile": false,
+  "enabled_templates_hotkeys": [
+    {
+      "name": "Templates/Module Template.md",
+      "hotkey": ""
+    },
+    {
+      "name": "Templates/Dev Journal Template.md",
+      "hotkey": ""
+    }
+  ],
+  "startup_templates": [],
+  "enable_system_commands": false,
+  "shell_path": "",
+  "user_scripts_folder": "",
+  "enable_folder_templates": true,
+  "folder_templates": [
+    {
+      "folder": "01-QMS-Modules",
+      "template": "Templates/Module Template.md"
+    },
+    {
+      "folder": "02-CLI-Commands",
+      "template": "Templates/CLI Command Template.md"
+    },
+    {
+      "folder": "03-Architecture",
+      "template": "Templates/Architecture Decision Record.md"
+    },
+    {
+      "folder": "04-API-Endpoints",
+      "template": "Templates/API Endpoint Template.md"
+    },
+    {
+      "folder": "05-Database",
+      "template": "Templates/Database Table Template.md"
+    },
+    {
+      "folder": "06-Dev-Journal",
+      "template": "Templates/Dev Journal Template.md"
+    },
+    {
+      "folder": "07-Troubleshooting",
+      "template": "Templates/Troubleshooting Template.md"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+CreateObject("Wscript.Shell").Run """C:\Program Files\Python312\pythonw.exe"" -m qms tray --auto-start --port 5000", 0, False

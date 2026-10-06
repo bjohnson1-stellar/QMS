@@ -1,0 +1,1979 @@
+Screens:
+  Welders:
+    Properties:
+      Fill: =ThemeBgPage
+      OnVisible: |-
+        =Set(activeNav, "Welders");
+        Set(welderSearch, "");
+        Set(welderStatusFilter, "All");
+        Refresh('Welder Registry');
+        If(IsBlank(selectedWelder), Set(selectedWelder, First('Welder Registry')))
+    Children:
+      - Wd_NavRail:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =0
+            Y: =0
+            Width: =160
+            Height: =Parent.Height
+            Fill: =ThemeNavyDeep
+            BorderThickness: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+          Children:
+            - Wd_NavBtnHome:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =24
+                  Width: =144
+                  Height: =48
+                  Icon: ="Home"
+                  Text: ="Home"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  BasePaletteColor: =ThemeNavyDeep
+                  AccessibleLabel: ="Home"
+                  OnSelect: =Navigate(Home)
+            - Wd_NavBtnWelders:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =84
+                  Width: =144
+                  Height: =48
+                  Icon: ="Person"
+                  Text: ="Welders"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Primary
+                  IconStyle: ='ButtonCanvas.IconStyle'.Filled
+                  BasePaletteColor: =ThemeAccent
+                  AccessibleLabel: ="Welders"
+                  OnSelect: =false
+            - Wd_NavBtnWPS:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =144
+                  Width: =144
+                  Height: =48
+                  Icon: ="DocumentBulletList"
+                  Text: ="WPS"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  BasePaletteColor: =ThemeNavyDeep
+                  AccessibleLabel: ="WPS"
+                  OnSelect: =Navigate(WPS)
+            - Wd_NavBtnPQR:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =204
+                  Width: =144
+                  Height: =48
+                  Icon: ="DocumentEdit"
+                  Text: ="PQR"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  BasePaletteColor: =ThemeNavyDeep
+                  AccessibleLabel: ="PQR"
+                  OnSelect: =Navigate(PQR)
+            - Wd_NavBtnWPQ:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =264
+                  Width: =144
+                  Height: =48
+                  Icon: ="Ribbon"
+                  Text: ="WPQ"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  BasePaletteColor: =ThemeNavyDeep
+                  AccessibleLabel: ="WPQ"
+                  OnSelect: =Navigate(WPQ)
+            - Wd_NavBtnDocuments:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =324
+                  Width: =144
+                  Height: =48
+                  Icon: ="Folder"
+                  Text: ="Documents"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  BasePaletteColor: =ThemeNavyDeep
+                  AccessibleLabel: ="Documents"
+                  OnSelect: =Navigate(Documents)
+            - Wd_NavBtnSettings:
+                Control: Button
+                Properties:
+                  X: =8
+                  Y: =384
+                  Width: =144
+                  Height: =48
+                  Icon: ="Settings"
+                  Text: ="Settings"
+                  Align: =Align.Left
+                  FontWeight: =FontWeight.Semibold
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  Appearance: ='ButtonCanvas.Appearance'.Transparent
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  BasePaletteColor: =ThemeNavyDeep
+                  AccessibleLabel: ="Settings"
+                  OnSelect: =Navigate(Settings)
+      - Wd_PageShell:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            X: =160
+            Y: =0
+            Width: =Parent.Width - 160
+            Height: =Parent.Height
+            Fill: =ThemeBgPage
+            BorderThickness: =0
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+          Children:
+            - Wd_PageHeader:
+                Control: GroupContainer
+                Variant: ManualLayout
+                Properties:
+                  Height: =64
+                  Fill: =ThemeNavy
+                  BorderThickness: =0
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =24
+                  PaddingRight: =24
+                Children:
+                  - Wd_PageTitle:
+                      Control: ModernText
+                      Properties:
+                        X: =24
+                        Y: =16
+                        Width: =400
+                        Height: =32
+                        Text: ="Welders"
+                        Font: =Font.'Segoe UI'
+                        Size: =22
+                        FontWeight: =FontWeight.Bold
+                        Color: =RGBA(255, 255, 255, 1)
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - Wd_PageSubtitle:
+                      Control: ModernText
+                      Properties:
+                        X: =24
+                        Y: =44
+                        Width: =400
+                        Height: =16
+                        Text: ="Welder registry, qualifications, and continuity"
+                        Font: =Font.'Segoe UI'
+                        Size: =11
+                        FontWeight: =FontWeight.Normal
+                        Color: =ThemeTextSubtle
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - Wd_NewWelderBtn:
+                      Control: Button
+                      Properties:
+                        X: =Parent.Width - 264
+                        Y: =12
+                        Width: =152
+                        Height: =40
+                        Text: ="+ New Welder"
+                        Icon: ="Add"
+                        Layout: ='ButtonCanvas.Layout'.IconBefore
+                        IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                        Appearance: ='ButtonCanvas.Appearance'.Primary
+                        BasePaletteColor: =ThemeAccent
+                        FontWeight: =FontWeight.Semibold
+                        AccessibleLabel: ="Add a new welder"
+                        OnSelect: |-
+                          =Set(showWelderForm, true);
+                          Set(showNotifications, false);
+                          Set(showProfileMenu, false);
+                          Set(welderFormError, "")
+                  - Wd_NotifBell:
+                      Control: Button
+                      Properties:
+                        X: =Parent.Width - 104
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Icon: ="Alert"
+                        Layout: ='ButtonCanvas.Layout'.IconOnly
+                        IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                        Appearance: ='ButtonCanvas.Appearance'.Transparent
+                        FontColor: =ThemeBgCard
+                        BasePaletteColor: =ThemeAccent
+                        AccessibleLabel: ="Expiring qualifications"
+                        OnSelect: |-
+                          =Set(showNotifications, !showNotifications); Set(showProfileMenu, false)
+                  - Wd_NotifBadge:
+                      Control: Rectangle
+                      Properties:
+                        X: =Parent.Width - 86
+                        Y: =10
+                        Width: =22
+                        Height: =18
+                        Fill: =StatusExpired
+                        BorderThickness: =0
+                        DisplayMode: =DisplayMode.View
+                        Visible: |-
+                          =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) > 0
+                  - Wd_NotifBadgeText:
+                      Control: ModernText
+                      Properties:
+                        X: =Parent.Width - 86
+                        Y: =10
+                        Width: =22
+                        Height: =18
+                        Text: |-
+                          =Text(CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())))
+                        Color: =RGBA(255, 255, 255, 1)
+                        Size: =11
+                        FontWeight: =FontWeight.Semibold
+                        Font: =Font.'Segoe UI'
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        Visible: |-
+                          =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) > 0
+                  - Wd_UserAvatar:
+                      Control: Avatar
+                      Properties:
+                        X: =Parent.Width - 56
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Name: =User().FullName
+                        Image: =User().Image
+                        Shape: ='Avatar.Shape'.Circular
+                        Appearance: ='Avatar.Appearance'.Colorful
+                        AccessibleLabel: ="Current user — " & User().FullName
+                  - Wd_UserAvatarClick:
+                      Control: Button
+                      Properties:
+                        X: =Parent.Width - 56
+                        Y: =12
+                        Width: =40
+                        Height: =40
+                        Text: =""
+                        Appearance: ='ButtonCanvas.Appearance'.Transparent
+                        BasePaletteColor: =RGBA(0, 0, 0, 0.001)
+                        BorderThickness: =0
+                        BorderRadius: =20
+                        AccessibleLabel: ="Open user menu"
+                        OnSelect: |-
+                          =Set(showProfileMenu, !showProfileMenu); Set(showNotifications, false)
+            - Wd_PageContent:
+                Control: GroupContainer
+                Variant: AutoLayout
+                Properties:
+                  Fill: =ThemeBgPage
+                  BorderThickness: =0
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =16
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  PaddingTop: =16
+                  PaddingBottom: =16
+                  PaddingLeft: =16
+                  PaddingRight: =16
+                Children:
+                  - Wd_LeftPane:
+                      Control: GroupContainer
+                      Variant: AutoLayout
+                      Properties:
+                        Width: =380
+                        FillPortions: =0
+                        AlignInContainer: =AlignInContainer.Stretch
+                        Fill: =ThemeBgCard
+                        BorderColor: =ThemeBorder
+                        BorderThickness: =1
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =8
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        PaddingTop: =16
+                        PaddingBottom: =16
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                      Children:
+                        - Wd_LeftHeader:
+                            Control: ModernText
+                            Properties:
+                              Height: =24
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Text: ="Welder Registry"
+                              Font: =Font.'Segoe UI'
+                              Size: =18
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ThemeText
+                              Wrap: =false
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                        - Wd_WelderSearchInput:
+                            Control: Classic/TextInput
+                            Properties:
+                              Fill: =RGBA(255, 255, 255, 1)
+                              Color: =ThemeText
+                              BorderColor: =ThemeBorder
+                              BorderThickness: =1
+                              RadiusTopLeft: =6
+                              RadiusTopRight: =6
+                              RadiusBottomLeft: =6
+                              RadiusBottomRight: =6
+                              Size: =13
+                              Font: =Font.'Segoe UI'
+                              Height: =40
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              HintText: ="Search by name or stamp..."
+                              OnChange: =Set(welderSearch, Self.Text)
+
+                              Mode: =TextMode.SingleLine
+                        - Wd_WelderStatusFilter:
+                            Control: DropDown
+                            Properties:
+                              Height: =40
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Items: =["All", "Active", "Inactive"]
+                              DefaultSelectedItems: =["All"]
+                              OnChange: |-
+                                =Set(welderStatusFilter, Self.Selected.Value)
+                        - Wd_WelderGallery:
+                            Control: Gallery
+                            Variant: Vertical
+                            Properties:
+                              FillPortions: =1
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Fill: =RGBA(0, 0, 0, 0)
+                              BorderThickness: =0
+                              TemplateSize: =76
+                              TemplatePadding: =4
+                              ShowScrollbar: =true
+                              Items: |-
+                                =SortByColumns(
+                                  Filter(
+                                    'Welder Registry',
+                                    ((IsBlank(welderSearch) || welderSearch = "") || StartsWith(Title, welderSearch) || StartsWith(WelderStamp, welderSearch))
+                                    && ((IsBlank(welderStatusFilter) || welderStatusFilter = "All") || Status.Value = welderStatusFilter)
+                                  ),
+                                  "Title",
+                                  SortOrder.Ascending
+                                )
+                            Children:
+                              - Wd_WelderRowBg:
+                                  Control: Rectangle
+                                  Properties:
+                                    X: =0
+                                    Y: =0
+                                    Width: =Parent.TemplateWidth
+                                    Height: =Parent.TemplateHeight
+                                    Fill: =If(ThisItem.ID = selectedWelder.ID, ThemeBgSubtle, ThemeBgCard)
+                                    HoverFill: =ThemeBgSubtle
+                                    PressedFill: =ThemeBgSubtle
+                                    BorderThickness: =0
+                                    OnSelect: =Set(selectedWelder, ThisItem)
+                              - Wd_WelderAvatarCircle:
+                                  Control: Circle
+                                  Properties:
+                                    X: =12
+                                    Y: =14
+                                    Width: =48
+                                    Height: =48
+                                    Fill: |-
+                                      =Switch(
+                                        Mod(Find(Upper(Left(Coalesce(ThisItem.WelderStamp, "A"), 1)), "ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 6),
+                                        0, RGBA(0, 90, 158, 1),
+                                        1, RGBA(0, 120, 212, 1),
+                                        2, RGBA(168, 75, 12, 1),
+                                        3, RGBA(16, 124, 16, 1),
+                                        4, RGBA(98, 100, 167, 1),
+                                        5, RGBA(46, 78, 122, 1)
+                                      )
+                                    BorderThickness: =0
+                              - Wd_WelderAvatarText:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =12
+                                    Y: =14
+                                    Width: =48
+                                    Height: =48
+                                    Text: =Substitute(Coalesce(ThisItem.WelderStamp, ""), "-", "")
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Bold
+                                    Color: =RGBA(255, 255, 255, 1)
+                                    Align: =Align.Center
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_WelderName:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =72
+                                    Y: =10
+                                    Width: =Parent.TemplateWidth - 84
+                                    Height: =22
+                                    Text: =ThisItem.Title
+                                    Font: =Font.'Segoe UI'
+                                    Size: =15
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeText
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_WelderStampLine:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =72
+                                    Y: =32
+                                    Width: =Parent.TemplateWidth - 84
+                                    Height: =16
+                                    Text: '="Stamp: " & Coalesce(ThisItem.WelderStamp, "—")'
+                                    Font: =Font.'Segoe UI'
+                                    Size: =11
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_WelderSupervisorLine:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =72
+                                    Y: =50
+                                    Width: =Parent.TemplateWidth - 84
+                                    Height: =16
+                                    Text: '="Supv: " & Coalesce(ThisItem.Supervisor.DisplayName, "—")'
+                                    Font: =Font.'Segoe UI'
+                                    Size: =11
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextSubtle
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                        - Wd_WelderEmpty:
+                            Control: ModernText
+                            Properties:
+                              Height: =48
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Visible: =Wd_WelderGallery.AllItemsCount = 0
+                              Text: ="No welders match your search."
+                              Font: =Font.'Segoe UI'
+                              Size: =13
+                              FontWeight: =FontWeight.Normal
+                              Color: =ThemeTextMuted
+                              Align: =Align.Center
+                              VerticalAlign: =VerticalAlign.Middle
+                              Wrap: =true
+                              PaddingTop: =12
+                              PaddingBottom: =12
+                              PaddingLeft: =12
+                              PaddingRight: =12
+                  - Wd_RightPane:
+                      Control: GroupContainer
+                      Variant: AutoLayout
+                      Properties:
+                        FillPortions: =1
+                        AlignInContainer: =AlignInContainer.Stretch
+                        Fill: =RGBA(0, 0, 0, 0)
+                        BorderThickness: =0
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =16
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                      Children:
+                        - Wd_ContinuityBanner:
+                            Control: GroupContainer
+                            Variant: ManualLayout
+                            Properties:
+                              Height: =56
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Fill: =StatusExpired
+                              BorderThickness: =0
+                              RadiusTopLeft: =6
+                              RadiusTopRight: =6
+                              RadiusBottomLeft: =6
+                              RadiusBottomRight: =6
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              LayoutMinWidth: =0
+                              LayoutMinHeight: =0
+                              Visible: |-
+                                =Not(IsBlank(selectedWelder)) &&
+                                  selectedWelder.Status.Value = "Active" &&
+                                  CountRows(
+                                    Filter(
+                                      'Continuity Log',
+                                      Welder_x0020_Stamp = selectedWelder.WelderStamp &&
+                                      Activity_x0020_Date >= DateAdd(Today(), -ContinuityWindowDays, TimeUnit.Days)
+                                    )
+                                  ) = 0
+                            Children:
+                              - Wd_ContinuityBannerIcon:
+                                  Control: Icon
+                                  Properties:
+                                    X: =16
+                                    Y: =16
+                                    Width: =24
+                                    Height: =24
+                                    Icon: ="Warning"
+                                    IconColor: =RGBA(255, 255, 255, 1)
+                              - Wd_ContinuityBannerTitle:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =48
+                                    Y: =8
+                                    Width: =Parent.Width - 64
+                                    Height: =22
+                                    Text: ="REQUIRES REQUALIFICATION"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Bold
+                                    Color: =RGBA(255, 255, 255, 1)
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ContinuityBannerSub:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =48
+                                    Y: =30
+                                    Width: =Parent.Width - 64
+                                    Height: =18
+                                    Text: ="No welding activity logged in the last 6 months (ASME IX QW-322)"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =11
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =RGBA(255, 230, 230, 1)
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                        - Wd_ProfileCard:
+                            Control: GroupContainer
+                            Variant: ManualLayout
+                            Properties:
+                              Height: =160
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Fill: =ThemeBgCard
+                              BorderColor: =ThemeBorder
+                              BorderThickness: =1
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              DropShadow: =DropShadow.Light
+                              LayoutMinWidth: =0
+                              LayoutMinHeight: =0
+                              PaddingTop: =20
+                              PaddingBottom: =20
+                              PaddingLeft: =24
+                              PaddingRight: =24
+                            Children:
+                              - Wd_ProfileAvatarCircle:
+                                  Control: Circle
+                                  Properties:
+                                    X: =24
+                                    Y: =24
+                                    Width: =96
+                                    Height: =96
+                                    Fill: |-
+                                      =Switch(
+                                        Mod(Find(Upper(Left(Coalesce(selectedWelder.WelderStamp, "A"), 1)), "ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 6),
+                                        0, RGBA(0, 90, 158, 1),
+                                        1, RGBA(0, 120, 212, 1),
+                                        2, RGBA(168, 75, 12, 1),
+                                        3, RGBA(16, 124, 16, 1),
+                                        4, RGBA(98, 100, 167, 1),
+                                        5, RGBA(46, 78, 122, 1)
+                                      )
+                                    BorderThickness: =0
+                              - Wd_ProfileAvatarText:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =24
+                                    Y: =24
+                                    Width: =96
+                                    Height: =96
+                                    Text: =Substitute(Coalesce(selectedWelder.WelderStamp, ""), "-", "")
+                                    Font: =Font.'Segoe UI'
+                                    Size: =26
+                                    FontWeight: =FontWeight.Bold
+                                    Color: =RGBA(255, 255, 255, 1)
+                                    Align: =Align.Center
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ProfileName:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =144
+                                    Y: =20
+                                    Width: =500
+                                    Height: =36
+                                    Text: =Coalesce(selectedWelder.Title, "Select a welder")
+                                    Font: =Font.'Segoe UI'
+                                    Size: =28
+                                    FontWeight: =FontWeight.Bold
+                                    Color: =ThemeText
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ProfileStampLabel:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =144
+                                    Y: =60
+                                    Width: =80
+                                    Height: =16
+                                    Text: ="STAMP"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =11
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeTextSubtle
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ProfileStampValue:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =144
+                                    Y: =76
+                                    Width: =200
+                                    Height: =22
+                                    Text: =Coalesce(selectedWelder.WelderStamp, "—")
+                                    Font: =Font.'Segoe UI'
+                                    Size: =15
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeText
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ProfileSupervisorLabel:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =360
+                                    Y: =60
+                                    Width: =120
+                                    Height: =16
+                                    Text: ="SUPERVISOR"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =11
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeTextSubtle
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ProfileSupervisorValue:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =360
+                                    Y: =76
+                                    Width: =260
+                                    Height: =22
+                                    Text: =Coalesce(selectedWelder.Supervisor.DisplayName, "—")
+                                    Font: =Font.'Segoe UI'
+                                    Size: =15
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeText
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ProfileHireLabel:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =144
+                                    Y: =104
+                                    Width: =120
+                                    Height: =16
+                                    Text: ="HIRE DATE"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =11
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeTextSubtle
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ProfileHireValue:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =144
+                                    Y: =120
+                                    Width: =200
+                                    Height: =22
+                                    Text: =If(IsBlank(selectedWelder.HireDate), "—", Text(selectedWelder.HireDate, "mmm d, yyyy"))
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeText
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ProfileProjectLabel:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =360
+                                    Y: =104
+                                    Width: =160
+                                    Height: =16
+                                    Text: ="CURRENT PROJECT"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =11
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeTextSubtle
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ProfileProjectValue:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =360
+                                    Y: =120
+                                    Width: =300
+                                    Height: =22
+                                    Text: =Coalesce(selectedWelder.CurrentProject, "—")
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeText
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ProfileStatusBadge:
+                                  Control: Badge
+                                  Properties:
+                                    X: =660
+                                    Y: =24
+                                    Width: =110
+                                    Height: =28
+                                    Content: =Coalesce(selectedWelder.Status.Value, "Unknown")
+                                    Appearance: ='BadgeCanvas.Appearance'.Filled
+                                    Shape: ='BadgeCanvas.Shape'.Rounded
+                                    BasePaletteColor: =If(selectedWelder.Status.Value = "Active", StatusCurrent, StatusInactive)
+                                    FontSize: =12
+                                    FontWeight: =FontWeight.Semibold
+                        - Wd_DetailTabs:
+                            Control: TabList
+                            Properties:
+                              Height: =44
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Items: |-
+                                =Table(
+                                  {Value: "Qualifications"},
+                                  {Value: "Continuity"},
+                                  {Value: "Notes"}
+                                )
+                              FontWeight: =FontWeight.Semibold
+                              BasePaletteColor: =ThemeAccent
+                        - Wd_TabContentArea:
+                            Control: GroupContainer
+                            Variant: ManualLayout
+                            Properties:
+                              FillPortions: =1
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Fill: =ThemeBgCard
+                              BorderColor: =ThemeBorder
+                              BorderThickness: =1
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              DropShadow: =DropShadow.Light
+                              LayoutMinWidth: =0
+                              LayoutMinHeight: =0
+                              PaddingTop: =16
+                              PaddingBottom: =16
+                              PaddingLeft: =16
+                              PaddingRight: =16
+                            Children:
+                              - Wd_QualificationsHeader:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =16
+                                    Y: =12
+                                    Width: =400
+                                    Height: =22
+                                    Visible: =Wd_DetailTabs.Selected.Value = "Qualifications"
+                                    Text: ="Qualifications"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =18
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeText
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_QualificationsGallery:
+                                  Control: Gallery
+                                  Variant: Vertical
+                                  Properties:
+                                    X: =16
+                                    Y: =44
+                                    Width: =Parent.Width - 32
+                                    Height: =Parent.Height - 60
+                                    Visible: =Wd_DetailTabs.Selected.Value = "Qualifications"
+                                    Fill: =RGBA(0, 0, 0, 0)
+                                    BorderThickness: =0
+                                    TemplateSize: =72
+                                    TemplatePadding: =4
+                                    ShowScrollbar: =true
+                                    Items: |-
+                                      =SortByColumns(
+                                        Filter(
+                                          'WPQ Qualifications',
+                                          WelderStamp = selectedWelder.WelderStamp
+                                        ),
+                                        "ExpirationDate",
+                                        SortOrder.Ascending
+                                      )
+                                  Children:
+                                    - Wd_QualRowBg:
+                                        Control: Rectangle
+                                        Properties:
+                                          X: =0
+                                          Y: =0
+                                          Width: =Parent.TemplateWidth
+                                          Height: =Parent.TemplateHeight
+                                          Fill: =ThemeBgCard
+                                          HoverFill: =ThemeBgSubtle
+                                          PressedFill: =ThemeBgSubtle
+                                          BorderColor: =ThemeBorder
+                                          BorderThickness: =1
+                                          OnSelect: =Set(selectedWPQ, ThisItem); Navigate(WPQ)
+                                    - Wd_QualWPSText:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =16
+                                          Y: =12
+                                          Width: =160
+                                          Height: =22
+                                          Text: =Coalesce(ThisItem.WPSNumber, "—")
+                                          Font: =Font.'Segoe UI'
+                                          Size: =15
+                                          FontWeight: =FontWeight.Semibold
+                                          Color: =ThemeText
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Wd_QualTitleText:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =16
+                                          Y: =36
+                                          Width: =320
+                                          Height: =18
+                                          Text: =Coalesce(ThisItem.Title, "—")
+                                          Font: =Font.'Segoe UI'
+                                          Size: =11
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextMuted
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Wd_QualProcessText:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =200
+                                          Y: =12
+                                          Width: =120
+                                          Height: =22
+                                          Text: =Coalesce(ThisItem.Process.Value, "—")
+                                          Font: =Font.'Segoe UI'
+                                          Size: =13
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeText
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Wd_QualDateText:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =340
+                                          Y: =12
+                                          Width: =160
+                                          Height: =22
+                                          Text: '=If(IsBlank(ThisItem.QualificationDate), "—", "Qual: " & Text(ThisItem.QualificationDate, "mmm d, yyyy"))'
+                                          Font: =Font.'Segoe UI'
+                                          Size: =13
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextMuted
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Wd_QualExpText:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =340
+                                          Y: =36
+                                          Width: =160
+                                          Height: =18
+                                          Text: '=If(IsBlank(ThisItem.ExpirationDate), "—", "Exp: " & Text(ThisItem.ExpirationDate, "mmm d, yyyy") & " (" & If(IsBlank(ThisItem.ExpirationDate), "—", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) < 0, Abs(DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days)) & " days ago", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) & " days") & ")")'
+                                          Font: =Font.'Segoe UI'
+                                          Size: =11
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextMuted
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Wd_QualStatusBadge:
+                                        Control: Badge
+                                        Properties:
+                                          X: =Parent.TemplateWidth - 130
+                                          Y: =22
+                                          Width: =110
+                                          Height: =28
+                                          Content: ="Current"
+                                          Appearance: ='BadgeCanvas.Appearance'.Tint
+                                          Shape: ='BadgeCanvas.Shape'.Rounded
+                                          BasePaletteColor: =If(IsBlank(ThisItem.ExpirationDate), StatusInactive, DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) < 0, StatusExpired, DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) <= 30, StatusExpiringSoon, StatusCurrent)
+                                          FontSize: =12
+                                          FontWeight: =FontWeight.Semibold
+                              - Wd_QualEmptyText:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =16
+                                    Y: =60
+                                    Width: =Parent.Width - 32
+                                    Height: =40
+                                    Visible: =Wd_DetailTabs.Selected.Value = "Qualifications" && CountRows(Filter('WPQ Qualifications', WelderStamp = selectedWelder.WelderStamp)) = 0
+                                    Text: ="No qualifications on file for this welder."
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Wrap: =true
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ContinuityHeader:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =16
+                                    Y: =12
+                                    Width: =400
+                                    Height: =22
+                                    Visible: =Wd_DetailTabs.Selected.Value = "Continuity"
+                                    Text: ="Continuity Log"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =18
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeText
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_ContinuityGallery:
+                                  Control: Gallery
+                                  Variant: Vertical
+                                  Properties:
+                                    X: =16
+                                    Y: =44
+                                    Width: =Parent.Width - 32
+                                    Height: =Parent.Height - 60
+                                    Visible: =Wd_DetailTabs.Selected.Value = "Continuity"
+                                    Fill: =RGBA(0, 0, 0, 0)
+                                    BorderThickness: =0
+                                    TemplateSize: =68
+                                    TemplatePadding: =4
+                                    ShowScrollbar: =true
+                                    Items: |-
+                                      =SortByColumns(
+                                        Filter(
+                                          'Continuity Log',
+                                          Welder_x0020_Stamp = selectedWelder.WelderStamp
+                                        ),
+                                        "Activity_x0020_Date",
+                                        SortOrder.Descending
+                                      )
+                                  Children:
+                                    - Wd_ContRowBg:
+                                        Control: Rectangle
+                                        Properties:
+                                          X: =0
+                                          Y: =0
+                                          Width: =Parent.TemplateWidth
+                                          Height: =Parent.TemplateHeight
+                                          Fill: =ThemeBgCard
+                                          HoverFill: =ThemeBgSubtle
+                                          PressedFill: =ThemeBgSubtle
+                                          BorderColor: =ThemeBorder
+                                          BorderThickness: =1
+                                          OnSelect: =false
+                                    - Wd_ContDateText:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =16
+                                          Y: =12
+                                          Width: =120
+                                          Height: =22
+                                          Text: =If(IsBlank(ThisItem.Activity_x0020_Date), "—", Text(ThisItem.Activity_x0020_Date, "mmm d, yyyy"))
+                                          Font: =Font.'Segoe UI'
+                                          Size: =13
+                                          FontWeight: =FontWeight.Semibold
+                                          Color: =ThemeText
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Wd_ContWPSText:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =16
+                                          Y: =36
+                                          Width: =120
+                                          Height: =18
+                                          Text: =Coalesce(ThisItem.WPS_x0020_Number, "—")
+                                          Font: =Font.'Segoe UI'
+                                          Size: =11
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextMuted
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Wd_ContProcessText:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =160
+                                          Y: =12
+                                          Width: =120
+                                          Height: =22
+                                          Text: =Coalesce(ThisItem.Process.Value, "—")
+                                          Font: =Font.'Segoe UI'
+                                          Size: =13
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeText
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Wd_ContLocationText:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =160
+                                          Y: =36
+                                          Width: =180
+                                          Height: =18
+                                          Text: =Coalesce(ThisItem.Location, "—")
+                                          Font: =Font.'Segoe UI'
+                                          Size: =11
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextMuted
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Wd_ContProjectText:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =300
+                                          Y: =12
+                                          Width: =200
+                                          Height: =22
+                                          Text: =Coalesce(ThisItem.Project, "—")
+                                          Font: =Font.'Segoe UI'
+                                          Size: =13
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeText
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Wd_ContVerifiedText:
+                                        Control: ModernText
+                                        Properties:
+                                          X: =300
+                                          Y: =36
+                                          Width: =220
+                                          Height: =18
+                                          Text: '="Verified by: " & Coalesce(ThisItem.Verified_x0020_By.DisplayName, "—")'
+                                          Font: =Font.'Segoe UI'
+                                          Size: =11
+                                          FontWeight: =FontWeight.Normal
+                                          Color: =ThemeTextMuted
+                                          Wrap: =false
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                    - Wd_ContStatusBadge:
+                                        Control: Badge
+                                        Properties:
+                                          X: =Parent.TemplateWidth - 130
+                                          Y: =20
+                                          Width: =110
+                                          Height: =28
+                                          Content: =Coalesce(ThisItem.Status.Value, "—")
+                                          Appearance: ='BadgeCanvas.Appearance'.Tint
+                                          Shape: ='BadgeCanvas.Shape'.Rounded
+                                          BasePaletteColor: =ThemeAccent
+                                          FontSize: =12
+                                          FontWeight: =FontWeight.Semibold
+                              - Wd_ContinuityEmptyText:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =16
+                                    Y: =60
+                                    Width: =Parent.Width - 32
+                                    Height: =40
+                                    Visible: =Wd_DetailTabs.Selected.Value = "Continuity" && CountRows(Filter('Continuity Log', Welder_x0020_Stamp = selectedWelder.WelderStamp)) = 0
+                                    Text: ="No continuity entries on file for this welder."
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeTextMuted
+                                    Wrap: =true
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_NotesHeader:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =16
+                                    Y: =12
+                                    Width: =400
+                                    Height: =22
+                                    Visible: =Wd_DetailTabs.Selected.Value = "Notes"
+                                    Text: ="Notes"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =18
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =ThemeText
+                                    Wrap: =false
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                              - Wd_NotesBody:
+                                  Control: ModernText
+                                  Properties:
+                                    X: =16
+                                    Y: =44
+                                    Width: =Parent.Width - 32
+                                    Height: =Parent.Height - 60
+                                    Visible: =Wd_DetailTabs.Selected.Value = "Notes"
+                                    Text: =If(IsBlank(selectedWelder.Notes), "No notes recorded for this welder.", selectedWelder.Notes)
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Normal
+                                    Color: =ThemeText
+                                    Wrap: =true
+                                    PaddingTop: =0
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+      - Wd_NotifScrim:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Text: =""
+            Visible: =showNotifications
+            Appearance: ='ButtonCanvas.Appearance'.Transparent
+            BasePaletteColor: =RGBA(0,0,0,0.001)
+            BorderThickness: =0
+            AccessibleLabel: ="Close notifications"
+            OnSelect: =Set(showNotifications, false)
+      - Wd_NotifPopover:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =Parent.Width - 392
+            Y: =76
+            Width: =376
+            Height: =440
+            Fill: =ThemeBgCard
+            BorderColor: =ThemeBorder
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Visible: =showNotifications
+          Children:
+            - Wd_NotifTitle:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =16
+                  Width: =280
+                  Height: =26
+                  Text: ="Expiring Qualifications"
+                  Font: =Font.'Segoe UI'
+                  Size: =16
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeText
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_NotifSubtitle:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =42
+                  Width: =280
+                  Height: =18
+                  Text: ="Within 30 days"
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_NotifClose:
+                Control: Button
+                Properties:
+                  X: =Parent.Width - 44
+                  Y: =12
+                  Width: =32
+                  Height: =32
+                  Icon: ="Dismiss"
+                  Layout: ='ButtonCanvas.Layout'.IconOnly
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeTextMuted
+                  AccessibleLabel: ="Close"
+                  OnSelect: =Set(showNotifications, false)
+            - Wd_NotifDivider:
+                Control: Rectangle
+                Properties:
+                  X: =0
+                  Y: =72
+                  Width: =Parent.Width
+                  Height: =1
+                  Fill: =ThemeBorder
+                  BorderThickness: =0
+            - Wd_NotifGallery:
+                Control: Gallery
+                Variant: Vertical
+                Properties:
+                  X: =0
+                  Y: =73
+                  Width: =Parent.Width
+                  Height: =Parent.Height - 73
+                  TemplateSize: =64
+                  TemplatePadding: =0
+                  Fill: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+                  ShowScrollbar: =true
+                  Items: |-
+                    =SortByColumns(
+                      Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today()),
+                      "ExpirationDate", SortOrder.Ascending
+                    )
+                Children:
+                  - Wd_NotifRowDivider:
+                      Control: Rectangle
+                      Properties:
+                        X: =0
+                        Y: =Parent.TemplateHeight - 1
+                        Width: =Parent.TemplateWidth
+                        Height: =1
+                        Fill: =ThemeBgSubtle
+                        BorderThickness: =0
+                  - Wd_NotifRowName:
+                      Control: ModernText
+                      Properties:
+                        X: =20
+                        Y: =10
+                        Width: =220
+                        Height: =22
+                        Text: =Coalesce(ThisItem.Title, "(Unknown)")
+                        Font: =Font.'Segoe UI'
+                        Size: =13
+                        FontWeight: =FontWeight.Semibold
+                        Color: =ThemeText
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - Wd_NotifRowSub:
+                      Control: ModernText
+                      Properties:
+                        X: =20
+                        Y: =34
+                        Width: =220
+                        Height: =18
+                        Text: =Coalesce(ThisItem.WPSNumber, "")
+                        Font: =Font.'Segoe UI'
+                        Size: =11
+                        FontWeight: =FontWeight.Normal
+                        Color: =ThemeTextMuted
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                  - Wd_NotifRowDate:
+                      Control: ModernText
+                      Properties:
+                        X: =Parent.TemplateWidth - 96
+                        Y: =22
+                        Width: =84
+                        Height: =22
+                        Text: =Text(ThisItem.ExpirationDate, "mmm d, yyyy") & " (" & If(IsBlank(ThisItem.ExpirationDate), "—", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) < 0, Abs(DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days)) & " days ago", DateDiff(Today(), ThisItem.ExpirationDate, TimeUnit.Days) & " days") & ")"
+                        Font: =Font.'Segoe UI'
+                        Size: =12
+                        FontWeight: =FontWeight.Semibold
+                        Color: =StatusExpiringSoon
+                        Align: =Align.Right
+                        Wrap: =false
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+            - Wd_NotifEmpty:
+                Control: ModernText
+                Properties:
+                  X: =20
+                  Y: =180
+                  Width: =Parent.Width - 40
+                  Height: =40
+                  Text: ="No qualifications expiring in the next 30 days."
+                  Font: =Font.'Segoe UI'
+                  Size: =13
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Align: =Align.Center
+                  Wrap: =true
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Visible: |-
+                    =CountRows(Filter('WPQ Qualifications', ExpirationDate <= DateAdd(Today(), 30, TimeUnit.Days) && ExpirationDate >= Today())) = 0
+      - Wd_ProfileScrim:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Text: =""
+            Visible: =showProfileMenu
+            Appearance: ='ButtonCanvas.Appearance'.Transparent
+            BasePaletteColor: =RGBA(0,0,0,0.001)
+            BorderThickness: =0
+            AccessibleLabel: ="Close profile menu"
+            OnSelect: =Set(showProfileMenu, false)
+      - Wd_ProfilePopover:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =Parent.Width - 296
+            Y: =76
+            Width: =280
+            Height: =220
+            Fill: =ThemeBgCard
+            BorderColor: =ThemeBorder
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Visible: =showProfileMenu
+          Children:
+            - Wd_ProfileAvatarBig:
+                Control: Avatar
+                Properties:
+                  X: =16
+                  Y: =16
+                  Width: =56
+                  Height: =56
+                  Name: =User().FullName
+                  Image: =User().Image
+                  Shape: ='Avatar.Shape'.Circular
+                  Appearance: ='Avatar.Appearance'.Colorful
+                  FontSize: =22
+            - Wd_ProfileNameBig:
+                Control: ModernText
+                Properties:
+                  X: =84
+                  Y: =18
+                  Width: =180
+                  Height: =22
+                  Text: =User().FullName
+                  Font: =Font.'Segoe UI'
+                  Size: =14
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeText
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_PopProfileEmail:
+                Control: ModernText
+                Properties:
+                  X: =84
+                  Y: =42
+                  Width: =180
+                  Height: =22
+                  Text: =User().Email
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_ProfileDivider:
+                Control: Rectangle
+                Properties:
+                  X: =16
+                  Y: =92
+                  Width: =Parent.Width - 32
+                  Height: =1
+                  Fill: =ThemeBorder
+                  BorderThickness: =0
+            - Wd_ProfileBtnAccount:
+                Control: Button
+                Properties:
+                  X: =16
+                  Y: =104
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  Text: ="View Microsoft account"
+                  Icon: ="Person"
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeAccent
+                  Align: =Align.Left
+                  OnSelect: |-
+                    =Launch("https://myaccount.microsoft.com"); Set(showProfileMenu, false)
+            - Wd_ProfileBtnAbout:
+                Control: Button
+                Properties:
+                  X: =16
+                  Y: =152
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  Text: ="About this app"
+                  Icon: ="Info"
+                  Layout: ='ButtonCanvas.Layout'.IconBefore
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeAccent
+                  Align: =Align.Left
+                  OnSelect: =Set(showProfileMenu, false); Navigate(Settings)
+
+      - Wd_NewWelderScrim:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Text: =""
+            Visible: =showWelderForm
+            Appearance: ='ButtonCanvas.Appearance'.Transparent
+            BasePaletteColor: =RGBA(0, 0, 0, 0.4)
+            BorderThickness: =0
+            AccessibleLabel: ="Close form"
+            OnSelect: =Set(showWelderForm, false)
+      - Wd_NewWelderForm:
+          Control: GroupContainer
+          Variant: ManualLayout
+          Properties:
+            X: =(Parent.Width - 480) / 2
+            Y: =(Parent.Height - 600) / 2
+            Width: =480
+            Height: =600
+            Fill: =ThemeBgCard
+            BorderColor: =ThemeBorder
+            BorderThickness: =1
+            DropShadow: =DropShadow.Bold
+            RadiusTopLeft: =10
+            RadiusTopRight: =10
+            RadiusBottomLeft: =10
+            RadiusBottomRight: =10
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Visible: =showWelderForm
+          Children:
+            - Wd_NWFTitle:
+                Control: ModernText
+                Properties:
+                  X: =24
+                  Y: =20
+                  Width: =400
+                  Height: =28
+                  Text: ="Add Welder"
+                  Font: =Font.'Segoe UI'
+                  Size: =18
+                  FontWeight: =FontWeight.Bold
+                  Color: =ThemeText
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_NWFSubtitle:
+                Control: ModernText
+                Properties:
+                  X: =24
+                  Y: =48
+                  Width: =400
+                  Height: =18
+                  Text: ="Add a new welder to the registry"
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Normal
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_NWFCloseBtn:
+                Control: Button
+                Properties:
+                  X: =Parent.Width - 44
+                  Y: =16
+                  Width: =32
+                  Height: =32
+                  Icon: ="Dismiss"
+                  Layout: ='ButtonCanvas.Layout'.IconOnly
+                  IconStyle: ='ButtonCanvas.IconStyle'.Outline
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeTextMuted
+                  AccessibleLabel: ="Close"
+                  OnSelect: =Set(showWelderForm, false)
+            - Wd_NWFDivider:
+                Control: Rectangle
+                Properties:
+                  X: =0
+                  Y: =80
+                  Width: =Parent.Width
+                  Height: =1
+                  Fill: =ThemeBorder
+                  BorderThickness: =0
+            - Wd_NWFNameLabel:
+                Control: ModernText
+                Properties:
+                  X: =24
+                  Y: =96
+                  Width: =200
+                  Height: =18
+                  Text: ="Welder Name *"
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_NWFNameInput:
+                Control: Classic/TextInput
+                Properties:
+                  X: =24
+                  Y: =116
+                  Width: =Parent.Width - 48
+                  Height: =40
+                  HintText: ="Julian Andrews"
+                  Mode: =TextMode.SingleLine
+                  Size: =13
+                  Color: =ThemeText
+                  Font: =Font.'Segoe UI'
+                  BorderColor: =ThemeBorder
+                  BorderThickness: =1
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+            - Wd_NWFStampLabel:
+                Control: ModernText
+                Properties:
+                  X: =24
+                  Y: =168
+                  Width: =200
+                  Height: =18
+                  Text: ="Welder Stamp *"
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_NWFStampInput:
+                Control: Classic/TextInput
+                Properties:
+                  X: =24
+                  Y: =188
+                  Width: =200
+                  Height: =40
+                  HintText: ="A-12"
+                  Mode: =TextMode.SingleLine
+                  Size: =13
+                  Color: =ThemeText
+                  Font: =Font.'Segoe UI'
+                  BorderColor: =ThemeBorder
+                  BorderThickness: =1
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+            - Wd_NWFStatusLabel:
+                Control: ModernText
+                Properties:
+                  X: =244
+                  Y: =168
+                  Width: =200
+                  Height: =18
+                  Text: ="Status"
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_NWFStatusDropdown:
+                Control: DropDown
+                Properties:
+                  X: =244
+                  Y: =188
+                  Width: =Parent.Width - 268
+                  Height: =40
+                  Items: =["Active", "Inactive"]
+                  DefaultSelectedItems: =["Active"]
+            - Wd_NWFHireDateLabel:
+                Control: ModernText
+                Properties:
+                  X: =24
+                  Y: =240
+                  Width: =200
+                  Height: =18
+                  Text: ="Hire Date"
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_NWFHireDatePicker:
+                Control: DatePicker
+                Properties:
+                  X: =24
+                  Y: =260
+                  Width: =200
+                  Height: =40
+                  SelectedDate: =Today()
+            - Wd_NWFProjectLabel:
+                Control: ModernText
+                Properties:
+                  X: =244
+                  Y: =240
+                  Width: =200
+                  Height: =18
+                  Text: ="Current Project"
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_NWFProjectInput:
+                Control: Classic/TextInput
+                Properties:
+                  X: =244
+                  Y: =260
+                  Width: =Parent.Width - 268
+                  Height: =40
+                  HintText: ="Project name"
+                  Mode: =TextMode.SingleLine
+                  Size: =13
+                  Color: =ThemeText
+                  Font: =Font.'Segoe UI'
+                  BorderColor: =ThemeBorder
+                  BorderThickness: =1
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+            - Wd_NWFNotesLabel:
+                Control: ModernText
+                Properties:
+                  X: =24
+                  Y: =312
+                  Width: =200
+                  Height: =18
+                  Text: ="Notes"
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ThemeTextMuted
+                  Wrap: =false
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_NWFNotesInput:
+                Control: Classic/TextInput
+                Properties:
+                  X: =24
+                  Y: =332
+                  Width: =Parent.Width - 48
+                  Height: =100
+                  HintText: ="Optional notes about this welder..."
+                  Mode: =TextMode.MultiLine
+                  Size: =13
+                  Color: =ThemeText
+                  Font: =Font.'Segoe UI'
+                  BorderColor: =ThemeBorder
+                  BorderThickness: =1
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+            - Wd_NWFErrorText:
+                Control: ModernText
+                Properties:
+                  X: =24
+                  Y: =446
+                  Width: =Parent.Width - 48
+                  Height: =40
+                  Visible: =Not(IsBlank(welderFormError))
+                  Text: =welderFormError
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  FontWeight: =FontWeight.Normal
+                  Color: =StatusExpired
+                  Wrap: =true
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+            - Wd_NWFFooterDivider:
+                Control: Rectangle
+                Properties:
+                  X: =0
+                  Y: =Parent.Height - 72
+                  Width: =Parent.Width
+                  Height: =1
+                  Fill: =ThemeBorder
+                  BorderThickness: =0
+            - Wd_NWFCancelBtn:
+                Control: Button
+                Properties:
+                  X: =Parent.Width - 232
+                  Y: =Parent.Height - 56
+                  Width: =104
+                  Height: =40
+                  Text: ="Cancel"
+                  Layout: ='ButtonCanvas.Layout'.TextOnly
+                  Appearance: ='ButtonCanvas.Appearance'.Subtle
+                  BasePaletteColor: =ThemeTextMuted
+                  AccessibleLabel: ="Cancel"
+                  OnSelect: =Set(showWelderForm, false)
+            - Wd_NWFSaveBtn:
+                Control: Button
+                Properties:
+                  X: =Parent.Width - 120
+                  Y: =Parent.Height - 56
+                  Width: =104
+                  Height: =40
+                  Text: ="Save Welder"
+                  Layout: ='ButtonCanvas.Layout'.TextOnly
+                  Appearance: ='ButtonCanvas.Appearance'.Primary
+                  BasePaletteColor: =ThemeAccent
+                  FontWeight: =FontWeight.Semibold
+                  AccessibleLabel: ="Save welder"
+                  OnSelect: |-
+                    =If(
+                      IsBlank(Wd_NWFNameInput.Text) || IsBlank(Wd_NWFStampInput.Text),
+                      Set(welderFormError, "Welder name and stamp are required."),
+                      If(
+                        CountRows(Filter('Welder Registry', WelderStamp = Wd_NWFStampInput.Text)) > 0,
+                        Set(welderFormError, "A welder with that stamp already exists."),
+                        Patch(
+                          'Welder Registry',
+                          Defaults('Welder Registry'),
+                          {
+                            Title: Wd_NWFNameInput.Text,
+                            WelderStamp: Wd_NWFStampInput.Text,
+                            Status: {Value: Wd_NWFStatusDropdown.Selected.Value},
+                            HireDate: Wd_NWFHireDatePicker.SelectedDate,
+                            CurrentProject: Wd_NWFProjectInput.Text,
+                            Notes: Wd_NWFNotesInput.Text
+                          }
+                        );
+                        Refresh('Welder Registry');
+                        Set(showWelderForm, false);
+                        Set(welderFormError, "");
+                        Reset(Wd_NWFNameInput);
+                        Reset(Wd_NWFStampInput);
+                        Reset(Wd_NWFProjectInput);
+                        Reset(Wd_NWFNotesInput)
+                      )
+                    )
